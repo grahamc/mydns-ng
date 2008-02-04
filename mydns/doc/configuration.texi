@@ -1,0 +1,193 @@
+@c ***
+@c ***	CONFIGURATION
+@c ***
+@node Configuration
+@appendix Configuration
+@cindex configuration
+@cindex mydns.conf
+@cindex variables, configuration
+The @file{mydns.conf} file has a simple, familiar format.  It consists
+of lines that may contain variables and values, in the format
+
+@example
+@i{variable} = @i{value}
+@end example
+
+Blank lines are allowed.  The @samp{#} character begins comments, which
+are ignored.
+
+The @option{--dump-config} option of the @command{mydns} program will output
+all possible variables in @file{mydns.conf} format.  (@xref{Creating mydns.conf}.)
+
+Boolean values can be @samp{yes}, @samp{no}, @samp{1}, @samp{0}, @samp{on}, or @samp{off}.
+
+@menu
+* Database options::  Database configuration.
+* General options::   Name daemon configuration.
+* Cache options::     Cache configuration.
+* Misc options::      Miscellaneous configuration options.
+@end menu
+
+
+@c *** (config) Database
+@node Database options
+@section Database configuration
+@cindex database, configuration
+@cindex configuration, database
+@cindex db-host
+@cindex db-user
+@cindex db-password
+@cindex database
+
+@table @var
+@item db-host
+@i{(string)}  The hostname where your database server is located.  May be overridden by the
+@option{-h} (@option{--host}) command-line option.
+
+@item db-user
+@i{(string)}  The username to provide to the database server during authentication.  May be
+overridden by the @option{-u} (@option{--user}) command-line option.
+
+@item db-password
+@i{(string)}  The password to provide to the database server during authentication.  May be
+overridden by the @option{-p} (@option{--password}) command-line option.
+
+@item database
+@i{(string)}  The name of the database containing DNS data.
+@end table
+
+
+@c *** (config) General options
+@node General options
+@section Name daemon configuration
+@cindex daemon, configuration
+@cindex configuration, daemon
+@cindex user
+@cindex group
+@cindex listen
+@cindex no-listen
+@cindex port number
+
+@table @var
+@item user
+@i{(string)}  Run with the permissions of this user. 
+
+@item group
+@i{(string)}  Run with the permissions of this group. 
+
+@item listen
+@i{(string)}  Listen and accept requests on this address only.  If this is @samp{*},
+the server will accept connections on all addresses.  This must be an IP address
+in numbers-and-dots format, or @samp{*}.  Multiple addresses may be specified,
+as a comma-delimited list of addresses or on separate @samp{listen} lines.  To
+specify a port other than port 53, append @samp{:@i{port}} to the address.
+
+@item no-listen
+@i{(string)}  Do @i{not} listen on this address.  This must be an IP address
+in numbers-and-dots format, or @samp{*}.  Multiple addresses may be specified,
+as a comma-delimited list of addresses or on separate @samp{no-listen} lines.  To
+specify a port other than port 53, append @samp{:@i{port}} to the address.  This
+option may be used to easily tell MyDNS not to listen on the address @samp{127.0.0.1},
+on which you are running a recursive name server.
+
+
+@end table
+
+@c *** (config) Cache options
+@node Cache options
+@section Cache configuration
+@cindex cache, configuration
+@cindex configuration, cache
+@cindex zone-cache-size
+@cindex zone-cache-expire
+@cindex reply-cache-size
+@cindex reply-cache-expire
+
+@table @var
+@item zone-cache-size
+@i{(integer)}  The number of items stored in the DNS server's internal zone data cache.
+Set this to @samp{0} to disable the zone data cache entirely.  (@xref{Caching}.)
+
+@item zone-cache-expire
+@i{(integer)}  Number of seconds after which cached items expire.  If this is @samp{0}, the
+zone data cache is not used.  The TTL value for any RR may override this value if it is
+a shorter amount of time.  (@xref{Caching}.)
+
+@item reply-cache-size
+@i{(integer)}  The number of items stored in the DNS server's internal reply cache.
+Set this to @samp{0} to disable the reply cache entirely.  (@xref{Caching}.)
+
+@item reply-cache-expire
+@i{(integer)}  Number of seconds after which cached replies expire.  If this is @samp{0}, the
+reply cache is not used. (@xref{Caching}.)
+@end table
+
+
+@c *** (config) Esoterica
+@node Misc options
+@section Miscellaneous configuration options.
+@cindex misc, configuration
+@cindex configuration, misc
+@cindex log
+@cindex pidfile
+@cindex timeout
+@cindex multicpu
+@cindex allow-axfr
+@cindex allow-tcp
+@cindex allow-update
+@cindex ignore-minimum
+@cindex soa-table
+@cindex rr-table
+
+@table @var
+@item log
+@i{(string)} The name daemon should log via the syslog facility specified,
+which may be @samp{LOG_DAEMON} or any of @samp{LOG_LOCAL0} through
+@samp{LOG_LOCAL7}.  If the argument is @samp{stderr} or @samp{stdout},
+program output will go to that stream only.  If the argument is a
+filename, program output will go to that file.
+
+@item pidfile
+@i{(string)}  The @command{mydns} program will write its PID to this file on startup.
+
+@item timeout
+@i{(integer)}  Number of seconds after which queries should time out.
+
+@item multicpu
+@i{(integer)}  Number of processors in your system.
+
+@item allow-axfr
+@i{(boolean)}  Should DNS-based zone transfers be enabled?
+
+@item allow-tcp
+@i{(boolean)}  Should TCP queries be allowed?  Use of this option is usually
+not recommended.  However, TCP queries should be enabled if you think your
+server will be serving out answers larger than 512 bytes.
+
+@item allow-update
+@i{(boolean)}  Should RFC 2136 DNS UPDATE queries be allowed?  (@xref{DNS UPDATE}.)
+
+@item ignore-minimum
+@i{(boolean)}  Should MyDNS ignore the minimum TTL specified in the SOA
+record for each zone?
+
+@item soa-table
+@i{(string)}  Name of the table containing SOA records.
+
+@item rr-table
+@i{(string)}  Name of the table containing resource record data.
+
+@item soa-where
+@i{(string)}  An additional SQL @samp{WHERE} clause to use when retrieving
+records from the @code{soa} table (@pxref{soa table}).
+
+@item rr-where
+@i{(string)}  An additional SQL @samp{WHERE} clause to use when retrieving
+records from the @code{rr} table (@pxref{rr table}).
+
+@item recursive
+@i{(string)}  Forward recursive requests to a DNS server at this address
+and return its response to the client.
+
+
+@end table

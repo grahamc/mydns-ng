@@ -1,0 +1,71 @@
+
+mydns version 1.1.0 is an SQL-based DNS server.
+
+This release is dated January 18, 2006.
+
+Changes in version 1.1.0:
+
+  * Implemented RFC 2136 (DNS UPDATE).  See the manual
+    for usage instructions.
+  * Fixed minor bug in admin.php where if db_get_settings()
+    failed, it might display an error message without
+    consistent formatting.
+  * Added two additional fields to the --verbose query log.
+    The opcode of the query (QUERY or UPDATE), and a quoted
+    field containing a description of the UPDATE performed,
+    if the opcode was UPDATE.
+  * Updated contrib/stats.php to handle new log fields.
+  * Fixed bug in --dump-config -- if present, fields without
+    default values ("no-listen", "soa-where", "rr-where",
+    and "recursive") were not being dumped.
+  * Made --dump-config dump ALL possible configuration
+    options, even if no value was originally specified.  As
+    such, MyDNS will no longer warn the user when a config
+    option doesn't have a value.  It will be silently ignored.
+  * Including <inttypes.h> after a suggestion by Christian
+    Tschenett, to help things out on 64-bit platforms like OSX.
+    If this creates problems on your platform, please let me
+    know.
+  * Modified admin.php to allow a backslash in the 'mbox' field,
+    immediately preceding a dot.  This is used in DNS to
+    indicate the presence of a dot in the username part of the
+    administrator's email address.  There was an additional bug
+    report from Andreas Grip that MyDNS was replying with the
+    slashes doubled up in this case, but it appears to be a
+    problem with the "dig" program, not MyDNS.
+  * Fixed bug with "rr-where" clause -- conf.c was using
+    "soa-where" instead.  David Darville first reported this bug.
+    Michael Gile submitted it two minutes later, with a patch.
+  * Added "create_domain.pl" to the contrib/ directory.  Thanks
+    to Gerard de Brieder for this script.  See contrib/README
+    for more information.
+  * Fixed bug in src/lib/rr.c (mydns_rr_load) that caused a
+    segfault if origin was NULL (it was designed to allow NULL,
+    but this version is the first to ever call it in that way).
+  * Added support for NAPTR (RFC 2915) records.  Users with
+    existing MyDNS databases will need to alter their tables to
+    allow "NAPTR" in the "type" column if they want to use NAPTR.
+  * Renamed library functions mydns_parse_rr() and mydns_parse_soa()
+    to mydns_rr_parse() and mydns_soa_parse(), for consistency.
+  * Library functions mydns_rr_dup() and mydns_soa_dup() now fail
+    (terminating the program) if out of memory.
+  * Moved routines that parse data for individual RR types (RP,
+    SRV, and NAPTR) into individual functions from mydns_rr_parse
+    for clarity.
+  * Fixed bug where AXFR might transmit incorrect information if
+    a FQDN is used in the 'name' field.
+  * Fixed AXFR bug with ALIAS enabled.  Thanks to Sven Wegener for
+    the patch.
+  * Created file "README.mysql" to address various problems common
+    while compiling with MySQL support.
+  * Fixed "use of cast expressions as lvalues is deprecated"
+    warning (caused compilation abort with --enable-debug).
+  * Added hostname to beginning of SIGUSR1 status output.
+  * Renamed "update" column in the soa table to "update_acl"; how
+    could I be so stupid as to name a column "update"?!
+  * Fixed a critical denial-of-service vulnerability.
+
+More information and downloads at http://mydns.bboy.net/
+
+- Don Moore <bboy@bboy.net>
+

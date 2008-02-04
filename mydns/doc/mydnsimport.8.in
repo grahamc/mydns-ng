@@ -1,0 +1,139 @@
+.\"
+.\" $Id: mydnsimport.8.in,v 1.4 2005/04/20 16:49:11 bboy Exp $
+.\"
+.\" Copyright (C) 2002-2005  Don Moore <bboy@bboy.net>
+.\"
+.TH mydnsimport 8 "@PACKAGE_DATE@" "@PACKAGE_STRING@" "System Administrator's Manual"
+.SH NAME
+mydnsimport \- Import zone data from external sources.
+.SH SYNOPSIS
+.B mydnsimport
+[\fB-a\fP, \fB--axfr=\fP\fIhost\fP]
+[\fB-D\fP, \fB--database=\fP\fIdbname\fP]
+[\fB-h\fP, \fB--host=\fP\fIhostname\fP]
+[\fB-o\fP, \fB--output\fP]
+[\fB-p\fP, \fB--password[=\fP\fIpassword\fP]]
+[\fB-r\fP, \fB--replace\fP]
+[\fB-t\fP, \fB--tinydns=\fP\fIfile\fP]
+[\fB--notrim\fP]
+[\fB-u\fP, \fB--user=\fP\fIusername\fP]
+[\fB-v\fP, \fB--verbose\fP]
+[\fB--help\fP]
+[\fB--version\fP]
+\fBZONE\fP
+[\fB...\fP]
+
+
+.\"--------------------------------------------------------------------------
+.\"  DESCRIPTION
+.\"--------------------------------------------------------------------------
+.SH DESCRIPTION
+\fBmydnsimport\fP imports zone data into MyDNS from an external source.
+If an import technique is specified (for example, via the \fB--axfr\fP
+option), the specified zone data will be loaded and \fBmydnsimport\fP will
+add the zone data to your database.
+
+Currently, \fB--axfr\fP and \fB--tinydns\fP are the only import techniques
+recognized.
+
+
+.\"--------------------------------------------------------------------------
+.\"  OPTIONS
+.\"--------------------------------------------------------------------------
+.SH OPTIONS
+
+.IP "\fB-a\fP, \fB--axfr\fP=\fIhostname[:port]\fP"
+Load \fIzone\fP information from the specified \fIhostname\fP via the
+DNS-based AXFR command.
+
+.IP "\fB-o\fP, \fB--output\fP"
+If this option is specified, \fBmydnsimport\fP outputs zone data in a
+computer-friendly format instead of modifying the database.  Each line of
+output consists of a \fIline type\fP (\fBsoa\fP, \fBrr\fP, or \fBptr\fP)
+followed by multiple fields.  Fields within each line are separated by the
+\fITAB\fP (ASCII 0x09) character.  See \fBLINE SYNTAX\fP, below.
+
+.IP "\fB-r\fP, \fB--replace\fP"
+When importing, if the \fIzone\fP specified already exists, \fBmydnsimport\fP
+will refuse to make changes to the database unless this flag is provided.
+When this flag is provided, if the \fIzone\fP already exists, its SOA record
+will be updated (from the external source), all resource records for that
+zone are purged, and a new set of resource records is loaded from the external
+source.
+
+.IP "\fB--notrim\fP"
+Normally the zone origin is removed from labels when importing, in order to
+save space in the database.  In other words, \fBhost.example.com.\fB becomes
+just \fBhost\fP.  Using the \fB--notrim\fP option inhibits this behavior.
+
+.IP "\fB-D\fP, \fB--database\fP=\fIdbname\fP"
+Use the database called \fIdbname\fP.
+
+.IP "\fB-h\fP, \fB--host\fP=\fIhostname\fP"
+Connect to database server at \fIhostname\fP.
+
+.IP "\fB-p\fP, \fB--pass\fP=\fIpassword\fP"
+Supply \fIpassword\fP when connecting to the database server.  If
+the \fIpassword\fP argument is omitted, it will be prompted on the tty.
+
+.IP "\fB-t\fP, \fB--tinydns\fP=\fIfile\fP"
+Load \fIzone\fP information from the specified \fIfile\fP, which is in
+tinydns-data format.  When importing from a tinydns data file, \fIzone\fP
+may be omitted from the command line, in which case all zones found in
+the file are imported.
+
+.IP "\fB-u\fP, \fB--user\fP=\fIusername\fP"
+Use \fIusername\fP when connecting to the database server.
+
+.IP "\fB-v\fP, \fB--verbose\fP"
+Enable verbose output while running.
+
+.IP "\fB--help\fP"
+Display program help and exit.
+
+.IP "\fB--version\fP"
+Output version number and exit.
+
+
+.\"--------------------------------------------------------------------------
+.\"  LINE SYNTAX
+.\"--------------------------------------------------------------------------
+.SH LINE SYNTAX
+When started with the \fB-o\fP (\fB--output\fP) option, \fBmydnsimport\fP
+outputs lines in the following format:
+
+.IP SOA
+"soa" <TAB> origin <TAB> ns <TAB> mbox <TAB> serial <TAB> refresh <TAB> retry <TAB> expire <TAB> minimum <TAB> ttl
+
+.IP RR
+"rr" <TAB> name <TAB> type <TAB> data <TAB> aux <TAB> ttl
+
+.IP PTR
+"ptr" <TAB> address <TAB> name <TAB> ttl
+
+
+.\"--------------------------------------------------------------------------
+.\"  AUTHOR
+.\"--------------------------------------------------------------------------
+.SH AUTHOR
+@PACKAGE_AUTHOR@
+
+
+.\"--------------------------------------------------------------------------
+.\"  HOMEPAGE
+.\"--------------------------------------------------------------------------
+.SH HOMEPAGE
+@PACKAGE_HOMEPAGE@
+
+
+.\"--------------------------------------------------------------------------
+.\"  SEE ALSO
+.\"--------------------------------------------------------------------------
+.SH "SEE ALSO"
+.BR mydns (8),
+.BR mydns.conf (5),
+.BR mydnscheck (8),
+.BR mydnsexport (8)
+
+
+.\" vi:set ts=3:

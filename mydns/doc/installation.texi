@@ -1,0 +1,166 @@
+@c ***
+@c ***	INSTALLATION
+@c ***
+@node Installation
+@chapter Installation
+@cindex installation
+@menu
+* Compiling the source::  How to use configure, build, and install from source.
+* Creating the database:: How to create the @samp{mydns} database.
+* Creating the tables::   How to create the tables in the @samp{mydns} database.
+* Database access::       How to create a user for the server and grant it access.
+* Creating mydns.conf::   How to create a template for your @file{mydns.conf} file.
+@end menu
+
+
+
+@c ***
+@c ***	Compiling the source
+@c ***
+@node Compiling the source
+@section Compiling the source
+@cindex configure script
+
+First, uncompress and unpack the distribution to a location of your choosing.
+The distribution will be extracted into a directory named @file{mydns-@value{VERSION}}.
+
+Change directory into the distribution directory, then run the @command{configure}
+script to configure the package for your system.
+
+The @file{INSTALL} file has full details on how the @command{configure} script works.  Run
+@command{configure --help} to output a summary of all options.
+
+You'll probably be able to simply run the @command{configure} command with no additional arguments.
+
+@example
+$ ./configure
+@end example
+
+If you have both MySQL and PostgreSQL installed on your system, MyDNS chooses MySQL by
+default.  To tell MyDNS to use PostgreSQL instead of MySQL, run @command{configure --without-mysql}.
+
+After the configuration process is complete, build the package.
+
+@example
+$ make
+@end example
+
+Then, if the build completed successfully, install the package.
+
+@example
+# make install
+@end example
+
+The @file{mydns} binary should now be installed in the @file{sbin} dir beneath
+the @option{prefix} provided to the @command{configure} script, if any.
+
+By default, @file{mydns} is installed as @file{/usr/local/sbin/mydns}.
+
+
+
+
+@c ***
+@c ***	Creating the database
+@c ***
+@node Creating the database
+@section Creating the database
+@cindex database, creating
+
+
+Now that you have installed MyDNS, you'll need to set up a database and access permissions.
+
+To create a database called @samp{mydns} on your database server:
+
+@i{MySQL:}
+@example
+$ mysqladmin -h @i{host} -u @i{username} -p create mydns
+@end example
+
+@i{PostgreSQL:}
+@example
+$ createdb mydns
+@end example
+
+
+
+
+
+@c ***
+@c ***	Creating the tables
+@c ***
+@node Creating the tables
+@section Creating the tables
+@cindex tables, creating
+
+Next, create the tables in your database that will hold the DNS data.
+
+Running @command{mydns --create-tables} will cause MyDNS to output
+@code{CREATE TABLE} statements appropriate for your database.
+
+@i{MySQL:}
+@example
+$ mydns --create-tables | mysql -h @i{host} -u @i{username} -p mydns
+@end example
+
+@i{PostgreSQL:}
+@example
+$ mydns --create-tables | psql mydns
+@end example
+
+
+After you have created the tables, you should have two tables in your
+@samp{mydns} database, called @samp{soa} (@pxref{soa table}) and
+@samp{rr} (@pxref{rr table}).
+
+
+
+@c ***
+@c ***	Database access
+@c ***
+@node Database access
+@section Database access
+@cindex database, access
+Next, create a user that the MyDNS server can use to access the @samp{mydns} database:
+
+@i{MySQL:}
+@example
+$ mysql -h @i{host} -u @i{username} -p mydns
+mysql> GRANT SELECT ON mydns.* TO @i{user}@@localhost IDENTIFIED BY '@i{password}';
+@end example
+
+@i{PostgreSQL:}
+@example
+$ psql mydns
+mydns=# CREATE USER @i{user} WITH PASSWORD '@i{password}';
+mydns=# GRANT SELECT ON soa,soa_id_seq TO @i{user};
+mydns=# GRANT SELECT ON rr,rr_id_seq TO @i{user};
+@end example
+
+
+
+
+@c ***
+@c ***	Creating mydns.conf
+@c ***
+@node Creating mydns.conf
+@section Creating @file{mydns.conf}
+@cindex mydns.conf
+
+MyDNS probably won't start properly if it can't find its configuration file.  By default,
+the configuration file is called @file{/etc/mydns.conf}.
+
+Running @command{mydns --dump-config} will output a set of configuration
+options suitable for using as your configuration file.  @xref{Configuration}.
+
+So, for a fresh installation, this command will create your initial configuration
+file:
+
+@example
+# mydns --dump-config > /etc/mydns.conf
+@end example
+
+You should now edit your @file{mydns.conf} file.  Most defaults should be fine for most sites.
+
+The values you are most likely to want to modify are the values for @samp{db-host} and @samp{db-user},
+which should contain the database username and password that you created at the end of step 2.4.
+@xref{Database access}.

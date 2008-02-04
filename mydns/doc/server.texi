@@ -1,0 +1,372 @@
+@c ***
+@c ***	SERVER
+@c ***
+@node Server
+@chapter Server
+@cindex server
+@cindex mydns (program)
+
+@menu
+* Caching::         The internal cache speeds things up.
+* Signals::         How MyDNS reacts to certain signals.
+* TCP support::     DNS over TCP.
+* Zone transfers::  DNS-based zone transfers.
+* DNS UPDATE::      Dynamic DNS updates.
+* Round robin::     Multiple address records for the same host.
+* Load balancing::  Like round robin, but more advanced.
+* Logging queries:: How to log each query your server receives.
+@end menu
+
+
+@c ***
+@c ***	THE CACHE
+@c ***
+@node Caching
+@section Caching
+@cindex cache
+@cindex zone cache
+@cindex reply cache
+MyDNS uses a lightweight internal cache to speed up question resolution.
+When the DNS server receives a question, it descends through each label
+in the name, looking for the first label that has any associated
+resource records (see @uref{http://www.ietf.org/rfc/rfc1034.txt, RFC 1034}).
+
+This means that a request for a name with lots of labels may require many database
+queries, most of which are likely to return no rows.
+
+MyDNS stores positive results in its zone cache.  The size of the zone cache is
+determined by the @code{zone-cache-size} variable in @file{mydns.conf}.  The
+zone-cache-size specifies the @i{number of entries} the zone cache
+may contain at any given time.  If the zone-cache-size is set to zero, the
+zone cache will be completely disabled, and the database will be queried every
+time.  Typically, the bigger your cache, the better MyDNS will perform.  Large
+sites may consider a cache around 32768 entries.  The default size is 8192
+entries.
+
+The @code{zone-cache-expire} variable in @file{mydns.conf} specifies the
+number of seconds after which zone cache data expires.  Most installations
+will want to set this value fairly low, maybe 60 seconds or so.  This
+way, the DNS data being served by MyDNS will never be more than 60 seconds
+behind what is actually stored in the database.  If your database changes
+infrequently, set this value much higher.
+
+If any RR stored in the zone data cache has a TTL that is shorter than the
+value of @code{zone-cache-expire}, the cached data will expire when the TTL
+expires.
+
+Once a complete reply has been constructed for a specific request (for example,
+@code{IN A foo.example.com.}), the completed reply will be stored in the
+reply cache.  The size of the reply cache is determined by the @code{reply-cache-size}
+variable in @file{mydns.conf}.  Entries in the reply cache expire after
+@code{reply-cache-expire} seconds.
+
+The reply cache is especially useful because if a match is found for a request
+in the reply cache, MyDNS will not need to perform any database queries or even
+very much internal computation in order to return the reply.
+
+A good way to check your cache configuration is to send @code{SIGUSR2}
+to your server:
+
+@example
+# kill -USR2 `cat /var/run/mydns.pid`
+@end example
+
+The server will then output its cache status.  For example
+
+@example
+mydns: zone cache 47% useful (31385 hits, 15894 misses),
+       2143 collisions (5%), 100% full (8192 records),
+       12711624 bytes, avg life 27 sec
+mydns: reply cache 84% useful (55200 hits, 10718 misses),
+       5707 collisions (14%), 100% full (8192 records),
+       3357269 bytes, avg life 38 sec
+@end example
+
+This tells you that MyDNS has been able to find the answer to a question
+in the reply cache (avoiding all database queries) 84 percent of the time,
+and that the other 16 percent of the time, it was able to find the data
+needed in the zone cache 47 percent of the time.
+
+When tweaking your cache sizes, the best clue in this output is the "avg life".
+This is the average amount of time an entry remains in the cache, between the
+time it was first inserted and the time it was removed due to either expiration
+or because it was removed to make room for other, more commonly-requested entries.
+
+If your "avg life" is extremely short (just a second or two) you should consider
+increasing your cache size.  Of course, if the average life is very short because
+your zone data has extremely short TTL values, this is to be expected.
+
+A very long @code{zone-cache-expire}/@code{reply-cache-expire} time means
+that the results returned by MyDNS are more likely to be out-of-date,
+especially if your database is constantly being updated.  Most DNS data
+is not.
+
+
+@c ***
+@c ***	SIGNALS
+@c ***
+@node Signals
+@section Signals
+@cindex signals
+@cindex SIGUSR1
+@cindex SIGUSR2
+@cindex SIGHUP
+If you send @samp{SIGHUP} to MyDNS, it empties its cache.
+
+MyDNS responds to @samp{SIGUSR1} by outputting some brief server statistics.
+
+MyDNS responds to @samp{SIGUSR2} by outputting cache statistics.
+
+
+@c ***
+@c ***	TCP SUPPORT
+@c ***
+@node TCP support
+@section TCP support
+@cindex TCP
+MyDNS will process all TCP requests it receives if the configuration option
+@option{allow-tcp} is true.  This is not usually necessary or recommended.
+TCP support will make the server run a little slower, and a
+denial-of-service attack is easier if TCP is allowed.
+
+Some very large sites may require TCP support, however.  If a response set
+would exceed the UDP message size limit (512 bytes), MyDNS will set the
+TC (truncated) flag on its answer.  Some clients will then fall back to TCP,
+which can handle such large answers.  If TCP support is enabled, those
+clients can get their responses.  Also, TCP support is required to perform
+DNS-based zone transfers.
+
+
+
+@c ***
+@c ***	ZONE TRANSFERS
+@c ***
+@node Zone transfers
+@section Zone transfers
+@cindex transfers, zone
+@cindex zone transfers
+@cindex IXFR
+@cindex AXFR
+MyDNS will allow zone transfers (via AXFR) if the configuration option
+@option{allow-axfr} is true.  This is recommended only if you have an
+absolute need for DNS-based zone transfers, such as if your secondary
+name server is running BIND.
+
+MyDNS does @i{not} support incremental zone transfers (@code{IXFR}).
+
+If you need to support DNS-based zone transfers,
+you have to enable @option{allow-tcp}.  (This is not true for BIND 9.)
+
+You can specify IP access rules for DNS-based zone transfers by using
+an optional column called @samp{xfer} in the @code{soa} table.
+@xref{soa.xfer}.
+
+
+@c ***
+@c ***	DNS UPDATE
+@c ***
+@node DNS UPDATE
+@section DNS UPDATE
+@cindex updates, dynamic
+@cindex DNS UPDATE
+@cindex RFC 2136
+MyDNS will allow dynamic DNS updates (described in RFC 2136) if the configuration option
+@option{allow-update} is true.
+
+You can specify IP access rules for DNS UPDATE by using
+an optional column called @samp{update_acl} in the @code{soa} table.
+@xref{soa.update_acl}.
+
+If the @samp{update_acl} column does not exist in the @code{soa} table, DNS UPDATE requests
+will be allowed only from localhost.
+
+In order for dynamic DNS updates to work, the @option{db-user} specified in the
+MyDNS configuration file must have permissions to insert and update on the @code{rr} table.
+
+If MyDNS receives multiple UPDATE requests in one packet, they must all complete
+successfully, or the UPDATE must fail.  Therefore, your database must have transactional
+capabilities if you enable DNS UPDATE.
+
+For more information, see @uref{http://www.ietf.org/rfc/rfc2136.txt, RFC 2136}.
+
+@c ***
+@c ***	ROUND ROBIN
+@c ***
+@node Round robin
+@section Round robin
+@cindex Round robin
+If your @code{rr} table contains more than one address record for the same
+name (but with different addresses, of course), MyDNS will serve them up
+in a random order each time.
+
+Round robin is used only if all the address records found have an @code{aux}
+value of @samp{0}.  If any of the records have an @code{aux} value that is
+non-zero, load balancing will be used instead.  (@xref{Load balancing}.)
+
+Note that MyDNS will also return multiple same-preference MX records in
+random order, to help equalize the load among same-preference MX hosts.
+
+
+@c ***
+@c ***	LOAD BALANCING
+@c ***
+@node Load balancing
+@section Load balancing
+@cindex Load balancing
+@cindex aux
+If your @code{rr} table contains more than one address record for the same
+name, and one or more of the records has an @code{aux} value greater than
+zero, MyDNS will weight its response using the value in @code{aux}.
+
+MyDNS uses the value in @code{aux} to determine the order in which addresses
+are listed.  Clients usually start with the first address and work their way
+down, so addresses that are usually listed first will bear the heaviest
+client load.
+
+A low value in @code{aux} makes an address record more likely to be listed
+first.  The balancing algorithm causes servers with a lower @code{aux} to be
+selected more frequently than those with higher values, although all servers
+will still be listed first occasionally, as the algorithm is partially random.
+
+Records where @code{aux} is 0 (zero) will be listed first almost every time.
+Records where @code{aux} is 50,000 or greater will always be listed last.
+
+Here's an example of how hosts were distributed on a 100,000 query test
+against ten hosts with aux values 10-100.  The number shown is the number of
+times that host was listed first:
+
+@example
+aux 10   51,211
+aux 20   21,881
+aux 30   10.983
+aux 40    6,209
+aux 50    3,661
+aux 60    2,311
+aux 70    1,526
+aux 80    1,032
+aux 90      675
+aux 100     511
+@end example
+
+
+@c ***
+@c ***	LOGGING QUERIES
+@c ***
+@node Logging queries
+@section Logging queries
+@cindex Logging queries
+If MyDNS is started with the @code{--verbose} (@code{-v}) option, each
+query the server receives will be output via the logging mechanism specified
+in your configuration file (@pxref{Misc options}).
+
+Each log line consists of the program name (and possibly the PID) followed by a colon,
+then seventeen fields separated by spaces.  For example:
+
+@example
+mydns: 25-Jul-2003 01:50:11+659583 #1 3987 UDP 192.168.1.1 IN ANY
+	bboy.net. NOERROR - 1 11 0 5 LOG Y QUERY
+@end example
+
+or
+
+@example
+mydns: 25-Jul-2003 01:50:44+720684 #2 33848 UDP 192.168.1.1 IN ANY
+	bogus.example.com. NXDOMAIN No_matching_resource_records 1 0 1 0 LOG N QUERY
+@end example
+
+In order, here's what these fields mean:
+
+@enumerate
+@item
+The date the query was received.
+
+@item
+The time the query was received, then a plus sign (@samp{+}), then the number
+of microseconds after the second the query was received.
+
+@item
+A pound sign (@samp{#}) followed by the server's internal ID number for this
+query.  The internal ID numbers begin at 0 and advance sequentially.
+
+@item
+The query ID provided by the client.  This is usually a seemingly-random 16-bit
+number used by the client to make sure the answer it receives matches the question
+it asked.
+
+@item
+The transport used, always either @code{TCP} or @code{UDP}.
+
+@item
+The client IP address, in dotted-decimal notation.
+
+@item
+The query class, always @code{IN}.
+
+@item
+The query type, such as @code{A}, @code{MX}, @code{NS}, etc. (@pxref{Supported RR types}).
+
+@item
+The name being requested.
+
+@item
+The result of the query.  The following values are possible:
+@table @var
+@item NOERROR
+No error; the query was successful.
+
+@item FORMERR
+The server was unable to interpret the query.
+
+@item SERVFAIL
+MyDNS experienced an internal error, usually the result of some malformed data in the database.
+
+@item NXDOMAIN
+No resource records (of any type) exist matching the domain name requested.
+
+@item NOTIMP
+The requested type of query is not implemented.
+
+@item REFUSED
+The query was refused due to server policy.  This usually happens because the client attempted
+to @code{AXFR} a zone that they were not allowed to transfer, or because the client requested
+a name within a zone for which the server is not authoritative.
+@end table
+
+@item
+If the previous field was anything but @code{NOERROR}, this is a human-readable reason
+why the query failed, with any space characters in the string converted into underscore (@samp{_})
+characters.  If the previous field was @code{NOERROR}, this field contains a dash (@samp{-}).
+
+@item
+The number of resource records included in the @i{question} section of the reply.
+
+@item
+The number of resource records included in the @i{answer} section of the reply.
+
+@item
+The number of resource records included in the @i{authority} section of the reply.
+
+@item
+The number of resource records included in the @i{additional} section of the reply.
+
+@item
+The word @code{LOG}.
+
+@item
+The character @samp{Y} if this was a cached reply, @samp{N} if it was not.
+
+@item
+The opcode for this query -- @samp{QUERY} or @samp{UPDATE}.
+
+@item
+If the previous field was @samp{UPDATE}, this is a description of the update performed,
+enclosed in quotation marks.  For example, this field might contain
+@samp{"test-a.example.com. 3600 IN A 0 1.2.3.4"}, indicating that for the zone specified,
+an @code{A} record was created for @code{test-a.example.com.} with the value @code{1.2.3.4}.
+
+
+@end enumerate
+
+There is a script in the @code{contrib/} directory of the source distribution called
+@code{stats.php} that provides an example of how a script might read and parse these lines,
+in case you wanted to accumulate usage information or something.

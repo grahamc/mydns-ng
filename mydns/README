@@ -1,0 +1,31 @@
+MyDNS - SQL-based DNS server
+
+This is the MyDNS package.  MyDNS is a simple, non-recursive Internet
+name daemon which serves records directly from an SQL database.  It
+currently works with either MySQL or PostgreSQL.
+
+This package has a homepage on the WWW at the following URL:
+
+     http://mydns.bboy.net/
+
+MySQL has a homepage on the WWW at the following URL:
+
+     http://www.mysql.com/
+
+PostgreSQL has a homepage on the WWW at the following URL:
+
+     http://www.postgresql.org/
+
+Code contributions and input are appreciated.  See the TODO file for a
+list of things that need to be done.
+
+MyDNS allows internationalization via GNU gettext.  Translations
+are encouraged and gladly accepted.  Send translations to the author
+at <bboy@bboy.net>.
+
+If you are looking for the web interface for MyDNS, it's included in
+the MyDNS distribution as contrib/admin.php.  See contrib/README for
+installation instructions.
+
+
+- 12-May-2004  Don Moore  <bboy@bboy.net>

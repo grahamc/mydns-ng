@@ -1,0 +1,208 @@
+.\"
+.\" $Id: mydns.conf.5.in,v 1.7 2005/04/20 16:49:11 bboy Exp $
+.\" mydns(8)
+.\"
+.\" Copyright (C) 2002-2005  Don Moore <bboy@bboy.net>
+.\"
+.TH mydns.conf 5 "@PACKAGE_DATE@" "@PACKAGE_STRING@" "File Formats"
+.SH NAME
+mydns.conf \- \fBmydns\fP(8) configuration file.
+
+.\"--------------------------------------------------------------------------
+.\"  DESCRIPTION
+.\"--------------------------------------------------------------------------
+.SH DESCRIPTION
+\fBmydns.conf\fP is read by \fBmydns\fP(8) on startup.  The default location
+of this file is \fI@MYDNS_CONF@\fP.
+.LP
+A \fBmydns.conf\fP might look something like this:
+.IP
+.nf
+# @MYDNS_CONF@
+# Configuration file for the MyDNS name daemon
+
+db-host = dbserver.example.com
+db-user = mydnsuser
+db-password = Gr8DNS!
+.fi
+.LP
+Each line in the file may contain only one configuration variable.
+All allowable configuration variables are described in this man page.
+The syntax for a configuration line is `\fIoption\fP [\fI=\fP \fIvalue\fP]'.
+All configuration variables have default values, which are used if the
+variable is omitted from the \fBmydns.conf\fP.  These defaults are
+listed in parentheses after the variable syntax.
+.LP
+All text following a hash mark (`\fB#\fP') and empty lines are ignored.
+If you need to specify an actual hash mark in a option value, escape it
+by prefixing it with a backslash (`\fB\\\fP') character.
+.LP
+The \fBmydns\fP(8) program has a convenient command-line option that will
+output all current configuration variables in \fBmydns.conf\fP format.
+If you are creating a \fBmydns.conf\fP file for the first time, this is a
+great way to create a template that you can customize.  See \fBmydns\fP(8)
+for details.
+
+
+
+
+.\"--------------------------------------------------------------------------
+.\" DATABASE INFORMATION
+.\"--------------------------------------------------------------------------
+.SH DATABASE INFORMATION
+The following configuration variables tell MyDNS about your database
+server.
+
+.IP "\fBdb-host\fP = \fIhostname\fP (`\fIlocalhost\fP')"
+Connect to the database server located at \fIhostname\fP.
+
+.IP "\fBdb-user\fP = \fIusername\fP"
+Use \fIusername\fP when authenticating with the database server.
+
+.IP "\fBdb-password\fP = \fIpassword\fP"
+Use \fIpassword\fP when authenticating with the database server.
+
+.IP "\fBdatabase\fP = \fIname\fP (`\fImydns\fP')"
+Read resource record information from the database called \fIname\fP.
+The specified \fBdbuser\fP must have \fBSELECT\fP privileges on the
+specified database.
+
+
+.\"--------------------------------------------------------------------------
+.\" GENERAL OPTIONS
+.\"--------------------------------------------------------------------------
+.SH GENERAL OPTIONS
+The following configuration variables control the general behavior of the
+name daemon.
+
+.IP "\fBuser\fP = \fIusername\fP (`\fInobody\fP')"
+Run the name daemon with the permissions of user \fIusername\fP.
+
+.IP "\fBgroup\fP = \fIgroupname\fP (`\fInogroup\fP')"
+Run the name daemon with the permissions of group \fIgroupname\fP.
+
+.IP "\fBlisten\fP = \fIaddress\fP (`\fI*\fP')"
+The name daemon should listen on \fIaddress\fP.  If \fIaddress\fP is
+\fB*\fP, listen on all addresses.  This must be an IP address in
+numbers-and-dots format, or \fB*\fP.  Multiple addresses may be specified,
+either separated by commas, or listed on separate \fBlisten\fP lines, or
+both.  If a port number other than port 53 is desired, append
+`\fB:\fP\fIport\fP' to the address.
+
+.IP "\fBno-listen\fP = \fIaddress\fP (`\fI*\fP')"
+The name daemon should NOT listen on \fIaddress\fP, even if it was specified
+by \fBlisten\fP.  This must be an IP address in numbers-and-dots format, or
+\fB*\fP.  Multiple addresses may be specified, either separated by commas,
+or listed on separate \fBlisten\fP lines, or both.  If a port number other
+than port 53 is desired, append `\fB:\fP\fIport\fP' to the address.
+
+
+
+.\"--------------------------------------------------------------------------
+.\" CACHE OPTIONS
+.\"--------------------------------------------------------------------------
+.SH CACHE OPTIONS
+The following configuration variables affect the cache used internally by
+the name daemon.
+
+.IP "\fBzone-cache-size\fP = \fInumber\fP (`\fI4096\fP')"
+The zone data cache will not contain more than \fInumber\fP entries.  The
+average entry in the cache is about 128 bytes.  If \fInumber\fP is \fB0\fP,
+the zone data cache will not be used.
+
+.IP "\fBzone-cache-expire\fP = \fIseconds\fP (`\fI60\fP')"
+Entries expire from the zone data cache once they are \fIseconds\fP old.
+If \fIseconds\fP is \fB0\fP, the zone data cache will not be used.  If
+the TTL for any RR in the zone is less than the cache expire time, the TTL
+will be honored.
+
+.IP "\fBreply-cache-size\fP = \fInumber\fP (`\fI1024\fP')"
+The reply cache will not contain more than \fInumber\fP entries.  The
+average entry in the cache is about 128 bytes.
+If \fInumber\fP is \fB0\fP, the reply cache will not be used.
+
+.IP "\fBreply-cache-expire\fP = \fIseconds\fP (`\fI30\fP')"
+Entries expire from the reply cache once they are \fIseconds\fP old.
+If \fIseconds\fP is \fB0\fP, the reply cache will not be used.
+
+
+.\"--------------------------------------------------------------------------
+.\" ESOTERICA
+.\"--------------------------------------------------------------------------
+.SH ESOTERICA
+The following configuration variables affect the name daemon also, but most
+users will not need to use them.
+
+.IP "\fBlog\fP = \fIfacility\fP (`\fILOG_DAEMON\fP')"
+The name daemon should log via syslog facility \fIfacility\fP.
+\fIfacility\fP may be \fBLOG_DAEMON\fP or \fBLOG_LOCAL0\fP
+through \fBLOG_LOCAL7\fP.  If \fIfacility\fP is \fBstderr\fP,
+program output will go to stderr only.
+
+.IP "\fBpidfile\fP = \fIfilename\fP (`\fI/var/run/named.pid\fP')"
+Create a PID file for the name daemon called \fIfilename\fP.
+
+.IP "\fBtimeout\fP = \fIseconds\fP (`\fI120\fP')"
+Incoming queries time out if a reply could not be sent after \fIseconds\fP
+have elapsed.
+
+.IP "\fBmulticpu\fP = \fIcpucount\fP (`\fI1\fP')"
+Run with multiple processes to support \fIcpucount\fP number of processors.
+
+.IP "\fBallow-axfr\fP = \fIbool\fP (`\fIno\fP')"
+Should DNS-based zone transfers be allowed?
+
+.IP "\fBallow-tcp\fP = \fIbool\fP (`\fIno\fP')"
+Should TCP requests be allowed?  \fI(not recommended)\fP
+
+.IP "\fBallow-update\fP = \fIbool\fP (`\fIno\fP')"
+Should DNS-based zone updates (RFC 2136) be allowed?
+
+.IP "\fBignore-minimum\fP = \fIbool\fP (`\fIno\fP')"
+Should MyDNS ignore the minimum TTL for zones?
+
+.IP "\fBsoa-table\fP = \fIname\fP (`\fIsoa\fP')"
+The name of the table containing SOA records.
+
+.IP "\fBrr-table\fP = \fIname\fP (`\fIrr\fP')"
+The name of the table containing resource record data.
+
+.IP "\fBsoa-where\fP = \fIstring\fP
+An extra WHERE clause to append to queries selecting records from the `soa' table.
+
+.IP "\fBrr-where\fP = \fIstring\fP
+An extra WHERE clause to append to queries selecting records from the `rr' table.
+
+.IP "\fBrecursive\fP = \fIaddress\fP
+If this option is specified, \fIaddress\fP is the address of a DNS server that
+accepts recursive queries.  If MyDNS receives a query where recursion is desired,
+and the zone is not local, MyDNS will forward the query to the server at \fIaddress\fP
+and return the result to the client.
+
+
+.\"--------------------------------------------------------------------------
+.\"  SECURITY
+.\"--------------------------------------------------------------------------
+.SH SECURITY
+The \fImydns.conf\fP file should be readable only by the root user (uid=0)
+since it typically contains a username and password allowing access to your
+database.
+
+
+.\"--------------------------------------------------------------------------
+.\"  FILES
+.\"--------------------------------------------------------------------------
+.SH FILES
+.I @MYDNS_CONF@
+.RS
+The default location of the configuration file.
+
+
+.\"--------------------------------------------------------------------------
+.\"  SEE ALSO
+.\"--------------------------------------------------------------------------
+.SH "SEE ALSO"
+.BR mydns (8)
+
+
+.\" vi:set ts=3:
