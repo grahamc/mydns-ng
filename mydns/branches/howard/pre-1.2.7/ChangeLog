@@ -1,0 +1,649 @@
+18-Jan-2006	 Don Moore	<bboy@bboy.net>  [1.1.0]
+
+	*	Implemented RFC 2136 (DNS UPDATE).  See the manual
+		for usage instructions.
+	*	Fixed minor bug in admin.php where if db_get_settings()
+		failed, it might display an error message without
+		consistent formatting.
+	*	Added two additional fields to the --verbose query log.
+		The opcode of the query (QUERY or UPDATE), and a quoted
+		field containing a description of the UPDATE performed,
+		if the opcode was UPDATE.
+	*	Updated contrib/stats.php to handle new log fields.
+	*	Fixed bug in --dump-config -- if present, fields without
+		default values ("no-listen", "soa-where", "rr-where",
+		and "recursive") were not being dumped.
+	*	Made --dump-config dump ALL possible configuration
+		options, even if no value was originally specified.  As
+		such, MyDNS will no longer warn the user when a config
+		option doesn't have a value.  It will be silently ignored.
+	*	Including <inttypes.h> after a suggestion by Christian
+		Tschenett, to help things out on 64-bit platforms like OSX.
+		If this creates problems on your platform, please let me
+		know.
+	*	Modified admin.php to allow a backslash in the 'mbox' field,
+		immediately preceding a dot.  This is used in DNS to
+		indicate the presence of a dot in the username part of the
+		administrator's email address.  There was an additional bug
+		report from Andreas Grip that MyDNS was replying with the
+		slashes doubled up in this case, but it appears to be a
+		problem with the "dig" program, not MyDNS.
+	*	Fixed bug with "rr-where" clause -- conf.c was using
+		"soa-where" instead.  David Darville first reported this bug.
+		Michael Gile submitted it two minutes later, with a patch.
+	*	Added "create_domain.pl" to the contrib/ directory.  Thanks
+		to Gerard de Brieder for this script.  See contrib/README
+		for more information.
+	*	Fixed bug in src/lib/rr.c (mydns_rr_load) that caused a
+		segfault if origin was NULL (it was designed to allow NULL,
+		but this version is the first to ever call it in that way).
+	*	Added support for NAPTR (RFC 2915) records.  Users with
+		existing MyDNS databases will need to alter their tables to
+		allow "NAPTR" in the "type" column if they want to use NAPTR.
+	*	Renamed library functions mydns_parse_rr() and mydns_parse_soa()
+		to mydns_rr_parse() and mydns_soa_parse(), for consistency.
+	*	Library functions mydns_rr_dup() and mydns_soa_dup() now fail
+		(terminating the program) if out of memory.
+	*	Moved routines that parse data for individual RR types (RP,
+		SRV, and NAPTR) into individual functions from mydns_rr_parse
+		for clarity.
+	*	Fixed bug where AXFR might transmit incorrect information if
+		a FQDN is used in the 'name' field.
+	*	Fixed AXFR bug with ALIAS enabled.  Thanks to Sven Wegener for
+		the patch.
+	*	Created file "README.mysql" to address various problems common
+		while compiling with MySQL support.
+	*	Fixed "use of cast expressions as lvalues is deprecated"
+		warning (caused compilation abort with --enable-debug).
+	*	Added hostname to beginning of SIGUSR1 status output.
+	*	Renamed "update" column in the soa table to "update_acl"; how
+		could I be so stupid as to name a column "update"?!
+	*	Fixed a critical denial-of-service vulnerability.
+
+
+13-Jan-2005	 Don Moore	<bboy@bboy.net>  [1.0.0]
+
+	*	Changed PostgreSQL connect error message code.
+		It will still try the Unix domain socket (not sure
+		why I did that) but if all fails, it outputs the
+		first error message, which is much more likely to
+		make sense.
+	*	Implemented David Phillips' AIX patch.
+	*	Implemented Petter Larsson's ALIAS patches for
+		mydnscheck and mydnsexport.
+	*	Made sure all copyright notices included 2005.
+	*	Fixed "undefined constant" and other strict error
+		message stuff in contrib/admin.php.
+	*	Fixed reference to "rr" (table name) in
+		contrib/admin.php -- replaced with $rr_table_name.
+		Thanks to Harald Paulsen for finding this.
+
+
+21-May-2004	 Don Moore	<bboy@bboy.net>  [0.11.0]
+
+	*	Added config option "--enable-alt-names" for my
+		employer and lots of DN_COLUMN_NAMES conditionals
+		to make MyDNS work with DN's databases.  No other
+		users will want to compile with this option.
+	*	Enhanced error messages for net functions to indicate
+		the type of connection (UDP/TCP).
+	*	Fixed internationalization on some error messages in
+		tcp.c/udp.c.
+	*	Fixed multiple bugs affecting TCP queries.  These
+		fixes should alleviate the major problems reported by
+		Russell D. Weiss, and anyone with TCP enabled.
+	*	Added command line option "--no-data-errors" to
+		inhibit "invalid address" errors and the like.
+	*	Added configure option "--disable-date-logging" to
+		turn off date/time logging in verbose output.
+	*	Updated README to include information about where
+		the web interface is located.
+	*	Re-enabled the negative cache by default.
+	*	Added sockclose() function/macro to the utility lib
+		to simplify the multiple instances of the same code.
+	*	Several crash-worthy bugs fixed in task_process()
+		and task_free().
+	*	axfr_zone() now uses mydns_rr_load() with a NULL name
+		rather than it's own parsing code, to eliminate
+		redundant code.
+	*	Added configuration option "--enable-status" which
+		enables BIND-like server status and identification
+		names.  Disabled by default, and not recommended for
+		production servers.
+
+
+28-Apr-2004	 Don Moore	<bboy@bboy.net>  [0.10.4]
+
+	*	Unknown RR types are ignored.  RR type names must now
+		be exact.
+	*	TCP replies are now cached separately from UDP replies
+		so that overly-long UDP replies won't be sent.  As a
+		side effect, TCP replies are now cached -- previously,
+		they were not.
+	*	DNS name encoding was inadvertently turned off in the
+		last few versions!  It's turned back on, now.
+
+
+12-Mar-2004	 Don Moore	<bboy@bboy.net>  [0.10.3]
+
+	*	Added support for the RP resource record type.
+		If you want to add RP support to your existing
+		database, just add it as a possible value to the
+		"type" column in the "rr" database.
+	*	Fixed bug in AXFR-forking code -- pipe was created
+		but not closed if fork() failed.
+	*	Added support for HINFO and RP records in mydns
+		import/export utilities.
+	*	Added check for non-CNAME records for a name that
+		has a CNAME record.  The DNS algorithm handles
+		these (the non-CNAME records are never examined),
+		but some other DNS servers don't, and it would be
+		wise to remove them if you plan to use mydnsexport
+		or outgoing DNS-based zone transfers.
+	*	"Query truncated" message lowered from LOG_NOTICE to
+		LOG_VERBOSE.
+	*	Added code to avoid flooding the logs with "invalid
+		name" errors if the same record is requested multiple
+		times.
+	*	Fixed bug -- was calling close(-1) sometimes.
+	*	Added mydnsptrconvert.8 man page.  Thanks to Philipp
+		Kern.
+	*	Fixed wierd "double dot" bug (for the second time!) in
+		contrib/mydns.redhat.
+	*	Fixed "avg life" SIGUSR2 output when no cache entries
+		have ever been removed -- output uptime instead of "0".
+
+
+11-Feb-2004	 Don Moore	<bboy@bboy.net>  [0.10.2]
+
+	*	"Query truncated" message lowered from LOG_WARNING to
+		LOG_NOTICE.
+	*	Fixed minor spelling error in conf.c - thanks to
+		Philipp Kern.
+	*	Added "contrib/MyDNS.pm", a Perl interface to the
+		MyDNS database written by Allen Bettilyon.
+	*	Eliminated the 'NegativeCache' -- it seemed to
+		make things generally slower.
+	*	Fixed bug where the cache didn't work if you didn't
+		have recursive forwarding enabled.  Thanks to
+		David S. Madole for his excellent analysis of this
+		problem.  As a result of this fix, recursively
+		retrieved data is never cached, and authoritative
+		replies are only cached if the RCODE was NOERROR.
+	*	New mydns.conf option "ignore-minimum" for users
+		who don't want MyDNS to adjust TTL values lower
+		than the zone's minimum TTL.  "admin.php" and
+		"mydnscheck" also updated to respect this option.
+	*	Removed '--enable-static-build' from MySQL RPM
+		build due to lack of a static libnss_files (and
+		probably libnss_dns), which are apparently part
+		of gethostbyname().
+	*	Added TODO file to the distribution, in case anybody
+		wants to help.
+
+
+15-Dec-2003	 Don Moore	<bboy@bboy.net>  [0.10.1]
+
+	*	Server can now answer requests on IPv6 addresses.
+	*	mydnsimport was not importing PTR records.  Fixed.
+	*	Removed default value '127.0.0.1' for 'no-listen' --
+		why ignore localhost by default?
+	*	Fixed bug where FQDN glue records might contain an
+		empty label, causing a malformed DNS message.
+	*	Un-included pg-config.h - Postgres 7.4 had name conflict
+		with PACKAGE_VERSION etc.
+	*	Added retry for "error reading startup notification:
+		Interrupted system call" error.
+	*	Added optional (and not recommended) recursive query
+		forwarding.
+	*	Fixed handling of queries with 'response' bit set.  Now
+		discarded instead of replied to with FORMERR.  Thanks to
+		Roy Arends for pointing this out.
+
+
+02-Aug-2003	 Don Moore	<bboy@bboy.net>  [0.10.0]
+
+	*	All rlimit commands have #ifdef's around them, to prevent
+		Solaris compilation problems.  Thanks to Fernando Durango.
+	*	Changed field lengths in database creation for MySQL
+		tables to 64 characters for 'data' and 128 characters for
+		'name' due to key length restriction.  Thanks to Alex Dupre
+		and the other users who reported this problem.
+	*	Moved cache status output to SIGUSR2, changed SIGUSR1 output
+		to a one-line status.
+	*	An informative message is now output if MyDNS returns
+		SERVFAIL due to invalid data.
+	*	Task queuing for both UDP and TCP requests consolidated in
+		new_task() so that sanity checks don't need to be duplicated.
+	*	Queries with format errors now log as much as possible about
+		what MyDNS was able to parse.
+	*	Signals were not being processed when they arrived if the
+		server was completely idle (they would get done when there
+		was any activity).  It now checks every half-second.
+	*	If the TTL (and minimum TTL) of a SOA record is 0, or if
+		the TTL for any resource record (and the zone minimum) is
+		0, the records and reply will not be cached [RFC 1035, 3.2.1].
+	*	Changed SCRIPT_NAME in contrib/admin.php back to PHP_SELF to
+		maintain compatibility with older PHP versions.
+
+
+27-Jul-2003	 Don Moore	<bboy@bboy.net>  [0.9.13]
+
+	*	Corrected image caching problem in admin.php.  Thanks to
+		Matthew Parke Bostrom for finding the solution!
+	*	Fixed major bug that caused RRs where name == origin to
+		generate malformed messages.  Thanks to Neo Wee Teck.
+	*	Corrected compliation failure on systems that don't have
+		strsep().  Thanks to Fernando Durango for reporting this.
+	*	Major updates to documentation.  Everything is now
+		described for both MySQL and PostgreSQL.
+	*	Added "reply from cache?" field to --verbose (-v) log line.
+	*	Fixed bug where --verbose (-v) log line had incorrect
+		record count if the reply was from the cache.
+	*	Cache size (bytes) reported by SIGUSR1 output fixed.
+	*	Restored "optional column" verbose notices.
+	*	SIGHUP now scans tables for optional columns, enabling
+		(or disabling) them if found (or disappeared).
+	*	Modified queries in admin.php to use "LIMIT offset,rows"
+		syntax rather than "LIMIT rows OFFSET offset" for MySQL,
+		since "LIMIT rows OFFSET offset" doesn't work with 3.23.xx.
+		Thanks to Andreas Danzer for reporting this.
+	*	"UDP message too short" no longer output on a read of 0 bytes.
+	*	Added negative reply cache; uses same size as the zone cache
+		(it takes up almost no memory but speeds things up).
+	*	Added --with-openssl configure options, for sites that have
+		OpenSSL compiled into their MySQL client library.  It must
+		be specified manually at the present time.
+	*	Added --enable-static-build, mostly for creation of the RPM
+		packages so that different distributions don't run into
+		libc problems, etc.  It compiles with -all-static.
+	*	Cache expiration times of 0 used to disable the cache; now
+		they mean "never expire, or when the TTL runs out".
+
+
+09-Jul-2003	 Don Moore	<bboy@bboy.net>  [0.9.12]
+
+	*	Eliminated the PTR table.  "ptrconvert" program now included
+		for converting your PTR table to regular in-addr.arpa zones.
+		See http://mydns.bboy.net/ptr.html for details.
+	*	Fixed messed-up meter output in 'mydnscheck'.
+	*	Fixed bug that caused 'mydnsexport' to crash when exporting
+		zones containing no resource records.
+	*	Added David Phillips' utility "mydns-conf" to the installed
+		utilities.  It's used to create a daemontools service directory
+		for MyDNS.
+	*	Rewrote contrib/admin.php to work with new two-table layout.
+		Many enhancements and changes.
+	*	If database access fails during resolution, SERVFAIL is returned
+		(older versions returned REFUSED as though MyDNS were not
+		authoritative for the requested zone) and MyDNS will attempt
+		to reconnect to the database.
+	*	New configuration values "soa-where" and "rr-where" enable
+		specification of additional WHERE clauses to add to lookup
+		queries for SOA records and resource records, respectively.
+	*	Added support for HINFO resource records.
+	*	"mydnsexport -b" (BIND format) was omitting the aux, weight,
+		and port when writing SRV records.
+	*	"mydnsexport -t" (tinydns format) did not output SRV records
+		at all.  Now they are output in the format specified by
+		Michael Handler's SRV patch (http://tinydns.org/srv-patch).
+	*	MyDNS now checks for glue FQDN's within the current zone.
+	*	Fixed malformed reply when an A record contains an invalid
+		address.
+	*	Dropped NLS support in doc/ subdirectory as it was grossly
+		out-of-date.	 Simplified documentation build process.
+	*	Added tinydns data file support to 'mydnsimport'.
+	*	RRs without data now cause SERVFAIL/ERR_NAME_FORMAT.
+	*	Overly long labels/names now cause SERVFAIL instead of
+		(incorrect) FORMERR.
+	*	Removed startup messages about optional columns.
+	*	Last word in query log lines (with --verbose) is now "LOG"
+		so that it can be easily detected by scripts, etc.
+	*	"log" configuration option now accepts "stdout" or a filename
+		in addition to the previously allowed values.
+	*	Added second line to SIGUSR1 output listing the total number
+		of each type of result (NOERROR/SERVFAIL/NXDOMAIN/etc).
+	*	Made sure that any acceptable boolean value would work for
+		the optional 'active' column in admin.php, mydns, and utilities.
+	*	Fixed reply cache bug that would reply with NOERROR incorrectly
+		on various errors.
+	*	SIGUSR1 info now split across multiple lines for easier reading.
+	*	Added 'stats.php' to contrib/
+	*	MyDNS now correctly returns FORMERR where possible in
+		response to badly-formed queries.
+
+
+02-May-2003	 Don Moore	<bboy@bboy.net>  [0.9.10]
+
+	*	Dist tarballs now include complete .spec files in pkg/
+	*	Fix to reply code to make sure QR flag is always set in
+		responses.  Thanks to Justin Moore for pointing this out
+		(it was causing zone transfers to fail for BIND "stub"
+		zones).
+	*	Fix to conf.c - MyDNS will now emit an error if an option
+		is given without a value.  Thanks to Arnaud de Bermingham.
+	*	Removed email addresses (except mine) from the ChangeLog.
+		Web spiders were finding them and spamming people who
+		helped me out.	How nice!
+	*	Fixed bug in which the AA (authoritative) flag was not
+		set if the entire reply was cached.	Thanks to David
+		Phillips.
+	*	AXFR rulesets may now be specified in CIDR (192.168.1.1/24)
+		or network/netmask (192.168.1.1/255.255.255.0) notation.
+
+
+06-Apr-2003	 Don Moore	<bboy@bboy.net>  [0.9.9]
+
+	*	Fixed serious bug in delegation code that was causing
+		NOERROR responses to be returned with NS information in
+		AUTHORITY instead of the SOA record.
+	*	Cleaned up CFLAGS construction in m4/mydns.m4.
+
+
+27-Mar-2003	 Don Moore	<bboy@bboy.net>  [0.9.8]
+
+	*	WARNING!	Load balancing now works exactly the opposite way
+		that it did in previous versions!	 They are now ordered
+		similarly to MX records, with lower 'aux' values meaning
+		"higher preference".	See the manual for full details.
+	*	Support for SRV (RFC2782) records.  If you're running an old
+		version, just add a SRV enum value to the "type" column in
+		your "rr" table, then read the manual to see how they work.
+	*	New reply cache; saves lots of database traffic on often-
+		requested records that don't have any dynamic content (like
+		load balancing, MX records, etc.).  The "cache-size" and
+		"cache-expire" options have been replaced by
+		"reply-cache-size", "reply-cache-expire", "zone-cache-size",
+		and "zone-cache-expire".	 The old variables will still work,
+		however, and will allocate 1/3 of cache area to the reply
+		cache.	 Current users may want to use "mydns --dump-config"
+		to update their mydns.conf files.
+	*	Default "timeout" changed to 120 seconds.
+	*	mydns.conf(5) updated - had some very old information.
+	*	zlib is now properly checked if compiling with MySQL client.
+	*	malloc() et al wrapper functions removed to save function
+		calls.	 Each memory allocation is now checked inline.
+	*	Restructured "doc" directory - it makes much more sense now.
+	*	Many enhancements to contrib/admin.php.
+	*	Records appearing in the ANSWER section no longer duplicated
+		in ADDITIONAL.
+	*	ADDITIONAL data is sorted where it would be sensible.
+	*	Bug fixed in 'mydnsimport' where importing was broken for
+		non-standard 'soa' table name.	 Thanks to Matthias Goebl.
+	*	PostgreSQL SQL code changed to allow views.  More thanks to
+		Matthias Goebl.
+	*	Merged David Phillips' ALIAS patch (via "--enable-alias").
+	*	More bugfixes to delegation code.	 It should be fixed now,
+		I swear.
+	*	Improved RR sorting code.  "aux" value for load balancing
+		may now contain any valid number (no longer clamped at 10);
+		lower values are more likely to be listed first.
+
+
+07-Mar-2003	 Don Moore	<bboy@bboy.net>  [0.9.7]
+
+	*	"mydnsimport" bug fixed - RR data consisting of exactly
+		the zone origin was being truncated to the empty string,
+		which won't work.	Thanks to Ari Pollak.
+	*	If soa.ns or soa.mbox do not end in a dot, the zone origin
+		is appended.
+	*	MyDNS now refuses to build packets containing labels that
+		do not end in a dot.	The server will return SERVFAIL and
+		the error ERR_NAME_FORMAT.
+	*	PostgreSQL connection routine now attempts connection via
+		Unix socket if TCP connection fails.	 Thanks to Lee
+		Brotherston for the info.
+
+
+04-Mar-2003	 Don Moore	<bboy@bboy.net>  [0.9.6]
+
+	*	Server now uses reliable signals via sigaction().
+		Thanks very much to Joost Damad.
+		who generously fixed the problem and supplied a patch.
+	*	Did away with --enable-axfr-debug, which is now just
+		included with --enable-debug.	DEBUG define renamed
+		DEBUG_ENABLED.	PROFILING renamed PROFILING_ENABLED.
+		Added -d, --debug option to all util programs, for
+		consistency.
+	*	Fixed bug when specifying multiple 'listen' addresses
+		when the first began with '*'.
+	*	Added 'mydns' configuration option 'no-listen', specifying
+		a list of address[:port] that should not be listened on,
+		even if they are specified in 'listen' - this makes it
+		easier to create a generic configuration file that says
+		"listen on every address except 127.0.0.1", for example.
+	*	"mydnsimport" now removes trailing origins on all names
+		by default, to decrease database size.	To inhibit this
+		behavior, use the '--notrim' option.
+	*	"mydnsimport" now correctly tries all A records returned
+		when looking up a hostname.	 If the first fails, it tries
+		the second, etc.
+	*	Fixed malformed packet bug when RR data contained non-FQDN
+		name values.
+
+
+08-Dec-2002	 Don Moore	<bboy@bboy.net>  [0.9.5]
+
+	*	PostgreSQL support added; many source changes,
+		especially in src/lib - All source now uses
+		generic SQL types - SQL, SQL_RES, SQL_ROW.
+	*	The "mysql-*" config vars are now called "db-*".
+		"mysql-*" still work though, for backwards compatibility.
+	*	mysql_options() is only being called for MySQL client
+		libraries with versions later than 3.23.49.  3.23.49
+		in particular is known to segfault when mysql_options()
+		is called.  I am assuming that earlier versions fail as
+		well, and that newer versions do not segfault.
+	*	LOG_NOTICE and LOG_VERBOSE messages changed to LOG_WARNING;
+		apparently most syslog configurations do not actually log
+		the lower priorities.
+	*	Changed verbose time output format to human-readable.
+	*	contrib/admin.php updated to support PostgreSQL.	 Also
+		several minor enhancements/bugfixes.
+	*	Fixed bug with top-level RR's in zone when the name was
+		equal to the zone origin.
+	*	New "./configure" option --enable-axfr-debug.
+	*	Fixed AXFR-related file descriptor leak.
+	*	If the TTL for a record is shorter than "cache-expire",
+		the TTL is used instead.
+	*	Removed gettext() calls around debug output -- it changes
+		too often for translations to be useful.  Besides, very
+		few messages contain much English text.
+	*	Fixed several serious bugs in the handling of NS and glue
+		records.	Thanks to Russell Weiss.
+	*	Added support for classless IN-ADDR.ARPA delegations.
+	*	Fixed bugs in mydnsexport when listing IN-ADDR.ARPA zones.
+	*	Several changes to fix compiling on Solaris.
+
+
+25-Sep-2002	 Don Moore	<bboy@bboy.net>  [0.9.3]
+
+	*	Fixed major "omission" in admin.php from last version
+		- I accidentally erased a line that caused RR's not
+		to show up.	Oops!
+	*	Fixed error when compiling on Solaris due to LOG_PERROR
+		being undefined.
+	*	Added typedefs for machines without u_intX_t.
+	*	Fixed handling of referrals and glue records.
+	*	Rewrote AXFR; should work now.
+	*	Removed all references to u_int64_t, PRINTF_NEEDS_QUAD, etc.
+
+
+20-Sep-2002	 Don Moore	<bboy@bboy.net>  [0.9.2]
+
+	*	Fixed bug when attempting to AXFR in-addr.arpa zones
+		from versions of BIND prior to BIND 9.
+	*	Added support for "in-addr.arpa." zones in the SOA
+		table, if non-default values are desired.
+	*	Added support for non-class-C in-addr.arpa zones.
+	*	contrib/admin.php now supports in-addr.arpa format.
+	*	Added $auto_update_serial option to contrib/admin.php.
+
+
+17-Sep-2002	 Don Moore	<bboy@bboy.net>  [0.9.1]
+
+	*	"mydnscheck -C" option did not work correctly - fixed.
+	*	Fixed bug that caused AXFR to fail when transferring to
+		hosts running versions of BIND prior to BIND 9.
+	*	Fixed bug that caused AXFR to generate bad packets for
+		CNAME/NS/MX RR's whose data did not contain the origin.
+
+
+13-Sep-2002	 Don Moore	<bboy@bboy.net>  [0.9.0]
+
+	*	Spanish native language support by Jose Luis Domingo Lopez.
+	*	AXFR import moved into separate program, "mydnsimport".
+		"mydnsimport" no longer updates the databases directly, but
+		outputs SQL statements that will perform the updates.
+	*	When returning an answer containing multiple equal-preference
+		MX records, MyDNS now shuffles them randomly each time, so
+		that the first one on the list doesn't get a heavier load.
+		Also corrected non-problematic bug where ADDITIONAL data was
+		sometimes not inserted if round-robin or load balancing was
+		used.
+	*	"mydnsdump" program renamed to "mydnsexport" and now supports
+		exporting to tinydns-data format.
+	*	SOA output changed.  AUTHORITY section now contains list of
+		authoritative nameservers on exact match.	On inexact match,
+		SOA is now output in AUTHORITY instead of ANSWER.
+	*	Resource records containing an FQDN in the 'name' column
+		(instead of just a hostname) now work properly.
+	*	TTL on response RRs are now adjusted if below the minimum
+		for the zone.
+	*	SOA records with blank ns/mbox now provided default values
+		and warned about by mydnscheck.  Thanks to David Phillips.
+	*	New optional database column 'xfer' in the 'soa' table, to
+		support restricting DNS-based zone transfers to specified
+		IP addresses.  If present, this will be used by MyDNS and
+		also in admin.php.
+	*	Added request time to verbose output.
+	*	Add warning about truncated UDP replies if TCP support is
+		disabled.
+	*	Added David Phillips' ALIAS patch to 'contrib'.
+	*	Fixed rare DNS-encoding bug.
+	*	Verbose (-v, --verbose) output now goes to stdout instead
+		of stderr.
+	*	Added support for native language documentation.
+	*	Enhanced admin.php (SOA browser, PTR brower, zone create)
+
+
+10-Aug-2002	 Don Moore	<bboy@bboy.net>  [0.8.3]
+
+	*	Fixed "0 length reply" problem for NOTIMP reply due to
+		invalid query class.
+	*	Removed the "test" program from the package.	It's useless
+		really to anybody but me.
+	*	Modified listening code so that INADDR_ANY is never used.
+		Instead, interfaces will be scanned and added individually,
+		so that replies always come from the correct interface.
+	*	Fixed bug in '--import' option when updating existing SOA.
+	*	Added command line option "-D, --database"
+	*	Added support for AAAA records on machines without IPv6.
+		Added Paul Vixie's inet_ntop() and inet_pton() to the
+		util library. Tested on FreeBSD 3.1-STABLE.
+	*	Added support for interface-specific ports.  Removed
+		"port" config variable (but it is still supported).
+	*	Multiple "listen" config vars may now be listed on separate
+		lines.
+	*	Fixed log output with 64-bit integers on 4.4BSD, when "%llu"
+		is broken.
+	*	"mysql-host" config var now supports optional ":port" to
+		specify nonstandard MySQL port number.
+	*	Fixed DNS encoding bug in AXFR code.
+	*	Numerous enhancements to resolution algorithm to (hopefully)
+		include more additional data.	CNAME resolution now handled
+		somewhat differently.
+	*	Added full list of record types to --verbose output (old
+		list had only supported types).
+	*	French native language support by Helios de Creisquer.
+	*	Brazilian Portugese native language support by Davi Arnaut.
+	*	Util programs now installed by default (in PREFIX/bin) -
+		"mydnsdump" to output a zone BIND-style, and "mydnscheck"
+		to check the correctness of your table data.
+	*	Documentation added for util programs.
+
+
+02-Aug-2002	 Don Moore	<bboy@bboy.net>  [0.8.2]
+
+	*	Fix for resolution behavior: Server was matching down past
+		the first label specified in the initial query, and returning
+		answers for labels below the original query.	This means that
+		if RRs existed for "bar.example.com", the server would return
+		RRs for "foo.bar.example.com" in error.	 Thanks to Marc
+		Jauvin for finding this bug.
+	*	Fix for SOA resolution: 'aa' flag was not being set for
+		SOA queries for which the server is indeed authoritative.
+	*	Fix for "." zone, thanks to Marc Jauvin.
+	*	Many updates to "admin.php".
+	*	Fixed axfr.c and import.c to support table name config vars.
+	*	The "libmydns" C library is no longer installed.
+
+
+29-Jul-2002	 Don Moore	<bboy@bboy.net>  [0.8.1]
+
+	*	Serious bug fixed in handling queries from recursive
+		DNS servers.	 Thanks to Simon Dick and Arnaud de Bermingham.
+	*	Possibly bad bug fixed: Some elements of the task structure
+		were being accessed after the task had been freed.
+		However, because it was the very next statement, it still
+		worked fine on my box.  Upgrading is recommended.
+	*	Added support for multiple addresses in "bind" config var.
+	*	"bind" config var now called "listen" (but "bind" still works)
+	*	New config var: "ptr-table"
+	*	New config var: "soa-table"
+	*	New config var: "rr-table"
+	*	If any table contains an "active" column, it will be examined
+		when loading records.	 It must be an ENUM with the first
+		value meaning "active" and the second meaning "inactive".
+		It ought to be indexed.
+
+
+27-Jul-2002	 Don Moore	<bboy@bboy.net>  [0.8]
+
+	*	Created "src/util" for small utility programs that don't
+		get installed.
+	*	Wrote "dumpzone", a utility to dump zone info in BIND format.
+	*	Fixed bug in which PTR records without a dot a the end
+		of the "name" data were being served as-is, resulting in
+		a "protocol error".  PTR records without the trailing dot
+		now have the dot appended automatically.
+	*	Added round robin DNS ability (random order).
+	*	Added support for TCP requests.
+	*	Added AXFR support.
+	*	Added config option "allow-tcp".
+	*	Added config option "allow-axfr".
+	*	Added config option "log".
+	*	Added configure script option "--with-confdir".
+	*	Added checks for database access and table presence
+		at server start.
+	*	Fixed bug with "bind" option under FreeBSD.
+	*	Changed size of "rr.name" field from 64 to 63.  Current
+		users don't need to alter their tables unless they want to.
+	*	Added support for load balancing using the "aux" field on
+		A and AAAA records.  (See the documentation)
+
+
+18-Jul-2002	 Don Moore	<bboy@bboy.net>  [0.7.1]
+
+	*	Added support for "bind" configuration option contributed
+		by Andreas Ljunggren.
+	*	Clarified contents of PTR table in the documentation.
+	*	Enhanced the "admin.php" web administration script to support
+		PTR records and to display very large result sets more cleanly.
+	*	Fixed bug with PTR record resolution (question was being
+		examined in incorrect byte order).
+
+
+17-Jul-2002	 Don Moore	<bboy@bboy.net>  [0.7]
+
+	*	Fixed a serious bug in resolution routines when the
+		cache was used.
+	*	Added multi-CPU support.
+
+
+14-Jul-2002	 Don Moore	<bboy@bboy.net>  [0.6]
+
+	*	Initial public release as version 0.6.
+
+
+## vi:set ts=3:
