@@ -105,7 +105,9 @@ extern int mydns_rr_use_serial;
 #define	DNS_MAXLABELLEN			63		/* RFC1035: "63 octets or less" */
 #define	DNS_POINTER_MASK		0xC0
 #define	DNS_QUERYBUFSIZ			512		/* Used as buffer size for SQL queries */
-#define DNS_MAXDATALEN			2047		/* RFC1035: Drawn from BIND LENGTHs */
+#define DNS_MAXDATALEN			511		/* Should be RFC1035: Drawn from BIND LENGTHs
+							 * Is limited by mysql key lengths - look for extension table
+							 */
 
 /* Default values in SOA records */
 #define	DNS_DEFAULT_REFRESH		28800
