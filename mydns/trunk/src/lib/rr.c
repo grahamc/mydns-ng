@@ -429,7 +429,7 @@ mydns_rr_build(uint32_t id,
   uint32_t	namelen;
 
 #if DEBUG_ENABLED && DEBUG_LIB_RR
-  Debug("mydns_rr_build(): called for id=%d, zone=%d, type=%d, class=%d, aux=%d, ttl=%d, active=%s, stamp=%p, serial=%d, name=%s, data=%p, datalen=%d, origin=%s",
+  Debug("mydns_rr_build(): called for id=%d, zone=%d, type=%d, class=%d, aux=%d, ttl=%d, active='%s', stamp=%p, serial=%d, name='%s', data=%p, datalen=%d, origin='%s'",
 	id, zone, type, class, aux, ttl, active, stamp, serial,
 	(name)?name:"<NULL>", data, datalen, origin);
 #endif
@@ -468,7 +468,7 @@ mydns_rr_build(uint32_t id,
 #endif
 
     /* Find a constant value so we do not have to allocate or free this one */
-    {
+    if (active) {
       int i;
       for (i = 0; i < 3; i++) {
 	if (!strcasecmp(mydns_rr_active_types[i], active)) { active = mydns_rr_active_types[i]; break; }
