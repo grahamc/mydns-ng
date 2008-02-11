@@ -32,47 +32,48 @@
 **************************************************************************************************/
 MYDNS_SOA *
 find_soa(
-	TASK *t,
-	char *fqdn,		/* The FQDN provided; return the SOA for the zone in this FQDN */
-	char *label		/* The label part of `fqdn' that is below the origin will be stored here */
-)
-{
-	MYDNS_SOA			*soa = (MYDNS_SOA *)NULL;
-	register size_t	fqdnlen = strlen(fqdn);
-	register char		*origin, *end;
-	int					errflag;
+	 TASK *t,
+	 char *fqdn,	/* The FQDN provided; return the SOA for the zone in this FQDN */
+	 char *label	/* The label part of `fqdn' that is below the origin will be stored here */
+) {
+  MYDNS_SOA		*soa = (MYDNS_SOA *)NULL;
+  register size_t	fqdnlen = strlen(fqdn);
+  register char		*origin, *end;
+  int			errflag = 0;
 
-	end = fqdn + fqdnlen;
-	for (origin = fqdn; *origin && !soa; origin++)
-		if (origin == fqdn || *origin == '.')
-		{
-			if (*origin == '.' && *(origin+1))
-				origin++;
+#if DEBUG_ENABLED && DEBUG_DATA
+  Debug("%s: find_soa(%s, %s)", desctask(t), fqdn, label);
+#endif
 
-			soa = zone_cache_find(t, 0, NULL, DNS_QTYPE_SOA, origin, end-origin, &errflag, NULL);
+  end = fqdn + fqdnlen;
+  for (origin = fqdn; *origin && !soa; origin++) {
+    if (origin == fqdn || *origin == '.') {
+      if (*origin == '.' && *(origin+1))
+	origin++;
 
-			if (errflag)
-			{
-				dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
-				return (NULL);
-			}
+      soa = zone_cache_find(t, 0, NULL, DNS_QTYPE_SOA, origin, end-origin, &errflag, NULL);
 
-			/* Get label */
-			if (soa && label)
-			{
-				register int origin_len = strlen(soa->origin);
-				register int len = strlen(fqdn) - origin_len - 1;
+      if (errflag) {
+	dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
+	return (NULL);
+      }
 
-				if (origin_len == 1)
-					len++;
-				if (len < 0) len = 0;
-				if (len > DNS_MAXNAMELEN) len = DNS_MAXNAMELEN;
-				memcpy(label, fqdn, len);
-				label[len] = '\0';
-			}
-		}
+      /* Get label */
+      if (soa && label)	{
+	register int origin_len = strlen(soa->origin);
+	register int len = strlen(fqdn) - origin_len - 1;
 
-	return (soa);
+	if (origin_len == 1)
+	  len++;
+	if (len < 0) len = 0;
+	if (len > DNS_MAXNAMELEN) len = DNS_MAXNAMELEN;
+	memcpy(label, fqdn, len);
+	label[len] = '\0';
+      }
+    }
+  }
+
+  return (soa);
 }
 /*--- find_soa() --------------------------------------------------------------------------------*/
 
