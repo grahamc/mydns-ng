@@ -9,7 +9,7 @@
 # General Public License and is *not* in the public domain.
 
 PACKAGE = mydns
-VERSION = 1.1.0
+VERSION = 1.2.6
 
 SHELL = /bin/sh
 
@@ -18,9 +18,9 @@ srcdir = .
 top_srcdir = ..
 
 
-prefix = /usr
-exec_prefix = /usr
-datadir = /usr/share
+prefix = /usr/local
+exec_prefix = ${prefix}
+datadir = ${prefix}/share
 localedir = $(datadir)/locale
 gettextsrcdir = $(datadir)/gettext/po
 
