@@ -376,6 +376,11 @@ axfr_fork(TASK *t) {
     if (write(pfd[1], "OK", 2) != 2)
       Warn(_("error writing startup notification"));
     close(pfd[1]);
+
+    /* Clean up parents resources */
+    free_other_tasks(t, 1);
+
+    /* Do AXFR */
     axfr(t);
   } else {	/* Parent */
     char	buf[5] = "\0\0\0\0\0";

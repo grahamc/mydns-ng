@@ -456,8 +456,16 @@ _task_change_type(TASK *t, tasktype_t type, taskpriority_t priority) {
 **************************************************************************************************/
 void
 _task_free(TASK *t, const char *file, int line) {
-  if (!t)
-    return;
+
+  if (!t) return;
+
+#if DEBUG_ENABLED && DEBUG_TASK
+  Debug("%s: Freeing task at %s:%d", desctask(t), file, line);
+#endif
+
+  if (t->protocol == SOCK_STREAM) {
+    close(t->fd);
+  }
 
   if (t->extension && t->freeextension) {
     t->freeextension(t, t->extension);
