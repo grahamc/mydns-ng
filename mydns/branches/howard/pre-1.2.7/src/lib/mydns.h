@@ -77,7 +77,7 @@ extern int mydns_rr_use_serial;
 
 /* NOTE: `type' is listed at the end so that we can possibly set the value of `aux' for
 	convenience based on the RR type; for example, an `A' record might store the IP in `aux'. */
-#define	MYDNS_SOA_NUMFIELDS	11
+#define	MYDNS_SOA_NUMFIELDS	10
 #ifdef DN_COLUMN_NAMES
 #	define	MYDNS_SOA_FIELDS	"zone_id,CONCAT(origin,\".\"),\"ns\",CONCAT(owner,\".\"),serial,refresh,retry,expire,min_ttl,min_ttl"
 #else
@@ -105,7 +105,9 @@ extern int mydns_rr_use_serial;
 #define	DNS_MAXLABELLEN			63		/* RFC1035: "63 octets or less" */
 #define	DNS_POINTER_MASK		0xC0
 #define	DNS_QUERYBUFSIZ			512		/* Used as buffer size for SQL queries */
-#define DNS_MAXDATALEN			2047		/* RFC1035: Drawn from BIND LENGTHs */
+#define DNS_MAXDATALEN			511		/* Should be RFC1035: Drawn from BIND LENGTHs
+							 * Is limited by mysql key lengths - look for extension table
+							 */
 
 /* Default values in SOA records */
 #define	DNS_DEFAULT_REFRESH		28800

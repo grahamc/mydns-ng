@@ -461,7 +461,7 @@ AC_DEFUN([AC_LIB_Z],
 		do
 			if test "$ac_zlib_found" != yes
 			then
-				AC_CHECK_FILE($dir/libz.a, ac_zlib_found=yes, ac_zlib_found=no)
+				AC_CHECK_FILE($dir/libz.so, ac_zlib_found=yes, ac_zlib_found=no)
 				if test "$ac_zlib_found" = yes
 				then
 					AC_CHECK_LIB(z, deflate, ac_zlib_ok=yes, ac_zlib_ok=no)
@@ -475,6 +475,37 @@ AC_DEFUN([AC_LIB_Z],
 		AC_SUBST(LIBZ)
 	]
 )
+
+
+##
+## Find static zlib compression library (@LIBZ_STATIC@)
+##
+AC_DEFUN([AC_LIB_Z_STATIC],
+        [
+                ac_zlib_static_dirs="/lib /usr/lib /usr/local/lib"
+                AC_ARG_WITH(zlib_static,
+                        AC_HELP_STRING([--with-zlib-static=DIR], [look for the static zlib compression library in DIR]),
+                        ac_zlib_static_dirs="$withval $ac_zlib_static_dirs")
+                ac_zlib_static_found=no, ac_zlib_static_ok=no
+                for dir in $ac_zlib_static_dirs
+                do
+                        if test "$ac_zlib_static_found" != yes
+                        then
+                                AC_CHECK_FILE($dir/libz.a, ac_zlib_static_found=yes, ac_zlib_static_found=no)
+                                if test "$ac_zlib_static_found" = yes
+                                then
+                                        AC_CHECK_LIB(z, deflate, ac_zlib_static_ok=yes, ac_zlib_static_ok=no)
+                                        if test "$ac_zlib_static_ok" = yes
+                                        then
+                                                LIBZ_STATIC="-L$dir -lz"
+                                        fi
+                                fi
+                        fi
+                done
+                AC_SUBST(LIBZ_STATIC)
+        ]
+)
+
 
 
 ##
@@ -524,12 +555,12 @@ AC_DEFUN([AC_LIB_MYSQLCLIENT],
 		libmysqlclient_found=no, libmysqlclient_ok=no
 		for libmysqlclient_dir in $libmysqlclient_dirs; do
 			if test "$libmysqlclient_found" != yes; then
-				AC_CHECK_FILE($libmysqlclient_dir/libmysqlclient.a, libmysqlclient_found=yes, libmysqlclient_found=no)
+				AC_CHECK_FILE($libmysqlclient_dir/libmysqlclient_r.so, libmysqlclient_found=yes, libmysqlclient_found=no)
 				if test "$libmysqlclient_found" != yes; then
-					AC_CHECK_FILE($libmysqlclient_dir/libmysqlclient.so.10, libmysqlclient_found=yes, libmysqlclient_found=no)
+					AC_CHECK_FILE($libmysqlclient_dir/libmysqlclient.so, libmysqlclient_found=yes, libmysqlclient_found=no)
 				fi
 				if test "$libmysqlclient_found" != yes; then
-					AC_CHECK_FILE($libmysqlclient_dir/libmysqlclient.so.12, libmysqlclient_found=yes, libmysqlclient_found=no)
+					AC_CHECK_FILE($libmysqlclient_dir/libmysqlclient.a, libmysqlclient_found=yes, libmysqlclient_found=no)
 				fi
 				if test "$libmysqlclient_found" = yes; then
 					## libmysqlclient depends on libz
@@ -553,7 +584,6 @@ AC_DEFUN([AC_LIB_MYSQLCLIENT],
 ])
      				fi
 					LIBMYSQLCLIENT="-L$libmysqlclient_dir -lmysqlclient"
-					#LIBMYSQLCLIENT="$libmysqlclient_dir/libmysqlclient.a"
 					libmysqlclient_found=yes
 				fi
 			fi

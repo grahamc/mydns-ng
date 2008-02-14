@@ -32,7 +32,7 @@ int mydns_soa_use_update_acl = 0;
 int mydns_soa_use_recursive = 0;
 
 /* Make this nonzero to enable debugging within this source file */
-#define	DEBUG_LIB_SOA	0
+#define	DEBUG_LIB_SOA	1
 
 
 void
@@ -72,7 +72,7 @@ mydns_soa_get_active_types(SQL *sqlConn)
 	   || !strcasecmp(VAL, "active")
 	   || !strcasecmp(VAL, "a")
 	   || !strcasecmp(VAL, "on")
-	   || VAL == "1" ) { YES = VAL; continue; }
+	   || !strcasecmp(VAL, "1") ) { YES = VAL; continue; }
     if (   !strcasecmp(VAL, "no")
 	   || !strcasecmp(VAL, "n")
 	   || !strcasecmp(VAL, "false")
@@ -80,7 +80,7 @@ mydns_soa_get_active_types(SQL *sqlConn)
 	   || !strcasecmp(VAL, "inactive")
 	   || !strcasecmp(VAL, "i")
 	   || !strcasecmp(VAL, "off")
-	   || VAL == "0" ) { NO = VAL; continue; }
+	   || !strcasecmp(VAL, "0") ) { NO = VAL; continue; }
   }
 
   sql_free(res);
@@ -287,6 +287,10 @@ mydns_soa_load(SQL *sqlConn, MYDNS_SOA **rptr, char *origin) {
   int			originlen = strlen(origin);
 #endif
 
+#if DEBUG_ENABLED && DEBUG_LIB_SOA
+  Debug("mydns_soa_load(%s)", origin);
+#endif
+
   if (rptr) *rptr = NULL;
 
   /* Verify args */
@@ -310,8 +314,8 @@ mydns_soa_load(SQL *sqlConn, MYDNS_SOA **rptr, char *origin) {
   /* Construct query */
   querylen = sql_build_query(&query,
 			     "SELECT "MYDNS_SOA_FIELDS"%s%s FROM %s WHERE origin='%s'%s%s;",
-			     (mydns_soa_use_recursive ? ",recursive" : ""),
 			     (mydns_soa_use_active ? ",active" : ""),
+			     (mydns_soa_use_recursive ? ",recursive" : ""),
 			     mydns_soa_table_name, origin,
 			     (mydns_soa_where_clause)? " AND " : "",
 			     (mydns_soa_where_clause)? mydns_soa_where_clause : "");
@@ -338,6 +342,13 @@ mydns_soa_load(SQL *sqlConn, MYDNS_SOA **rptr, char *origin) {
   /* Add results to list */
   while ((row = sql_getrow(res, NULL))) {
     MYDNS_SOA *new;
+
+#if DEBUG_ENABLED && DEBUG_LIB_SOA
+    Debug("SOA query: use_soa_active=%d soa_active=%s,%d", mydns_soa_use_active,
+	  row[MYDNS_SOA_NUMFIELDS], GETBOOL(row[MYDNS_SOA_NUMFIELDS]));
+    Debug("SOA query: id=%s, origin=%s, ns=%s, mbox=%s, serial=%s, refresh=%s, retry=%s, expire=%s, minimum=%s, ttl=%s",
+	  row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]);
+#endif
 
     if (mydns_soa_use_active && row[MYDNS_SOA_NUMFIELDS] && !GETBOOL(row[MYDNS_SOA_NUMFIELDS]))
       continue;

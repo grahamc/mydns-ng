@@ -214,6 +214,7 @@ extern void		ixfr_start();
 extern struct timeval	*gettick();
 extern int		Max_FDs;
 extern void		named_shutdown(int);
+extern void		free_other_tasks(TASK *, int);
 
 /* message.c */
 extern char		*dns_make_message(TASK *, uint16_t, uint8_t, dns_qtype_t,

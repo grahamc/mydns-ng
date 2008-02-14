@@ -1,19 +1,7 @@
 
-mydns version 1.2.6 is an SQL-based DNS server.
+mydns version 1.1.0 is an SQL-based DNS server.
 
-This release is dated February 08, 2008
-
-Changes in version 1.2.6:
-
-	*	Implemented DNS Notify
-	*	Implemented IXFR support
-	*	Extended record sizes - supports TXT of 2000+ bytes
-	*	Started to remove fixed buffer sizes.
-	*	Miscellaneous fixes in path from 1.1.0 -> 1.2.6
-
-More information and download at http://sourceforge.net/projects/mydns/
-
-Howard Wilkinson <howard@cohtech.com>
+This release is dated January 18, 2006.
 
 Changes in version 1.1.0:
 

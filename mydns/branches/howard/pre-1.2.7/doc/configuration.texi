@@ -132,12 +132,30 @@ reply cache is not used. (@xref{Caching}.)
 @cindex pidfile
 @cindex timeout
 @cindex multicpu
+@cindex servers
+@cindex recursive
+@cindex recursive-timeout
+@cindex recursive-retries
+@cindex recursive-algorithm
 @cindex allow-axfr
 @cindex allow-tcp
 @cindex allow-update
 @cindex ignore-minimum
 @cindex soa-table
 @cindex rr-table
+@cindex use-soa-active
+@cindex use-rr-active
+@cindex notify-enabled
+@cindex notify-source
+@cindex notify-source6
+@cindex notify-retries
+@cindex notify-algorithm
+@cindex ixfr-enabled
+@cindex ixfr-gc-enabled
+@cindex ixfr-gc-interval
+@cindex ixfr-gc-delay
+@cindex soa-where
+@cindex rr-where
 
 @table @var
 @item log
@@ -155,6 +173,24 @@ filename, program output will go to that file.
 
 @item multicpu
 @i{(integer)}  Number of processors in your system.
+
+@item servers
+
+@item recursive
+@i{(string)}  Forward recursive requests to a DNS server at this address
+and return its response to the client.
+
+@item recursive-timeout
+@i{(integer)} Number of seconds to wait before first retry
+
+@item recursive-retries
+@i{(integer)} Number of retries before abandoning recursion
+
+@item recursive-algorithm
+@i{(string)}  Algorithm to use when applying timeout.
+Linear - each timeout is equal to @i{recursive-timeout},
+Exponential - double timeout on each retry,
+Progressive - increase timeout by number of retries.
 
 @item allow-axfr
 @i{(boolean)}  Should DNS-based zone transfers be enabled?
@@ -177,6 +213,39 @@ record for each zone?
 @item rr-table
 @i{(string)}  Name of the table containing resource record data.
 
+@item use-soa-active
+@i{(boolean)} Where there is an soa-active column use this to determine which zones to server.
+
+@item use-rr-active
+@i{(boolean)} Where there is a rr-active column use this to determine which records to serve.
+
+@item notify-enabled
+@i{(boolean)} Support DNS NOTIFY message generation is this is enabled.
+
+@item notify-source
+@i{(string)}
+
+@item notify-source6
+@i{(string)}
+
+@item notify-retries
+@i{(integer)}
+
+@item notify-algorithm
+@i{(string)}
+
+@item ixfr-enabled
+@i{(boolean})
+
+@item ixfr-gc-enabled
+@i{(boolean)}
+
+@item ixfr-gc-interval
+@i{(integer)}
+
+@item ixfr-gc-delay
+@i{(integer})
+
 @item soa-where
 @i{(string)}  An additional SQL @samp{WHERE} clause to use when retrieving
 records from the @code{soa} table (@pxref{soa table}).
@@ -184,10 +253,5 @@ records from the @code{soa} table (@pxref{soa table}).
 @item rr-where
 @i{(string)}  An additional SQL @samp{WHERE} clause to use when retrieving
 records from the @code{rr} table (@pxref{rr table}).
-
-@item recursive
-@i{(string)}  Forward recursive requests to a DNS server at this address
-and return its response to the client.
-
 
 @end table

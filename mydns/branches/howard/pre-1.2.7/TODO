@@ -4,7 +4,7 @@
 
 SHORT TERM:
 
-*  Add full checks for SRV, PTR, RP, and NAPTR to 'mydnscheck'.
+*	Add full checks for SRV, PTR, RP, and NAPTR to 'mydnscheck'.
 
 *  Reply cache should obey shortest TTL in the cached RRSET.
 
@@ -14,7 +14,7 @@ LONG TERM:
 
 *	Move SRV/RP/NAPTR extra data OUT of the mydns_rr structure -- leave the
 	data in the "data" column and let it be parsed as needed.  The parsed
-	data really gobbles up space in the MYDNS_RR structure. - almost done
+	data really gobbles up space in the MYDNS_RR structure.
 
 *	Full IPv6 support (added to server, need support in utils).
 
@@ -38,47 +38,5 @@ LONG TERM:
 *	No calls to gethostbyname() anywhere -- add `--enable-static-build'
 	back to the `./configure' line in pkg/mydns-mysql.spec.in.
 
-*	Extend record sizes to 65535 limit - auxiliary data table needed
-
-*	Add additional record types
-
-*	Rewrite DB abstrction to remove sql from main line code
-
-*	Run-time DB switch so that can support multiple DB's
-	 e.g MyDNS and Postgresql at the same time.
-
-*	Add an acl table to support symbolic acl's
-
-*	Add TSIG capabilities
-
-*	Add DNSSEC
-
-*	Add notify processing on receipt of notify
-	- flush other server process caches
-	- check SOA against master (if slave)
-	- check SOA against db and force reload
-
-*	Add other zone types
-	- Master, Slave, Forward, Stub
-
-*	Add code to support transfer in (mydnsimport) using both AXFR and IXFR
-
-*	Abstract memory management
-
-*	Add additional statistics 
-
-*	Add facility to collect statistics in master process and report.
-
-*	Add a command interface
-	- collect qstats on demand
-	- force zone reload
-	- force zone flush
-	- force slave(s) shutdown
-	- force slave(s) startup
-	- force notify transmission.
-
-Additional things to look at.
-
-*	Add views to the code?
 
 ## vi:set ts=3:

@@ -499,6 +499,27 @@ free_all_tasks() {
   }
 }
 
+void
+free_other_tasks(TASK *t, int closeallfds) {
+  int i, j;
+
+  for (i = NORMAL_TASK; i <+ PERIODIC_TASK; i++) {
+    for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
+      QUEUE *TaskQ = TaskArray[i][j];
+      TASK *curtask = TaskQ->head;
+      TASK *nexttask;
+      while (curtask) {
+	nexttask = curtask->next;
+	if (curtask == t) continue;
+	/* Do not sockclose as the other end(s) are still inuse */
+	if (closeallfds && (t->protocol != SOCK_STREAM) && t->fd >= 0) close(t->fd);
+	dequeue(curtask);
+	curtask = nexttask;
+      }
+    }
+  }
+}
+
 /**************************************************************************************************
 	NAMED_CLEANUP
 **************************************************************************************************/
@@ -538,19 +559,19 @@ named_shutdown(int signo) {
 #endif
   cache_empty(ReplyCache);
 
-  /* Close listening FDs */
+  /* Close listening FDs - do not sockclose these are shard with other processes */
   for (n = 0; n < num_tcp4_fd; n++)
-    sockclose(tcp4_fd[n]);
+    close(tcp4_fd[n]);
 
   for (n = 0; n < num_udp4_fd; n++)
-    sockclose(udp4_fd[n]);
+    close(udp4_fd[n]);
 
 #if HAVE_IPV6
   for (n = 0; n < num_tcp6_fd; n++)
-    sockclose(tcp6_fd[n]);
+    close(tcp6_fd[n]);
 
   for (n = 0; n < num_udp6_fd; n++)
-    sockclose(udp6_fd[n]);
+    close(udp6_fd[n]);
 #endif	/* HAVE_IPV6 */
 
 }
@@ -604,7 +625,7 @@ master_shutdown(int signo) {
   /* Kill our in-direct children */
   killpg(0, signo);
 
-  /* Close listening FDs */
+  /* Close listening FDs - sockclose these as we want everything to go away */
   for (n = 0; n < num_tcp4_fd; n++)
     sockclose(tcp4_fd[n]);
 

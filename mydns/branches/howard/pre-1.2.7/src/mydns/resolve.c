@@ -37,6 +37,11 @@ static taskexec_t
 resolve_soa(TASK *t, datasection_t section, char *fqdn, int level) {
   MYDNS_SOA *soa = find_soa(t, fqdn, NULL);
 
+#if DEBUG_ENABLED && DEBUG_RESOLVE
+  Debug("%s: resolve_soa(%s) -> `%p'", desctask(t), fqdn, soa);
+#endif
+
+  /* Resolve with this new CNAME record as the FQDN */
   if (soa) {
     /* Condition mimics code from resolve BUT check for forwarding recursive first
        then if zone has been marked as recursive
