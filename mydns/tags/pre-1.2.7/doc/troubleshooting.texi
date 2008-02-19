@@ -1,0 +1,18 @@
+@c ***
+@c ***	TROUBLESHOOTING
+@c ***
+@node Troubleshooting
+@appendix Troubleshooting
+@cindex troubleshooting
+@cindex debug mode, enabling
+Of the problems you may encounter while running MyDNS, the vast majority will
+be caused by @i{inappropriate} data in your tables.  MyDNS does not know what
+your intentions are, and will serve the data as you have specified it.  The
+best way to make sure your data seems reasonable is to run the provided data
+validation utility.  (@xref{mydnscheck}.)
+
+If you give the @option{--enable-debug} option to the @file{configure} script,
+MyDNS will be compiled with built-in debug messages.  You can then run MyDNS
+with the @option{-d, --debug} flag, and it will output copious amounts of
+debugging information.  If you are trying to debug, do not run MyDNS as a
+daemon, as the debugging information will not be output.

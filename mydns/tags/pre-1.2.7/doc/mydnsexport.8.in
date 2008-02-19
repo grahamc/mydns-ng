@@ -1,0 +1,94 @@
+.\"
+.\" $Id: mydnsexport.8.in,v 1.4 2005/04/20 16:49:11 bboy Exp $
+.\"
+.\" Copyright (C) 2002-2005  Don Moore <bboy@bboy.net>
+.\"
+.TH mydnsexport 8 "@PACKAGE_DATE@" "@PACKAGE_STRING@" "System Administrator's Manual"
+.SH NAME
+mydnsexport \- Output zone data in various foreign file formats
+.SH SYNOPSIS
+.B mydnsexport
+[\fB-b\fP, \fB--bind\fP]
+[\fB-t\fP, \fB--tinydns-data\fP]
+[\fB-D\fP, \fB--database=\fP\fIdbname\fP]
+[\fB-h\fP, \fB--host=\fP\fIhostname\fP]
+[\fB-p\fP, \fB--password[=\fP\fIpassword\fP]]
+[\fB-u\fP, \fB--user=\fP\fIusername\fP]
+[\fB-v\fP, \fB--verbose\fP]
+[\fB--help\fP]
+[\fB--version\fP]
+[\fBZONE\fP]
+[\fB...\fP]
+
+.\"--------------------------------------------------------------------------
+.\"  DESCRIPTION
+.\"--------------------------------------------------------------------------
+.SH DESCRIPTION
+\fBmydnsexport\fP outputs information about the zone(s) specified on the
+command line to the standard output, in the format specified.  By default,
+it outputs BIND zone file format.  Currently it can also output in
+\fItinydns-data\fP format if the \fB-t\fP, \fB--tinydns-data\fP option is
+specified.
+
+If no zones are specified, all zones will be output.
+
+
+.\"--------------------------------------------------------------------------
+.\"  OPTIONS
+.\"--------------------------------------------------------------------------
+.SH OPTIONS
+
+.IP "\fB-b\fP, \fB--bind\fP"
+Output the specified zone(s) in BIND zone file format.
+
+.IP "\fB-t\fP, \fB--tinydns-data\fP"
+Output the specified zone(s) in tinydns-data format.
+
+.IP "\fB-D\fP, \fB--database\fP=\fIdbname\fP"
+Use the database called \fIdbname\fP.
+
+.IP "\fB-h\fP, \fB--host\fP=\fIhostname\fP"
+Connect to database server at \fIhostname\fP.
+
+.IP "\fB-p\fP, \fB--pass\fP=\fIpassword\fP"
+Supply \fIpassword\fP when connecting to the database server.  If
+the \fIpassword\fP argument is omitted, it will be prompted on the tty.
+
+.IP "\fB-u\fP, \fB--user\fP=\fIusername\fP"
+Use \fIusername\fP when connecting to the database server.
+
+.IP "\fB-v\fP, \fB--verbose\fP"
+Enable verbose output while running.
+
+.IP "\fB--help\fP"
+Display program help and exit.
+
+.IP "\fB--version\fP"
+Output version number and exit.
+
+
+.\"--------------------------------------------------------------------------
+.\"  AUTHOR
+.\"--------------------------------------------------------------------------
+.SH AUTHOR
+@PACKAGE_AUTHOR@
+
+
+.\"--------------------------------------------------------------------------
+.\"  HOMEPAGE
+.\"--------------------------------------------------------------------------
+.SH HOMEPAGE
+@PACKAGE_HOMEPAGE@
+
+
+.\"--------------------------------------------------------------------------
+.\"  SEE ALSO
+.\"--------------------------------------------------------------------------
+.SH "SEE ALSO"
+.BR mydns (8),
+.BR mydns.conf (5),
+.BR mydnscheck (8),
+.BR mydnsimport (8)
+
+
+.\" vi:set ts=3:

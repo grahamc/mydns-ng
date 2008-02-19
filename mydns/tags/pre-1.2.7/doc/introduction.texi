@@ -1,0 +1,23 @@
+@c ***
+@c ***	INTRODUCTION
+@c ***
+@node Introduction
+@chapter Introduction to MyDNS
+@cindex introduction
+@cindex mydns, description
+
+
+MyDNS is an Internet domain name server.  It is unique among DNS
+servers in that it was designed explicitly to work with an
+external SQL database.
+
+At the moment, two popular open-source databases are supported:
+@uref{http://www.mysql.com/, MySQL} and
+@uref{http://www.postgresql.org/, PostgreSQL}.
+
+The primary goals of the MyDNS package are stability, security,
+interoperability, simplicity, and speed.  But not necessarily
+in that order.
+
+This manual assumes that the reader has a working
+understanding of basic DNS concepts and their SQL server.
