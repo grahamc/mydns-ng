@@ -112,20 +112,17 @@ name_unencode2(char *start, size_t slen, char **current, task_error_t *errcode) 
   register char *rp = NULL;
 
 #define CHECK_DEST_SPACE2(n)  \
-  if (d >= dest+(destlen-(n))) {		 \
-    int doffset = d - dest;			 \
-    destlen += (n > 16)?n:16;			 \
-    if (!(dest = realloc(dest, destlen))) {	 \
-      *errcode = ERR_Q_BUFFER_OVERFLOW;		 \
-      return (NULL);				 \
-    }						 \
-    d = &dest[doffset];				 \
-  }						 \
+  if (d >= dest+(destlen-(n))) {		 	\
+    int doffset = d - dest;			 	\
+    destlen += (n > 16)?n:16;			 	\
+    if (!(dest = REALLOCATE(dest, destlen, char[]))) {	\
+      *errcode = ERR_Q_BUFFER_OVERFLOW;		 	\
+      return (NULL);				 	\
+    }						 	\
+    d = &dest[doffset];				 	\
+  }						 	\
   
-  if(!(dest = (char*)malloc(destlen))) {
-    *errcode = ERR_Q_BUFFER_OVERFLOW;
-    return NULL;
-  }
+  dest = ALLOCATE(destlen, char[]);
   d = dest;
 
   if (*s == 0) {						/* The name is just "." */
@@ -150,7 +147,7 @@ name_unencode2(char *start, size_t slen, char **current, task_error_t *errcode) 
 	  || (current_offset == new_offset)			/* Pointing to current position */
 	  || ((start + new_offset) > start + slen)) {		/* Pointing out-of-bounds */
 	*errcode = ERR_Q_INVALID_COMPRESSION;
-	Free(dest);
+	RELEASE(dest);
 	return (NULL);
       }
 
@@ -160,13 +157,13 @@ name_unencode2(char *start, size_t slen, char **current, task_error_t *errcode) 
       s = start + new_offset;
     } else if (mask == 0x40 || mask == 0x80) {
       *errcode = ERR_Q_INVALID_COMPRESSION;
-      Free(dest);
+      RELEASE(dest);
       return (NULL);
     } else {
       s++;
       if (len + (s - *current) > DNS_MAXNAMELEN) {
 	*errcode = ERR_Q_NAME_TOO_LONG;
-	Free(dest);
+	RELEASE(dest);
 	return (NULL);
       }
       for (n = 0; n < len; n++) {				/* Get label */

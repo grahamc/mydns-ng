@@ -58,11 +58,9 @@ error_init(argv0, facility)
 	{
 		char *c;
 		if ((c = strrchr(argv0, '/')))
-			progname = strdup(c+1);
+			progname = STRDUP(c+1);
 		else
-			progname = strdup((char *)argv0);
-		if (!progname)
-			Err("strdup");
+			progname = STRDUP((char *)argv0);
 	}
 
 	/* Open syslog */

@@ -69,7 +69,7 @@ notify_free(TASK *t, void *data) {
 
   array_free(notify->slaves, 1);
 
-  Free(notify->origin);
+  RELEASE(notify->origin);
 
   if (t->family == AF_INET)
     notify_tasks_running -= 1;
@@ -206,7 +206,7 @@ notify_write(TASK *t) {
     }
   }
 
-  Free(out);
+  RELEASE(out);
 
   if(slavecount) {
     t->timeout = timeout;
@@ -394,7 +394,7 @@ notify_read(TASK *t) {
 	      DNS_GET16(qclass, current);
 	      Debug("%s: DNS NOTIFY %s asks for %s - %s against %s", desctask(t),
 		    msg, mydns_qtype_str(qtype), mydns_class_str(qclass), msg2);
-	      Free(msg2);
+	      RELEASE(msg2);
 	      goto DECODEDQUERY;
 	    }
 	  }
@@ -508,10 +508,10 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
     /* Check name_server is absolute, if not add origin */
     if (!MYDNS_RR_DATA_LENGTH(r)) continue;
     name_server = mydns_rr_append_origin(MYDNS_RR_DATA_VALUE(r), soa->origin);
-    if (name_server == MYDNS_RR_DATA_VALUE(r)) name_server = strdup(name_server);
+    if (name_server == MYDNS_RR_DATA_VALUE(r)) name_server = STRDUP(name_server);
     if (!strcasecmp(name_server, soa->ns)) {
       /* Filter out Master as that is us! */
-      Free(name_server);
+      RELEASE(name_server);
       continue;
     }
     array_append(name_servers, name_server);
@@ -526,7 +526,7 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
   Verbose("%s: DNS NOTIFY: %s", desctask(t), query);
 #endif
   res = sql_query(sql, query, querylen);
-  Free(query);
+  RELEASE(query);
   if (!res)
     ErrSQL(sql, "%s: %s", desctask(t), _("error loading DNS NOTIFY also_notify nameservers"));
 
@@ -542,12 +542,12 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
 	int i;
 
 	if (comma) {
-	  also_notify_server = (char*)malloc(comma - start + 1);
+	  also_notify_server = ALLOCATE(comma - start + 1, char[]);
 	  strncpy(also_notify_server, start, comma - start);
 	  also_notify_server[comma - start] = '\0';
 	  scanned += comma - start + 1;
 	} else {
-	  also_notify_server = malloc(strlen(start)+1);
+	  also_notify_server = ALLOCATE(strlen(start)+1, char[]);
 	  strncpy(also_notify_server, start, strlen(start));
 	  also_notify_server[strlen(start)] = '\0';
 	  scanned += strlen(start) + 1;
@@ -556,7 +556,7 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
 	  char *nsn = (char*)array_fetch(name_servers, i);
 	  if (!nsn) continue;
 	  if (!strcasecmp(also_notify_server, nsn)) {
-	    Free(also_notify_server);
+	    RELEASE(also_notify_server);
 	    goto NEXTSERVER;
 	  }
 	}
@@ -617,8 +617,8 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 	  if (strlen(ipa) != MYDNS_RR_DATA_LENGTH(r)) goto NextA_RR;
 	  if (!strcmp(MYDNS_RR_DATA_VALUE(r), ipa)) goto NextA_RR;
 	}
-	array_append(ipaddresses, strdup(MYDNS_RR_DATA_VALUE(r)));
-	slave = (NOTIFYSLAVE*)malloc(sizeof(NOTIFYSLAVE));
+	array_append(ipaddresses, STRDUP(MYDNS_RR_DATA_VALUE(r)));
+	slave = (NOTIFYSLAVE*)ALLOCATE(sizeof(NOTIFYSLAVE), NOTIFYSLAVE);
 	slave->lastsent = 0;
 	slave->replied = 0;
 	slave->retries = 0;
@@ -647,8 +647,8 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 	  if (strlen(ipa) != MYDNS_RR_DATA_LENGTH(r)) goto NextAAAA_RR;
 	  if (!strcmp(MYDNS_RR_DATA_VALUE(r), ipa)) goto NextAAAA_RR;
 	}
-	array_append(ipaddresses, strdup(MYDNS_RR_DATA_VALUE(r)));
-	slave = (NOTIFYSLAVE*)malloc(sizeof(NOTIFYSLAVE));
+	array_append(ipaddresses, STRDUP(MYDNS_RR_DATA_VALUE(r)));
+	slave = (NOTIFYSLAVE*)ALLOCATE(sizeof(NOTIFYSLAVE), NOTIFYSLAVE);
 	slave->lastsent = 0;
 	slave->replied = 0;
 	slave->retries = 0;
@@ -679,7 +679,7 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 
 	for (j = 0; hostdata->h_addr_list[j]; j++) {
 	  char ipaddress[512];
-	  NOTIFYSLAVE *slave = (NOTIFYSLAVE*)malloc(sizeof(NOTIFYSLAVE));
+	  NOTIFYSLAVE *slave = (NOTIFYSLAVE*)ALLOCATE(sizeof(NOTIFYSLAVE), NOTIFYSLAVE);
 	  slave->lastsent = 0;
 	  slave->replied = 0;
 	  slave->retries = 0;
@@ -703,11 +703,11 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 	    char *ipa = array_fetch(ipaddresses, k);
 	    if (!ipa) continue;
 	    if(!strcmp(ipaddress, ipa)) {
-	      Free(slave);
+	      RELEASE(slave);
 	      goto DONETHATONE;
 	    }
 	  }
-	  array_append(ipaddresses, strdup(ipaddress));
+	  array_append(ipaddresses, STRDUP(ipaddress));
 	  if (hostdata->h_addrtype == AF_INET) {
 	    array_append(ips4, slave);
 #if HAVE_IPV6
@@ -787,12 +787,12 @@ notify_get_source(int family, char *sourceaddr)
   struct sockaddr *res = NULL;
 
   if (family == AF_INET) {
-    res = (struct sockaddr*)malloc(sizeof(struct sockaddr_in));
+    res = (struct sockaddr*)ALLOCATE(sizeof(struct sockaddr_in), struct sockaddr_in);
     ((struct sockaddr_in*)res)->sin_port = htons(0); /* Random port selection */
     inet_pton(family, sourceaddr, (void*)&(((struct sockaddr_in*)res)->sin_addr));
 #if HAVE_IPV6
   } else if (family == AF_INET6) {
-    res = (struct sockaddr*)malloc(sizeof(struct sockaddr_in6));
+    res = (struct sockaddr*)ALLOCATE(sizeof(struct sockaddr_in6), struct sockaddr_in6);
     ((struct sockaddr_in6*)res)->sin6_port = htons(0); /* Random port selection */
     inet_pton(family, sourceaddr, (void*)&(((struct sockaddr_in6*)res)->sin6_addr));
 #endif
@@ -928,8 +928,8 @@ notify_slaves(TASK *t, MYDNS_SOA *soa)
 			   (TimeExtension)master_tick);
 	notify_tasks_running = 0;
       }
-      notify = (NOTIFYDATA*)calloc(1, sizeof(NOTIFYDATA));
-      notify->origin = strdup(soa->origin);
+      notify = (NOTIFYDATA*)ALLOCATE(sizeof(NOTIFYDATA), NOTIFYDATA);
+      notify->origin = STRDUP(soa->origin);
       notify->soa_id = soa->id;
       notify->slaves = slavesipv4;
 
@@ -971,8 +971,8 @@ notify_slaves(TASK *t, MYDNS_SOA *soa)
 			   (TimeExtension)master_tick);
 	notify_tasks_running6 = 0;
       }
-      notify = (NOTIFYDATA*)calloc(1, sizeof(NOTIFYDATA));
-      notify->origin = strdup(soa->origin);
+      notify = (NOTIFYDATA*)ALLOCATE(sizeof(NOTIFYDATA), NOTIFYDATA);
+      notify->origin = STRDUP(soa->origin);
       notify->soa_id = soa->id;
       notify->slaves = slavesipv6;
       
@@ -1018,7 +1018,7 @@ notify_all_soas(TASK *t, void *data) {
 
   /* Retrieve next SOA and build a task for it */
   res = sql_query(sql, query, querylen);
-  Free(query);
+  RELEASE(query);
   if(!res) {
     ErrSQL(sql, "%s: %s", desctask(t),
 	   _("error loading DNS NOTIFY zone origin while building all_soas"));
@@ -1066,7 +1066,7 @@ notify_start()
     return;
   }
 
-  initdata = (INITDATA*)calloc(1, sizeof(INITDATA));
+  initdata = (INITDATA*)ALLOCATE(sizeof(INITDATA), INITDATA);
   initdata->zonecount = zonecount;
   initdata->lastzoneid = -1;
 

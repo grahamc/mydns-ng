@@ -46,35 +46,31 @@ unsigned int rr_found = 0, rr_inserted = 0;		/* Total resource records found/ins
 	Display program usage information.
 **************************************************************************************************/
 static void
-usage(int status)
-{
-	if (status != EXIT_SUCCESS)
-	{
-		fprintf(stderr, _("Try `%s --help' for more information."), progname);
-		fputs("\n", stderr);
-	}
-	else
-	{
-		printf(_("Usage: %s [OPTIONS]... NS MBOX"), progname);
-		puts("");
-		puts(_("Convert pre-0.9.12 PTR table format to in-addr.arpa zones."));
-		puts("");
-/*		puts("----------------------------------------------------------------------------78");  */
-		puts(_("  -D, --database=DB       database name to use"));
-		puts(_("  -h, --host=HOST         connect to SQL server at HOST"));
-		puts(_("  -p, --password=PASS     password for SQL server (or prompt from tty)"));
-		puts(_("  -u, --user=USER         username for SQL server if not current user"));
-		puts("");
+usage(int status) {
+  if (status != EXIT_SUCCESS) {
+    fprintf(stderr, _("Try `%s --help' for more information."), progname);
+    fputs("\n", stderr);
+  } else {
+    printf(_("Usage: %s [OPTIONS]... NS MBOX"), progname);
+    puts("");
+    puts(_("Convert pre-0.9.12 PTR table format to in-addr.arpa zones."));
+    puts("");
+    /*	puts("----------------------------------------------------------------------------78");  */
+    puts(_("  -D, --database=DB       database name to use"));
+    puts(_("  -h, --host=HOST         connect to SQL server at HOST"));
+    puts(_("  -p, --password=PASS     password for SQL server (or prompt from tty)"));
+    puts(_("  -u, --user=USER         username for SQL server if not current user"));
+    puts("");
 #if DEBUG_ENABLED
-		puts(_("  -d, --debug             enable debug output"));
+    puts(_("  -d, --debug             enable debug output"));
 #endif
-		puts(_("  -v, --verbose           be more verbose while running (on by default)"));
-		puts(_("      --help              display this help and exit"));
-		puts(_("      --version           output version information and exit"));
-		puts("");
-		printf(_("Report bugs to <%s>.\n"), PACKAGE_BUGREPORT);
-	}
-	exit(status);
+    puts(_("  -v, --verbose           be more verbose while running (on by default)"));
+    puts(_("      --help              display this help and exit"));
+    puts(_("      --version           output version information and exit"));
+    puts("");
+    printf(_("Report bugs to <%s>.\n"), PACKAGE_BUGREPORT);
+  }
+  exit(status);
 }
 /*--- usage() -----------------------------------------------------------------------------------*/
 
@@ -84,95 +80,87 @@ usage(int status)
 	Process command line options.
 **************************************************************************************************/
 static void
-cmdline(int argc, char **argv)
-{
-	char	*optstr;
-	int	optc, optindex;
-	struct option const longopts[] =
-	{
-		{"database",		required_argument,	NULL,	'D'},
-		{"host",				required_argument,	NULL,	'h'},
-		{"password",		optional_argument,	NULL,	'p'},
-		{"user",				required_argument,	NULL,	'u'},
+cmdline(int argc, char **argv) {
+  char	*optstr;
+  int	optc, optindex;
+  struct option const longopts[] = {
+    {"database",		required_argument,	NULL,	'D'},
+    {"host",				required_argument,	NULL,	'h'},
+    {"password",		optional_argument,	NULL,	'p'},
+    {"user",				required_argument,	NULL,	'u'},
+    
+    {"debug",			no_argument,			NULL,	'd'},
+    {"verbose",			no_argument,			NULL,	'v'},
+    {"help",				no_argument,			NULL,	0},
+    {"version",			no_argument,			NULL,	0},
 
-		{"debug",			no_argument,			NULL,	'd'},
-		{"verbose",			no_argument,			NULL,	'v'},
-		{"help",				no_argument,			NULL,	0},
-		{"version",			no_argument,			NULL,	0},
+    {NULL, 0, NULL, 0}
+  };
 
-		{NULL, 0, NULL, 0}
-	};
+  /* Set default NS and MBOX based on this machine's hostname */
+  gethostname(hostname, sizeof(hostname)-1);
+  snprintf(ns, sizeof(ns), "%s.", hostname);
+  snprintf(mbox, sizeof(mbox), "hostmaster.%s.", hostname);
 
-	/* Set default NS and MBOX based on this machine's hostname */
-	gethostname(hostname, sizeof(hostname)-1);
-	snprintf(ns, sizeof(ns), "%s.", hostname);
-	snprintf(mbox, sizeof(mbox), "hostmaster.%s.", hostname);
+  err_file = stdout;
+  error_init(argv[0], LOG_USER);					/* Init output routines */
+  optstr = getoptstr(longopts);
+  while ((optc = getopt_long(argc, argv, optstr, longopts, &optindex)) != -1) {
+    switch (optc) {
+    case 0:
+      {
+	const char *opt = longopts[optindex].name;
 
-	err_file = stdout;
-	error_init(argv[0], LOG_USER);							/* Init output routines */
-	optstr = getoptstr(longopts);
-	while ((optc = getopt_long(argc, argv, optstr, longopts, &optindex)) != -1)
-	{
-		switch (optc)
-		{
-			case 0:
-				{
-					const char *opt = longopts[optindex].name;
+	if (!strcmp(opt, "version")) {					/* --version */
+	  printf("%s ("PACKAGE_NAME") "PACKAGE_VERSION" ("SQL_VERSION_STR")\n", progname);
+	  puts("\n" PACKAGE_COPYRIGHT);
+	  puts(_("This is free software; see the source for copying conditions.  There is NO"));
+	  puts(_("warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."));
+	  exit(EXIT_SUCCESS);
+	} else if (!strcmp(opt, "help"))				/* --help */
+	  usage(EXIT_SUCCESS);
+      }
+      break;
 
-					if (!strcmp(opt, "version"))									/* --version */
-					{
-						printf("%s ("PACKAGE_NAME") "PACKAGE_VERSION" ("SQL_VERSION_STR")\n", progname);
-						puts("\n" PACKAGE_COPYRIGHT);
-						puts(_("This is free software; see the source for copying conditions.  There is NO"));
-						puts(_("warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."));
-						exit(EXIT_SUCCESS);
-					}
-					else if (!strcmp(opt, "help"))								/* --help */
-						usage(EXIT_SUCCESS);
-				}
-				break;
-
-			case 'd':																	/* -d, --debug */
+    case 'd':								/* -d, --debug */
 #if DEBUG_ENABLED
-				err_verbose = err_debug = 1;
+      err_verbose = err_debug = 1;
 #endif
-				break;
-			case 'D':																	/* -D, --database=DB */
-				conf_set(&Conf, "database", optarg, 0);
-				break;
-			case 'h':																	/* -h, --host=HOST */
-				conf_set(&Conf, "db-host", optarg, 0);
-				break;
-			case 'p':																	/* -p, --password=PASS */
-				if (optarg)
-				{
-					conf_set(&Conf, "db-password", optarg, 0);
-					memset(optarg, 'X', strlen(optarg));
-				}
-				else
-					conf_set(&Conf, "db-password", passinput(_("Enter password")), 0);
-				break;
-			case 'u':																	/* -u, --user=USER */
-				conf_set(&Conf, "db-user", optarg, 0);
-				break;
+      break;
+    case 'D':								/* -D, --database=DB */
+      conf_set(&Conf, "database", optarg, 0);
+      break;
+    case 'h':								/* -h, --host=HOST */
+      conf_set(&Conf, "db-host", optarg, 0);
+      break;
+    case 'p':								/* -p, --password=PASS */
+      if (optarg) {
+	conf_set(&Conf, "db-password", optarg, 0);
+	memset(optarg, 'X', strlen(optarg));
+      } else
+	conf_set(&Conf, "db-password", passinput(_("Enter password")), 0);
+      break;
+    case 'u':								/* -u, --user=USER */
+      conf_set(&Conf, "db-user", optarg, 0);
+      break;
 
-			case 'v':																	/* -v, --verbose */
-				err_verbose = 1;
-				break;
-			default:
-				usage(EXIT_FAILURE);
-		}
-	}
+    case 'v':								/* -v, --verbose */
+      err_verbose = 1;
+      break;
+    default:
+      usage(EXIT_FAILURE);
+    }
+  }
 
-	/* Get NS and/or MBOX if specified */
-	if (optind < argc)
-		snprintf(ns, sizeof(ns), "%s", (char *)argv[optind++]);
-	if (optind < argc)
-		snprintf(mbox, sizeof(mbox), "%s", (char *)argv[optind++]);
-	if (LASTCHAR(ns) != '.')
-		strncat(ns, ".", sizeof(ns) - strlen(ns) - 1);
-	if (LASTCHAR(mbox) != '.')
-		strncat(mbox, ".", sizeof(mbox) - strlen(mbox) - 1);
+  /* Get NS and/or MBOX if specified */
+  if (optind < argc)
+    snprintf(ns, sizeof(ns), "%s", (char *)argv[optind++]);
+  if (optind < argc)
+    snprintf(mbox, sizeof(mbox), "%s", (char *)argv[optind++]);
+  if (LASTCHAR(ns) != '.')
+    strncat(ns, ".", sizeof(ns) - strlen(ns) - 1);
+  if (LASTCHAR(mbox) != '.')
+    strncat(mbox, ".", sizeof(mbox) - strlen(mbox) - 1);
 }
 /*--- cmdline() ---------------------------------------------------------------------------------*/
 
@@ -182,85 +170,76 @@ cmdline(int argc, char **argv)
 	Examines all records in the 'ptr' table, constructing a list of zones to create.
 **************************************************************************************************/
 static void
-load_zone_list(void)
-{
-	SQL_RES	*res;
-	SQL_ROW	row;
-	char		query[512];
-	size_t	querylen;
+load_zone_list(void) {
+  SQL_RES	*res;
+  SQL_ROW	row;
+  char		query[512];
+  size_t	querylen;
 
-	/* Construct and execute query */
-	querylen = snprintf(query, sizeof(query),
-		"SELECT "MYDNS_PTR_FIELDS"%s FROM %s",
-		(mydns_ptr_use_active ? ",active" : ""), mydns_ptr_table_name);
-	if (!(res = sql_query(sql, query, querylen)))
-		ErrSQL(sql, "Error selecting PTR records");
+  /* Construct and execute query */
+  querylen = snprintf(query, sizeof(query),
+		      "SELECT "MYDNS_PTR_FIELDS"%s FROM %s",
+		      (mydns_ptr_use_active ? ",active" : ""), mydns_ptr_table_name);
+  if (!(res = sql_query(sql, query, querylen)))
+    ErrSQL(sql, "Error selecting PTR records");
 
-	/* Add results to list */
-	while ((row = sql_getrow(res, NULL)))
-	{
-		uint32_t		ip;
-		uint8_t		quad[4];
-		char			addr[256], name[30];
-		register int n;
-		MYDNS_PTR	*ptr;
+  /* Add results to list */
+  while ((row = sql_getrow(res, NULL))) {
+    uint32_t		ip;
+    uint8_t		quad[4];
+    char			addr[256], name[30];
+    register int n;
+    MYDNS_PTR	*ptr;
 
-		if (mydns_ptr_use_active && row[4] && !GETBOOL(row[4]))
-			continue;
+    if (mydns_ptr_use_active && row[4] && !GETBOOL(row[4]))
+      continue;
 
-		if (!(ptr = mydns_parse_ptr(row)))
-			continue;
+    if (!(ptr = mydns_parse_ptr(row)))
+      continue;
 
-		/* Get IP address etc */
-		ip = htonl(ptr->ip);
-		memcpy(&quad, &ip, sizeof(quad));
-		inet_ntop(AF_INET, &ip, addr, sizeof(addr));
+    /* Get IP address etc */
+    ip = htonl(ptr->ip);
+    memcpy(&quad, &ip, sizeof(quad));
+    inet_ntop(AF_INET, &ip, addr, sizeof(addr));
 
-		/* Generate zone name */
-		snprintf(name, sizeof(name), "%u.%u.%u.in-addr.arpa.", quad[2], quad[1], quad[0]);
+    /* Generate zone name */
+    snprintf(name, sizeof(name), "%u.%u.%u.in-addr.arpa.", quad[2], quad[1], quad[0]);
 
-		/* Find zone */
-		for (n = 0; n < numZones; n++)
-			if (!strcasecmp(Zones[n]->name, name))
-				break;
+    /* Find zone */
+    for (n = 0; n < numZones; n++)
+      if (!strcasecmp(Zones[n]->name, name))
+	break;
 
-		/* Add new zone if not found */
-		if (n == numZones)
-		{
-			if (!Zones)
-			{
-				if (!(Zones = malloc((numZones + 1) * sizeof(ARPAZONE *))))
-					Err("malloc");
-			}
-			else
-			{
-				if (!(Zones = realloc(Zones, (numZones + 1) * sizeof(ARPAZONE *))))
-					Err("realloc");
-			}
-			if (!(Zones[numZones] = malloc(sizeof(ARPAZONE))))
-				Err("malloc");
-			strncpy(Zones[numZones]->name, name, sizeof(Zones[numZones]->name)-1);
-			Zones[numZones]->id = 0;
+    /* Add new zone if not found */
+    if (n == numZones) {
+      if (!Zones) {
+	Zones = ALLOCATE_N(numZones + 1, sizeof(ARPAZONE *), ARPAZONE*[]);
+      } else {
+	Zones = REALLOCATE(Zones, (numZones + 1) * sizeof(ARPAZONE *), ARPAZONE*[]);
+      }
+      Zones[numZones] = ALLOCATE(sizeof(ARPAZONE), ARPAZONE);
+      strncpy(Zones[numZones]->name, name, sizeof(Zones[numZones]->name)-1);
+      Zones[numZones]->id = 0;
 
-			/* Get low/high extent of zone */
-			quad[3] = 0;
-			memcpy(&ip, &quad, sizeof(ip));
-			Zones[numZones]->low = ntohl(ip);
-			quad[3] = 255;
-			memcpy(&ip, &quad, sizeof(ip));
-			Zones[numZones]->high = ntohl(ip);
+      /* Get low/high extent of zone */
+      quad[3] = 0;
+      memcpy(&ip, &quad, sizeof(ip));
+      Zones[numZones]->low = ntohl(ip);
+      quad[3] = 255;
+      memcpy(&ip, &quad, sizeof(ip));
+      Zones[numZones]->high = ntohl(ip);
 
-			numZones++;
-		}
-		Free(ptr);
-	}
-	sql_free(res);
+      numZones++;
+    }
+    RELEASE(ptr);
+  }
+  sql_free(res);
 
-	if (!numZones)
-		Errx("No zones found in PTR table.");
+  if (!numZones)
+    Errx("No zones found in PTR table.");
 
-	Verbose("loaded %d distinct zone%s from \"%s\" table",
-			  numZones, S(numZones), mydns_ptr_table_name);
+  Verbose("loaded %d distinct zone%s from \"%s\" table",
+	  numZones, S(numZones), mydns_ptr_table_name);
 }
 /*--- load_zone_list() --------------------------------------------------------------------------*/
 
@@ -301,14 +280,14 @@ get_zone_ids(void)
 			esc_mbox = sql_escstr(sql, mbox);
 
 			/* Construct and issue query */
-			querylen = asprintf((char**)&query,
+			querylen = ASPRINTF((char**)&query,
 					    "INSERT INTO %s (origin,ns,mbox) VALUES ('%s','%s','%s')",
 					    mydns_soa_table_name, esc_origin, esc_ns, esc_mbox);
-			Free(esc_origin);
-			Free(esc_ns);
-			Free(esc_mbox);
+			RELEASE(esc_origin);
+			RELEASE(esc_ns);
+			RELEASE(esc_mbox);
 			res = sql_nrquery(sql, (char*)query, querylen);
-			Free(query);
+			RELEASE(query);
 			if (res != 0)
 				ErrSQL(sql, "%s: Error inserting zone", Zones[n]->name);
 
@@ -346,13 +325,13 @@ ptrconvert(void)
 
 		esc_origin = sql_escstr(sql, Zones[n]->name);
 
-		querylen = asprintf(&query,
+		querylen = ASPRINTF(&query,
 				    "SELECT "MYDNS_PTR_FIELDS"%s FROM %s WHERE ip >= %u AND ip <= %u",
 				    (mydns_ptr_use_active ? ",active" : ""),
 				    mydns_ptr_table_name, Zones[n]->low, Zones[n]->high);
-		Free(esc_origin);
+		RELEASE(esc_origin);
 		res = sql_query(sql, query, querylen);
-		Free(query);
+		RELEASE(query);
 		if (!(res))
 			ErrSQL(sql, "Error selecting PTR records");
 
@@ -386,13 +365,13 @@ ptrconvert(void)
 
 				esc_data = sql_escstr(sql, ptr->name);
 
-				querylen = asprintf(&query,
+				querylen = ASPRINTF(&query,
 						    "INSERT INTO %s (zone,name,type,data,ttl) VALUES (%u,'%u','PTR','%s',%u)",
 						    mydns_rr_table_name, Zones[n]->id, quad[3],
 						    esc_data, ptr->ttl);
-				Free(esc_data);
+				RELEASE(esc_data);
 				res = sql_nrquery(sql, query, querylen);
-				Free(query);
+				RELEASE(query);
 				if (res != 0)
 					ErrSQL(sql, "%s: Error inserting rr", Zones[n]->name);
 
@@ -406,7 +385,7 @@ ptrconvert(void)
 			}
 			else if (rv < 0)
 				ErrSQL(sql, "Error looking for existing resource record");
-			Free(ptr);
+			RELEASE(ptr);
 		}
 
 		Verbose("%s: %d record%s (%d found, %d inserted)", Zones[n]->name,

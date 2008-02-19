@@ -88,13 +88,7 @@ rdata_enlarge(TASK *t, size_t size) {
     return (NULL);
 
   t->rdlen += size;
-  if (!t->rdata) {
-    if (!(t->rdata = malloc(t->rdlen)))
-      Err(_("out of memory"));
-  } else {
-    if (!(t->rdata = realloc(t->rdata, t->rdlen)))
-      Err(_("out of memory"));
-  }
+  t->rdata = REALLOCATE(t->rdata, t->rdlen, char[]);
   return (t->rdata + t->rdlen - size);
 }
 /*--- rdata_enlarge() ---------------------------------------------------------------------------*/
@@ -692,7 +686,7 @@ abandon_reply(TASK *t) {
   /* Make sure reply is empty */
   t->replylen = 0;
   t->rdlen = 0;
-  Free(t->rdata);
+  RELEASE(t->rdata);
 }
 
 /**************************************************************************************************
@@ -755,9 +749,7 @@ build_reply(TASK *t, int want_additional) {
 
   /* Construct the reply */
   t->replylen = DNS_HEADERSIZE + t->qdlen + t->rdlen;
-  dest = t->reply = malloc(t->replylen);
-  if (!t->reply)
-    Err(_("out of memory"));
+  dest = t->reply = ALLOCATE(t->replylen, char[]);
 
   DNS_PUT16(dest, t->id);					/* Query ID */
   DNS_PUT(dest, &t->hdr, SIZE16);				/* Header */

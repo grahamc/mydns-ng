@@ -61,73 +61,70 @@ isprime(unsigned int number)
 	Create, initialize, and return a new CACHE structure.
 **************************************************************************************************/
 static CACHE *
-_cache_init(uint32_t limit, uint32_t expire, const char *desc)
-{
-	CACHE *C;
+_cache_init(uint32_t limit, uint32_t expire, const char *desc) {
+  CACHE *C;
 
-	if (!(C = calloc(1, sizeof(CACHE))))
-		Err(_("out of memory"));
-	C->limit = limit;
-	C->expire = expire;
+  C = ALLOCATE(sizeof(CACHE), CACHE);
+  C->limit = limit;
+  C->expire = expire;
 
 #if (HASH_TYPE == ORIGINAL_HASH) || (HASH_TYPE == ADDITIVE_HASH)
-	/* Make `slots' prime */
-	C->slots = limit * CACHE_SLOT_MULTIPLIER;
-	C->slots |= 1;
-	while (!isprime(C->slots))
-		C->slots += 2;
+  /* Make `slots' prime */
+  C->slots = limit * CACHE_SLOT_MULTIPLIER;
+  C->slots |= 1;
+  while (!isprime(C->slots))
+    C->slots += 2;
 #elif (HASH_TYPE == ROTATING_HASH) || (HASH_TYPE == FNV_HASH)
-	/* Make `slots' a power of two */
-	{
-		int		bits;
-		uint32_t	slots;
+  /* Make `slots' a power of two */
+  {
+    int		bits;
+    uint32_t	slots;
 
-		C->slots = limit * CACHE_SLOT_MULTIPLIER;
-		for (slots = C->slots, bits = 0; slots != 1; )
-		{
-			slots >>= 1;
-			bits++;
-		}
-		if (C->slots & ((1 << bits) - 1))
-			bits++;
-		slots = 1 << bits;
+    C->slots = limit * CACHE_SLOT_MULTIPLIER;
+    for (slots = C->slots, bits = 0; slots != 1; ) {
+      slots >>= 1;
+      bits++;
+    }
+    if (C->slots & ((1 << bits) - 1))
+      bits++;
+    slots = 1 << bits;
 
-   	C->slots = slots;
+    C->slots = slots;
 #if (HASH_TYPE == ROTATING_HASH)
-		C->mask = C->slots - 1;
+    C->mask = C->slots - 1;
 #endif
 #if (HASH_TYPE == FNV_HASH)
-		/* A 16-bit hash lets us use XOR instead of MOD to clamp the value - very fast */
-		if (C->slots < 65536)
-			C->slots = 65536;
-		for (C->bits = 0; C->bits < 32; C->bits++)
-			if (((uint32_t)1 << C->bits) == C->slots)
-				break;
+    /* A 16-bit hash lets us use XOR instead of MOD to clamp the value - very fast */
+    if (C->slots < 65536)
+      C->slots = 65536;
+    for (C->bits = 0; C->bits < 32; C->bits++)
+      if (((uint32_t)1 << C->bits) == C->slots)
+	break;
 #endif
-	}
+  }
 #else
 #	error Hash method unknown or unspecified
 #endif
 
-	if (!(C->nodes = calloc(C->slots, sizeof(CNODE *))))
-		Err(_("out of memory"));
+  C->nodes = ALLOCATE_N(C->slots, sizeof(CNODE *), CNODE *);
 
 #if DEBUG_ENABLED && DEBUG_CACHE
 #if (HASH_TYPE == ORIGINAL_HASH)
-		Debug("%s cache initialized (%u nodes, %u elements max) (original hash)", desc, C->slots, limit);
+  Debug("%s cache initialized (%u nodes, %u elements max) (original hash)", desc, C->slots, limit);
 #elif (HASH_TYPE == ADDITIVE_HASH)
-		Debug("%s cache initialized (%u nodes, %u elements max) (additive hash)", desc, C->slots, limit);
+  Debug("%s cache initialized (%u nodes, %u elements max) (additive hash)", desc, C->slots, limit);
 #elif (HASH_TYPE == ROTATING_HASH)
-		Debug("%s cache initialized (%u nodes, %u elements max) (rotating hash)", desc, C->slots, limit);
+  Debug("%s cache initialized (%u nodes, %u elements max) (rotating hash)", desc, C->slots, limit);
 #elif (HASH_TYPE == FNV_HASH)
-		Debug("%s cache initialized (%u nodes, %u elements max) (%d-bit FNV hash)", desc, C->slots, limit, C->bits);
+  Debug("%s cache initialized (%u nodes, %u elements max) (%d-bit FNV hash)", desc, C->slots, limit,
+	C->bits);
 #else
 #	error Hash method unknown or unspecified
 #endif
 #endif
 
-	strncpy(C->name, desc, sizeof(C->name)-1);
-	return (C);
+  strncpy(C->name, desc, sizeof(C->name)-1);
+  return (C);
 }
 /*--- _cache_init() -----------------------------------------------------------------------------*/
 
@@ -137,43 +134,40 @@ _cache_init(uint32_t limit, uint32_t expire, const char *desc)
 	Create the caches used by MyDNS.
 **************************************************************************************************/
 void
-cache_init(void)
-{
-	uint32_t	cache_size, zone_cache_size, reply_cache_size;
-	int		defaulted;
-	int		zone_cache_expire, reply_cache_expire;
+cache_init(void) {
+  uint32_t	cache_size, zone_cache_size, reply_cache_size;
+  int		defaulted;
+  int		zone_cache_expire, reply_cache_expire;
 
-	/* Get ZoneCache size */
-	zone_cache_size = atou(conf_get(&Conf, "zone-cache-size", &defaulted));
-	if (defaulted)
-	{
-		cache_size = atou(conf_get(&Conf, "cache-size", NULL));
-		zone_cache_size = cache_size - (cache_size / 3);
-	}
-	zone_cache_expire = atou(conf_get(&Conf, "zone-cache-expire", &defaulted));
-	if (defaulted)
-		zone_cache_expire = atou(conf_get(&Conf, "cache-expire", NULL));
+  /* Get ZoneCache size */
+  zone_cache_size = atou(conf_get(&Conf, "zone-cache-size", &defaulted));
+  if (defaulted) {
+    cache_size = atou(conf_get(&Conf, "cache-size", NULL));
+    zone_cache_size = cache_size - (cache_size / 3);
+  }
+  zone_cache_expire = atou(conf_get(&Conf, "zone-cache-expire", &defaulted));
+  if (defaulted)
+    zone_cache_expire = atou(conf_get(&Conf, "cache-expire", NULL));
 
-	/* Get ReplyCache size */
-	reply_cache_size = atou(conf_get(&Conf, "reply-cache-size", &defaulted));
-	if (defaulted)
-	{
-		cache_size = atou(conf_get(&Conf, "cache-size", NULL));
-		reply_cache_size = cache_size / 3;
-	}
-	reply_cache_expire = atou(conf_get(&Conf, "reply-cache-expire", &defaulted));
-	if (defaulted)
-		reply_cache_expire = atou(conf_get(&Conf, "cache-expire", NULL)) / 2;
+  /* Get ReplyCache size */
+  reply_cache_size = atou(conf_get(&Conf, "reply-cache-size", &defaulted));
+  if (defaulted) {
+    cache_size = atou(conf_get(&Conf, "cache-size", NULL));
+    reply_cache_size = cache_size / 3;
+  }
+  reply_cache_expire = atou(conf_get(&Conf, "reply-cache-expire", &defaulted));
+  if (defaulted)
+    reply_cache_expire = atou(conf_get(&Conf, "cache-expire", NULL)) / 2;
 
-	/* Initialize caches */
-	if (zone_cache_size)
-		ZoneCache = _cache_init(zone_cache_size, zone_cache_expire, "zone");
+  /* Initialize caches */
+  if (zone_cache_size)
+    ZoneCache = _cache_init(zone_cache_size, zone_cache_expire, "zone");
 #if USE_NEGATIVE_CACHE
-	if (zone_cache_size)
-		NegativeCache = _cache_init(zone_cache_size, zone_cache_expire, "negative");
+  if (zone_cache_size)
+    NegativeCache = _cache_init(zone_cache_size, zone_cache_expire, "negative");
 #endif
-	if (reply_cache_size)
-		ReplyCache = _cache_init(reply_cache_size, reply_cache_expire, "reply");
+  if (reply_cache_size)
+    ReplyCache = _cache_init(reply_cache_size, reply_cache_expire, "reply");
 }
 /*--- cache_init() ------------------------------------------------------------------------------*/
 
@@ -183,33 +177,28 @@ cache_init(void)
 	Updates the 'size' variable in a cache.
 **************************************************************************************************/
 static void
-cache_size_update(CACHE *C)
-{
-	register int n;
-	register CNODE *N;
+cache_size_update(CACHE *C) {
+  register int n;
+  register CNODE *N;
 
-	C->size = 0;
-	C->size += sizeof(CACHE);
+  C->size = 0;
+  C->size += sizeof(CACHE);
 
-	/* Get size of all data in cache */
-	for (n = 0; n < C->slots; n++)
-		for (N = C->nodes[n]; N; N = N->next_node)
-		{
-			C->size += sizeof(CNODE);
+  /* Get size of all data in cache */
+  for (n = 0; n < C->slots; n++)
+    for (N = C->nodes[n]; N; N = N->next_node) {
+      C->size += sizeof(CNODE);
 
-			if (C == ZoneCache)
-			{
-				if (N->data)
-				{
-					if (N->type == DNS_QTYPE_SOA)
-						C->size += mydns_soa_size((MYDNS_SOA *)N->data);
-					else
-						C->size += mydns_rr_size((MYDNS_RR *)N->data);
-				}
-			}
-			else 
-				C->size += N->datalen;
-		}
+      if (C == ZoneCache) {
+	if (N->data) {
+	  if (N->type == DNS_QTYPE_SOA)
+	    C->size += mydns_soa_size((MYDNS_SOA *)N->data);
+	  else
+	    C->size += mydns_rr_size((MYDNS_RR *)N->data);
+	}
+      } else 
+	C->size += N->datalen;
+    }
 }
 /*--- cache_size_update() -----------------------------------------------------------------------*/
 
@@ -219,30 +208,30 @@ cache_size_update(CACHE *C)
 	Called when SIGUSR1 is received, returns a string to append to status.
 **************************************************************************************************/
 void
-cache_status(CACHE *C)
-{
-	if (C)
-	{
-		register int ct, collisions;
-		register CNODE *n;
+cache_status(CACHE *C) {
+  if (C) {
+    register int ct, collisions;
+    register CNODE *n;
 
-		/* Update cache size (bytes) */
-		cache_size_update(C);
+    /* Update cache size (bytes) */
+    cache_size_update(C);
 
-		/* Count number of collisions */
-		for (ct = collisions = 0; ct < C->slots; ct++)
-			if (C->nodes[ct] && C->nodes[ct]->next_node)
-				for (n = C->nodes[ct]->next_node; n; n = n->next_node)
-					collisions++;
+    /* Count number of collisions */
+    for (ct = collisions = 0; ct < C->slots; ct++)
+      if (C->nodes[ct] && C->nodes[ct]->next_node)
+	for (n = C->nodes[ct]->next_node; n; n = n->next_node)
+	  collisions++;
 
-		Notice(_("%s cache %.0f%% useful (%u hits, %u misses),"
-					" %u collisions (%.0f%%), %.0f%% full (%u records), %u bytes, avg life %u sec"),
-			C->name, PCT(C->questions, C->hits), C->hits, C->misses,
-			collisions, PCT(C->slots, collisions),
-			PCT(C->limit, C->count), C->count, C->size,
-			(unsigned int)(C->removed ? C->removed_secs / C->removed : (time(NULL) - Status.start_time))
-		);
-	}
+    Notice(_("%s cache %.0f%% useful (%u hits, %u misses),"
+	     " %u collisions (%.0f%%), %.0f%% full (%u records), %u bytes, avg life %u sec"),
+	   C->name, PCT(C->questions, C->hits), C->hits, C->misses,
+	   collisions, PCT(C->slots, collisions),
+	   PCT(C->limit, C->count), C->count, C->size,
+	   (unsigned int)(C->removed
+			  ? C->removed_secs / C->removed
+			  : (time(NULL) - Status.start_time))
+	   );
+  }
 }
 /*--- cache_status() ----------------------------------------------------------------------------*/
 
@@ -252,29 +241,25 @@ cache_status(CACHE *C)
 	Adds the specified node to the head of the MRU list.
 **************************************************************************************************/
 static void
-mrulist_add(CACHE *ThisCache, CNODE *n)
-{
-	register CNODE *head = ThisCache->mruHead;
+mrulist_add(CACHE *ThisCache, CNODE *n) {
+  register CNODE *head = ThisCache->mruHead;
 
-	if (!n || !ThisCache) return;
+  if (!n || !ThisCache) return;
 
-	if (!ThisCache->mruHead)
-	{
-		ThisCache->mruHead = n;
-		ThisCache->mruHead->mruPrev = NULL;
-		ThisCache->mruHead->mruNext = NULL;
-		ThisCache->mruTail = n;
-	}
-	else
-	{
-		n->mruNext = head;
-		n->mruPrev = head->mruPrev;
-		if (head->mruPrev == NULL)
-			ThisCache->mruHead = n;
-		else
-			head->mruPrev->mruNext = n;
-		head->mruPrev = n;
-	}
+  if (!ThisCache->mruHead) {
+    ThisCache->mruHead = n;
+    ThisCache->mruHead->mruPrev = NULL;
+    ThisCache->mruHead->mruNext = NULL;
+    ThisCache->mruTail = n;
+  } else {
+    n->mruNext = head;
+    n->mruPrev = head->mruPrev;
+    if (head->mruPrev == NULL)
+      ThisCache->mruHead = n;
+    else
+      head->mruPrev->mruNext = n;
+    head->mruPrev = n;
+  }
 }
 /*--- mrulist_add() -----------------------------------------------------------------------------*/
 
@@ -283,26 +268,22 @@ mrulist_add(CACHE *ThisCache, CNODE *n)
 	MRULIST_DEL
 **************************************************************************************************/
 static void
-mrulist_del(CACHE *ThisCache, CNODE *n)
-{
-	if (!n || !ThisCache || !ThisCache->mruHead) return;
+mrulist_del(CACHE *ThisCache, CNODE *n) {
+  if (!n || !ThisCache || !ThisCache->mruHead) return;
 
-	if (n == ThisCache->mruHead)
-	{
-		ThisCache->mruHead = n->mruNext;
-		if (ThisCache->mruHead == NULL)
-			ThisCache->mruTail = NULL;
-		else
-			n->mruNext->mruPrev = NULL;
-	}
-	else
-	{
-		n->mruPrev->mruNext = n->mruNext;
-		if (n->mruNext == NULL)
-			ThisCache->mruTail = n->mruPrev;
-		else
-			n->mruNext->mruPrev = n->mruPrev;
-	}
+  if (n == ThisCache->mruHead) {
+    ThisCache->mruHead = n->mruNext;
+    if (ThisCache->mruHead == NULL)
+      ThisCache->mruTail = NULL;
+    else
+      n->mruNext->mruPrev = NULL;
+  } else {
+    n->mruPrev->mruNext = n->mruNext;
+    if (n->mruNext == NULL)
+      ThisCache->mruTail = n->mruPrev;
+    else
+      n->mruNext->mruPrev = n->mruPrev;
+  }
 }
 /*--- mrulist_del() -----------------------------------------------------------------------------*/
 
@@ -312,47 +293,38 @@ mrulist_del(CACHE *ThisCache, CNODE *n)
 	Frees the node specified and removes it from the cache.
 **************************************************************************************************/
 static void
-cache_free_node(CACHE *ThisCache, uint32_t hash, CNODE *n)
-{
-	register CNODE *prev = NULL, *cur, *next;
+cache_free_node(CACHE *ThisCache, uint32_t hash, CNODE *n) {
+  register CNODE *prev = NULL, *cur, *next;
 
-	if (!n || hash >= ThisCache->slots)
-		return;
+  if (!n || hash >= ThisCache->slots)
+    return;
 
-	for (cur = ThisCache->nodes[hash]; cur; cur = next)
-	{
-		next = cur->next_node;
-		if (cur == n)		/* Delete this node */
-		{
-			mrulist_del(ThisCache, n);							/* Remove from MRU/LRU list */
+  for (cur = ThisCache->nodes[hash]; cur; cur = next) {
+    next = cur->next_node;
+    if (cur == n) {						/* Delete this node */
+      mrulist_del(ThisCache, n);				/* Remove from MRU/LRU list */
 
-			/* Remove the node */
-			if (cur->datalen)
-			{
-				Free(cur->data);
-			}
-			else if (cur->type == DNS_QTYPE_SOA)
-			{
-				mydns_soa_free(cur->data);
-			}
-			else
-			{
-				mydns_rr_free(cur->data);
-			}
+      /* Remove the node */
+      if (cur->datalen) {
+	RELEASE(cur->data);
+      }	else if (cur->type == DNS_QTYPE_SOA) {
+	mydns_soa_free(cur->data);
+      } else {
+	mydns_rr_free(cur->data);
+      }
 
-			if (cur == ThisCache->nodes[hash])				/* Head of node? */
-				ThisCache->nodes[hash] = cur->next_node;
-			else if (prev)
-				prev->next_node = cur->next_node;
-			Free(cur);
-			ThisCache->out++;
-			ThisCache->count--;
-			return;
-		}
-		else
-			prev = cur;
-	}
-	Errx(_("tried to free invalid node %p at %u in cache"), n, hash);
+      if (cur == ThisCache->nodes[hash])			/* Head of node? */
+	ThisCache->nodes[hash] = cur->next_node;
+      else if (prev)
+	prev->next_node = cur->next_node;
+      RELEASE(cur);
+      ThisCache->out++;
+      ThisCache->count--;
+      return;
+    } else
+      prev = cur;
+  }
+  Errx(_("tried to free invalid node %p at %u in cache"), n, hash);
 }
 /*--- cache_free_node() -------------------------------------------------------------------------*/
 
@@ -362,19 +334,17 @@ cache_free_node(CACHE *ThisCache, uint32_t hash, CNODE *n)
 	Deletes all nodes within the cache.
 **************************************************************************************************/
 void
-cache_empty(CACHE *ThisCache)
-{
-	register int ct;
-	register CNODE *n, *tmp;
+cache_empty(CACHE *ThisCache) {
+  register int ct;
+  register CNODE *n, *tmp;
 
-	if (!ThisCache) return;
-	for (ct = 0; ct < ThisCache->slots; ct++)
-		for (n = ThisCache->nodes[ct]; n; n = tmp)
-		{
-			tmp = n->next_node;
-			cache_free_node(ThisCache, ct, n);
-		}
-	ThisCache->mruHead = ThisCache->mruTail = NULL;
+  if (!ThisCache) return;
+  for (ct = 0; ct < ThisCache->slots; ct++)
+    for (n = ThisCache->nodes[ct]; n; n = tmp) {
+      tmp = n->next_node;
+      cache_free_node(ThisCache, ct, n);
+    }
+  ThisCache->mruHead = ThisCache->mruTail = NULL;
 }
 /*--- cache_empty() -----------------------------------------------------------------------------*/
 
@@ -384,23 +354,20 @@ cache_empty(CACHE *ThisCache)
 	Deletes all expired nodes within the cache.
 **************************************************************************************************/
 void
-cache_cleanup(CACHE *ThisCache)
-{
-	register int	ct;
-	register CNODE	*n, *tmp;
+cache_cleanup(CACHE *ThisCache) {
+  register int	ct;
+  register CNODE	*n, *tmp;
 
-	if (!ThisCache)
-		return;
-	for (ct = 0; ct < ThisCache->slots; ct++)
-		for (n = ThisCache->nodes[ct]; n; n = tmp)
-		{
-			tmp = n->next_node;
-			if (n->expire && (current_time > n->expire))
-			{
-				ThisCache->expired++;
-				cache_free_node(ThisCache, ct, n);
-			}
-		}
+  if (!ThisCache)
+    return;
+  for (ct = 0; ct < ThisCache->slots; ct++)
+    for (n = ThisCache->nodes[ct]; n; n = tmp) {
+      tmp = n->next_node;
+      if (n->expire && (current_time > n->expire)) {
+	ThisCache->expired++;
+	cache_free_node(ThisCache, ct, n);
+      }
+    }
 }
 /*--- cache_cleanup() ---------------------------------------------------------------------------*/
 
@@ -410,20 +377,18 @@ cache_cleanup(CACHE *ThisCache)
 	Deletes all nodes within the cache for the specified zone.
 **************************************************************************************************/
 void
-cache_purge_zone(CACHE *ThisCache, uint32_t zone)
-{
-	register int	ct;
-	register CNODE	*n, *tmp;
+cache_purge_zone(CACHE *ThisCache, uint32_t zone) {
+  register int	ct;
+  register CNODE	*n, *tmp;
 
-	if (!ThisCache)
-		return;
-	for (ct = 0; ct < ThisCache->slots; ct++)
-		for (n = ThisCache->nodes[ct]; n; n = tmp)
-		{
-			tmp = n->next_node;
-			if (n->zone == zone)
-				cache_free_node(ThisCache, ct, n);
-		}
+  if (!ThisCache)
+    return;
+  for (ct = 0; ct < ThisCache->slots; ct++)
+    for (n = ThisCache->nodes[ct]; n; n = tmp) {
+      tmp = n->next_node;
+      if (n->zone == zone)
+	cache_free_node(ThisCache, ct, n);
+    }
 }
 /*--- cache_purge_zone() ------------------------------------------------------------------------*/
 
@@ -433,65 +398,55 @@ cache_purge_zone(CACHE *ThisCache, uint32_t zone)
 	Returns hash value.
 **************************************************************************************************/
 static inline uint32_t
-cache_hash(CACHE *ThisCache, uint32_t initval, void *buf, register size_t buflen)
+cache_hash(CACHE *ThisCache, uint32_t initval, void *buf, register size_t buflen) {
 #if (HASH_TYPE == ORIGINAL_HASH)
-{
-	register uint32_t	hash;
-	register unsigned char *p;
+  register uint32_t	hash;
+  register unsigned char *p;
 
-	/* Generate hash value */
-	for (hash = initval, p = (unsigned char *)buf; p < (unsigned char *)(buf + buflen); p++)
-	{
-		register int tmp;
-		hash = (hash << 4) + (*p);
-		if ((tmp = (hash & 0xf0000000)))
-		{
-			hash = hash ^ (tmp >> 24);
-			hash = hash ^ tmp;
-		}
-	}
-	return (hash % ThisCache->slots);
-}
+  /* Generate hash value */
+  for (hash = initval, p = (unsigned char *)buf; p < (unsigned char *)(buf + buflen); p++) {
+    register int tmp;
+    hash = (hash << 4) + (*p);
+    if ((tmp = (hash & 0xf0000000))) {
+      hash = hash ^ (tmp >> 24);
+      hash = hash ^ tmp;
+    }
+  }
+  return (hash % ThisCache->slots);
 #elif (HASH_TYPE == ADDITIVE_HASH)
-{
-	register uint32_t	hash;
-	register unsigned char *p;
+  register uint32_t	hash;
+  register unsigned char *p;
 
-	for (hash = initval, p = (unsigned char *)buf; p < (unsigned char *)(buf + buflen); p++)
-		hash += *p;
-	return (hash % ThisCache->slots);
-}
+  for (hash = initval, p = (unsigned char *)buf; p < (unsigned char *)(buf + buflen); p++)
+    hash += *p;
+  return (hash % ThisCache->slots);
 #elif (HASH_TYPE == ROTATING_HASH)
-{
-	register uint32_t	hash;
-	register unsigned char *p;
+  register uint32_t	hash;
+  register unsigned char *p;
 
-	for (hash = initval, p = (unsigned char *)buf; p < (unsigned char *)(buf + buflen); p++)
-		hash = (hash << 4) ^ (hash >> 28) ^ (*p);
-	return ((hash ^ (hash>>10) ^ (hash>>20)) & ThisCache->mask);
-}
+  for (hash = initval, p = (unsigned char *)buf; p < (unsigned char *)(buf + buflen); p++)
+    hash = (hash << 4) ^ (hash >> 28) ^ (*p);
+  return ((hash ^ (hash>>10) ^ (hash>>20)) & ThisCache->mask);
 #elif (HASH_TYPE == FNV_HASH)
-{
-	register uint32_t	hash = FNV_32_INIT;
-	unsigned char *bp = (unsigned char *)buf;
-	unsigned char *be = bp + buflen;
+  register uint32_t	hash = FNV_32_INIT;
+  unsigned char *bp = (unsigned char *)buf;
+  unsigned char *be = bp + buflen;
 
-	while (bp < be)
-	{
-		hash *= FNV_32_PRIME;
-		hash ^= (uint32_t)*bp++;
-	}
-	hash *= FNV_32_PRIME;
-	hash ^= (uint32_t)initval;
+  while (bp < be) {
+    hash *= FNV_32_PRIME;
+    hash ^= (uint32_t)*bp++;
+  }
+  hash *= FNV_32_PRIME;
+  hash ^= (uint32_t)initval;
 
-	if (ThisCache->bits == 16)
-		return ((hash >> 16) ^ (hash & (((uint32_t)1 << 16) - 1)));
-	else
-		return (hash % ThisCache->slots);
-}
+  if (ThisCache->bits == 16)
+    return ((hash >> 16) ^ (hash & (((uint32_t)1 << 16) - 1)));
+  else
+    return (hash % ThisCache->slots);
 #else
 #	error Hash method unknown or unspecified
 #endif
+}
 /*--- cache_hash() ------------------------------------------------------------------------------*/
 
 
@@ -654,8 +609,7 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
 
   /* Add to cache */
   C->in++;
-  if (!(n = calloc(1, sizeof(CNODE))))
-    Err(_("out of memory"));
+  n = ALLOCATE(sizeof(CNODE), CNODE);
   n->hash = hash;
   n->zone = zone;
   n->type = type;
@@ -700,78 +654,72 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
 	If found, fills in t->reply and t->replylen.
 **************************************************************************************************/
 int
-reply_cache_find(TASK *t)
-{
-	register uint32_t	hash;
-	register CNODE		*n;
-	register void		*p;
+reply_cache_find(TASK *t) {
+  register uint32_t	hash;
+  register CNODE		*n;
+  register void		*p;
 
-	if (!ReplyCache || t->qdlen > DNS_MAXPACKETLEN_UDP)
-		return (0);
+  if (!ReplyCache || t->qdlen > DNS_MAXPACKETLEN_UDP)
+    return (0);
 
 #if STATUS_ENABLED
-	/* Status requests aren't cached */
-	if (t->qclass == DNS_CLASS_CHAOS)
-		return (0);
+  /* Status requests aren't cached */
+  if (t->qclass == DNS_CLASS_CHAOS)
+    return (0);
 #endif
 
-	hash = cache_hash(ReplyCache, t->qtype, t->qd, t->qdlen);
-	ReplyCache->questions++;
+  hash = cache_hash(ReplyCache, t->qtype, t->qd, t->qdlen);
+  ReplyCache->questions++;
 
-	/* Look at the appropriate node.  Descend list and find match. */
-	for (n = ReplyCache->nodes[hash]; n; n = n->next_node)
-	{
-		if ((n->namelen == t->qdlen) && (n->type == t->qtype) && (n->protocol == t->protocol))
-		{
-			if (!n->name)
-				Errx(_("reply cache node %p at hash %u has NULL name"), n, hash);
-			if (!memcmp(n->name, t->qd, t->qdlen))
-			{
-				/* Is the node expired? */
-				if (n->expire && (current_time > n->expire))
-				{
-					cache_free_node(ReplyCache, hash, n);
-					break;
-				}
-
-				/* Found in cache; move to head of usefulness list */
-				mrulist_del(ReplyCache, n);
-				mrulist_add(ReplyCache, n);
-
-				/* Allocate space for reply data */
-				t->replylen = n->datalen - sizeof(DNS_HEADER) - sizeof(task_error_t);
-				if (!(t->reply = malloc(t->replylen)))
-					Err(_("out of memory"));
-				p = n->data;
-
-				/* Copy DNS header */
-				memcpy(&t->hdr, p, sizeof(DNS_HEADER));
-				p += sizeof(DNS_HEADER);
-
-				/* Copy reason */
-				memcpy(&t->reason, p, sizeof(task_error_t));
-				p += sizeof(task_error_t);
-
-				/* Copy reply data */
-				memcpy(t->reply, p, t->replylen);
-
-				/* Set count of records in each section */
-				p = t->reply + SIZE16 + SIZE16 + SIZE16;
-				DNS_GET16(t->an.size, p);
-				DNS_GET16(t->ns.size, p);
-				DNS_GET16(t->ar.size, p);
-
-				t->zone = n->zone;
-
-				t->reply_from_cache = 1;
-				ReplyCache->hits++;
-
-				return (1);
-			}
-		}
+  /* Look at the appropriate node.  Descend list and find match. */
+  for (n = ReplyCache->nodes[hash]; n; n = n->next_node) {
+    if ((n->namelen == t->qdlen) && (n->type == t->qtype) && (n->protocol == t->protocol)) {
+      if (!n->name)
+	Errx(_("reply cache node %p at hash %u has NULL name"), n, hash);
+      if (!memcmp(n->name, t->qd, t->qdlen)) {
+	/* Is the node expired? */
+	if (n->expire && (current_time > n->expire)) {
+	  cache_free_node(ReplyCache, hash, n);
+	  break;
 	}
-	ReplyCache->misses++;
-	return (0);
+
+	/* Found in cache; move to head of usefulness list */
+	mrulist_del(ReplyCache, n);
+	mrulist_add(ReplyCache, n);
+
+	/* Allocate space for reply data */
+	t->replylen = n->datalen - sizeof(DNS_HEADER) - sizeof(task_error_t);
+	t->reply = ALLOCATE(t->replylen, char[]);
+	p = n->data;
+
+	/* Copy DNS header */
+	memcpy(&t->hdr, p, sizeof(DNS_HEADER));
+	p += sizeof(DNS_HEADER);
+
+	/* Copy reason */
+	memcpy(&t->reason, p, sizeof(task_error_t));
+	p += sizeof(task_error_t);
+
+	/* Copy reply data */
+	memcpy(t->reply, p, t->replylen);
+
+	/* Set count of records in each section */
+	p = t->reply + SIZE16 + SIZE16 + SIZE16;
+	DNS_GET16(t->an.size, p);
+	DNS_GET16(t->ns.size, p);
+	DNS_GET16(t->ar.size, p);
+
+	t->zone = n->zone;
+
+	t->reply_from_cache = 1;
+	ReplyCache->hits++;
+
+	return (1);
+      }
+    }
+  }
+  ReplyCache->misses++;
+  return (0);
 }
 /*--- reply_cache_find() ------------------------------------------------------------------------*/
 
@@ -781,111 +729,100 @@ reply_cache_find(TASK *t)
 	Adds the current reply to the reply cache.
 **************************************************************************************************/
 void
-add_reply_to_cache(TASK *t)
-{
-	register uint32_t	hash;
-	register CNODE		*n;
-	register void		*p;
+add_reply_to_cache(TASK *t) {
+  register uint32_t	hash;
+  register CNODE	*n;
+  register void		*p;
 
-	if (!ReplyCache || t->qdlen > DNS_MAXPACKETLEN_UDP || t->hdr.rcode == DNS_RCODE_SERVFAIL)
-	{
-		return;
-	}
+  if (!ReplyCache || t->qdlen > DNS_MAXPACKETLEN_UDP || t->hdr.rcode == DNS_RCODE_SERVFAIL) {
+    return;
+  }
 
-	/* Don't cache replies from recursive forwarder */
-	if (t->forwarded)
-		return;
+  /* Don't cache replies from recursive forwarder */
+  if (t->forwarded)
+    return;
 
 #if STATUS_ENABLED
-	/* Don't cache status requests */
-	if (t->qclass == DNS_CLASS_CHAOS)
-		return;
+  /* Don't cache status requests */
+  if (t->qclass == DNS_CLASS_CHAOS)
+    return;
 #endif
 
-	/* Don't cache negative replies if recursive forwarding is enabled */
-	if (forward_recursive && t->hdr.rcode != DNS_RCODE_NOERROR)
-		return;
+  /* Don't cache negative replies if recursive forwarding is enabled */
+  if (forward_recursive && t->hdr.rcode != DNS_RCODE_NOERROR)
+    return;
 
-	hash = cache_hash(ReplyCache, t->qtype, t->qd, t->qdlen);
+  hash = cache_hash(ReplyCache, t->qtype, t->qd, t->qdlen);
 
-	/* Look at the appropriate node.  Descend list and find match. */
-	for (n = ReplyCache->nodes[hash]; n; n = n->next_node)
-	{
-		if ((n->namelen == t->qdlen) && (n->type == t->qtype) && (n->protocol == t->protocol))
-		{
-			if (!n->name)
-				Errx(_("reply cache node %p at hash %u has NULL name"), n, hash);
+  /* Look at the appropriate node.  Descend list and find match. */
+  for (n = ReplyCache->nodes[hash]; n; n = n->next_node) {
+    if ((n->namelen == t->qdlen) && (n->type == t->qtype) && (n->protocol == t->protocol)) {
+      if (!n->name)
+	Errx(_("reply cache node %p at hash %u has NULL name"), n, hash);
 
-			if (!memcmp(n->name, t->qd, t->qdlen))
-			{
-				/* Is the node expired? */
-				if (n->expire && (current_time > n->expire))
-				{
-					cache_free_node(ReplyCache, hash, n);
-					break;
-				}
-
-				/* Found in cache; move to head of usefulness list */
-				mrulist_del(ReplyCache, n);
-				mrulist_add(ReplyCache, n);
-				return;
-			}
-		}
+      if (!memcmp(n->name, t->qd, t->qdlen)) {
+	/* Is the node expired? */
+	if (n->expire && (current_time > n->expire)) {
+	  cache_free_node(ReplyCache, hash, n);
+	  break;
 	}
 
-	/* If the cache is full, delete the least recently used node and add new node */
-	if (ReplyCache->count >= ReplyCache->limit)
-	{
-		if (ReplyCache->mruTail)
-		{
-			ReplyCache->removed++;
-			ReplyCache->removed_secs += current_time - ReplyCache->mruTail->insert_time;
-			cache_free_node(ReplyCache, ReplyCache->mruTail->hash, ReplyCache->mruTail);
-		}
-		else
-			return;
-	}
-
-	/* Add to cache */
-	ReplyCache->in++;
-
-	if (!(n = calloc(1, sizeof(CNODE))))
-		Err(_("out of memory"));
-	n->hash = hash;
-	n->zone = t->zone;
-	n->type = t->qtype;
-	n->protocol = t->protocol;
-	memcpy(n->name, t->qd, t->qdlen);
-	n->namelen = t->qdlen;
-
-	/* The data is the DNS_HEADER, the reason, then the reply */
-	n->datalen = sizeof(DNS_HEADER) + sizeof(task_error_t) + t->replylen;
-	if (!(n->data = malloc(n->datalen)))
-		Err(_("out of memory"));
-	p = n->data;
-
-	/* Save DNS header */
-	memcpy(p, &t->hdr, sizeof(DNS_HEADER));
-	p += sizeof(DNS_HEADER);
-
-	/* Save reason for error, if any */
-	memcpy(p, &t->reason, sizeof(task_error_t));
-	p += sizeof(task_error_t);
-
-	/* Save reply data */
-	memcpy(p, t->reply, t->replylen);
-
-	n->insert_time = current_time;
-	if (ReplyCache->expire)
-		n->expire = current_time + ReplyCache->expire;
-	n->next_node = ReplyCache->nodes[hash];
-
-	/* Add node to cache */
-	ReplyCache->nodes[hash] = n;
-	ReplyCache->count++;
-
-	/* Add node to head of MRU list */
+	/* Found in cache; move to head of usefulness list */
+	mrulist_del(ReplyCache, n);
 	mrulist_add(ReplyCache, n);
+	return;
+      }
+    }
+  }
+
+  /* If the cache is full, delete the least recently used node and add new node */
+  if (ReplyCache->count >= ReplyCache->limit) {
+    if (ReplyCache->mruTail) {
+      ReplyCache->removed++;
+      ReplyCache->removed_secs += current_time - ReplyCache->mruTail->insert_time;
+      cache_free_node(ReplyCache, ReplyCache->mruTail->hash, ReplyCache->mruTail);
+    } else
+      return;
+  }
+
+  /* Add to cache */
+  ReplyCache->in++;
+
+  n = ALLOCATE(sizeof(CNODE), CNODE);
+  n->hash = hash;
+  n->zone = t->zone;
+  n->type = t->qtype;
+  n->protocol = t->protocol;
+  memcpy(n->name, t->qd, t->qdlen);
+  n->namelen = t->qdlen;
+
+  /* The data is the DNS_HEADER, the reason, then the reply */
+  n->datalen = sizeof(DNS_HEADER) + sizeof(task_error_t) + t->replylen;
+  n->data = ALLOCATE(n->datalen, char[]);
+  p = n->data;
+
+  /* Save DNS header */
+  memcpy(p, &t->hdr, sizeof(DNS_HEADER));
+  p += sizeof(DNS_HEADER);
+
+  /* Save reason for error, if any */
+  memcpy(p, &t->reason, sizeof(task_error_t));
+  p += sizeof(task_error_t);
+
+  /* Save reply data */
+  memcpy(p, t->reply, t->replylen);
+
+  n->insert_time = current_time;
+  if (ReplyCache->expire)
+    n->expire = current_time + ReplyCache->expire;
+  n->next_node = ReplyCache->nodes[hash];
+
+  /* Add node to cache */
+  ReplyCache->nodes[hash] = n;
+  ReplyCache->count++;
+
+  /* Add node to head of MRU list */
+  mrulist_add(ReplyCache, n);
 
 }
 /*--- add_reply_to_cache() ----------------------------------------------------------------------*/

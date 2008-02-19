@@ -39,6 +39,8 @@ extern char mydns_rr_table_name[PATH_MAX];
 extern char *mydns_soa_where_clause;
 extern char *mydns_rr_where_clause;
 
+extern size_t mydns_rr_data_length;
+
 /* If this is nonzero, an 'active' field is assumed to exist in the table, and
 	only active rows will be loaded by mydns_*_load() */
 extern int mydns_soa_use_active;
@@ -47,6 +49,10 @@ extern int mydns_soa_use_active;
 extern int mydns_rr_use_active;
 #define mydns_set_rr_use_active(S)	\
   (mydns_rr_use_active = (sql_iscolumn((S), mydns_rr_table_name, "active") && mydns_rr_use_active))
+
+extern int mydns_rr_extended_data;
+#define mydns_set_rr_extended_data(S)   \
+  (mydns_rr_extended_data = (sql_iscolumn((S), mydns_rr_table_name, "edata") && mydns_rr_extended_data))
 
 /* This is set by mydns_set_soa_use_xfer */
 extern int mydns_soa_use_xfer;
@@ -105,10 +111,11 @@ extern int mydns_rr_use_serial;
 #define	DNS_MAXLABELLEN			63		/* RFC1035: "63 octets or less" */
 #define	DNS_POINTER_MASK		0xC0
 #define	DNS_QUERYBUFSIZ			512		/* Used as buffer size for SQL queries */
-#define DNS_MAXDATALEN			511		/* Should be RFC1035: Drawn from BIND LENGTHs
-							 * Is limited by mysql key lengths - look for extension table
+#define DNS_MAXDATALEN			65536		/* Should be RFC1035: Drawn from BIND LENGTHs
 							 */
-
+#define DNS_DATALEN			128		/* Length of data field */
+#define DNS_MAXTXTLEN			2048		/* Arbitrary limit for TXT data */
+#define DNS_MAXTXTELEMLEN		255		/* Maximum string length in a text entry */
 /* Default values in SOA records */
 #define	DNS_DEFAULT_REFRESH		28800
 #define	DNS_DEFAULT_RETRY		7200
@@ -437,6 +444,7 @@ extern int		mydns_extract_arpa(char *, uint8_t ip[]);
 
 /* rr.c */
 extern long		mydns_rr_count(SQL *);
+extern void		mydns_rr_get_active_types(SQL *);
 extern void		mydns_set_rr_table_name(char *);
 extern void		mydns_set_rr_where_clause(char *);
 extern dns_qtype_t	mydns_rr_get_type(char *);
@@ -475,6 +483,7 @@ extern size_t		mydns_rr_size(MYDNS_RR *);
 
 /* soa.c */
 extern long		mydns_soa_count(SQL *);
+extern void		mydns_soa_get_active_types(SQL *);
 extern void		mydns_set_soa_table_name(char *);
 extern void		mydns_set_soa_where_clause(char *);
 extern MYDNS_SOA	*mydns_soa_parse(SQL_ROW);

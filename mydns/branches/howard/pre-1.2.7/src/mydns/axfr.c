@@ -36,24 +36,23 @@ static size_t total_records, total_octets;
 /* Stupid compiler doesn't know exit from _exit... */
 /* static void axfr_error(TASK *, const char *, ...) __attribute__ ((__noreturn__)); */
 static void
-axfr_error(TASK *t, const char *fmt, ...)
-{
-	va_list	ap;
-	char		msg[BUFSIZ];
+axfr_error(TASK *t, const char *fmt, ...) {
+  va_list	ap; 
+  char		msg[BUFSIZ];
 
-	va_start(ap, fmt);
-	vsnprintf(msg, sizeof(msg), fmt, ap);
-	va_end(ap);
+  va_start(ap, fmt);
+  vsnprintf(msg, sizeof(msg), fmt, ap);
+  va_end(ap);
 
-	if (t)
-		task_output_info(t, NULL);
-	else
-		Warnx("%s", msg);
+  if (t)
+    task_output_info(t, NULL);
+  else
+    Warnx("%s", msg);
 
-	sockclose(t->fd);
+  sockclose(t->fd);
 
-	_exit(EXIT_FAILURE);
-	/* NOTREACHED */
+  _exit(EXIT_FAILURE);
+  /* NOTREACHED */
 }
 /*--- axfr_error() ------------------------------------------------------------------------------*/
 
@@ -63,8 +62,7 @@ axfr_error(TASK *t, const char *fmt, ...)
 	Hard timeout called by SIGALRM after one hour.
 **************************************************************************************************/
 static void
-axfr_timeout(int dummy)
-{
+axfr_timeout(int dummy) {
 	axfr_error(NULL, _("AXFR timed out"));
 }
 /*--- axfr_timeout() ----------------------------------------------------------------------------*/
@@ -75,20 +73,19 @@ axfr_timeout(int dummy)
 	Wait for the client to become ready to read.  Times out after `task_timeout' seconds.
 **************************************************************************************************/
 static void
-axfr_write_wait(TASK *t)
-{
-	fd_set	wfd;
-	struct timeval tv;
-	int		rv;
+axfr_write_wait(TASK *t) {
+  fd_set		wfd;
+  struct timeval 	tv;
+  int			rv;
 
-	FD_ZERO(&wfd);
-	FD_SET(t->fd, &wfd);
-	tv.tv_sec = task_timeout;
-	tv.tv_usec = 0;
-	if ((rv = select(t->fd + 1, NULL, &wfd, NULL, &tv)) < 0)
-		axfr_error(t, "%s: %s", _("select"), strerror(errno));
-	if (rv != 1 || !FD_ISSET(t->fd, &wfd))
-		axfr_error(t, _("write timeout"));
+  FD_ZERO(&wfd);
+  FD_SET(t->fd, &wfd);
+  tv.tv_sec = task_timeout;
+  tv.tv_usec = 0;
+  if ((rv = select(t->fd + 1, NULL, &wfd, NULL, &tv)) < 0)
+    axfr_error(t, "%s: %s", _("select"), strerror(errno));
+  if (rv != 1 || !FD_ISSET(t->fd, &wfd))
+    axfr_error(t, _("write timeout"));
 }
 /*--- axfr_write_wait() -------------------------------------------------------------------------*/
 
@@ -98,20 +95,18 @@ axfr_write_wait(TASK *t)
 	Writes the specified buffer, obeying task_timeout (via axfr_write_wait).
 **************************************************************************************************/
 static void
-axfr_write(TASK *t, char *buf, size_t size)
-{
-	int		rv;
-	size_t	offset = 0;
+axfr_write(TASK *t, char *buf, size_t size) {
+  int		rv;
+  size_t	offset = 0;
 
-	do
-	{
-		axfr_write_wait(t);
-		if ((rv = write(t->fd, buf+offset, size-offset)) < 0)
-			axfr_error(t, "write: %s", strerror(errno));
-		if (!rv)
-			axfr_error(t, _("client closed connection"));
-		offset += rv;
-	} while (offset < size);
+  do {
+    axfr_write_wait(t);
+    if ((rv = write(t->fd, buf+offset, size-offset)) < 0)
+      axfr_error(t, "write: %s", strerror(errno));
+    if (!rv)
+      axfr_error(t, _("client closed connection"));
+    offset += rv;
+  } while (offset < size);
 }
 /*--- axfr_write() ------------------------------------------------------------------------------*/
 
@@ -121,33 +116,32 @@ axfr_write(TASK *t, char *buf, size_t size)
 	Sends one reply to the client.
 **************************************************************************************************/
 static void
-axfr_reply(TASK *t)
-{
-	char len[2], *l = len;
+axfr_reply(TASK *t) {
+  char len[2], *l = len;
 
-	build_reply(t, 0);
-	DNS_PUT16(l, t->replylen);
-	axfr_write(t, len, SIZE16);
-	axfr_write(t, t->reply, t->replylen);
-	total_octets += SIZE16 + t->replylen;
-	total_records++;
+  build_reply(t, 0);
+  DNS_PUT16(l, t->replylen);
+  axfr_write(t, len, SIZE16);
+  axfr_write(t, t->reply, t->replylen);
+  total_octets += SIZE16 + t->replylen;
+  total_records++;
 
-	/* Reset the pertinent parts of the task reply data */
-	rrlist_free(&t->an);
-	rrlist_free(&t->ns);
-	rrlist_free(&t->ar);
+  /* Reset the pertinent parts of the task reply data */
+  rrlist_free(&t->an);
+  rrlist_free(&t->ns);
+  rrlist_free(&t->ar);
 
-	Free(t->reply);
-	t->replylen = 0;
+  RELEASE(t->reply);
+  t->replylen = 0;
 
-	name_forget(t);
+  name_forget(t);
 
-	Free(t->rdata);
-	t->rdlen = 0;
+  RELEASE(t->rdata);
+  t->rdlen = 0;
 
-	/* Nuke question data */
-	t->qdcount = 0;
-	t->qdlen = 0;
+  /* Nuke question data */
+  t->qdcount = 0;
+  t->qdlen = 0;
 }
 /*--- axfr_reply() ------------------------------------------------------------------------------*/
 
@@ -178,11 +172,11 @@ check_xfer(TASK *t, MYDNS_SOA *soa) {
 			     (mydns_rr_use_active)? mydns_rr_active_types[0] : "",
 			     (mydns_rr_use_active)? "'" : "");
 
-  if (!(res = sql_query(sql, query, querylen))) {
-    Free(query);
+  res = sql_query(sql, query, querylen);
+  RELEASE(query);
+  if (!res) {
     ErrSQL(sql, "%s: %s", desctask(t), _("error loading zone transfer access rules"));
   }
-  Free(query);
 
   if ((row = sql_getrow(res, NULL))) {
     char *wild, *r;

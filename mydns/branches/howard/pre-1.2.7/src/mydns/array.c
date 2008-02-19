@@ -31,15 +31,11 @@ ARRAY *
 array_init(size_t initial_size) {
   ARRAY *a;
 
-  if (!(a = malloc(sizeof(ARRAY))))
-    Err(_("out of memory"));
+  a = ALLOCATE(sizeof(ARRAY), ARRAY);
 
   if (initial_size <= 0) initial_size = 1;
 
-  if (!(a->objects = calloc(sizeof(void*), initial_size))) {
-    Free(a);
-    Err(_("out of memory"));
-  }
+  a->objects = ALLOCATE_N(initial_size, sizeof(void*), void*);
 
   a->size = initial_size;
   a->maxidx = -1;
@@ -57,15 +53,15 @@ array_free(ARRAY *a, int release_contents) {
     int i;
     for (i = 0; i <= array_max(a); i++) {
       void *o = array_fetch(a, i);
-      Free(o);
+      RELEASE(o);
     }
   }
 
-  Free(a->objects);
+  RELEASE(a->objects);
   a->objects = NULL;
   a->size = 0;
   a->maxidx = -1;
-  Free(a);
+  RELEASE(a);
 }
 
 /**************************************************************************************************
@@ -78,9 +74,7 @@ array_append(ARRAY *a, void *o) {
   int idx = a->maxidx + 1;
 
   if (idx >= a->size) {
-    if (!(a->objects = (void**)realloc(a->objects, (a->size*2)*sizeof(void*)))) {
-      Err(_("out of memory"));
-    }
+    a->objects = (void**)REALLOCATE(a->objects, (a->size*2)*sizeof(void*), void*);
     a->size *= 2;
   }
 

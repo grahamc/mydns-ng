@@ -150,6 +150,8 @@ db_output_create_tables(void) {
 #endif
   printf("OR type='CNAME' OR type='HINFO' OR type='MX' OR type='NAPTR' OR type='NS' ");
   printf("OR type='PTR' OR type='RP' OR type='SRV' OR type='TXT'),\n");
+  if (mydns_rr_extended_data)
+    printf("  edata      BYTEA DEFAULT NULL,\n");
   if (mydns_rr_use_active) {
     printf("  active     VARCHAR(1) NOT NULL CHECK ");
     printf("(active='Y' OR active='N'");
@@ -170,7 +172,7 @@ db_output_create_tables(void) {
   printf("  id         INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,\n");
   printf("  zone       INT UNSIGNED NOT NULL,\n");
   printf("  name       CHAR(64) NOT NULL,\n");
-  printf("  data       VARBINARY(512) NOT NULL,\n");
+  printf("  data       VARBINARY(%d) NOT NULL,\n", mydns_rr_data_length);
   printf("  aux        INT UNSIGNED NOT NULL,\n");
   printf("  ttl        INT UNSIGNED NOT NULL default '%u',\n", DNS_DEFAULT_TTL);
   printf("  type       ENUM('A','AAAA',");
@@ -178,10 +180,12 @@ db_output_create_tables(void) {
   printf("'ALIAS',");
 #endif
   printf("'CNAME','HINFO','MX','NAPTR','NS','PTR','RP','SRV','TXT'),\n");
+  if (mydns_rr_extended_data)
+    printf("  edata      BLOB(65408) DEFAULT NULL,\n");
   if (mydns_rr_use_active)
-    printf("  active     ENUM('Y', 'N'%s) NOT NULL default 'Y',\n", (dns_ixfr_enabled)?", 'D'":"");
+    printf("  active     ENUM('Y', 'N'%s) NOT NULL DEFAULT 'Y',\n", (dns_ixfr_enabled)?", 'D'":"");
   if (dns_ixfr_enabled) {
-    printf("  stamp      timestamp NOT NULL default CURRENT_TIMESTAMP,\n");
+    printf("  stamp      timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n");
     printf("  serial     INT UNSIGNED DEFAULT NULL,\n");
   }
   printf("  UNIQUE KEY rr (zone,name,type,data");
@@ -209,14 +213,14 @@ db_sql_numrows(const char *fmt, ...) {
   int		rv;
 
   va_start(ap, fmt);
-  querylen = vasprintf(&query,fmt, ap);
+  querylen = VASPRINTF(&query,fmt, ap);
   va_end(ap);
 
-  if (!(res = sql_query(sql, query, querylen))) {
-    Free(query);
+  res = sql_query(sql, query, querylen);
+  RELEASE(query);
+  if (!res) {
     ErrSQL(sql, "%s", _("database error"));
   }
-  Free(query);
   rv = sql_num_rows(res);
   sql_free(res);
   return (rv);
@@ -278,6 +282,7 @@ db_check_optional(void) {
   int		old_soa_use_update_acl = mydns_soa_use_update_acl;
   int		old_soa_use_recursive = mydns_soa_use_recursive;
   int		old_rr_use_active = mydns_rr_use_active;
+  int		old_rr_extended_data = mydns_rr_extended_data;
   int		old_rr_use_stamp = mydns_rr_use_stamp;
   int		old_rr_use_serial = mydns_rr_use_serial;
 
@@ -285,6 +290,8 @@ db_check_optional(void) {
   mydns_set_soa_use_active(sql);
   if (mydns_soa_use_active != old_soa_use_active)
     Verbose(_("optional 'active' column found in '%s' table"), mydns_soa_table_name);
+
+  if (mydns_soa_use_active) mydns_soa_get_active_types(sql);
 
   /* Check for soa.xfer */
   mydns_set_soa_use_xfer(sql);
@@ -301,10 +308,17 @@ db_check_optional(void) {
   if (mydns_soa_use_recursive != old_soa_use_recursive)
     Verbose(_("optional 'recursive' column found in '%s' table"), mydns_soa_table_name);
 
+  /* Check for rr.edata */
+  mydns_set_rr_extended_data(sql);
+  if (mydns_rr_extended_data != old_rr_extended_data)
+    Verbose(_("optional 'edata' column found in '%s' table"), mydns_rr_table_name);
+
   /* Check for rr.active */
   mydns_set_rr_use_active(sql);
   if (mydns_rr_use_active != old_rr_use_active)
     Verbose(_("optional 'active' column found in '%s' table"), mydns_rr_table_name);
+
+  if (mydns_rr_use_active) mydns_rr_get_active_types(sql);
 
   /* Check for rr.stamp */
   mydns_set_rr_use_stamp(sql);

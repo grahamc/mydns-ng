@@ -207,8 +207,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
     return formerr(t, DNS_RCODE_FORMERR, ERR_MALFORMED_REQUEST, _("question has zero length"));
   }
 
-  if (!(t->qd = malloc(t->qdlen)))
-    Err(_("out of memory"));
+  t->qd = ALLOCATE(t->qdlen, char[]);
 
   memcpy(t->qd, src, t->qdlen);
   qdtop = src;
@@ -219,7 +218,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
     return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
   }
   strncpy(t->qname, (char*)qname, sizeof(t->qname)-1);
-  Free(qname);
+  RELEASE(qname);
 
   /* Now we have question data, so initialize encoding */
   if (reply_init(t) < 0) {
@@ -279,8 +278,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
     if ((t->hdr.opcode == DNS_OPCODE_UPDATE)
 	|| (t->hdr.opcode == DNS_OPCODE_QUERY && t->qtype == DNS_QTYPE_IXFR)) {
       t->len = len;
-      if (!(t->query = malloc(t->len)))
-	Err(_("out of memory"));
+      t->query = ALLOCATE(t->len, char[]);
       memcpy(t->query, data, t->len);
     }
   }
@@ -362,8 +360,7 @@ clientaddr(TASK *t) {
 	Describe a task; used by error/warning/debug output.
 **************************************************************************************************/
 char *
-desctask(TASK *t)
-{
+desctask(TASK *t) {
 	static char desc[1024];
 
 	snprintf(desc, sizeof(desc), "%s: %s %s (%u) %s, %s %s",
@@ -398,12 +395,11 @@ _task_init(
   uint16_t			id;
 
   if (!taskvec) {
-    taskvec = (uint8_t*)malloc(TASKVECSZ);
+    taskvec = (uint8_t*)ALLOCATE(TASKVECSZ, uint8_t[]);
     TASKVEC_ZERO(taskvec);
   }
 
-  if (!(new = calloc(1, sizeof(TASK))))
-    Err(_("out of memory"));
+  new = ALLOCATE(sizeof(TASK), TASK);
 
   new->status = status;
   new->fd = fd;
@@ -471,30 +467,30 @@ _task_free(TASK *t, const char *file, int line) {
     t->freeextension(t, t->extension);
   }
 	
-  Free(t->extension);
+  RELEASE(t->extension);
 	  
 #if DYNAMIC_NAMES
   {
     register int n;
     for (n = 0; n < t->numNames; n++)
-      Free(t->Names[n]);
+      RELEASE(t->Names[n]);
     if (t->numNames)
-      Free(t->Names);
-    Free(t->Offsets);
+      RELEASE(t->Names);
+    RELEASE(t->Offsets);
   }
 #endif
 
-  Free(t->query);
-  Free(t->qd);
+  RELEASE(t->query);
+  RELEASE(t->qd);
   rrlist_free(&t->an);
   rrlist_free(&t->ns);
   rrlist_free(&t->ar);
-  Free(t->rdata);
-  Free(t->reply);
+  RELEASE(t->rdata);
+  RELEASE(t->reply);
 
   TASKVEC_CLR(t->id, taskvec);
 
-  Free(t);
+  RELEASE(t);
 
   if (answer_then_quit && (Status.udp_requests + Status.tcp_requests) >= answer_then_quit)
     named_cleanup(SIGQUIT);
@@ -508,7 +504,7 @@ task_add_extension(TASK *t, void *extension, FreeExtension freeextension, RunExt
   if (t->extension && t->freeextension) {
     t->freeextension(t, t->extension);
   }
-  Free(t->extension);
+  RELEASE(t->extension);
 
   t->extension = extension;
   t->freeextension = freeextension;
@@ -517,12 +513,11 @@ task_add_extension(TASK *t, void *extension, FreeExtension freeextension, RunExt
 }
 
 void
-task_remove_extension(TASK *t)
-{
+task_remove_extension(TASK *t) {
   if (t->extension && t->freeextension) {
     t->freeextension(t, t->extension);
   }
-  Free(t->extension);
+  RELEASE(t->extension);
   t->extension = NULL;
   t->freeextension = NULL;
   t->runextension = NULL;
@@ -535,8 +530,7 @@ task_remove_extension(TASK *t)
 	Sets and/or clears header fields and values as necessary.
 **************************************************************************************************/
 void
-task_init_header(TASK *t)
-{
+task_init_header(TASK *t) {
 	t->hdr.qr = 1;					/* This is the response, not the query */
 	t->hdr.ra = forward_recursive;			/* Are recursive queries available? */
 	t->hdr.rcode = DNS_RCODE_NOERROR;		/* Assume success unless told otherwise */
@@ -548,8 +542,7 @@ task_init_header(TASK *t)
 	TASK_OUTPUT_INFO
 **************************************************************************************************/
 void
-task_output_info(TASK *t, char *update_desc)
-{
+task_output_info(TASK *t, char *update_desc) {
 #if !DISABLE_DATE_LOGGING
 	struct timeval tv;
 	time_t tt;

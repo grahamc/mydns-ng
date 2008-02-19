@@ -79,10 +79,7 @@ static COMMS *
 __comms_allocate() {
   COMMS		*comms;
 
-  comms = (COMMS*)malloc(sizeof(COMMS));
-
-  if (!comms)
-    Err(_("out of memory"));
+  comms = (COMMS*)ALLOCATE(sizeof(COMMS), COMMS);
 
   comms->message = NULL;
   comms->donesofar = 0;
@@ -96,11 +93,7 @@ __message_allocate(size_t messagelength) {
   COMMSMESSAGE	*message;
 
   messagelength += sizeof(COMMSMESSAGE) - sizeof(message->messagedata) + 1;
-  message = (COMMSMESSAGE*)malloc(messagelength);
-
-  if (!message)
-    Err(_("out of memory"));
-
+  message = (COMMSMESSAGE*)ALLOCATE(messagelength, COMMSMESSAGE);
 
   message->messageid = htons(messageid++);
   message->messagelength = htons(messagelength);
@@ -132,7 +125,7 @@ __comms_free(TASK *t, void *data) {
   if (!comms) return;
 
   __message_free(t, comms->message);
-  Free(comms->message);
+  RELEASE(comms->message);
 }
 
 static int
@@ -365,33 +358,30 @@ static taskexec_t
 scomms_tick(TASK *t, void* data) {
   taskexec_t	rv = TASK_CONTINUE;
   COMMS		*comms = (COMMS*)data;
+  int		lastseen = current_time - comms->connectionalive;
 
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
   int		fd = t->fd;
 #endif
 
-  if ((current_time - comms->connectionalive) > (5*KEEPALIVE)) {
+  if (lastseen <= KEEPALIVE)
+    rv = TASK_CONTINUE;
+  else if (lastseen  <= (5*KEEPALIVE))
+    rv = comms_sendping(t, __comms_allocate(), NULL);
+  else
+    rv = TASK_FAILED;
+
+  if (rv == TASK_FAILED) {
     /* Nothing from the master for 5 cycles assume one of us has gone AWOL */
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
     Debug("%s: Server comms tick - master has not pinged for %d seconds", desctask(t),
-	  (int)(current_time - comms->connectionalive));
+	  lastseen);
 #endif
     named_shutdown(0);
     return TASK_FAILED;
   }
 
   t->timeout = current_time + KEEPALIVE;
-
-  if ((current_time - comms->connectionalive) > KEEPALIVE)
-    rv = comms_sendping(t, __comms_allocate(), NULL);
-
-  if (rv == TASK_FAILED) {
-#if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-    Debug("%s: Server comms tick - connection to master has failed fd %d", desctask(t), fd);
-#endif
-    named_shutdown(0);
-    return TASK_FAILED;
-  }
 
   return TASK_CONTINUE;
 }
@@ -400,31 +390,39 @@ static int
 mcomms_tick(TASK *t, void* data) {
   taskexec_t	rv = TASK_CONTINUE;
   COMMS		*comms = (COMMS*)data;
+  int		lastseen = current_time - comms->connectionalive;
 
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
   int		fd = t->fd;
 #endif
 
-  if ((current_time - comms->connectionalive) > (5*KEEPALIVE)) {
-    /* Shutdown and restart server at other end of connection */
-#if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-    Debug("%s: Master comms tick - connection to server has not pinged for %d seconds", desctask(t),
-	  (int)(current_time - comms->connectionalive));
-#endif
-    ;
-  }
-
-  t->timeout = current_time + KEEPALIVE;
-
-  if ((current_time - comms->connectionalive) > KEEPALIVE)
+  if (lastseen <= KEEPALIVE) 
+    rv = TASK_CONTINUE;
+  else if (lastseen <= (5*KEEPALIVE))
     rv = comms_sendping(t, comms, NULL);
+  else
+    rv = TASK_FAILED;
 
   if (rv == TASK_FAILED) {
     /* Shutdown and restart server at other end of connection */
+    SERVER *server = find_server_for_task(t);
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-    Debug("%s: Master comms tick - connection to server has failed fd %d", desctask(t), fd);
+    Debug("%s: Master comms tick - connection to server has not pinged for %d seconds", desctask(t),
+	  lastseen);
 #endif
-    ;
+    if (!server) {
+      /* Server has gone but task has not so just let this one go away */
+      return TASK_FAILED;
+    }
+    if (server->signalled) {
+      server->signalled = SIGKILL;
+    } else {
+      server->signalled = SIGTERM;
+    }
+    kill_server(server, server->signalled);
+    t->timeout = current_time + 5; /* Give the server time to die */
+  } else {
+    t->timeout = current_time + KEEPALIVE;
   }
 
   return TASK_CONTINUE;

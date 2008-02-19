@@ -330,7 +330,12 @@ typedef unsigned int uint32_t;
 #  define   __FUNCTION_NAME   __PRETTY_FUNCTION__
 #endif
 
-
+#ifndef MAX
+#define MAX(__N__, __M__) (((__N__) > (__M__))?(__N__):(__M__))
+#endif
+#ifndef MIN
+#define MIN(__N__, __M__) (((__N__) < (__M__))?(__N__):(__M__))
+#endif
 
 /* cidr.c */
 extern int in_cidr(char *cidr, struct in_addr ip);
@@ -359,19 +364,96 @@ extern void	conf_set(CONF **, char *, char *, int);
 extern char	*conf_get(CONF **, char *, int *);
 extern void	conf_load(CONF **, const char *);
 
-#define	Free(P)	if ((P)) free((P)), (P) = NULL
+#define MEMMAN 1
 
+#if MEMMAN == 0
+#define __ALLOCATE__(SIZE, THING, COUNT, ARENA) calloc(COUNT, SIZE)
+#define __REALLOCATE__(OBJECT, SIZE, THING, COUNT, ARENA) realloc(OBJECT, (COUNT)*(SIZE))
+#define __RELEASE__(OBJECT, COUNT, ARENA)  if ((OBJECT)) free((OBJECT)), (OBJECT) = NULL
+#define STRDUP(__STRING__) strdup(__STRING__)
+#define ASPRINTF asprintf
+#define VASPRINTF vasprintf
+#else
+#define __ALLOCATE__(SIZE, THING, COUNT, ARENA)	\
+  _mydns_allocate(SIZE, COUNT, ARENA, "##THING##", __FILE__, __LINE__)
+#define __REALLOCATE__(OBJECT, SIZE, THING, COUNT, ARENA) \
+  _mydns_reallocate(OBJECT, SIZE, COUNT, ARENA, "##THING##", __FILE__, __LINE__)
+#define __RELEASE__(OBJECT, COUNT, ARENA) \
+  _mydns_release(OBJECT, COUNT, ARENA, __FILE__, __LINE__), (OBJECT) = NULL
+
+#define STRDUP(__STRING__)		_mydns_strdup(__STRING__, ARENA_GLOBAL, __FILE__, __LINE__)
+
+#define ASPRINTF			_mydns_asprintf
+#define VASPRINTF			_mydns_vasprintf
+
+#endif
+
+/*
+**  memoryman.c
+**  Memory management functions.
+*/
+typedef enum _arena_t {
+  ARENA_GLOBAL		= 0,
+  ARENA_LOCAL		= 1,
+  ARENA_SHARED0		= 2,
+} arena_t;
+
+extern int	_mydns_asprintf(char **strp, const char *fmt, ...);
+extern int	_mydns_vasprintf(char **strp, const char *fmt, va_list ap);
+extern char *	_mydns_strdup(const char *, arena_t, char *, int);
+extern void *	_mydns_allocate(size_t, size_t, arena_t, char *, char *, int);
+extern void *	_mydns_reallocate(void *, size_t, size_t, arena_t, char *, char *, int);
+extern void	_mydns_release(void *, size_t, arena_t, char *, int);
+
+#define ALLOCATE_GLOBAL(SIZE, THING) \
+  __ALLOCATE__(SIZE, THING, 1, ARENA_GLOBAL)
+#define ALLOCATE_LOCAL(SIZE, THING) \
+  __ALLOCATE__(SIZE, THING, 1, ARENA_LOCAL)
+#define ALLOCATE_SHARED(SIZE, THING, POOL) \
+  __ALLOCATE__(SIZE, THING, 1, ARENA_SHARED##POOL)
+
+#define ALLOCATE_N_GLOBAL(COUNT, SIZE, THING) \
+  __ALLOCATE__(SIZE, THING, COUNT, ARENA_GLOBAL)
+#define ALLOCATE_N_LOCAL(COUNT, SIZE, THING) \
+  __ALLOCATE__(SIZE, THING, COUNT, ARENA_LOCAL)
+#define ALLOCATE_N_SHARED(COUNT, SIZE, THING, POOL) \
+  __ALLOCATE__(SIZE, THING, COUNT, ARENA_SHARED##POOL)
+
+#define ALLOCATE(SIZE, THING) \
+  ALLOCATE_GLOBAL(SIZE, THING)
+#define ALLOCATE_N(COUNT, SIZE, THING)	\
+  ALLOCATE_N_GLOBAL(COUNT, SIZE, THING)
+
+#define REALLOCATE_GLOBAL(OBJECT, SIZE, THING) \
+  __REALLOCATE__(OBJECT, SIZE, THING, 1, ARENA_GLOBAL)
+#define REALLOCATE_LOCAL(OBJECT, SIZE, THING) \
+  __REALLOCATE__(OBJECT, SIZE, THING, 1, ARENA_LOCAL)
+#define REALLOCATE_SHARED(OBJECT, SIZE, THING, POOL) \
+  __REALLOCATE__(OBJECT, SIZE, THING, 1, ARENA_SHARED##POOL)
+
+#define REALLOCATE(OBJECT, SIZE, THING)	\
+  REALLOCATE_GLOBAL(OBJECT, SIZE, THING)
+
+#define RELEASE_GLOBAL(OBJECT) \
+  __RELEASE__(OBJECT, 1, ARENA_GLOBAL)
+#define RELEASE_LOCAL(OBJECT) \
+  __RELEASE__(OBJECT, 1, ARENA_LOCAL)
+#define RELEASE_SHARED(OBJECT, POOL) \
+  __RELEASE__(OBJECT, 1, ARENA_SHARED##POOL)
+
+#define RELEASE(OBJECT)	\
+  RELEASE_GLOBAL(OBJECT)
 
 /*
 **  error.c
 **  Error reporting functions.
 */
-extern char *progname;											/* The name of this program */
-extern int	err_verbose;										/* Should ERR_VERBOSE output anything? */
+extern char *progname;						/* The name of this program */
+extern int	err_verbose;					/* Should ERR_VERBOSE output anything? */
 #if DEBUG_ENABLED
-extern int	err_debug;											/* Should ERR_DEBUG output anything? */
+extern int	err_debug;					/* Should ERR_DEBUG output anything? */
 #endif
-extern FILE	*err_file;											/* Output to this file */
+extern FILE	*err_file;					/* Output to this file */
 
 
 extern void error_init(const char *argv0, int facility);

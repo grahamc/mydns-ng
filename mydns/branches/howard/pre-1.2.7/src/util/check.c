@@ -43,7 +43,7 @@ __EXPAND_DATA(char *s) {
   if (*s) slen += 1;
   slen += strlen(soa->origin);
 
-  s = (char*)realloc(s, slen + 1);
+  s = REALLOCATE(s, slen + 1, char[]);
   if (*s) strcat(s, ".");
   strcat(s, soa->origin);
 
@@ -281,7 +281,7 @@ check_name(const char *name_in, const char *col, int is_rr) {
   fqdnlen = strlen(name_in);
   if (is_rr && *name_in && LASTCHAR(name_in) != '.') fqdnlen += strlen(soa->origin) + 1;
 
-  fqdn = (char*)malloc(fqdnlen + 1);
+  fqdn = ALLOCATE(fqdnlen + 1, char[]);
 
   strncpy(fqdn, name_in, sizeof(fqdn)-1);
 
@@ -299,7 +299,7 @@ check_name(const char *name_in, const char *col, int is_rr) {
 
   /* Break into labels, verifying each */
   if (strcmp(fqdn, ".")) {
-    buf = strdup(fqdn);
+    buf = STRDUP(fqdn);
     for (b = buf; (label = strsep(&b, ".")); ) {
       register int len = strlen(label);
       register char *cp;
@@ -329,7 +329,7 @@ check_name(const char *name_in, const char *col, int is_rr) {
       } else if (!is_rr)
 	rrproblem(_("Wildcard not allowed in `%s'"), col);
     }
-    Free(buf);
+    RELEASE(buf);
   }
 
 #ifdef EXTENDED_CHECK_WRITTEN
@@ -337,7 +337,7 @@ check_name(const char *name_in, const char *col, int is_rr) {
   if (is_rr && opt_extended_check)
     check_name_extended(name_in, fqdn, col);
 #endif
-  Free(fqdn);
+  RELEASE(fqdn);
 }
 /*--- check_name() ------------------------------------------------------------------------------*/
 
@@ -358,7 +358,7 @@ check_soa(const char *zone) {
   rr = NULL;
 
   /* SOA validation */
-  name = (char*) realloc(name, strlen(soa->origin) + 1);
+  name = REALLOCATE(name, strlen(soa->origin) + 1, char[]);
   strcpy(name, soa->origin);
   check_name(soa->ns, "soa.ns", 0);
   check_name(soa->mbox, "soa.mbox", 0);
@@ -395,14 +395,14 @@ check_rr_cname(void) {
   found = sql_count(sql,
 		    "SELECT COUNT(*) FROM %s WHERE zone=%u AND name='%s' AND type != 'CNAME' AND type != 'ALIAS'",
 		    mydns_rr_table_name, rr->zone, xname);
-  Free(xname);
+  RELEASE(xname);
   /* If not found that way, check short name */
   if (!found) {
     xname = sql_escstr(sql, (char *)shortname(name, 1));
     found = sql_count(sql,
 		      "SELECT COUNT(*) FROM %s WHERE zone=%u AND name='%s' AND type != 'CNAME' AND type != 'ALIAS'",
 		      mydns_rr_table_name, rr->zone, xname);
-    Free(xname);
+    RELEASE(xname);
     EXPAND_DATA(name);
   }
 
@@ -435,8 +435,8 @@ check_rr_naptr(void) {
   char *tmp, *data_copy, *p;
   int tmplen = MYDNS_RR_DATA_LENGTH(rr);
 
-  data_copy = strdup(MYDNS_RR_DATA(rr));
-  tmp = malloc(tmplen);
+  data_copy = STRDUP(MYDNS_RR_DATA(rr));
+  tmp = ALLOCATE(tmplen, char[]);
   p = data_copy;
 
   if (!strsep_quotes(&p, tmp, tmplen))
@@ -460,8 +460,8 @@ check_rr_naptr(void) {
   /* For now, don't check 'replacement'.. the example in the RFC even contains illegal chars */
   /* EXPAND_DATA(tmp); */
   /* check_name(tmp, "replacement", 1); */
-  Free(data_copy);
-  Free(tmp);
+  RELEASE(data_copy);
+  RELEASE(tmp);
 }
 /*--- check_rr_naptr() --------------------------------------------------------------------------*/
 
@@ -475,8 +475,8 @@ check_rr(void) {
   /* Expand RR's name into `name' */
   int	namelen = strlen(MYDNS_RR_NAME(rr));
 
-  name = (char*)realloc(name, namelen+1);
-  data = (char*)realloc(data, MYDNS_RR_DATA_LENGTH(rr)+1);
+  name = REALLOCATE(name, namelen+1, char[]);
+  data = REALLOCATE(data, MYDNS_RR_DATA_LENGTH(rr)+1, char[]);
   strncpy(name, MYDNS_RR_NAME(rr), namelen);
   strncpy(data, MYDNS_RR_DATA_VALUE(rr), MYDNS_RR_DATA_LENGTH(rr));
   EXPAND_DATA(name);
@@ -540,12 +540,12 @@ check_rr(void) {
     {
       char	*txt;
 
-      txt = malloc(strlen(MYDNS_RR_RP_TXT(rr)) + 1);
+      txt = ALLOCATE(strlen(MYDNS_RR_RP_TXT(rr)) + 1, char[]);
       strcpy(txt, MYDNS_RR_RP_TXT(rr));
       EXPAND_DATA(txt);
       check_name(data, "rr.data (mbox)", 1);
       check_name(txt, "rr.data (txt)", 1);
-      Free(txt);
+      RELEASE(txt);
     }
     break;
 
@@ -554,7 +554,24 @@ check_rr(void) {
     break;
 
   case DNS_QTYPE_TXT:							/* Data: Undefined text string */
-    /* Can be anything, so consider it always OK */
+    /*
+     * Data length must be less than DNS_MAXTXTLEN
+     * and each element must be less than DNS_MAXTXTELEMLEN
+     */
+    if (MYDNS_RR_DATA_LENGTH(rr) > DNS_MAXTXTLEN)
+      rrproblem(_("Text record length is too great"));
+    {
+      char	*txt = MYDNS_RR_DATA_VALUE(rr);
+      uint16_t	txtlen = MYDNS_RR_DATA_LENGTH(rr);
+
+      while (txtlen > 0) {
+	uint16_t len = strlen(txt);
+	if (len > DNS_MAXTXTELEMLEN)
+	  rrproblem(_("Text element in TXT record is too long"));
+	txt = &txt[len];
+	txtlen -= len;
+      }
+    }
     break;
 
   default:
@@ -579,10 +596,10 @@ check_zone(void) {
   SQL_ROW row;
   unsigned long *lengths;
 
-  querylen = asprintf(&query, "SELECT "MYDNS_RR_FIELDS" FROM %s WHERE zone=%u",
+  querylen = ASPRINTF(&query, "SELECT "MYDNS_RR_FIELDS" FROM %s WHERE zone=%u",
 		      mydns_rr_table_name, soa->id);
   res = sql_query(sql, query, querylen);
-  Free(query);
+  RELEASE(query);
   if (!res) 
     return;
 
@@ -614,12 +631,13 @@ consistency_rr_zone(void) {
   SQL_RES *res;
   SQL_ROW row;
 
-  querylen = asprintf(&query,
+  querylen = ASPRINTF(&query,
 		      "SELECT %s.id,%s.zone FROM %s LEFT JOIN %s ON %s.zone=%s.id WHERE %s.id IS NULL",
-		      mydns_rr_table_name, mydns_rr_table_name, mydns_rr_table_name, mydns_soa_table_name,
-		      mydns_rr_table_name, mydns_soa_table_name, mydns_soa_table_name);
+		      mydns_rr_table_name, mydns_rr_table_name, mydns_rr_table_name,
+		      mydns_soa_table_name, mydns_rr_table_name, mydns_soa_table_name,
+		      mydns_soa_table_name);
   res = sql_query(sql, query, querylen);
-  Free(query);
+  RELEASE(query);
   if (!res)
     return;
   while ((row = sql_getrow(res, NULL))) {
@@ -655,7 +673,7 @@ consistency_check(void) {
 **************************************************************************************************/
 int
 main(int argc, char **argv) {
-  setlocale(LC_ALL, "");						/* Internationalization */
+  setlocale(LC_ALL, "");					/* Internationalization */
   bindtextdomain(PACKAGE, LOCALEDIR);
   textdomain(PACKAGE);
   cmdline(argc, argv);
@@ -664,16 +682,16 @@ main(int argc, char **argv) {
   db_connect();
 
   if (!opt_consistency_only) {
-    if (optind >= argc)	{						/* Check all zones */
+    if (optind >= argc)	{					/* Check all zones */
       char *query;
       size_t querylen;
       SQL_RES *res;
       SQL_ROW row;
       unsigned long current = 0, total;
 
-      querylen = asprintf(&query, "SELECT origin FROM %s", mydns_soa_table_name);
+      querylen = ASPRINTF(&query, "SELECT origin FROM %s", mydns_soa_table_name);
       res = sql_query(sql, query, querylen);
-      Free(query);
+      RELEASE(query);
       if(res) {
 	total = sql_num_rows(res);
 	while ((row = sql_getrow(res, NULL))) {
@@ -686,11 +704,11 @@ main(int argc, char **argv) {
 	sql_free(res);
       }
     }
-    else while (optind < argc) {					/* Check zones provided as args */
+    else while (optind < argc) {				/* Check zones provided as args */
       char *zone;
       int zonelen = strlen(argv[optind]);
       if (*argv[optind] && LASTCHAR(argv[optind]) != '.') zonelen += 1;
-      zone = (char*)malloc(zonelen);
+      zone = ALLOCATE(zonelen, char[]);
       strcpy(zone, argv[optind++]);
       if (*zone && LASTCHAR(zone) != '.')
 	strcat(zone, ".");
@@ -698,12 +716,12 @@ main(int argc, char **argv) {
 	check_zone();
 	mydns_soa_free(soa);
       }
-      Free(zone);
+      RELEASE(zone);
     }
   }
 
   if (opt_consistency)
-    consistency_check();						/* Do consistency check if requested */
+    consistency_check();					/* Do consistency check if requested */
   
   meter(0, 0);
   if (!syntax_errors && !consistency_errors)

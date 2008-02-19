@@ -46,6 +46,11 @@ however, the field types are slightly different.  You can run
 @cindex expire
 @cindex minimum
 @cindex TTL
+@cindex active
+@cindex recursive
+@cindex xfer
+@cindex update_acl
+@cindex also_notify
 
 The @samp{soa} table contains one row for each zone for which the server is
 authoritative.
@@ -129,6 +134,34 @@ source of the information should again be consulted.  Zero values are
 interpreted to mean that the zone should not be cached.@*
 @i{ex:} @b{@code{86400}}
 
+@c *** ACTIVE
+@item @samp{active ENUM('Y', 'N') NOT NULL DEFAULT 'Y'} (@i{MySQL})
+@item @samp{active VARCHAR(1) NOT NULL CHECK (active='Y' OR active='N')} (@i{PostgreSQL})
+Optional column allowing zones to be marked inactive and therefore ignored by the
+server.
+
+@c ** RECURSIVE
+@item @samp{recursive ENUM('Y', 'N') NOT NULL DEFAULT 'N'} (@i{MySQL})
+@item @samp{recursive VARCHAR(1) NOT NULL CHECK (recursive='Y' O recursive='N')} (@i{PostgreSQL})
+Optional column marking the zone as recursive - is this is true then the server will delegate
+any requests for resolution to an external resolver. @b{This is due to be replaced by a zone type column shortly}
+
+@c ** XFER
+@item @samp{xfer CHAR(255) DEFAULT NULL} (@i{MySQL})
+@item @samp{xfer CHAR(255) DEFAULT NULL} (@i{PostgreSQL})
+Optional column specifying the ACL for allowing AXFR/IXFR requests. Currently specified as an IP address list.
+
+@c ** UPDATE_ACL
+@item @samp{update_acl CHAR(255) DEFAULT NULL} (@i{MySQL})
+@item @samp{update_acl CHAR(255) DEFAULT NULL} (@i{PostgreSQL})
+Optional column specifying the ACL controlling who can update a zone. Currently specified as an IP address list.
+
+@c ** ALSO_NOTIFY
+@item @samp{also_notify CHAR(255) DEFAULT NULL} (@i{MySQL})
+@item @samp{also_notify CHAR(255) DEFAULT NULL} (@i{PostgreSQL})
+Optional column specifying the name servers, other than those mentioned in the zone data, that should receive
+NOTIFY messages. Specified as a list of IP addresses.
+ 
 @end table
 
 
@@ -197,6 +230,24 @@ The time interval that this resource record may be cached before the
 source of the information should again be consulted.  Zero values are
 interpreted to mean that the RR can only be used for the transaction
 in progress, and should not be cached.
+
+@c *** ACTIVE
+@item @samp{active ENUM('Y', 'N', 'D') NOT NULL DEFAULT 'Y'} (@i{MySQL})
+@item @samp{active VARCHAR(1) NOT NULL CHECK (active='Y' OR active='N' OR active='D')} (@i{PostgreSQL})
+Optional column used to mark a record as active. When not set to Y the record is not served out by the
+server during normal requests or AXFR's. However if IXFR processing is enabled and the record is marked
+as 'D' (@i{deleted}) then it is visible in IXFR responses. If IXFR is disabled then 'D' === 'N'.
+
+@c *** STAMP
+@item @samp{stamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP} (@i{MySQL})
+@item @samp{stamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP} (@i{PostgreSQL})
+Optional column used to mark the last modified time and date of the record. Utilised in IXFR processing.
+
+@c *** SERIAL
+@item @samp{serial INT UNSIGNED DEFAULT NULL} (@i{MySQL})
+@item @samp{serial INTEGER DEFAULT NULL} (@i{PostgreSQL})
+Optional column used to contain the serial number of the zone when the record was created.
+Utilised in IXFR processing.
 
 @end table
 
@@ -351,6 +402,9 @@ is issued for the host specified by @samp{name}.
 @section Optional columns
 @cindex optional columns
 
+As shown above MyDNS allows optional columns in the tables. These are utilised when extended operation is
+enabled. The configuration must aenable the use of these columns before they will have any effect.
+
 Each of these columns is optional.
 
 If these columns exist, MyDNS will notice this and enable additional code
@@ -363,6 +417,10 @@ rescan the tables by sending it a SIGHUP signal (@pxref{Signals}).
 * any.active::      Activating and deactivating individual rows.
 * soa.xfer::        Zone transfer access rules.
 * soa.update_acl::  Dynamic DNS UPDATE access rules.
+* soa.also_notify:: Notify additional servers on zone update.
+* soa.recursive::   Zone will be handled by the recursive server.
+* rr.stamp::        Modification timestamp.
+* rr.serial::       Creation serial number.
 @end menu
 
 
@@ -489,5 +547,119 @@ mydns=# ALTER TABLE soa ADD COLUMN update_acl VARCHAR(255);
 mydns=# UPDATE soa SET update_acl='';
 mydns=# ALTER TABLE soa ALTER COLUMN update_acl SET NOT NULL;
 mydns=# ALTER TABLE soa ALTER COLUMN update_acl SET DEFAULT '';
+@end example
+
+@c ***
+@c ***  OPTIONAL: SOA.ALSO_NOTIFY
+@c ***
+@node soa.also_notify
+@subsection soa.also_notify
+@cindex also_notify
+
+If the @samp{soa} table contains a column named @samp{also_notify} and dynamic DNS updates
+are enabled (@pxref{DNS UPDATE}), the @samp{also_notify} column
+will be examined whenever an UPDATE is processed successfully by the server.
+
+The @samp{also_notify} column should contain one or more IP addresses separated
+by commas. These IP addresses will be used to send NOTIFY messages to additional name servers.
+
+The IP addresses in @samp{also_notify} must be host addresses and may not contain any wildcard
+specifications.
+
+The @samp{also_notify} column may be any size you want, whatever size you think
+will be adequate to hold the list of additional servers for the zone.
+
+To create an @samp{also_notify} column on your @samp{soa} table, for example, you
+might issue SQL statements like this:
+
+@i{MySQL}
+@example
+mysql> ALTER TABLE mydns.soq ADD COLUMN also_notify CHAR(255) DEFAULT NULL;
+@end example
+
+@i{PostgreSQL}
+@example
+mydns=# ALTER TABLE soa ADD COLUMN also_notify VARCHAR(255) DEFAULT NULL;
+@end example
+
+@c ***
+@c ***  OPTIONAL: SOA.RECURSIVE
+@c ***
+@node soa.recursive
+@subsection soa.recursive
+@cindex recursive
+
+If the @samp{soa} table contains a column named @samp{recursive} the column will be examined
+on every request and if set to true requests for this zone will be forwarded via
+the recursor rather than resolved locally.
+
+To create a @samp{recursive} column on your @samp{soa} table, for example, you
+might issue SQL statements like this:
+
+@i{MySQL:}
+@example
+mysql> ALTER TABLE mydns.soa ADD COLUMN recursive ENUM('Y','N') NOT NULL;
+@end example
+
+@i{PostgreSQL:}
+@example
+mydns=# ALTER TABLE soa ADD COLUMN recursive VARCHAR(1);
+mydns=# UPDATE soa SET recursive='N';
+mydns=# ALTER TABLE soa ALTER COLUMN recursive SET NOT NULL;
+mydns=# ALTER TABLE soa ALTER COLUMN recursive SET DEFAULT 'Y';
+mydns=# ALTER TABLE soa ALTER COLUMN recursive SET CHECK (recursive='Y' OR recursive='N');
+@end example
+
+@c ***
+@c ***  OPTIONAL: RR.STAMP
+@c ***
+@node rr.stamp
+@subsection rr.stamp
+@cindex stamp
+
+If the @samp{rr} table contains a column named @samp{stamp} the column will be examined
+by the garbage collection code to determine if the record can be deleted. This is used in
+conjunction with the @samp{active} column where the record must be in the @b{D} state,
+and the @samp{soa.expire} column for the zone which determines how old the record must be
+before it can be deleted.
+
+To create a @samp{stamp} column on your @samp{rr} table, for example, you
+might issue SQL statements like this:
+
+@i{MySQL:}
+@example
+mysql> ALTER TABLE mydns.rr ADD COLUMN stamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+@end example
+
+@i{PostgreSQL:}
+@example
+mydns=# ALTER TABLE rr ADD COLUMN stamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+@end example
+
+
+@c ***
+@c ***  OPTIONAL: RR.SERIAL
+@c ***
+@node rr.serial
+@subsection rr.serial
+@cindex serial
+
+If the @samp{rr} table contains a column named @samp{serial} the column will be examined
+by the IXFR code to determine if the record needs to be sent to the requestor. This is used in
+conjunction with the @samp{active} column where the record must be in the @b{D} state,
+and the @samp{soa.expire} column for the zone which determines how old the record must be
+before it can be ignored.
+
+To create a @samp{serial} column on your @samp{rr} table, for example, you
+might issue SQL statements like this:
+
+@i{MySQL:}
+@example
+mysql> ALTER TABLE mydns.rr ADD COLUMN serial INT UNSIGNED DEFAULT NULL;
+@end example
+
+@i{PostgreSQL:}
+@example
+mydns=# ALTER TABLE rr ADD COLUMN stamp INTEGER DEFAULT NULL;
 @end example
 

@@ -42,7 +42,7 @@ _queue_stats(QUEUE *q) {
   strftime(datebuf, sizeof(datebuf)-1, "%d-%b-%Y %H:%M:%S", tm);
 #endif
 
-  Verbose(
+  Debug(
 #if !DISABLE_DATE_LOGGING
 	  "%s+%06lu "
 #endif
@@ -77,23 +77,17 @@ queue_stats() {
 	Creates a new queue and returns a pointer to it.
 **************************************************************************************************/
 QUEUE *
-queue_init(char *typename, char *priorityname)
-{
-	QUEUE *q;
-	int queuenamelen = strlen(typename) + strlen(priorityname) + 3;
-	char * queuename;
+queue_init(char *typename, char *priorityname) {
+  QUEUE *q;
+  int queuenamelen = strlen(typename) + strlen(priorityname) + 3;
+  char * queuename;
 
-	if(!(queuename = malloc(queuenamelen)))
-	  Err(_("out of memory"));
-
-	queuenamelen = snprintf(queuename, queuenamelen, "%s %ss",
-				priorityname, typename);
-	if (!(q = malloc(sizeof(QUEUE))))
-		Err(_("out of memory"));
-	q->size = q->max_size = 0;
-	q->queuename = queuename;
-	q->head = q->tail = (TASK *)NULL;
-	return (q);
+  queuenamelen = ASPRINTF(&queuename, "%s %ss", priorityname, typename);
+  q = ALLOCATE(sizeof(QUEUE), QUEUE);
+  q->size = q->max_size = 0;
+  q->queuename = queuename;
+  q->head = q->tail = (TASK *)NULL;
+  return (q);
 }
 /*--- queue_init() ------------------------------------------------------------------------------*/
 
