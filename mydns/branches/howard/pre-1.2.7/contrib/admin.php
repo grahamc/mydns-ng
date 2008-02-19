@@ -1681,9 +1681,9 @@ function db_column_width_and_type ($table, $column, &$type, &$width) {
     $res = sql_query("SHOW COLUMNS FROM $table LIKE '$column'",
 		     "columns named '$column' from table '$table'");
     if ($res) {
-      while ($row = sql_fetch_row($res)) {
+      $basetype = "";
+      if ($row = sql_fetch_row($res)) {
 	$coltype = $row[1];
-	$basetype = "";
 	for ($n = 0; $n < strlen($coltype); $n++) {
 	  if ($coltype[$n] == '(') break;
 	  $basetype .= $coltype[$n];
@@ -1693,7 +1693,6 @@ function db_column_width_and_type ($table, $column, &$type, &$width) {
 	  if ($coltype[$n] == ')') break;
 	  $typewidth = $typewidth * 10 + $coltype[$n];
 	}
-	break;
       }
       switch (strtolower($basetype)) {
 	/* Numeric types */

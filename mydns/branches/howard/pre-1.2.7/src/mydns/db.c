@@ -246,6 +246,12 @@ db_check_column(char *database, char *table, char *name) {
 }
 /*--- db_check_column() -------------------------------------------------------------------------*/
 
+static int
+db_get_column_width(char *database, char *table, char *name) {
+  int width = sql_get_column_width(sql, table, name);
+
+  return width;
+}
 
 /**************************************************************************************************
 	DB_VERIFY_TABLE
@@ -374,6 +380,11 @@ db_verify_tables(void) {
   db_verify_table(database, mydns_rr_table_name, MYDNS_RR_FIELDS);
 
   db_check_ptr_table(database);
+
+  {
+    int width = db_get_column_width(database, mydns_rr_table_name, "data");
+    mydns_rr_data_length = (width)?width:mydns_rr_data_length;
+  }
 
   db_check_optional();
 #endif

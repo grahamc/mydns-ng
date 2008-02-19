@@ -217,7 +217,48 @@ sql_iscolumn(SQL *sqlConn, const char *tablename, const char *columnname) {
 }
 /*--- sql_iscolumn() ----------------------------------------------------------------------------*/
 
+int sql_get_column_width(SQL *sqlConn, const char *tablename, const char *columnname) {
+  char *xtablename, *xcolumnname;
+  int width = 0;
 
+  xtablename = sql_escstr(sqlConn, (char*)tablename);
+  xcolumnname = sql_escstr(sqlConn, (char*)columnname);
+
+#if USE_PGSQL
+  /* Do not know how to do this */
+#else
+  {
+    SQL_RES *res = sql_queryf(sqlConn, "SHOW COLUMNS FROM %s LIKE '%s'",  xtablename, xcolumnname);
+    SQL_ROW row;
+
+    row = sql_getrow(res, NULL);
+    if (row) {
+      char *typefield = row[1];
+      char *basetype = NULL;
+      int i;
+      for (i = 0; i < strlen(typefield); i++) {
+	if (typefield[i] == '(') {
+	  basetype = STRNDUP(typefield, i);
+	  break;
+	}
+      }
+      typefield = &typefield[i];
+      if (typefield[0] && typefield[0] == '(') typefield = &typefield[1];
+      for (i = 0; i < strlen(typefield); i++) {
+	if (typefield[i] == ')') {
+	  width = atoi(typefield);
+	  break;
+	}
+      }
+    }
+    sql_free(res);
+  }
+#endif
+
+  RELEASE(xtablename);
+  RELEASE(xcolumnname);
+  return (width);
+}
 /**************************************************************************************************
 	_SQL_CLOSE
 **************************************************************************************************/

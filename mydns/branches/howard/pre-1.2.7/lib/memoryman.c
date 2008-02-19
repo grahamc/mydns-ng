@@ -89,6 +89,28 @@ _mydns_strdup(const char *s, arena_t arena, char *file, int line) {
   return (news);
 }
 
+char *
+_mydns_strndup(const char *s, size_t size, arena_t arena, char *file, int line) {
+  char *news = NULL;
+
+#if DEBUG_ENABLED && DEBUG_MEMMAN
+  Debug("Allocate string copy of size %d bytes, in arena %s from %s:%d",
+	size, __mydns_arenaname(arena), file, line);
+#endif
+
+  news = strndup(s, size);
+
+#if DEBUG_ENABLED && DEBUG_MEMMAN
+  Debug("Allocating string copy of size %d bytes in arena %s %s -> %p",
+	size, __mydns_arenaname(arena), (news)?"succeeded":"failed", news);
+#endif
+
+  if (!news)
+    Err("Memory allocation failed");
+
+  return (news);
+}
+
 void *
 _mydns_allocate(size_t size, size_t count, arena_t arena, char *type, char *file, int line) {
 

@@ -371,6 +371,7 @@ extern void	conf_load(CONF **, const char *);
 #define __REALLOCATE__(OBJECT, SIZE, THING, COUNT, ARENA) realloc(OBJECT, (COUNT)*(SIZE))
 #define __RELEASE__(OBJECT, COUNT, ARENA)  if ((OBJECT)) free((OBJECT)), (OBJECT) = NULL
 #define STRDUP(__STRING__) strdup(__STRING__)
+#define STRNDUP(__STRING__, __LENGTH__) strndup(__STRING__, __LENGTH__)
 #define ASPRINTF asprintf
 #define VASPRINTF vasprintf
 #else
@@ -382,7 +383,7 @@ extern void	conf_load(CONF **, const char *);
   _mydns_release(OBJECT, COUNT, ARENA, __FILE__, __LINE__), (OBJECT) = NULL
 
 #define STRDUP(__STRING__)		_mydns_strdup(__STRING__, ARENA_GLOBAL, __FILE__, __LINE__)
-
+#define STRNDUP(__STRING__, __LENGTH__) _mydns_strndup(__STRING__, __LENGTH__, ARENA_GLOBAL, __FILE__, __LINE__)
 #define ASPRINTF			_mydns_asprintf
 #define VASPRINTF			_mydns_vasprintf
 
@@ -401,6 +402,7 @@ typedef enum _arena_t {
 extern int	_mydns_asprintf(char **strp, const char *fmt, ...);
 extern int	_mydns_vasprintf(char **strp, const char *fmt, va_list ap);
 extern char *	_mydns_strdup(const char *, arena_t, char *, int);
+extern char *	_mydns_strndup(const char *, size_t, arena_t, char *, int);
 extern void *	_mydns_allocate(size_t, size_t, arena_t, char *, char *, int);
 extern void *	_mydns_reallocate(void *, size_t, size_t, arena_t, char *, char *, int);
 extern void	_mydns_release(void *, size_t, arena_t, char *, int);

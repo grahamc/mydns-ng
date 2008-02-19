@@ -512,6 +512,7 @@ extern void		_sql_free(SQL_RES *res);
 extern long		sql_num_rows(SQL_RES *res);
 extern int		sql_istable(SQL *, const char *);
 extern int		sql_iscolumn(SQL *, const char *, const char *);
+extern int		sql_get_column_width(SQL *, const char *, const char *);
 extern int		sql_build_query(char **, const char *, ...) __printflike(2,3);
 #define			sql_free(p) if ((p)) _sql_free((p)), (p) = NULL
 
