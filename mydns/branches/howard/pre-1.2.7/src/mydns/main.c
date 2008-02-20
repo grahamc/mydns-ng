@@ -660,6 +660,8 @@ reap_child() {
 
   if ((pid = waitpid(-1, &status, WNOHANG)) < 0) return -1;
 
+  if (pid == 0) return 0;
+
   if (WIFEXITED(status)) {
     ;
   } else {
@@ -704,7 +706,7 @@ master_child_cleanup(int signo) {
     for (n = 0; n < array_numobjects(Servers); n++) {
       SERVER	*server = (SERVER*)array_fetch(Servers, n);
       if (pid == server->pid) {
-	Notice("pid %d died", pid);
+	Notice("Server pid %d died", pid);
 	if (shutting_down) server->pid = -1;
 	else {
 	  if (server->listener) dequeue(server->listener);

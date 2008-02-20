@@ -48,7 +48,7 @@ int mydns_rr_use_serial = 0;
 char *mydns_rr_active_types[] = { "Y", "N", "D" };
 
 /* Make this nonzero to enable debugging within this source file */
-#define	DEBUG_LIB_RR	0
+#define	DEBUG_LIB_RR	1
 
 void *
 __mydns_rr_assert_pointer(void *ptr, char *fieldname, char *filename, int linenumber) {
@@ -634,7 +634,7 @@ mydns_rr_parse(SQL_ROW row, unsigned long *lengths, const char *origin) {
 		      datalen,
 		      origin);
 
-  if (lengths[MYDNS_RR_NUMFIELDS]) RELEASE(data);
+  if (mydns_rr_extended_data && lengths[MYDNS_RR_NUMFIELDS]) RELEASE(data);
 
   return (rr);
 }
@@ -777,7 +777,7 @@ __mydns_rr_prepare_query(uint32_t zone, dns_qtype_t type, char *name, char *orig
 #endif
 
 #if DEBUG_ENABLED && DEBUG_LIB_RR
-  Debug("mydns_rr_load(zone=%u, type='%s', name='%s', origin='%s')",
+  Debug("_mydns_rr_prepare_query(zone=%u, type='%s', name='%s', origin='%s')",
 	zone, mydns_qtype_str(type), name ?: "NULL", origin ?: "NULL");
 #endif
 

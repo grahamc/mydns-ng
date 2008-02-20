@@ -288,7 +288,6 @@ db_check_optional(void) {
   int		old_soa_use_update_acl = mydns_soa_use_update_acl;
   int		old_soa_use_recursive = mydns_soa_use_recursive;
   int		old_rr_use_active = mydns_rr_use_active;
-  int		old_rr_extended_data = mydns_rr_extended_data;
   int		old_rr_use_stamp = mydns_rr_use_stamp;
   int		old_rr_use_serial = mydns_rr_use_serial;
 
@@ -316,7 +315,7 @@ db_check_optional(void) {
 
   /* Check for rr.edata */
   mydns_set_rr_extended_data(sql);
-  if (mydns_rr_extended_data != old_rr_extended_data)
+  if (mydns_rr_extended_data)
     Verbose(_("optional 'edata' column found in '%s' table"), mydns_rr_table_name);
 
   /* Check for rr.active */

@@ -52,7 +52,7 @@ extern int mydns_rr_use_active;
 
 extern int mydns_rr_extended_data;
 #define mydns_set_rr_extended_data(S)   \
-  (mydns_rr_extended_data = (sql_iscolumn((S), mydns_rr_table_name, "edata") && mydns_rr_extended_data))
+  (mydns_rr_extended_data = sql_iscolumn((S), mydns_rr_table_name, "edata"))
 
 /* This is set by mydns_set_soa_use_xfer */
 extern int mydns_soa_use_xfer;

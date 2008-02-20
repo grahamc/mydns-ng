@@ -24,7 +24,7 @@
 #define	DEBUG_CACHE	1
 
 /* Set this to nonzero to debug frequency of SQL queries */
-#define	DEBUG_SQL_QUERIES 0
+#define	DEBUG_SQL_QUERIES 1
 
 CACHE *ZoneCache = NULL;							/* Data cache */
 CACHE *ReplyCache = NULL;							/* Reply cache */
