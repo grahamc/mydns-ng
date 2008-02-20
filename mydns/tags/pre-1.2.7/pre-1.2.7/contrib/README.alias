@@ -1,0 +1,26 @@
+
+This patch requires a non destructive table modification:
+
+sql> ALTER TABLE rr MODIFY COLUMN
+ type enum('A','AAAA','ALIAS','CNAME','HINFO','MX','NS','PTR','SRV','TXT');
+
+(Syntax shown is for MySQL database)
+
+It performs server side aliasing for A records.  Aliased records are returned
+to the client as normal A records: the client will not know that any
+translation took place.  These work anytime an A record is needed, such as
+when providing additional records for NS or MX records.
+
+Three errors can occur: the chain can loop, the chain can be broken or the
+maximum depth can be exceeded while attempting to complete the chain.  In
+the case of any of these errors, the reply is sent without the A record.
+Thus, the client will never get nxdomain if an alias exists for the domain,
+even if it cannot be completed.
+
+I did a fair amount of testing with this and haven't found any bugs yet.
+I haven't yet figured out the CNAME bug, but this should make it less urgent.
+
+--
+David Phillips <david@acz.org>
+http://david.acz.org/
+

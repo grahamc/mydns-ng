@@ -1,0 +1,63 @@
+Quickstart instructions for MyDNS (MySQL installation):
+
+...............................................................................
+
+1.	Configure and install MyDNS.
+
+	$ ./configure
+	$ make
+	# make install
+
+	If "make" fails, please read the "README.mysql" file located in this
+	directory.
+
+...............................................................................
+
+2.	Create a database called `mydns' on your MySQL server.
+
+	$ mysqladmin -u <username> -p create mydns
+	Enter password:
+
+...............................................................................
+
+3.	Create a user the mydns(8) server can use to access the `mydns' database.
+
+	$ mysql -u <user> -p mydns
+	Enter password:
+	mysql> GRANT SELECT ON mydns.* TO <user>@localhost
+	       IDENTIFIED BY '<password>';
+
+...............................................................................
+
+4.	Create the tables in the `mydns' database.
+
+	$ mydns --create-tables | mysql -u <user> -p mydns
+	Enter password:
+
+...............................................................................
+
+5. Create your configuration file.
+
+	# make conf
+
+...............................................................................
+
+6.	Edit the configuration file.  Change the `db-user' and `db-pass'
+	values to reflect the user name and password you created in step 3.
+
+...............................................................................
+
+7.	Start `mydns'.  You may want to add something like this to your startup
+	scripts.
+
+	# mydns --background
+
+...............................................................................
+
+
+If you currently have a name server running BIND or something else, you can use
+the `mydnsimport' program to import the data from that server into your new
+MyDNS database.  See the user's manual for details.
+
+
+## vi:set ts=3:
