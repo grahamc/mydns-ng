@@ -71,68 +71,61 @@ static int AllInterfaceAddressesCount = 0;
 	Adds the specified address to the current list, checking for duplicates, etc.
 **************************************************************************************************/
 static void
-addrlist_add(int family, void *address, int port)
-{
-	ADDRLIST *A;
-	struct in_addr addr4;
+addrlist_add(int family, void *address, int port) {
+  ADDRLIST *A;
+  struct in_addr addr4;
 #if HAVE_IPV6
-	struct in6_addr addr6;
+  struct in6_addr addr6;
 #endif
 
-	/* Copy address into struct and make sure it's not the "catch-all" address */
-	if (family == AF_INET)
-	{
-		memcpy(&addr4, address, sizeof(struct in_addr));
-		if (addr4.s_addr == INADDR_ANY)
-			return;
-	}
+  /* Copy address into struct and make sure it's not the "catch-all" address */
+  if (family == AF_INET) {
+    memcpy(&addr4, address, sizeof(struct in_addr));
+    if (addr4.s_addr == INADDR_ANY)
+      return;
+  }
 #if HAVE_IPV6
-	else if (family == AF_INET6)
-	{
-		memcpy(&addr6, address, sizeof(struct in6_addr));
-		if (!memcmp(&addr6, &in6addr_any, sizeof(struct in6_addr)))
-			return;
-	}
+  else if (family == AF_INET6) {
+    memcpy(&addr6, address, sizeof(struct in6_addr));
+    if (!memcmp(&addr6, &in6addr_any, sizeof(struct in6_addr)))
+      return;
+  }
 #endif
-	else return;	/* Invalid family */
+  else return;	/* Invalid family */
 
-	/* Check for duplicate */
-	for (A = FirstAddr; A; A = A->next)
-		switch (family)
-		{
-			case AF_INET:
-				if ((A->port == port) && !memcmp(&addr4, &A->addr4, sizeof(struct in_addr)))
-					return;
-				break;
+  /* Check for duplicate */
+  for (A = FirstAddr; A; A = A->next)
+    switch (family) {
+    case AF_INET:
+      if ((A->port == port) && !memcmp(&addr4, &A->addr4, sizeof(struct in_addr)))
+	return;
+      break;
 #if HAVE_IPV6
-			case AF_INET6:
-				if ((A->port == port) && !memcmp(&addr6, &A->addr6, sizeof(struct in6_addr)))
-					return;
-				break;
+    case AF_INET6:
+      if ((A->port == port) && !memcmp(&addr6, &A->addr6, sizeof(struct in6_addr)))
+	return;
+      break;
 #endif
-		}
+    }
 
-	/* Not a duplicate; add new interface */
-	if (!(A = calloc(1, sizeof(ADDRLIST))))
-		Err(_("out of memory"));
-	switch ((A->family = family))
-	{
-		case AF_INET: memcpy(&A->addr4, &addr4, sizeof(struct in_addr)); break;
+  /* Not a duplicate; add new interface */
+  A = ALLOCATE(sizeof(ADDRLIST), ADDRLIST);
+  switch ((A->family = family)) {
+  case AF_INET: memcpy(&A->addr4, &addr4, sizeof(struct in_addr)); break;
 #if HAVE_IPV6
-		case AF_INET6: memcpy(&A->addr6, &addr6, sizeof(struct in6_addr)); break;
+  case AF_INET6: memcpy(&A->addr6, &addr6, sizeof(struct in6_addr)); break;
 #endif
-	}
-	A->port = port;
-	A->ok = 1;
+  }
+  A->port = port;
+  A->ok = 1;
 
-	/* Add new interface to list */
-	if (!LastAddr)
-		FirstAddr = LastAddr = A;
-	else
-	{
-		LastAddr->next = A;
-		LastAddr = A;
-	}
+  /* Add new interface to list */
+  if (!LastAddr)
+    FirstAddr = LastAddr = A;
+  else {
+    LastAddr->next = A;
+    LastAddr = A;
+  }
 }
 /*--- addrlist_add() ----------------------------------------------------------------------------*/
 
@@ -142,31 +135,29 @@ addrlist_add(int family, void *address, int port)
 	IP6_EXTRA
 **************************************************************************************************/
 char *
-ip6_extra(const struct in6_addr *a)
-{
-	static char buf[2048];
-	char *b = buf;
+ip6_extra(const struct in6_addr *a){ 
+  static char buf[2048];
+  char *b = buf;
 
-	*b = '\0';
+  *b = '\0';
 
-	if (IN6_IS_ADDR_UNSPECIFIED(a)) b += snprintf(b, sizeof(buf)-(b-buf), "UNSPECIFIED ");
-	if (IN6_IS_ADDR_LOOPBACK(a)) b += snprintf(b, sizeof(buf)-(b-buf), "LOOPBACK ");
-	if (IN6_IS_ADDR_MULTICAST(a)) b += snprintf(b, sizeof(buf)-(b-buf), "MULTICAST ");
-	if (IN6_IS_ADDR_LINKLOCAL(a)) b += snprintf(b, sizeof(buf)-(b-buf), "LINKLOCAL ");
-	if (IN6_IS_ADDR_SITELOCAL(a)) b += snprintf(b, sizeof(buf)-(b-buf), "SITELOCAL ");
-	if (IN6_IS_ADDR_V4MAPPED(a)) b += snprintf(b, sizeof(buf)-(b-buf), "V4MAPPED ");
-	if (IN6_IS_ADDR_V4COMPAT(a)) b += snprintf(b, sizeof(buf)-(b-buf), "V4COMPAT ");
+  if (IN6_IS_ADDR_UNSPECIFIED(a)) b += snprintf(b, sizeof(buf)-(b-buf), "UNSPECIFIED ");
+  if (IN6_IS_ADDR_LOOPBACK(a)) b += snprintf(b, sizeof(buf)-(b-buf), "LOOPBACK ");
+  if (IN6_IS_ADDR_MULTICAST(a)) b += snprintf(b, sizeof(buf)-(b-buf), "MULTICAST ");
+  if (IN6_IS_ADDR_LINKLOCAL(a)) b += snprintf(b, sizeof(buf)-(b-buf), "LINKLOCAL ");
+  if (IN6_IS_ADDR_SITELOCAL(a)) b += snprintf(b, sizeof(buf)-(b-buf), "SITELOCAL ");
+  if (IN6_IS_ADDR_V4MAPPED(a)) b += snprintf(b, sizeof(buf)-(b-buf), "V4MAPPED ");
+  if (IN6_IS_ADDR_V4COMPAT(a)) b += snprintf(b, sizeof(buf)-(b-buf), "V4COMPAT ");
 
-	if (IN6_IS_ADDR_MULTICAST(a))
-	{
-		if (IN6_IS_ADDR_MC_NODELOCAL(a)) b += snprintf(b, sizeof(buf)-(b-buf), "MC_NODELOCAL ");
-		if (IN6_IS_ADDR_MC_LINKLOCAL(a)) b += snprintf(b, sizeof(buf)-(b-buf), "MC_LINKLOCAL ");
-		if (IN6_IS_ADDR_MC_SITELOCAL(a)) b += snprintf(b, sizeof(buf)-(b-buf), "MC_SITELOCAL ");
-		if (IN6_IS_ADDR_MC_ORGLOCAL(a)) b += snprintf(b, sizeof(buf)-(b-buf), "MC_ORGLOCAL ");
-		if (IN6_IS_ADDR_MC_GLOBAL(a)) b += snprintf(b, sizeof(buf)-(b-buf), "MC_GLOBAL ");
-	}
+  if (IN6_IS_ADDR_MULTICAST(a)) {
+    if (IN6_IS_ADDR_MC_NODELOCAL(a)) b += snprintf(b, sizeof(buf)-(b-buf), "MC_NODELOCAL ");
+    if (IN6_IS_ADDR_MC_LINKLOCAL(a)) b += snprintf(b, sizeof(buf)-(b-buf), "MC_LINKLOCAL ");
+    if (IN6_IS_ADDR_MC_SITELOCAL(a)) b += snprintf(b, sizeof(buf)-(b-buf), "MC_SITELOCAL ");
+    if (IN6_IS_ADDR_MC_ORGLOCAL(a)) b += snprintf(b, sizeof(buf)-(b-buf), "MC_ORGLOCAL ");
+    if (IN6_IS_ADDR_MC_GLOBAL(a)) b += snprintf(b, sizeof(buf)-(b-buf), "MC_GLOBAL ");
+  }
 
-	return buf;
+  return buf;
 }
 /*--- ip6_extra() -------------------------------------------------------------------------------*/
 #endif
@@ -181,59 +172,55 @@ ip6_extra(const struct in6_addr *a)
 #ifdef __linux__
 #if HAVE_IPV6
 static void
-linux_load_ip6(int port)
-{
-	FILE *fp;
-	char line[512];
+linux_load_ip6(int port) {
+  FILE *fp;
+  char line[512];
 
-	if ((fp = fopen("/proc/net/if_inet6", "r")))
-	{
-		while (fgets(line, sizeof(line), fp))
-		{
-			int n;
-			char *l, *hex, *device_number, *prefix_length, *scope_value, *if_flags;
-			char buf[sizeof("XXXX:XXXX:XXXX:XXXX:XXXX:XXXX:XXXX:XXXX\0")];
-			struct in6_addr addr;
+  if ((fp = fopen("/proc/net/if_inet6", "r"))) {
+    while (fgets(line, sizeof(line), fp)) {
+      int n;
+      char *l, *hex, *device_number, *prefix_length, *scope_value, *if_flags;
+      char buf[sizeof("XXXX:XXXX:XXXX:XXXX:XXXX:XXXX:XXXX:XXXX\0")];
+      struct in6_addr addr;
 
-			l = line;
-			if (!(hex = strsep(&l, " "))) continue;
-			if (!(device_number = strsep(&l, " "))) continue;
-			if (!(prefix_length = strsep(&l, " "))) continue;
-			if (!(scope_value = strsep(&l, " "))) continue;
-			if (!(if_flags = strsep(&l, " "))) continue;
-			strtrim(l);
+      l = line;
+      if (!(hex = strsep(&l, " "))) continue;
+      if (!(device_number = strsep(&l, " "))) continue;
+      if (!(prefix_length = strsep(&l, " "))) continue;
+      if (!(scope_value = strsep(&l, " "))) continue;
+      if (!(if_flags = strsep(&l, " "))) continue;
+      strtrim(l);
 
-			/* Convert hex address into 'addr' */
-			for (n = 0; n < 8; n++)
-			{
-				memcpy(buf + (4 * n) + (n * 1), hex + (4 * n), 4);
-				buf[(4 * n) + (n * 1) + 4] = ':';
-			}
-			buf[39] = '\0';
+      /* Convert hex address into 'addr' */
+      for (n = 0; n < 8; n++) {
+	memcpy(buf + (4 * n) + (n * 1), hex + (4 * n), 4);
+	buf[(4 * n) + (n * 1) + 4] = ':';
+      }
+      buf[39] = '\0';
 #if DEBUG_ENABLED && DEBUG_LISTEN
-			{
-				uint16_t dn, pl, sv, f;
-				dn = (uint16_t)strtoul(device_number, NULL, 16);
-				pl = (uint16_t)strtoul(prefix_length, NULL, 16);
-				sv = (uint16_t)strtoul(scope_value, NULL, 16);
-				f = (uint16_t)strtoul(if_flags, NULL, 16);
-				Debug("IPv6 %s: device_number=%u prefix_length=%u scope_value=%u if_flags=%u", buf, dn, pl, sv, f);
-			}
+      {
+	uint16_t dn, pl, sv, f;
+	dn = (uint16_t)strtoul(device_number, NULL, 16);
+	pl = (uint16_t)strtoul(prefix_length, NULL, 16);
+	sv = (uint16_t)strtoul(scope_value, NULL, 16);
+	f = (uint16_t)strtoul(if_flags, NULL, 16);
+	Debug("IPv6 %s: device_number=%u prefix_length=%u scope_value=%u if_flags=%u",
+	      buf, dn, pl, sv, f);
+      }
 #endif
-			if (inet_pton(AF_INET6, buf, &addr) > 0)
-			{
-				/* I am not at all sure which of these scopes from RFC 2553 we should NOT try to
-					bind to..  LINKLOCAL for sure doesn't work if you try it */
-				if (IN6_IS_ADDR_LINKLOCAL(&addr))
-					continue;
+      if (inet_pton(AF_INET6, buf, &addr) > 0) {
+	/* I am not at all sure which of these scopes from RFC 2553 we should NOT try to
+	   bind to..  LINKLOCAL for sure doesn't work if you try it */
+	if (IN6_IS_ADDR_LINKLOCAL(&addr))
+	  continue;
 #if DEBUG_ENABLED && DEBUG_LISTEN
-				Debug("  extra: %s", ip6_extra(&addr));
+	Debug("  extra: %s", ip6_extra(&addr));
 #endif
-				addrlist_add(AF_INET6, &addr, port);
-			}
-		}
-		fclose(fp);
-	}
+	addrlist_add(AF_INET6, &addr, port);
+      }
+    }
+    fclose(fp);
+  }
 }
 #endif
 #endif
@@ -245,10 +232,10 @@ linux_load_ip6(int port)
 **************************************************************************************************/
 static void
 addAllInterfaceAddress(const char *address) {
-  if (!(AllInterfaceAddresses = (char**)realloc(AllInterfaceAddresses,
-						sizeof(char*)*(++AllInterfaceAddressesCount + 1))))
-    Err(_("out of memory"));
-  AllInterfaceAddresses[AllInterfaceAddressesCount-1]=strdup(address);
+  AllInterfaceAddresses = (char**)REALLOCATE(AllInterfaceAddresses,
+					     sizeof(char*)*(++AllInterfaceAddressesCount + 1),
+					     char*[]);
+  AllInterfaceAddresses[AllInterfaceAddressesCount-1]=STRDUP(address);
   AllInterfaceAddresses[AllInterfaceAddressesCount] = NULL;
 }
 /*--- addAllInterfaceAddresses() ----------------------------------------------------------------*/
@@ -260,9 +247,9 @@ addAllInterfaceAddress(const char *address) {
 static void
 freeAllInterfaceAddresses() {
         while (AllInterfaceAddressesCount--) {
-	  free((void*)AllInterfaceAddresses[AllInterfaceAddressesCount]);
+	  RELEASE(AllInterfaceAddresses[AllInterfaceAddressesCount]);
 	}
-	free((void*)AllInterfaceAddresses);
+	RELEASE(AllInterfaceAddresses);
 	AllInterfaceAddresses=NULL;
 	AllInterfaceAddressesCount=0;
 }
@@ -283,96 +270,88 @@ all_interface_addresses() {
 	Returns the interface list, or NULL on error.
 **************************************************************************************************/
 static ADDRLIST *
-addrlist_load(int port)
-{
-	struct ifconf ifc;
-	struct ifreq *ifr;
-	int sockfd, buflen = 8192, n;
-	char *buf;
+addrlist_load(int port) {
+  struct ifconf ifc;
+  struct ifreq *ifr;
+  int sockfd, buflen = 8192, n;
+  char *buf;
 
-	FirstAddr = LastAddr = NULL;
+  FirstAddr = LastAddr = NULL;
 
-	freeAllInterfaceAddresses();
+  freeAllInterfaceAddresses();
 
-	if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-	{
-		Warn("error creating socket for interface scan");
-		return NULL;
-	}
+  if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    Warn("error creating socket for interface scan");
+    return NULL;
+  }
 
-	for (;;)	/* Allocate buffer space */
-	{
-		if (!(buf = malloc(buflen)))
-			Err(_("out of memory"));
-		ifc.ifc_len = buflen;
-		ifc.ifc_buf = buf;
+  buf = ALLOCATE(buflen, char[]);
 
-		if ((n = ioctl(sockfd, SIOCGIFCONF, (char *)&ifc)) != -1)
-		{
-			if (ifc.ifc_len + 2 * sizeof(struct ifreq) < buflen)
-				break;
-		}
-		if ((n == -1) && errno != EINVAL)
-		{
-			Err("error setting SIOCGIFCONF for interface scan");
-			return NULL;
-		}
-		free(buf);
-		buflen += 4096;
-	}
+  for (;;) {	/* Allocate buffer space */
+    ifc.ifc_len = buflen;
+    ifc.ifc_buf = buf;
 
-	for (n = 0; n < ifc.ifc_len;)					/* Scan interfaces */
-	{
-	  char addressBuffer[64]; /*Magic number greater than the longest address!*/
-		struct in_addr addr4;
+    if ((n = ioctl(sockfd, SIOCGIFCONF, (char *)&ifc)) != -1) {
+      if (ifc.ifc_len + 2 * sizeof(struct ifreq) < buflen)
+	break;
+    }
+    if ((n == -1) && errno != EINVAL) {
+      Err("error setting SIOCGIFCONF for interface scan");
+      return NULL;
+    }
+    buf = REALLOCATE(buf, buflen += 4096, char[]);
+  }
+
+  for (n = 0; n < ifc.ifc_len;) {					/* Scan interfaces */
+    char addressBuffer[64]; /*Magic number greater than the longest address!*/
+    struct in_addr addr4;
 #if HAVE_IPV6
-		struct in6_addr addr6;
+    struct in6_addr addr6;
 #endif
 
-		ifr = (struct ifreq *)((char *)ifc.ifc_req + n);
+    ifr = (struct ifreq *)((char *)ifc.ifc_req + n);
 
 #ifdef HAVE_SOCKADDR_SA_LEN
-		n += sizeof(ifr->ifr_name) + (ifr->ifr_addr.sa_len > sizeof(struct sockaddr)
-					      ? ifr->ifr_addr.sa_len : sizeof(struct sockaddr));
+    n += sizeof(ifr->ifr_name) + (ifr->ifr_addr.sa_len > sizeof(struct sockaddr)
+				  ? ifr->ifr_addr.sa_len : sizeof(struct sockaddr));
 #else
-		n += sizeof(struct ifreq);
+    n += sizeof(struct ifreq);
 #endif /* HAVE_SOCKADDR_SA_LEN */
 
-		if (ifr->ifr_flags & IFF_UP)				/* Must be up */
-			continue;
-		if (ioctl(sockfd, SIOCGIFADDR, ifr) < 0)		/* Get address */
-			continue;
+    if (ifr->ifr_flags & IFF_UP)				/* Must be up */
+      continue;
+    if (ioctl(sockfd, SIOCGIFADDR, ifr) < 0)		/* Get address */
+      continue;
 
-		switch (ifr->ifr_addr.sa_family)
-		{
-			case AF_INET:
-				memcpy(&addr4, &((struct sockaddr_in *)&ifr->ifr_addr)->sin_addr, sizeof(struct in_addr));
-				addrlist_add(AF_INET, &addr4, port);
-				addAllInterfaceAddress(inet_ntop(AF_INET, &addr4,
-								 addressBuffer, INET_ADDRSTRLEN));
-				break;
+    switch (ifr->ifr_addr.sa_family) {
+    case AF_INET:
+      memcpy(&addr4, &((struct sockaddr_in *)&ifr->ifr_addr)->sin_addr, sizeof(struct in_addr));
+      addrlist_add(AF_INET, &addr4, port);
+      addAllInterfaceAddress(inet_ntop(AF_INET, &addr4,
+				       addressBuffer, INET_ADDRSTRLEN));
+      break;
 #if HAVE_IPV6
-			case AF_INET6:
-				memcpy(&addr6, &((struct sockaddr_in6 *)&ifr->ifr_addr)->sin6_addr, sizeof(struct in6_addr));
-				addrlist_add(AF_INET6, &addr6, port);
-				addAllInterfaceAddress(inet_ntop(AF_INET6, &addr6,
-								 addressBuffer, INET6_ADDRSTRLEN));
-				break;
+    case AF_INET6:
+      memcpy(&addr6, &((struct sockaddr_in6 *)&ifr->ifr_addr)->sin6_addr, sizeof(struct in6_addr));
+      addrlist_add(AF_INET6, &addr6, port);
+      addAllInterfaceAddress(inet_ntop(AF_INET6, &addr6,
+				       addressBuffer, INET6_ADDRSTRLEN));
+      break;
 #endif
-			default:
-				continue;
-		}
-	}
-	close(sockfd);
-	free(buf);
+    default:
+      continue;
+    }
+  }
+  RELEASE(buf);
+  close(sockfd);
 
 #ifdef __linux__
 #if HAVE_IPV6
-	linux_load_ip6(port);
+  linux_load_ip6(port);
 #endif
 #endif
 
-	return (FirstAddr);
+  return (FirstAddr);
 }
 /*--- addrlist_load() ---------------------------------------------------------------------------*/
 
@@ -381,15 +360,13 @@ addrlist_load(int port)
 	ADDRLIST_FREE
 **************************************************************************************************/
 void
-addrlist_free(ADDRLIST *Addresses)
-{
-	ADDRLIST *A, *tmp;
+addrlist_free(ADDRLIST *Addresses) {
+  ADDRLIST *A, *tmp;
 
-	for (A = Addresses; A; A = tmp)
-	{
-		tmp = A->next;
-		free(A);
-	}
+  for (A = Addresses; A; A = tmp) {
+    tmp = A->next;
+    RELEASE(A);
+  }
 }
 /*--- addrlist_free() ---------------------------------------------------------------------------*/
 
@@ -399,112 +376,99 @@ addrlist_free(ADDRLIST *Addresses)
 	the addresses.
 **************************************************************************************************/
 static ADDRLIST *
-get_opt_addrlist(ADDRLIST *Addresses, const char *opt, int default_port, char *desc)
-{
-	int family;														/* Protocol family (AF_INET/AF_INET6) */
-	struct in_addr addr4;										/* IPv4 address buffer */
+get_opt_addrlist(ADDRLIST *Addresses, const char *opt, int default_port, char *desc) {
+  int family;						/* Protocol family (AF_INET/AF_INET6) */
+  struct in_addr addr4;					/* IPv4 address buffer */
 #if HAVE_IPV6
-	struct in6_addr addr6;										/* IPv6 address buffer */
+  struct in6_addr addr6;				/* IPv6 address buffer */
 #endif
-	register ADDRLIST *A;
-	char *cc, *oc, *a, *c;
+  register ADDRLIST *A;
+  char *cc, *oc, *a, *c;
 
-	FirstAddr = LastAddr = NULL;
-	if (!opt || !opt[0])
-		return (NULL);
-	if (!(oc = strdup((char *)opt)))							/* Make copy of 'opt' for mangling */
-		Err("strdup");
-	for (c = oc; *c; c++)										/* Replace commas with CONF_FS */
-		if (*c == ',')
-			*c = CONF_FS_CHAR;
+  FirstAddr = LastAddr = NULL;
+  if (!opt || !opt[0])
+    return (NULL);
+  oc = STRDUP((char *)opt);				/* Make copy of 'opt' for mangling */
+  for (c = oc; *c; c++)					/* Replace commas with CONF_FS */
+    if (*c == ',')
+      *c = CONF_FS_CHAR;
 
-	for (cc = oc; (a = strsep(&cc, CONF_FS_STR)); )		/* Add each address */
-	{
-		char	addr[256];											/* Address/port part of address */
-		int	port = default_port;								/* Port number */
+  for (cc = oc; (a = strsep(&cc, CONF_FS_STR)); ) {	/* Add each address */
+    char	addr[256];				/* Address/port part of address */
+    int	port = default_port;				/* Port number */
 
-		strncpy(addr, a, sizeof(addr)-1);
+    strncpy(addr, a, sizeof(addr)-1);
 
 #if HAVE_IPV6
-		if (is_ipv6(addr))		/* IPv6 - treat '+' as port separator */
-		{
-			family = AF_INET6;
-			if ((c = strchr(addr, '+')))
-			{
-				*c++ = '\0';
-				if (!(port = atoi(c)))
-					port = default_port;
-			}
-		}
-		else							/* IPv4 - treat '+' or ':' as port separator  */
+    if (is_ipv6(addr)) {				/* IPv6 - treat '+' as port separator */
+      family = AF_INET6;
+      if ((c = strchr(addr, '+'))) {
+	*c++ = '\0';
+	if (!(port = atoi(c)))
+	  port = default_port;
+      }
+    } else						/* IPv4 - treat '+' or ':' as port separator  */
 #endif
-		{
-			family = AF_INET;
-			if ((c = strchr(addr, '+')) || (c = strchr(addr, ':')))
-			{
-				*c++ = '\0';
-				if (!(port = atoi(c)))
-					port = default_port;
-			}
-		}
-
-		/* If the address specifies the wildcard '*', add a record for each address */
-		if (addr[0] == '*')
-		{
-			for (A = Addresses; A; A = A->next)
-				if (A->family == AF_INET)
-					addrlist_add(A->family, &A->addr4, port);
-#if HAVE_IPV6
-				else if (A->family == AF_INET6)
-					addrlist_add(A->family, &A->addr6, port);
-#endif
-			continue;
-		}
-
-		/* Handle "localhost" */
-		if (!strcasecmp(addr, "localhost"))
-		{
-			/* Only add the IPv4 localhost if there are SOME IPv4 addresses */
-			for (A = Addresses; A; A = A->next)
-				if (A->family == AF_INET)
-				{
-					if (inet_pton(AF_INET, "127.0.0.1", &addr4) > 0)
-						addrlist_add(AF_INET, &addr4, port);
-					break;
-				}
-
-#if HAVE_IPV6
-			/* Only add the IPv6 localhost if there are SOME IPv6 addresses */
-			for (A = Addresses; A; A = A->next)
-				if (A->family == AF_INET6)
-				{
-					memcpy(&addr6, &in6addr_loopback, sizeof(struct in6_addr));
-					addrlist_add(AF_INET6, &addr6, port);
-					break;
-				}
-#endif
-			continue;
-		}
-
-		if (family == AF_INET)									/* Add regular IPv4 address */
-		{
-			if (inet_pton(AF_INET, addr, &addr4) <= 0)
-				Warnx("%s: `%s' %s: %s", addr, desc, _("address"), _("invalid IPv4 address format"));
-			else
-				addrlist_add(AF_INET, &addr4, port);
-		}
-#if HAVE_IPV6
-		else if (family == AF_INET6)							/* Add regular IPv6 address */
-		{
-			if (inet_pton(AF_INET6, addr, &addr6) <= 0)
-				Warnx("%s: `%s' %s: %s", addr, desc, _("address"), _("invalid IPv6 address format"));
-			else
-				addrlist_add(AF_INET6, &addr4, port);
-		}
-#endif
+      {
+	family = AF_INET;
+	if ((c = strchr(addr, '+')) || (c = strchr(addr, ':'))) {
+	  *c++ = '\0';
+	  if (!(port = atoi(c)))
+	    port = default_port;
 	}
-	Free(oc);
-	return (FirstAddr);
+      }
+
+    /* If the address specifies the wildcard '*', add a record for each address */
+    if (addr[0] == '*')	{
+      for (A = Addresses; A; A = A->next)
+	if (A->family == AF_INET)
+	  addrlist_add(A->family, &A->addr4, port);
+#if HAVE_IPV6
+	else if (A->family == AF_INET6)
+	  addrlist_add(A->family, &A->addr6, port);
+#endif
+      continue;
+    }
+
+    /* Handle "localhost" */
+    if (!strcasecmp(addr, "localhost"))	{
+      /* Only add the IPv4 localhost if there are SOME IPv4 addresses */
+      for (A = Addresses; A; A = A->next)
+	if (A->family == AF_INET) {
+	  if (inet_pton(AF_INET, "127.0.0.1", &addr4) > 0)
+	    addrlist_add(AF_INET, &addr4, port);
+	  break;
+	}
+
+#if HAVE_IPV6
+      /* Only add the IPv6 localhost if there are SOME IPv6 addresses */
+      for (A = Addresses; A; A = A->next)
+	if (A->family == AF_INET6) {
+	  memcpy(&addr6, &in6addr_loopback, sizeof(struct in6_addr));
+	  addrlist_add(AF_INET6, &addr6, port);
+	  break;
+	}
+#endif
+      continue;
+    }
+
+    if (family == AF_INET) {				/* Add regular IPv4 address */
+      if (inet_pton(AF_INET, addr, &addr4) <= 0)
+	Warnx("%s: `%s' %s: %s", addr, desc, _("address"), _("invalid IPv4 address format"));
+      else
+	addrlist_add(AF_INET, &addr4, port);
+    }
+#if HAVE_IPV6
+    else if (family == AF_INET6) {			/* Add regular IPv6 address */
+      if (inet_pton(AF_INET6, addr, &addr6) <= 0)
+	Warnx("%s: `%s' %s: %s", addr, desc, _("address"), _("invalid IPv6 address format"));
+      else
+	addrlist_add(AF_INET6, &addr4, port);
+    }
+#endif
+  }
+  RELEASE(oc);
+  return (FirstAddr);
 }
 /*--- get_opt_addrlist() ------------------------------------------------------------------------*/
 
@@ -514,41 +478,36 @@ get_opt_addrlist(ADDRLIST *Addresses, const char *opt, int default_port, char *d
 	Create IPv4 listening socket.  Returns the new file descriptor.  Errors are fatal.
 **************************************************************************************************/
 static int
-ipv4_listener(struct sockaddr_in *sa, int protocol)
-{
-	int fd, opt = 1;
+ipv4_listener(struct sockaddr_in *sa, int protocol) {
+  int fd, opt = 1;
 
-	if ((fd = socket(AF_INET, protocol, (protocol == SOCK_STREAM) ? IPPROTO_TCP : IPPROTO_UDP)) < 0)
-		Err("socket");
-	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-		Warn("setsockopt");
-	fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
-	if (bind(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in)) < 0)
-		Err("bind (%s): %s:%d",
-			 (protocol == SOCK_STREAM) ? "TCP" : "UDP", inet_ntoa(sa->sin_addr), ntohs(sa->sin_port));
-	if (protocol == SOCK_STREAM)
-	{
-		if (listen(fd, SOMAXCONN) < 0)
-			Err("listen");
-	}
-	else
-	{
-		int n, size;
+  if ((fd = socket(AF_INET, protocol, (protocol == SOCK_STREAM) ? IPPROTO_TCP : IPPROTO_UDP)) < 0)
+    Err("socket");
+  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+    Warn("setsockopt");
+  fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
+  if (bind(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in)) < 0)
+    Err("bind (%s): %s:%d",
+	(protocol == SOCK_STREAM) ? "TCP" : "UDP", inet_ntoa(sa->sin_addr), ntohs(sa->sin_port));
+  if (protocol == SOCK_STREAM) {
+    if (listen(fd, SOMAXCONN) < 0)
+      Err("listen");
+  } else {
+    int n, size;
 
-		for (n = 1; n < 1024; n++)
-		{
-			size = n * 1024;
-			if ((setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size))) < 0)
-				break;
-		}
-	}
+    for (n = 1; n < 1024; n++) {
+      size = n * 1024;
+      if ((setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size))) < 0)
+	break;
+    }
+  }
 
 #if DEBUG_ENABLED && DEBUG_LISTEN
-	Debug("listening on %s, %s port %d", ipaddr(AF_INET, &sa->sin_addr),
-			protocol == SOCK_STREAM ? "TCP" : "UDP", ntohs(sa->sin_port));
+  Debug("listening on %s, %s port %d", ipaddr(AF_INET, &sa->sin_addr),
+	protocol == SOCK_STREAM ? "TCP" : "UDP", ntohs(sa->sin_port));
 #endif
 
-	return (fd);
+  return (fd);
 }
 /*--- ipv4_listener() ---------------------------------------------------------------------------*/
 
@@ -559,42 +518,37 @@ ipv4_listener(struct sockaddr_in *sa, int protocol)
 	Create IPv6 listening socket.  Returns the new file descriptor.  Errors are fatal.
 **************************************************************************************************/
 static int
-ipv6_listener(struct sockaddr_in6 *sa, int protocol)
-{
-	int fd, opt = 1;
+ipv6_listener(struct sockaddr_in6 *sa, int protocol) {
+  int fd, opt = 1;
 
-	if ((fd = socket(AF_INET6, protocol, (protocol == SOCK_STREAM) ? IPPROTO_TCP : IPPROTO_UDP)) < 0)
-		Err("socket");
+  if ((fd = socket(AF_INET6, protocol, (protocol == SOCK_STREAM) ? IPPROTO_TCP : IPPROTO_UDP)) < 0)
+    Err("socket");
 
-	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-		Warn("setsockopt");
-	fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
-	if (bind(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in6)) < 0)
-		Err("bind (%s): %s+%d", (protocol == SOCK_STREAM) ? "TCP" : "UDP",
-			 ipaddr(AF_INET6, &sa->sin6_addr), ntohs(sa->sin6_port));
-	if (protocol == SOCK_STREAM)
-	{
-		if (listen(fd, 5) < 0)
-			Err("listen");
-	}
-	else
-	{
-		int n, size;
+  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+    Warn("setsockopt");
+  fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
+  if (bind(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in6)) < 0)
+    Err("bind (%s): %s+%d", (protocol == SOCK_STREAM) ? "TCP" : "UDP",
+	ipaddr(AF_INET6, &sa->sin6_addr), ntohs(sa->sin6_port));
+  if (protocol == SOCK_STREAM) {
+    if (listen(fd, 5) < 0)
+      Err("listen");
+  } else {
+    int n, size;
 
-		for (n = 1; n < 1024; n++)
-		{
-			size = n * 1024;
-			if ((setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size))) < 0)
-				break;
-		}
-	}
+    for (n = 1; n < 1024; n++) {
+      size = n * 1024;
+      if ((setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size))) < 0)
+	break;
+    }
+  }
 
 #if DEBUG_ENABLED && DEBUG_LISTEN
-	Debug("listening on %s, %s port %d", ipaddr(AF_INET6, &sa->sin6_addr), 
-			protocol == SOCK_STREAM ? "TCP" : "UDP", ntohs(sa->sin6_port));
+  Debug("listening on %s, %s port %d", ipaddr(AF_INET6, &sa->sin6_addr), 
+	protocol == SOCK_STREAM ? "TCP" : "UDP", ntohs(sa->sin6_port));
 #endif
 
-	return (fd);
+  return (fd);
 }
 /*--- ipv6_listener() ---------------------------------------------------------------------------*/
 #endif
@@ -604,132 +558,122 @@ ipv6_listener(struct sockaddr_in6 *sa, int protocol)
 	CREATE_LISTENERS
 **************************************************************************************************/
 void
-create_listeners(void)
-{
-	ADDRLIST	*Addresses;											/* List of available addresses */
-	ADDRLIST	*Listen;												/* Listen on these addresses */
-	ADDRLIST	*NoListen;											/* Don't listen on these addresses */
-	ADDRLIST	*L, *N;												/* Current address */
-	char		*port_opt = conf_get(&Conf, "port", 0);	/* "port" config option */
-	int		port = 53;											/* Listen on this port number */
+create_listeners(void) {
+  ADDRLIST	*Addresses;					/* List of available addresses */
+  ADDRLIST	*Listen;					/* Listen on these addresses */
+  ADDRLIST	*NoListen;					/* Don't listen on these addresses */
+  ADDRLIST	*L, *N;						/* Current address */
+  char		*port_opt = conf_get(&Conf, "port", 0);		/* "port" config option */
+  int		port = 53;					/* Listen on this port number */
 
-	/* Set default port number */
-	if (port_opt && atoi(port_opt))
-		port = atoi(port_opt);
+  /* Set default port number */
+  if (port_opt && atoi(port_opt))
+    port = atoi(port_opt);
 
-	Addresses = addrlist_load(port);							/* Get available addresses */
-
-#if DEBUG_ENABLED && DEBUG_LISTEN
-	Debug(" ");
-	for (L = Addresses; L; L = L->next)
-		if (L->family == AF_INET)
-			Debug("Address: %s (port %d)", ipaddr(AF_INET, &L->addr4), L->port);
-#if HAVE_IPV6
-		else if (L->family == AF_INET6)
-			Debug("Address: %s (port %d)", ipaddr(AF_INET6, &L->addr6), L->port);
-#endif
-	Debug(" ");
-#endif
-
-	/* Get addresses specified in 'listen' and 'no-listen' configuration variables */
-	Listen = get_opt_addrlist(Addresses, conf_get(&Conf, "listen", NULL), port, "listen");
-	NoListen = get_opt_addrlist(Addresses, conf_get(&Conf, "no-listen", NULL), port, "no-listen");
+  Addresses = addrlist_load(port);				/* Get available addresses */
 
 #if DEBUG_ENABLED && DEBUG_LISTEN
-	for (L = NoListen; L; L = L->next)
-		if (L->family == AF_INET)
-			Debug("NoListen: %s (port %d)", ipaddr(AF_INET, &L->addr4), L->port);
+  Debug(" ");
+  for (L = Addresses; L; L = L->next)
+    if (L->family == AF_INET)
+      Debug("Address: %s (port %d)", ipaddr(AF_INET, &L->addr4), L->port);
 #if HAVE_IPV6
-		else if (L->family == AF_INET6)
-			Debug("NoListen: %s (port %d)", ipaddr(AF_INET6, &L->addr6), L->port);
+    else if (L->family == AF_INET6)
+      Debug("Address: %s (port %d)", ipaddr(AF_INET6, &L->addr6), L->port);
 #endif
-	Debug(" ");
+  Debug(" ");
+#endif
+
+  /* Get addresses specified in 'listen' and 'no-listen' configuration variables */
+  Listen = get_opt_addrlist(Addresses, conf_get(&Conf, "listen", NULL), port, "listen");
+  NoListen = get_opt_addrlist(Addresses, conf_get(&Conf, "no-listen", NULL), port, "no-listen");
+
+#if DEBUG_ENABLED && DEBUG_LISTEN
+  for (L = NoListen; L; L = L->next)
+    if (L->family == AF_INET)
+      Debug("NoListen: %s (port %d)", ipaddr(AF_INET, &L->addr4), L->port);
+#if HAVE_IPV6
+    else if (L->family == AF_INET6)
+      Debug("NoListen: %s (port %d)", ipaddr(AF_INET6, &L->addr6), L->port);
+#endif
+  Debug(" ");
 #endif
 
 #if DEBUG_ENABLED && DEBUG_LISTEN
-	for (L = Listen; L; L = L->next)
-		if (L->family == AF_INET)
-			Debug("Listen: %s (port %d)", ipaddr(AF_INET, &L->addr4), L->port);
+  for (L = Listen; L; L = L->next)
+    if (L->family == AF_INET)
+      Debug("Listen: %s (port %d)", ipaddr(AF_INET, &L->addr4), L->port);
 #if HAVE_IPV6
-		else if (L->family == AF_INET6)
-			Debug("Listen: %s (port %d)", ipaddr(AF_INET6, &L->addr6), L->port);
+    else if (L->family == AF_INET6)
+      Debug("Listen: %s (port %d)", ipaddr(AF_INET6, &L->addr6), L->port);
 #endif
-	Debug(" ");
+  Debug(" ");
 #endif
 
-	/* Deactivate any 'NoListen' addresses found in 'Listen' */
-	for (N = NoListen; N; N = N->next)
-		for (L = Listen; L; L = L->next)
-			if (L->ok && (N->family == L->family) && (N->port == L->port)
+  /* Deactivate any 'NoListen' addresses found in 'Listen' */
+  for (N = NoListen; N; N = N->next)
+    for (L = Listen; L; L = L->next)
+      if (L->ok && (N->family == L->family) && (N->port == L->port)
 #if HAVE_IPV6
-				 && !memcmp(&N->addr6, &L->addr6, sizeof(struct in6_addr))
+	  && !memcmp(&N->addr6, &L->addr6, sizeof(struct in6_addr))
 #endif
-				 && !memcmp(&N->addr4, &L->addr4, sizeof(struct in_addr)))
-				L->ok = 0;
+	  && !memcmp(&N->addr4, &L->addr4, sizeof(struct in_addr)))
+	L->ok = 0;
 
-	/* Free 'Addresses' and 'NoListen'; we're done with them */
-	addrlist_free(Addresses);
-	addrlist_free(NoListen);
+  /* Free 'Addresses' and 'NoListen'; we're done with them */
+  addrlist_free(Addresses);
+  addrlist_free(NoListen);
 
-	/* Create listening socket for each address in 'Listen' */
-	for (L = Listen; L; L = L->next)
-	{
-		if (!L->ok)
-			continue;
+  /* Create listening socket for each address in 'Listen' */
+  for (L = Listen; L; L = L->next) {
+    if (!L->ok)
+      continue;
 
-		if (L->family == AF_INET)
-		{
-			struct sockaddr_in sa;
+    if (L->family == AF_INET) {
+      struct sockaddr_in sa;
 
-			memset(&sa, 0, sizeof(struct sockaddr_in));
-			sa.sin_family = AF_INET;
-			sa.sin_port = htons(L->port);
-			memcpy(&sa.sin_addr, &L->addr4, sizeof(struct in_addr));
+      memset(&sa, 0, sizeof(struct sockaddr_in));
+      sa.sin_family = AF_INET;
+      sa.sin_port = htons(L->port);
+      memcpy(&sa.sin_addr, &L->addr4, sizeof(struct in_addr));
 
-			/* Expand FD lists as appropriate and create listening sockets */
-			if (!(udp4_fd = realloc(udp4_fd, (1 + num_udp4_fd) * sizeof(int))))
-				Err(_("out of memory"));
-			udp4_fd[num_udp4_fd++] = ipv4_listener(&sa, SOCK_DGRAM);
+      /* Expand FD lists as appropriate and create listening sockets */
+      udp4_fd = REALLOCATE(udp4_fd, (1 + num_udp4_fd) * sizeof(int), int[]);
+      udp4_fd[num_udp4_fd++] = ipv4_listener(&sa, SOCK_DGRAM);
 
-			if (axfr_enabled || tcp_enabled)
-			{
-				if (!(tcp4_fd = realloc(tcp4_fd, (1 + num_tcp4_fd) * sizeof(int))))
-					Err(_("out of memory"));
-				tcp4_fd[num_tcp4_fd++] = ipv4_listener(&sa, SOCK_STREAM);
-			}
-		}
+      if (axfr_enabled || tcp_enabled) {
+	tcp4_fd = REALLOCATE(tcp4_fd, (1 + num_tcp4_fd) * sizeof(int), int[]);
+	tcp4_fd[num_tcp4_fd++] = ipv4_listener(&sa, SOCK_STREAM);
+      }
+    }
 #if HAVE_IPV6
-		else if (L->family == AF_INET6)
-		{
-			struct sockaddr_in6 sa;
+    else if (L->family == AF_INET6) {
+      struct sockaddr_in6 sa;
 
-			memset(&sa, 0, sizeof(struct sockaddr_in6));
-			sa.sin6_family = AF_INET6;
-			sa.sin6_port = htons(L->port);
-			memcpy(&sa.sin6_addr, &L->addr6, sizeof(struct in6_addr));
+      memset(&sa, 0, sizeof(struct sockaddr_in6));
+      sa.sin6_family = AF_INET6;
+      sa.sin6_port = htons(L->port);
+      memcpy(&sa.sin6_addr, &L->addr6, sizeof(struct in6_addr));
 #if 0
-			/* These two vars are part of struct sockaddr_in6, but I don't know what they are: */
-			uint32_t sin6_flowinfo;   /* IPv6 flow information */
-			uint32_t sin6_scope_id;   /* IPv6 scope-id */
+      /* These two vars are part of struct sockaddr_in6, but I don't know what they are: */
+      uint32_t sin6_flowinfo;   /* IPv6 flow information */
+      uint32_t sin6_scope_id;   /* IPv6 scope-id */
 #endif
 
-			/* Expand FD lists as appropriate and create listening sockets */
-			if (!(udp6_fd = realloc(udp6_fd, (1 + num_udp6_fd) * sizeof(int))))
-				Err(_("out of memory"));
-			udp6_fd[num_udp6_fd++] = ipv6_listener(&sa, SOCK_DGRAM);
-
-			if (axfr_enabled || tcp_enabled)
-			{
-				if (!(tcp6_fd = realloc(tcp6_fd, (1 + num_tcp6_fd) * sizeof(int))))
-					Err(_("out of memory"));
-				tcp6_fd[num_tcp6_fd++] = ipv6_listener(&sa, SOCK_STREAM);
-			}
-		}
+      /* Expand FD lists as appropriate and create listening sockets */
+      udp6_fd = REALLOCATE(udp6_fd, (1 + num_udp6_fd) * sizeof(int), int[]);
+      udp6_fd[num_udp6_fd++] = ipv6_listener(&sa, SOCK_DGRAM);
+      
+      if (axfr_enabled || tcp_enabled) {
+	tcp6_fd = REALLOCATE(tcp6_fd, (1 + num_tcp6_fd) * sizeof(int), int[]);
+	tcp6_fd[num_tcp6_fd++] = ipv6_listener(&sa, SOCK_STREAM);
+      }
+    }
 #endif
-	}
+  }
 
-	server_greeting();
-	addrlist_free(Listen);
+  server_greeting();
+  addrlist_free(Listen);
 }
 /*--- create_listeners() ------------------------------------------------------------------------*/
 
@@ -738,29 +682,28 @@ create_listeners(void)
 	SERVER_GREETING
 **************************************************************************************************/
 static void
-server_greeting(void)
-{
-	char	greeting[512], *g = greeting;						/* Server startup message */
-	int	total;													/* Total listening sockets */
-	time_t now = time(NULL);
+server_greeting(void) {
+  char	greeting[512], *g = greeting;				/* Server startup message */
+  int	total;							/* Total listening sockets */
+  time_t now = time(NULL);
 
-	g += sprintf(g, "%s %s %s %.24s", progname, PACKAGE_VERSION, _("started"), ctime(&now));
+  g += sprintf(g, "%s %s %s %.24s", progname, PACKAGE_VERSION, _("started"), ctime(&now));
 
-	total = num_udp4_fd;
+  total = num_udp4_fd;
 #if HAVE_IPV6
-	total += num_udp6_fd;
+  total += num_udp6_fd;
 #endif
-	g += sprintf(g, " (%s %d %s)", _("listening on"),
-					 total, total == 1 ? _("address") : _("addresses"));
+  g += sprintf(g, " (%s %d %s)", _("listening on"),
+	       total, total == 1 ? _("address") : _("addresses"));
 
 #if DEBUG_ENABLED
-	g += sprintf(g, "%s", _(" (compiled with debug)"));
+  g += sprintf(g, "%s", _(" (compiled with debug)"));
 #endif
 
-	if (answer_then_quit)
-		g += sprintf(g, _(" (quit after %u requests)"), answer_then_quit);
+  if (answer_then_quit)
+    g += sprintf(g, _(" (quit after %u requests)"), answer_then_quit);
 
-	Notice("%s", greeting);
+  Notice("%s", greeting);
 }
 /*--- server_greeting() -------------------------------------------------------------------------*/
 

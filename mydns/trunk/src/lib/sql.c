@@ -34,65 +34,62 @@ static char *_sql_database = NULL;
 	Connect to the database.  Errors fatal.
 **************************************************************************************************/
 void
-sql_open(char *user, char *password, char *host, char *database)
-{
-	char *portp = NULL;
-	unsigned int port = 0;
+sql_open(char *user, char *password, char *host, char *database) {
+  char *portp = NULL;
+  unsigned int port = 0;
 
-	if (host && (portp = strchr(host, ':')))
-	{
-		port = atoi(portp + 1);
-		*portp = '\0';
-	}
+  if (host && (portp = strchr(host, ':'))) {
+    port = atoi(portp + 1);
+    *portp = '\0';
+  }
 
-	/* Save connection information so that we can reconnect if necessary */
-	if (_sql_user) Free(_sql_user);
-	if (_sql_password) Free(_sql_password);
-	if (_sql_host) Free(_sql_host);
-	if (_sql_database) Free(_sql_database);
-	_sql_user = user ? strdup(user) : NULL;
-	_sql_password = password ? strdup(password) : NULL;
-	_sql_host = host ? strdup(host) : NULL;
-	_sql_database = database ? strdup(database) : NULL;
+  /* Save connection information so that we can reconnect if necessary */
+  if (_sql_user) RELEASE(_sql_user);
+  if (_sql_password) RELEASE(_sql_password);
+  if (_sql_host) RELEASE(_sql_host);
+  if (_sql_database) RELEASE(_sql_database);
+  _sql_user = user ? STRDUP(user) : NULL;
+  _sql_password = password ? STRDUP(password) : NULL;
+  _sql_host = host ? STRDUP(host) : NULL;
+  _sql_database = database ? STRDUP(database) : NULL;
 
 #if USE_PGSQL
-	sql = PQsetdbLogin(host, portp, NULL, NULL, database, user, password);
-	if (PQstatus(sql) == CONNECTION_BAD)
-	{
-		char *errmsg = PQerrorMessage(sql), *c, out[512];
+  sql = PQsetdbLogin(host, portp, NULL, NULL, database, user, password);
+  if (PQstatus(sql) == CONNECTION_BAD) {
+    char *errmsg = PQerrorMessage(sql), *c, out[512];
 
-		/* Save the first error message so that the user gets the error message they "expect" */
-		for (c = errmsg; *c; c++)
-			if (*c == '\r' || *c == '\n')
-				*c = ' ';
-		strtrim(errmsg);
+    /* Save the first error message so that the user gets the error message they "expect" */
+    for (c = errmsg; *c; c++)
+      if (*c == '\r' || *c == '\n')
+	*c = ' ';
+    strtrim(errmsg);
 
-		snprintf(out, sizeof(out), "%s %s: %s (errno=%d)",
-					_("Error connecting to PostgreSQL server at"), host, errmsg, errno);
+    snprintf(out, sizeof(out), "%s %s: %s (errno=%d)",
+	     _("Error connecting to PostgreSQL server at"), host, errmsg, errno);
 
-		if (sql)
-			PQfinish(sql);
-		/* Try login via UNIX socket before failing, per Lee Brotherston <lee@nerds.org.uk> */
-		sql = PQsetdbLogin(NULL, NULL, NULL, NULL, database, user, password);
-		if (PQstatus(sql) == CONNECTION_BAD)
-			Errx("%s", out);
-	}
+    if (sql)
+      PQfinish(sql);
+    /* Try login via UNIX socket before failing, per Lee Brotherston <lee@nerds.org.uk> */
+    sql = PQsetdbLogin(NULL, NULL, NULL, NULL, database, user, password);
+    if (PQstatus(sql) == CONNECTION_BAD)
+      Errx("%s", out);
+  }
 #else
-	sql = NULL;
-	if (!(sql = mysql_init(NULL)))
-		Err(_("Unable to allocate MySQL data structure"));
+  sql = NULL;
+  if (!(sql = mysql_init(NULL)))
+    Err(_("Unable to allocate MySQL data structure"));
 #if MYSQL_VERSION_ID > 32349
-	mysql_options(sql, MYSQL_READ_DEFAULT_GROUP, "client");
+  mysql_options(sql, MYSQL_READ_DEFAULT_GROUP, "client");
 #endif
 #if MYSQL_VERSION_ID > 50012
-	mysql_options(sql, MYSQL_OPT_RECONNECT, "1");
+  mysql_options(sql, MYSQL_OPT_RECONNECT, "1");
 #endif
-	if (!(mysql_real_connect(sql, host, user, password, database, port, NULL, 0)))
-		ErrSQL(sql, _("Error connecting to MySQL server at %s"), host);
+  if (!(mysql_real_connect(sql, host, user, password, database, port, NULL, 0)))
+    ErrSQL(sql, _("Error connecting to MySQL server at %s"), host);
 #endif
 
-	if (portp)
-		*portp = ':';
+  if (portp)
+    *portp = ':';
 }
 /*--- sql_open() --------------------------------------------------------------------------------*/
 
@@ -102,55 +99,50 @@ sql_open(char *user, char *password, char *host, char *database)
 	Attempt to close and reopen the database connection.
 **************************************************************************************************/
 void
-sql_reopen(void)
-{
-	SQL *new_sql = NULL;
-	char *portp = NULL;
-	unsigned int port = 0;
+sql_reopen(void) {
+  SQL *new_sql = NULL;
+  char *portp = NULL;
+  unsigned int port = 0;
 
-	if (_sql_host && (portp = strchr(_sql_host, ':')))
-	{
-		port = atoi(portp + 1);
-		*portp = '\0';
-	}
+  if (_sql_host && (portp = strchr(_sql_host, ':'))) {
+    port = atoi(portp + 1);
+    *portp = '\0';
+  }
 
 #if USE_PGSQL
-	new_sql = PQsetdbLogin(_sql_host, portp, NULL, NULL, _sql_database, _sql_user, _sql_password);
-	if (PQstatus(new_sql) == CONNECTION_BAD)
-	{
-		if (new_sql)
-			PQfinish(new_sql);
-		/* Try login via UNIX socket before failing, per Lee Brotherston <lee@nerds.org.uk> */
-		new_sql = PQsetdbLogin(NULL, NULL, NULL, NULL, _sql_database, _sql_user, _sql_password);
-		if (PQstatus(new_sql) == CONNECTION_BAD)
-		{
-			if (new_sql)
-				PQfinish(new_sql);
-			return;
-		}
-	}
+  new_sql = PQsetdbLogin(_sql_host, portp, NULL, NULL, _sql_database, _sql_user, _sql_password);
+  if (PQstatus(new_sql) == CONNECTION_BAD) {
+    if (new_sql)
+      PQfinish(new_sql);
+    /* Try login via UNIX socket before failing, per Lee Brotherston <lee@nerds.org.uk> */
+    new_sql = PQsetdbLogin(NULL, NULL, NULL, NULL, _sql_database, _sql_user, _sql_password);
+    if (PQstatus(new_sql) == CONNECTION_BAD) {
+      if (new_sql)
+	PQfinish(new_sql);
+      return;
+    }
+  }
 #else
-	if (!mysql_ping(sql)) return;
-	if (!(new_sql = mysql_init(NULL)))
-		return;
+  if (!mysql_ping(sql)) return;
+  if (!(new_sql = mysql_init(NULL)))
+    return;
 #if MYSQL_VERSION_ID > 32349
-	mysql_options(new_sql, MYSQL_READ_DEFAULT_GROUP, "client");
+  mysql_options(new_sql, MYSQL_READ_DEFAULT_GROUP, "client");
 #endif
 #if MYSQL_VERSION_ID > 50012
-	mysql_options(sql, MYSQL_OPT_RECONNECT, "1");
+  mysql_options(sql, MYSQL_OPT_RECONNECT, "1");
 #endif
-	if (!(mysql_real_connect(new_sql, _sql_host, _sql_user, _sql_password, _sql_database, port, NULL, 0)))
-	{
-		mysql_close(new_sql);
-		return;
-	}
+  if (!(mysql_real_connect(new_sql, _sql_host, _sql_user, _sql_password, _sql_database, port, NULL, 0))) {
+    mysql_close(new_sql);
+    return;
+  }
 #endif
 
-	sql_close(sql);
-	sql = new_sql;
+  sql_close(sql);
+  sql = new_sql;
 
-	if (portp)
-		*portp = ':';
+  if (portp)
+    *portp = ':';
 }
 /*--- sql_reopen() ------------------------------------------------------------------------------*/
 
@@ -160,31 +152,29 @@ sql_reopen(void)
 	Returns 1 if the specified table exists in the current database, or 0 if it does not.
 **************************************************************************************************/
 int
-sql_istable(SQL *sqlConn, const char *tablename)
-{
-	char *xtablename;
+sql_istable(SQL *sqlConn, const char *tablename) {
+  char *xtablename;
 #if !USE_PGSQL
-	SQL_RES *res;
+  SQL_RES *res;
 #endif
-	int rv = 0;
+  int rv = 0;
 
-	xtablename = sql_escstr(sqlConn, (char*)tablename);
+  xtablename = sql_escstr(sqlConn, (char*)tablename);
 
 #if USE_PGSQL
-	if (sql_count(sqlConn, "SELECT COUNT(*) FROM pg_class"
-		 " WHERE (relkind='r' OR relkind='v') AND relname='%s'", xtablename) > 0)
-		rv = 1;
+  if (sql_count(sqlConn, "SELECT COUNT(*) FROM pg_class"
+		" WHERE (relkind='r' OR relkind='v') AND relname='%s'", xtablename) > 0)
+    rv = 1;
 #else
-	if ((res = sql_queryf(sqlConn, "SHOW TABLES LIKE '%s'", xtablename)))
-	{
-		if (sql_num_rows(res) > 0)
-			rv = 1;
-		sql_free(res);
-	}
+  if ((res = sql_queryf(sqlConn, "SHOW TABLES LIKE '%s'", xtablename))) {
+    if (sql_num_rows(res) > 0)
+      rv = 1;
+    sql_free(res);
+  }
 #endif
 
-	Free(xtablename);
-	return (rv);
+  RELEASE(xtablename);
+  return (rv);
 }
 /*--- sql_istable() -----------------------------------------------------------------------------*/
 
@@ -194,52 +184,90 @@ sql_istable(SQL *sqlConn, const char *tablename)
 	Returns 1 if the specified column exists in the current database, or 0 if it does not.
 **************************************************************************************************/
 int
-sql_iscolumn(SQL *sqlConn, const char *tablename, const char *columnname)
-{
-	char *xtablename, *xcolumnname;
+sql_iscolumn(SQL *sqlConn, const char *tablename, const char *columnname) {
+  char *xtablename, *xcolumnname;
 #if !USE_PGSQL
-	SQL_RES *res;
+  SQL_RES *res;
 #endif
-	int rv = 0;
+  int rv = 0;
 
-	xtablename = sql_escstr(sqlConn, (char*)tablename);
-	xcolumnname = sql_escstr(sqlConn, (char*)columnname);
+  xtablename = sql_escstr(sqlConn, (char*)tablename);
+  xcolumnname = sql_escstr(sqlConn, (char*)columnname);
 
 #if USE_PGSQL
-	if (sql_count(sqlConn,
-			"SELECT COUNT(*)"
-			" FROM pg_class,pg_attribute"
-			" WHERE (relkind='r' OR relkind='v')"
-			" AND relname='%s'"
-			" AND attrelid=oid"
-			" AND attname='%s'", xtablename, xcolumnname) > 0)
-		rv = 1;
+  if (sql_count(sqlConn,
+		"SELECT COUNT(*)"
+		" FROM pg_class,pg_attribute"
+		" WHERE (relkind='r' OR relkind='v')"
+		" AND relname='%s'"
+		" AND attrelid=oid"
+		" AND attname='%s'", xtablename, xcolumnname) > 0)
+    rv = 1;
 #else
-	if ((res = sql_queryf(sqlConn, "SHOW COLUMNS FROM %s LIKE '%s'", xtablename, xcolumnname)))
-	{
-		if (sql_num_rows(res) > 0)
-			rv = 1;
-		sql_free(res);
-	}
+  if ((res = sql_queryf(sqlConn, "SHOW COLUMNS FROM %s LIKE '%s'", xtablename, xcolumnname))) {
+    if (sql_num_rows(res) > 0)
+      rv = 1;
+    sql_free(res);
+  }
 #endif
 
-	Free(xtablename);
-	Free(xcolumnname);
-	return (rv);
+  RELEASE(xtablename);
+  RELEASE(xcolumnname);
+  return (rv);
 }
 /*--- sql_iscolumn() ----------------------------------------------------------------------------*/
 
+int sql_get_column_width(SQL *sqlConn, const char *tablename, const char *columnname) {
+  char *xtablename, *xcolumnname;
+  int width = 0;
 
+  xtablename = sql_escstr(sqlConn, (char*)tablename);
+  xcolumnname = sql_escstr(sqlConn, (char*)columnname);
+
+#if USE_PGSQL
+  /* Do not know how to do this */
+#else
+  {
+    SQL_RES *res = sql_queryf(sqlConn, "SHOW COLUMNS FROM %s LIKE '%s'",  xtablename, xcolumnname);
+    SQL_ROW row;
+
+    row = sql_getrow(res, NULL);
+    if (row) {
+      char *typefield = row[1];
+      char *basetype = NULL;
+      int i;
+      for (i = 0; i < strlen(typefield); i++) {
+	if (typefield[i] == '(') {
+	  basetype = STRNDUP(typefield, i);
+	  break;
+	}
+      }
+      typefield = &typefield[i];
+      if (typefield[0] && typefield[0] == '(') typefield = &typefield[1];
+      for (i = 0; i < strlen(typefield); i++) {
+	if (typefield[i] == ')') {
+	  width = atoi(typefield);
+	  break;
+	}
+      }
+    }
+    sql_free(res);
+  }
+#endif
+
+  RELEASE(xtablename);
+  RELEASE(xcolumnname);
+  return (width);
+}
 /**************************************************************************************************
 	_SQL_CLOSE
 **************************************************************************************************/
 void
-_sql_close(SQL *sqlConn)
-{
+_sql_close(SQL *sqlConn) {
 #if USE_PGSQL
-	PQfinish(sqlConn);
+  PQfinish(sqlConn);
 #else
-	mysql_close(sqlConn);
+  mysql_close(sqlConn);
 #endif
 }
 /*--- _sql_close() ------------------------------------------------------------------------------*/
@@ -250,34 +278,28 @@ _sql_close(SQL *sqlConn)
 	Issues an SQL query that does not return a result.  Returns 0 on success, -1 on error.
 **************************************************************************************************/
 int
-sql_nrquery(SQL *sqlConn, const char *query, size_t querylen)
-{
+sql_nrquery(SQL *sqlConn, const char *query, size_t querylen) {
 #if USE_PGSQL
-	{
-		ExecStatusType q_rv = PGRES_COMMAND_OK;
-		PGresult *result = NULL;
+  ExecStatusType q_rv = PGRES_COMMAND_OK;
+  PGresult *result = NULL;
 
-		result = PQexec(sqlConn, query);
-		q_rv = PQresultStatus(result);
+  result = PQexec(sqlConn, query);
+  q_rv = PQresultStatus(result);
 
-		if (q_rv == PGRES_COMMAND_OK)
-		{
-			PQclear(result);
-			return (0);
-		}
-		else
-		{
-			/* WarnSQL(sqlConn, _("%s: error during query"), PQresStatus(PQresultStatus(result))); */
-			PQclear(result);
-			return (-1);
-		}
-	}
+  if (q_rv == PGRES_COMMAND_OK) {
+    PQclear(result);
+    return (0);
+  } else {
+    /* WarnSQL(sqlConn, _("%s: error during query"), PQresStatus(PQresultStatus(result))); */
+    PQclear(result);
+    return (-1);
+  }
 #else
-	if (mysql_real_query(sqlConn, query, querylen))
-		return (-1);
+  if (mysql_real_query(sqlConn, query, querylen))
+    return (-1);
 #endif
 
-	return (0);
+  return (0);
 }
 /*--- sql_nrquery() -----------------------------------------------------------------------------*/
 
@@ -287,61 +309,38 @@ sql_nrquery(SQL *sqlConn, const char *query, size_t querylen)
 	Returns a query's result, or NULL on error.
 **************************************************************************************************/
 SQL_RES *
-sql_query(SQL *sqlConn, const char *query, size_t querylen)
-{
-	SQL_RES *res = NULL;
+sql_query(SQL *sqlConn, const char *query, size_t querylen) {
+  SQL_RES *res = NULL;
 
 #if USE_PGSQL
-	{
-		ExecStatusType q_rv = PGRES_COMMAND_OK;
-		PGresult *result = NULL;
+  ExecStatusType q_rv = PGRES_COMMAND_OK;
+  PGresult *result = NULL;
 
-		result = PQexec(sqlConn, query);
-		q_rv = PQresultStatus(result);
+  result = PQexec(sqlConn, query);
+  q_rv = PQresultStatus(result);
 
-		if (q_rv == PGRES_TUPLES_OK)
-		{
-			if (!(res = malloc(sizeof(SQL_RES))))
-			{
-				PQclear(result);
-				return (NULL);
-			}
-			res->result = result;
-			res->tuples = PQntuples(result);
-			res->fields = PQnfields(result);
-			res->current_tuple = 0;
-			if (!(res->current_row = malloc(res->fields * sizeof(unsigned char *))))
-			{
-				Free(res);
-				PQclear(result);
-				return (NULL);
-			}
-			if (!(res->current_length = malloc(res->fields * sizeof(int *))))
-			{
-			  	Free(res->current_row);
-				Free(res);
-				PQclear(result);
-				return (NULL);
-			}
-		}
-		else if (q_rv == PGRES_COMMAND_OK)
-		{
-			PQclear(result);
-			return (NULL);
-		}
-		else
-		{
-			/* WarnSQL(sqlConn, _("%s: error during query"), PQresStatus(PQresultStatus(result))); */
-			PQclear(result);
-			return (NULL);
-		}
-	}
+  if (q_rv == PGRES_TUPLES_OK) {
+    res = ALLOCATE(sizeof(SQL_RES), SQL_RES);
+    res->result = result;
+    res->tuples = PQntuples(result);
+    res->fields = PQnfields(result);
+    res->current_tuple = 0;
+    res->current_row = ALLOCATE(res->fields * sizeof(unsigned char *), unsigned char[]);
+    res->current_length = ALLOCATE(res->fields * sizeof(int *), int[]);
+  } else if (q_rv == PGRES_COMMAND_OK) {
+    PQclear(result);
+    return (NULL);
+  } else {
+    /* WarnSQL(sqlConn, _("%s: error during query"), PQresStatus(PQresultStatus(result))); */
+    PQclear(result);
+    return (NULL);
+  }
 #else
-	if (mysql_real_query(sqlConn, query, querylen) || !(res = mysql_store_result(sqlConn)))
-		return (NULL);
+  if (mysql_real_query(sqlConn, query, querylen) || !(res = mysql_store_result(sqlConn)))
+    return (NULL);
 #endif
 
-	return (res);
+  return (res);
 }
 /*--- sql_query() -------------------------------------------------------------------------------*/
 
@@ -351,17 +350,16 @@ sql_query(SQL *sqlConn, const char *query, size_t querylen)
 	Like sql_query, but accepts varargs format.
 **************************************************************************************************/
 SQL_RES *
-sql_queryf(SQL *sqlConn, const char *fmt, ...)
-{
-	va_list ap;
-	char buf[DNS_QUERYBUFSIZ];
-	size_t buflen;
+sql_queryf(SQL *sqlConn, const char *fmt, ...) {
+  va_list ap;
+  char buf[DNS_QUERYBUFSIZ];
+  size_t buflen;
 
-	va_start(ap, fmt);
-	buflen = vsnprintf(buf, sizeof(buf), fmt, ap);
-	va_end(ap);
+  va_start(ap, fmt);
+  buflen = vsnprintf(buf, sizeof(buf), fmt, ap);
+  va_end(ap);
 
-	return sql_query(sqlConn, buf, buflen);
+  return sql_query(sqlConn, buf, buflen);
 }
 /*--- sql_queryf() ------------------------------------------------------------------------------*/
 
@@ -372,33 +370,31 @@ sql_queryf(SQL *sqlConn, const char *fmt, ...)
 	occurred.
 **************************************************************************************************/
 long
-sql_count(SQL *sqlConn, const char *fmt, ...)
-{
-	va_list ap;
-	char buf[DNS_QUERYBUFSIZ];
-	size_t buflen;
-	SQL_RES *res = NULL;
-	long rv = 0;
+sql_count(SQL *sqlConn, const char *fmt, ...) {
+  va_list ap;
+  char buf[DNS_QUERYBUFSIZ];
+  size_t buflen;
+  SQL_RES *res = NULL;
+  long rv = 0;
 
-	va_start(ap, fmt);
-	buflen = vsnprintf(buf, sizeof(buf), fmt, ap);
-	va_end(ap);
+  va_start(ap, fmt);
+  buflen = vsnprintf(buf, sizeof(buf), fmt, ap);
+  va_end(ap);
 
-	if (!(res = sql_query(sqlConn, buf, buflen)))
-		return (-1);
-	if (sql_num_rows(res))
+  if (!(res = sql_query(sqlConn, buf, buflen)))
+    return (-1);
+  if (sql_num_rows(res)) {
 #if USE_PGSQL
-		rv = atol(PQgetvalue(res->result, 0, 0));
+    rv = atol(PQgetvalue(res->result, 0, 0));
 #else
-	{
-		MYSQL_ROW row;
+    MYSQL_ROW row;
 
-		if ((row = mysql_fetch_row(res)))
-			rv = atol(row[0]);
-	}
+    if ((row = mysql_fetch_row(res)))
+      rv = atol(row[0]);
 #endif
-	sql_free(res);
-	return (rv);
+  }
+  sql_free(res);
+  return (rv);
 }
 /*--- sql_count() -------------------------------------------------------------------------------*/
 
@@ -408,12 +404,11 @@ sql_count(SQL *sqlConn, const char *fmt, ...)
 	Returns the number of rows in a result set.
 **************************************************************************************************/
 long
-sql_num_rows(SQL_RES *res)
-{
+sql_num_rows(SQL_RES *res) {
 #if USE_PGSQL
-	return res->tuples;
+  return res->tuples;
 #else
-	return mysql_num_rows(res);
+  return mysql_num_rows(res);
 #endif
 }
 /*--- sql_num_rows() ----------------------------------------------------------------------------*/
@@ -426,21 +421,21 @@ sql_num_rows(SQL_RES *res)
 SQL_ROW
 sql_getrow(SQL_RES *res, unsigned long **lengths) {
 #if USE_PGSQL
-	register int n;
+  register int n;
 
-	if (res->current_tuple >= res->tuples)
-		return (NULL);
-	for (n = 0; n < res->fields; n++) {
-		res->current_row[n] = PQgetvalue(res->result, res->current_tuple, n);
-		res->current_length[n] = PQgetlength(res->result, res->current_tuple, n);
-	}
-	if (lengths) *lengths = res->current_length;
-	res->current_tuple++;
-	return (res->current_row);
+  if (res->current_tuple >= res->tuples)
+    return (NULL);
+  for (n = 0; n < res->fields; n++) {
+    res->current_row[n] = PQgetvalue(res->result, res->current_tuple, n);
+    res->current_length[n] = PQgetlength(res->result, res->current_tuple, n);
+  }
+  if (lengths) *lengths = res->current_length;
+  res->current_tuple++;
+  return (res->current_row);
 #else
-	SQL_ROW row = mysql_fetch_row(res);
-	if (lengths) *lengths = mysql_fetch_lengths(res);
-	return row;
+  SQL_ROW row = mysql_fetch_row(res);
+  if (lengths) *lengths = mysql_fetch_lengths(res);
+  return row;
 #endif
 }
 /*--- sql_getrow() ------------------------------------------------------------------------------*/
@@ -452,7 +447,7 @@ sql_getrow(SQL_RES *res, unsigned long **lengths) {
 **************************************************************************************************/
 char *
 sql_escstr2(SQL *sqlConn, char *src, size_t srclen) {
-  char *dest = (char*)malloc(srclen*2+1);
+  char *dest = ALLOCATE(srclen*2+1, char[]);
   size_t reslen;
 #if USE_PGSQL
   int errcode = 0;
@@ -460,7 +455,7 @@ sql_escstr2(SQL *sqlConn, char *src, size_t srclen) {
 #else
   reslen = mysql_real_escape_string(sqlConn, dest, src, srclen);
 #endif
-  dest = realloc(dest, reslen+1);
+  dest = REALLOCATE(dest, reslen+1, char[]);
   return dest;
 }
 
@@ -476,15 +471,14 @@ sql_escstr(SQL *sqlConn, char *src) {
 	Free an SQL result.
 **************************************************************************************************/
 void
-_sql_free(SQL_RES *res)
-{
+_sql_free(SQL_RES *res) {
 #if USE_PGSQL
-  	Free(res->current_length);
-	Free(res->current_row);
-	PQclear(res->result);
-	Free(res);
+  RELEASE(res->current_length);
+  RELEASE(res->current_row);
+  PQclear(res->result);
+  RELEASE(res);
 #else
-	mysql_free_result(res);
+  mysql_free_result(res);
 #endif
 }
 /*--- _sql_free() -------------------------------------------------------------------------------*/
@@ -494,7 +488,7 @@ sql_build_query(char **query, const char *fmt, ...) {
   int querylen;
 
   va_start(ap, fmt);
-  querylen = vasprintf(query, fmt, ap);
+  querylen = VASPRINTF(query, fmt, ap);
   va_end(ap);
 
   if (querylen < 0)

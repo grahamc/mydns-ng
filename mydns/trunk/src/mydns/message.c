@@ -42,8 +42,8 @@ dns_make_message(TASK * t, uint16_t id, uint8_t opcode, dns_qtype_t qtype,
   int		messagesize = 0;
 
 
-  if (t->protocol == SOCK_DGRAM) message = (char*)malloc(messagesize = DNS_MAXPACKETLEN_UDP);
-  else if (t->protocol == SOCK_STREAM) message = (char*)malloc(messagesize = DNS_MAXPACKETLEN_TCP);
+  if (t->protocol == SOCK_DGRAM) message = ALLOCATE(messagesize = DNS_MAXPACKETLEN_UDP, char[]);
+  else if (t->protocol == SOCK_STREAM) message = ALLOCATE(messagesize = DNS_MAXPACKETLEN_TCP, char[]);
   else Err("unknown protocol %d", t->protocol);
 
   if (!message)
@@ -54,7 +54,7 @@ dns_make_message(TASK * t, uint16_t id, uint8_t opcode, dns_qtype_t qtype,
     *length = 0;
   if (!name) {
     if (length) *length = (int)ERR_MALFORMED_REQUEST;
-    Free(message);
+    RELEASE(message);
     return (NULL);
   }
 
@@ -71,7 +71,7 @@ dns_make_message(TASK * t, uint16_t id, uint8_t opcode, dns_qtype_t qtype,
   for (mark = dest++, c = name; *c; c++) {			/* QNAME */
     if ((c - name) > DNS_MAXNAMELEN) {
       if (length) *length = (int)ERR_Q_NAME_TOO_LONG;
-      Free(message);
+      RELEASE(message);
       return NULL;						/* Name too long */
     }
     if (*c != '.')						/* Append current character */
@@ -80,7 +80,7 @@ dns_make_message(TASK * t, uint16_t id, uint8_t opcode, dns_qtype_t qtype,
       /* Store current label length at 'mark' */
       if ((*mark = dest - mark - 1) > DNS_MAXLABELLEN) {
 	if (length) *length = (int)ERR_Q_LABEL_TOO_LONG;
-	Free(message);
+	RELEASE(message);
 	return NULL;	/* Label too long */
       }
       mark = dest++;
@@ -92,7 +92,7 @@ dns_make_message(TASK * t, uint16_t id, uint8_t opcode, dns_qtype_t qtype,
     }
     if ((dest - message) >= messagesize) {
       if (length) *length = (int)ERR_QUESTION_TRUNCATED;
-      Free(message);
+      RELEASE(message);
       return NULL;
     }
   }

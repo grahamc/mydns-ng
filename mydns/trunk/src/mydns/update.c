@@ -53,12 +53,19 @@ typedef struct _update_temp_rrset {
     uint16_t		len;
     char		*value;
   } tdata;
+  struct {
+    uint16_t		len;
+    char		*value;
+  } tedata;
 } TMPRR;
 
 #define TMPRR_NAME(__rrp)		((__rrp)->name)
 #define TMPRR_DATA_LENGTH(__rrp)	((__rrp)->tdata.len)
 #define TMPRR_DATA_VALUE(__rrp)		((__rrp)->tdata.value)
 #define TMPRR_DATA(__rrp)		((__rrp)->tdata)
+#define TMPRR_EDATA_LENGTH(__rrp)	((__rrp)->tedata.len)
+#define TMPRR_EDATA_VALUE(__rrp)	((__rrp)->tedata.value)
+#define TMPRR_EDATA(__rrp)		((__rrp)->tedata)
 
 typedef struct _update_query {
   /* Zone section */
@@ -88,19 +95,21 @@ typedef struct _update_query {
 static void
 free_uqrr(UQRR *uqrr) {
   UQRR_DATA_LENGTH(uqrr) = 0;
-  Free(UQRR_DATA_VALUE(uqrr));
-  Free(UQRR_NAME(uqrr));
+  RELEASE(UQRR_DATA_VALUE(uqrr));
+  RELEASE(UQRR_NAME(uqrr));
 
-  Free(uqrr);
+  RELEASE(uqrr);
 }
 
 static void
 free_tmprr(TMPRR *tmprr) {
   TMPRR_DATA_LENGTH(tmprr) = 0;
-  Free(TMPRR_DATA_VALUE(tmprr));
-  Free(TMPRR_NAME(tmprr));
+  RELEASE(TMPRR_DATA_VALUE(tmprr));
+  TMPRR_EDATA_LENGTH(tmprr) = 0;
+  TMPRR_EDATA_VALUE(tmprr) = NULL;
+  RELEASE(TMPRR_NAME(tmprr));
 
-  Free(tmprr);
+  RELEASE(tmprr);
 }
 
 static void
@@ -114,12 +123,12 @@ free_uq(UQ *uq) {
 
     for (n = 0; n < uq->num_tmprr; n++)
       free_tmprr(uq->tmprr[n]);
-    Free(uq->tmprr);
+    RELEASE(uq->tmprr);
   }
 
-  Free(UQ_NAME(uq));
+  RELEASE(UQ_NAME(uq));
 
-  Free(uq);
+  RELEASE(uq);
 }
 /*--- free_uq() ---------------------------------------------------------------------------------*/
 
@@ -190,7 +199,7 @@ check_update(TASK *t, MYDNS_SOA *soa) {
 #endif
 
   res = sql_query(sql, query, querylen);
-  Free(query);
+  RELEASE(query);
   if (!res) {
     ErrSQL(sql, "%s: %s", desctask(t), _("error loading DNS UPDATE access rules"));
   }
@@ -230,7 +239,7 @@ update_rrdump(TASK *t, char *section, int which, UQRR *rr) {
   int bufused = 0;
   int bufsiz = BUFSIZ;
 
-  buf = malloc(bufsiz);
+  buf = ALLOCATE(bufsiz, char[]);
   b = buf;
 
   for (n = 0; n < UQRR_DATA_LENGTH(rr); n++) {
@@ -244,7 +253,7 @@ update_rrdump(TASK *t, char *section, int which, UQRR *rr) {
     }
     if (bufused > (bufsiz - 6)) {
       bufsiz += BUFSIZ;
-      buf = realloc(buf, bufsiz );
+      buf = REALLOCATE(buf, bufsiz, char[]);
     }
   }
 
@@ -253,7 +262,7 @@ update_rrdump(TASK *t, char *section, int which, UQRR *rr) {
 	mydns_qtype_str(rr->type), mydns_class_str(rr->class),
 	rr->ttl, UQRR_DATA_LENGTH(rr), buf);
 
-  Free(buf);
+  RELEASE(buf);
 }
 /*--- update_rrdump() ---------------------------------------------------------------------------*/
 #endif
@@ -276,7 +285,7 @@ update_gobble_rr(TASK *t, MYDNS_SOA *soa, char *query, size_t querylen, char *cu
   DNS_GET16(rr->class, src);
   DNS_GET32(rr->ttl, src);
   DNS_GET16(UQRR_DATA_LENGTH(rr), src);
-  UQRR_DATA_VALUE(rr) = malloc(UQRR_DATA_LENGTH(rr)+1);
+  UQRR_DATA_VALUE(rr) = ALLOCATE(UQRR_DATA_LENGTH(rr)+1, char[]);
 
   memcpy(UQRR_DATA_VALUE(rr), src, UQRR_DATA_LENGTH(rr));
   src += UQRR_DATA_LENGTH(rr);
@@ -322,8 +331,7 @@ parse_update_query(TASK *t, MYDNS_SOA *soa, UQ *q) {
   **  These records are in normal RR format (RFC 1035 4.1.3)
   */
   q->numPR = t->ancount;
-  if (!(q->PR = calloc(q->numPR, sizeof(UQRR))))
-    Err(_("out of memory"));
+  q->PR = ALLOCATE_N(q->numPR, sizeof(UQRR), UQRR[]);
   for (n = 0; n < q->numPR; n++)
     if (!(src = update_gobble_rr(t, soa, query, querylen, src, &q->PR[n])))
       return -1;
@@ -337,8 +345,7 @@ parse_update_query(TASK *t, MYDNS_SOA *soa, UQ *q) {
   **  These records are in normal RR format (RFC 1035 4.1.3)
   */
   q->numUP = t->nscount;
-  if (!(q->UP = calloc(q->numUP, sizeof(UQRR))))
-    Err(_("out of memory"));
+  q->UP = ALLOCATE_N(q->numUP, sizeof(UQRR), UQRR[]);
   for (n = 0; n < q->numUP; n++)
     if (!(src = update_gobble_rr(t, soa, query, querylen, src, &q->UP[n])))
       return -1;
@@ -352,8 +359,7 @@ parse_update_query(TASK *t, MYDNS_SOA *soa, UQ *q) {
   **  These records are in normal RR format (RFC 1035 4.1.3)
   */
   q->numAD = t->arcount;
-  if (!(q->AD = calloc(q->numAD, sizeof(UQRR))))
-    Err(_("out of memory"));
+  q->AD = ALLOCATE_N(q->numAD, sizeof(UQRR), UQRR[]);
   for (n = 0; n < q->numAD; n++)
     if (!(src = update_gobble_rr(t, soa, query, querylen, src, &q->AD[n])))
       return -1;
@@ -372,10 +378,10 @@ parse_update_query(TASK *t, MYDNS_SOA *soa, UQ *q) {
 	Retrieve a name from the source without end-dot encoding.
 **************************************************************************************************/
 static char *
-text_retrieve(char **srcp, char *end, size_t *datalen, int one_word_only) {
+text_retrieve(unsigned char **srcp, unsigned char *end, size_t *datalen, int one_word_only) {
   int		n, x;							/* Offset in 'data' */
   char 		*data = NULL;
-  char		*src = *srcp;
+  unsigned char	*src = *srcp;
 
   *datalen = 0;
 
@@ -384,10 +390,10 @@ text_retrieve(char **srcp, char *end, size_t *datalen, int one_word_only) {
 
     if (n >= *datalen) {
       *datalen += len;
-      data = realloc(data, (*datalen)+1);
+      data = REALLOCATE(data, (*datalen)+1, char[]);
     }
     if (n)
-      data[n++] = ' ';
+      data[n++] = '\0';
     for (x = 0; x < len && src < end; x++)
       data[n++] = *src++;
     if (one_word_only)
@@ -406,10 +412,15 @@ text_retrieve(char **srcp, char *end, size_t *datalen, int one_word_only) {
 	Returns 0 on success, -1 on error.
 **************************************************************************************************/
 static taskexec_t
-update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t *datalen, uint32_t *aux) {
-  char	*src = (char*)UQRR_DATA_VALUE(rr);
-  char	*end = (char*)(UQRR_DATA_VALUE(rr) + UQRR_DATA_LENGTH(rr));
-  task_error_t errcode = 0;
+update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t *datalen,
+		   char **edata, size_t *edatalen, uint32_t *aux) {
+  unsigned char	*src = (unsigned char*)UQRR_DATA_VALUE(rr);
+  unsigned char	*end = (unsigned char*)(UQRR_DATA_VALUE(rr) + UQRR_DATA_LENGTH(rr));
+  task_error_t	errcode = 0;
+
+  *edata = NULL;
+  *edatalen = 0;
+
   *aux = 0;
 
   if (!UQRR_DATA_LENGTH(rr))
@@ -420,26 +431,27 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
   case DNS_QTYPE_A:
     if (UQRR_DATA_LENGTH(rr) != 4)
       return (TASK_ABANDONED);
-    *datalen = asprintf(data, "%d.%d.%d.%d", UQRR_DATA_VALUE(rr)[0], UQRR_DATA_VALUE(rr)[1],
+    *datalen = ASPRINTF(data, "%d.%d.%d.%d", UQRR_DATA_VALUE(rr)[0], UQRR_DATA_VALUE(rr)[1],
 			UQRR_DATA_VALUE(rr)[2], UQRR_DATA_VALUE(rr)[3]);
-    return (TASK_EXECUTED);
+    break;
 
   case DNS_QTYPE_AAAA:
     if (UQRR_DATA_LENGTH(rr) != 16)
       return (TASK_ABANDONED);
     /* Need to allocate a dynamic buffer */
-    *data = malloc(*datalen = INET6_ADDRSTRLEN);
+    *data = ALLOCATE(*datalen = INET6_ADDRSTRLEN, char[]);
     if (!(inet_ntop(AF_INET6, UQRR_DATA_VALUE(rr), *data, *datalen))) {
-      Free(*data); *datalen = 0;
+      RELEASE(*data);
+      *datalen = 0;
       return dnserror(t, DNS_RCODE_FORMERR, ERR_INVALID_ADDRESS);
     }
-    return (TASK_EXECUTED);
+    break;
 
   case DNS_QTYPE_CNAME:
-    if (!(*data = name_unencode2(t->query, t->len, &src, &errcode)))
+    if (!(*data = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
       return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
     *datalen = strlen(*data);
-    return (TASK_EXECUTED);
+    break;
 
   case DNS_QTYPE_HINFO:
     {
@@ -456,57 +468,60 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
       for (c = data2, data2sp = 0; *c && !data2sp; c++)
 	if (isspace(*c)) data2sp = 1;
 
-      *datalen = asprintf(data, "%s%s%s %s%s%s",
+      *datalen = ASPRINTF(data, "%s%s%s %s%s%s",
 			  data1sp ? "\"" : "", data1, data1sp ? "\"" : "",
 			  data2sp ? "\"" : "", data2, data2sp ? "\"" : "");
-      Free(data1);
-      Free(data2);
+      RELEASE(data1);
+      RELEASE(data2);
     }
-    return (TASK_EXECUTED);
+    break;
 
   case DNS_QTYPE_MX:
     DNS_GET16(*aux, src);
-    if (!(*data = name_unencode2(t->query, t->len, &src, &errcode)))
+    if (!(*data = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
       return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
     *datalen = strlen(*data);
-    return (TASK_EXECUTED);
+    break;
 
   case DNS_QTYPE_NS:
-    if (!(*data = name_unencode2(t->query, t->len, &src, &errcode)))
+    if (!(*data = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
       return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
     *datalen = strlen(*data);
-    return (TASK_EXECUTED);
+    break;
 
   case DNS_QTYPE_TXT:
     *data = text_retrieve(&src, end, datalen, 0);
-    if (*datalen > DNS_MAXDATALEN) {
-      Free(*data);
+    if (*datalen > DNS_MAXTXTLEN) {
+      RELEASE(*data);
       return dnserror(t, DNS_RCODE_FORMERR, ERR_INVALID_DATA);
     }
-    return (TASK_EXECUTED);
+    if (*datalen > mydns_rr_data_length) {
+      *datalen = mydns_rr_data_length;
+    }
+    break;
 
   case DNS_QTYPE_PTR:
-    if (!(*data = name_unencode2(t->query, t->len, &src, &errcode)))
+    if (!(*data = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
       return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
     *datalen = strlen(*data);
-    return (TASK_EXECUTED);
+    break;
 
   case DNS_QTYPE_RP:
     {
       char *data1, *data2;
 
-      if (!(data1 = name_unencode2(t->query, t->len, &src, &errcode)))
+      if (!(data1 = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
 	return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
-      if (!(data2 = name_unencode2(t->query, t->len, &src, &errcode))) {
-	Free(data1);
+      if (!(data2 = name_unencode2(t->query, t->len, (char**)&src, &errcode))) {
+	RELEASE(data1);
 	return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
       }
 
-      *datalen = asprintf(data, "%s %s", data1, data2);
-      Free(data1);
-      Free(data2);
+      *datalen = ASPRINTF(data, "%s %s", data1, data2);
+      RELEASE(data1);
+      RELEASE(data2);
     }
-    return (TASK_EXECUTED);
+    break;
 
   case DNS_QTYPE_SRV:
     {
@@ -517,19 +532,25 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
       DNS_GET16(weight, src);
       DNS_GET16(port, src);
 
-      if (!(data1 = name_unencode2(t->query, t->len, &src, &errcode)))
+      if (!(data1 = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
 	return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
 
-      *datalen = asprintf(data, "%u %u %s", weight, port, data1);
-      Free(data1);
+      *datalen = ASPRINTF(data, "%u %u %s", weight, port, data1);
+      RELEASE(data1);
     }
-    return (TASK_EXECUTED);
+    break;
 
   default:
-    *datalen = asprintf(data, "Unknown type %s", mydns_qtype_str(rr->type));
-    break;
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
   }
-  return (TASK_FAILED);
+
+  if (mydns_rr_extended_data && *datalen > mydns_rr_data_length) {
+    *edatalen = *datalen - mydns_rr_data_length;
+    *edata = &((*data)[mydns_rr_data_length]);
+  }
+
+  return (TASK_EXECUTED);
 }
 /*--- update_get_rr_data() ----------------------------------------------------------------------*/
 
@@ -562,12 +583,12 @@ update_escape_name(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **xname, char 
 
   *xname = sql_escstr(sql, UQRR_NAME(rr));
 
-  asprintf(&tmp, "%.*s",
+  ASPRINTF(&tmp, "%.*s",
 	   strlen(UQRR_NAME(rr)) - strlen(soa->origin) - 1,
 	   UQRR_NAME(rr));
   *xhost = sql_escstr(sql, tmp);
 
-  Free(tmp);
+  RELEASE(tmp);
 }
 
 static int
@@ -608,11 +629,11 @@ update_zone_has_name(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
   Debug("%s: DNS UPDATE: %s", desctask(t), query);
 #endif
 
-  Free(xname);
-  Free(xhost);
+  RELEASE(xname);
+  RELEASE(xhost);
 
   res = sql_query(sql, query, querylen);
-  Free(query);
+  RELEASE(query);
   if (!(res))	{
     WarnSQL(sql, "%s: %s", desctask(t), _("error searching name for DNS UPDATE"));
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
@@ -658,11 +679,11 @@ update_zone_has_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
   Debug("%s: DNS UPDATE: %s", desctask(t), query);
 #endif
 
-  Free(xname);
-  Free(xhost);
+  RELEASE(xname);
+  RELEASE(xhost);
 
   res = sql_query(sql, query, querylen);
-  Free(query);
+  RELEASE(query);
   if (!(res)) {
     WarnSQL(sql, "%s: %s", desctask(t), _("error searching name/type for DNS UPDATE"));
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
@@ -685,8 +706,8 @@ update_zone_has_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 **************************************************************************************************/
 static taskexec_t
 check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
-  char		*data;
-  size_t	datalen;
+  char		*data, *edata;
+  size_t	datalen, edatalen;
   uint32_t	aux = 0;
   int		n, rv;
 
@@ -699,14 +720,14 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 #endif
 
   /* Get aux/data */
-  update_get_rr_data(t, soa, q, rr, &data, &datalen, &aux);		/* Ignore error */
+  update_get_rr_data(t, soa, q, rr, &data, &datalen, &edata, &edatalen, &aux);	/* Ignore error */
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
   Debug("%s: DNS UPDATE: check_prerequisite: aux=%u", desctask(t), aux);
   Debug("%s: DNS UPDATE: check_prerequisite: data=[%s]", desctask(t), data);
 #endif
 
-  Free(data);
+  RELEASE(data);
 
   /* TTL must be zero */
   if (rr->ttl) {
@@ -799,7 +820,8 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 #endif
 
     /* Get the RR data */
-    if ((ures = update_get_rr_data(t, soa, q, rr, &data, &datalen, &aux)) != TASK_EXECUTED) {
+    if ((ures = update_get_rr_data(t, soa, q, rr,
+				   &data, &datalen, &edata, &edatalen, &aux)) != TASK_EXECUTED) {
       if (ures != TASK_FAILED)
 	return dnserror(t, DNS_RCODE_FORMERR, ERR_INVALID_DATA);
       else
@@ -815,30 +837,30 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
     for (n = 0, unique = 1; n < q->num_tmprr && unique; n++)
       if (q->tmprr[n]->type == rr->type && !strcasecmp(TMPRR_NAME(q->tmprr[n]), UQRR_NAME(rr))
 	  && (TMPRR_DATA_LENGTH(q->tmprr[n]) == datalen)
-	  && !strcasecmp(TMPRR_DATA_VALUE(q->tmprr[n]), data) && q->tmprr[n]->aux == aux)
+	  && !memcmp(TMPRR_DATA_VALUE(q->tmprr[n]), data, datalen)
+	  && q->tmprr[n]->aux == aux)
 	unique = 0;
 
     if (unique) {
       if (!q->num_tmprr)
-	q->tmprr = calloc(1, sizeof(TMPRR *));
+	q->tmprr = ALLOCATE(sizeof(TMPRR *), TMPRR*[]);
       else
-	q->tmprr = realloc(q->tmprr, sizeof(TMPRR *) * (q->num_tmprr + 1));
-
-      if (!q->tmprr)
-	Err(_("out of memory"));
+	q->tmprr = REALLOCATE(q->tmprr, sizeof(TMPRR *) * (q->num_tmprr + 1), TMPRR*[]);
 
       /* Add this stuff to the new tmprr */
-      if (!(q->tmprr[q->num_tmprr] = malloc(sizeof(TMPRR))))
-	Err(_("out of memory"));
-      strncpy(TMPRR_NAME(q->tmprr[q->num_tmprr]), UQRR_NAME(rr), sizeof(TMPRR_NAME(q->tmprr[q->num_tmprr])) - 1);
+      q->tmprr[q->num_tmprr] = ALLOCATE(sizeof(TMPRR), TMPRR);
+      strncpy(TMPRR_NAME(q->tmprr[q->num_tmprr]), UQRR_NAME(rr),
+	      sizeof(TMPRR_NAME(q->tmprr[q->num_tmprr])) - 1);
       q->tmprr[q->num_tmprr]->type = rr->type;
       TMPRR_DATA_LENGTH(q->tmprr[q->num_tmprr]) = datalen;
       TMPRR_DATA_VALUE(q->tmprr[q->num_tmprr]) = data;
+      TMPRR_EDATA_LENGTH(q->tmprr[q->num_tmprr]) = edatalen;
+      TMPRR_EDATA_VALUE(q->tmprr[q->num_tmprr]) = edata;
       q->tmprr[q->num_tmprr]->aux = aux;
       q->tmprr[q->num_tmprr]->checked = 0;
       q->num_tmprr++;
     } else {
-      Free(data);
+      RELEASE(data);
     }
   } else {
     return dnserror(t, DNS_RCODE_FORMERR, ERR_INVALID_DATA);
@@ -953,10 +975,10 @@ prescan_update(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
  ************************************************************************************************/
 static taskexec_t
 update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
-  char		*data;
-  size_t	datalen;
+  char		*data, *edata;
+  size_t	datalen, edatalen;
   uint32_t	aux;
-  char		*xhost = NULL, *xname = NULL, *xdata = NULL;
+  char		*xhost = NULL, *xname = NULL, *xdata = NULL, *xedata = NULL;
   char		*query;
   size_t	querylen = 0;
 #if USE_PGSQL
@@ -964,7 +986,8 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 #endif
   taskexec_t	ures;
 
-  if ((ures = update_get_rr_data(t, soa, q, rr, &data, &datalen, &aux)) != TASK_EXECUTED) {
+  if ((ures = update_get_rr_data(t, soa, q, rr,
+				 &data, &datalen, &edata, &edatalen, &aux)) != TASK_EXECUTED) {
     if (ures != TASK_FAILED)
       return dnserror(t, DNS_RCODE_FORMERR, ERR_INVALID_DATA);
     else
@@ -980,11 +1003,14 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
   update_escape_name(t, soa, q, rr, &xname, &xhost);
 
   xdata = sql_escstr2(sql, data, datalen);
+  if (edatalen)
+    xedata = sql_escstr2(sql, edata, edatalen);
 
   /* IXFR support code */
   if(mydns_rr_use_active && mydns_rr_use_stamp && mydns_rr_use_serial) {
     SQL_RES	*res = NULL;
     /* Find out if the record exists - update active records otherwise insert a new active one */
+    /* We do not check edata as this is not indexed ? does it matter if other fields are */
     querylen = sql_build_query(&query,
 			       "SELECT id,serial FROM %s "
 			       "WHERE zone=%u AND (name='%s' OR name='%s') AND type='%s' "
@@ -994,7 +1020,7 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 			       mydns_rr_active_types[0]);
 
     res = sql_query(sql, query, querylen);
-    Free(query);
+    RELEASE(query);
     if(!(res)) {
       WarnSQL(sql, "%s: %s", desctask(t), _("error searching pre-existing for DNS UPDATE"));
       return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
@@ -1007,17 +1033,22 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
     sql_free(res);
     /* Record needs inserting */
     querylen = sql_build_query(&query,
-			       "INSERT INTO %s (zone,name,type,data,aux,ttl,serial,active)"
-			       " VALUES (%u,'%s','%s','%s',%u,%u,%u,'%s')",
-			       mydns_rr_table_name, soa->id, xhost, mydns_qtype_str(rr->type),
-			       xdata, aux, rr->ttl, next_serial, mydns_rr_active_types[0]);
+			       "INSERT INTO %s (zone,name,type,data,aux,ttl,serial,active%s)"
+			       " VALUES (%u,'%s','%s','%s',%u,%u,%u,'%s'%s%s%s)",
+			       mydns_rr_table_name,
+			       (edatalen)?",edata":"",
+			       soa->id, xhost, mydns_qtype_str(rr->type),
+			       xdata, aux, rr->ttl, next_serial, mydns_rr_active_types[0],
+			       (edatalen)?",'":"",
+			       (edatalen)?xedata:"",
+			       (edatalen)?"'":"");
     if (sql_nrquery(sql, query, querylen) != 0) {
       WarnSQL(sql, "%s: %s %s", desctask(t), _("error updating entries using"), query);
-      Free(query);
+      RELEASE(query);
       return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
     }
   } else {
-    /* Non IXFR SUpport Code */
+    /* Non IXFR Support Code */
     /* POSTGRES ONLY */
     /* First we have to see if this record exists.  If it does, we should "silently ignore" it. */
 #if USE_PGSQL
@@ -1039,10 +1070,10 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 #endif
     if (!(res = sql_query(sql, query, querylen))) {
       WarnSQL(sql, "%s: %s", desctask(t), _("error searching duplicate for DNS UPDATE"));
-      Free(query);
+      RELEASE(query);
       return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
     }
-    Free(query);
+    RELEASE(query);
     if (sql_num_rows(res) > 0)
       duplicate = 1;
     sql_free(res);
@@ -1062,8 +1093,7 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
       {
 	char *serialstr = NULL;
 	if (mydns_rr_use_serial)
-	  if(asprintf(&serialstr, "%u", next_serial) <= 0)
-	    Err(_("out of memory?"));
+	  ASPRINTF(&serialstr, "%u", next_serial);
 	querylen = sql_build_query(&query,
 #if USE_PGSQL
 				   "INSERT INTO %s"
@@ -1071,27 +1101,35 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 				   "INSERT IGNORE INTO %s"
 #endif
 				   " (zone,name,type,data,aux,ttl"
+				   /* Optional edata */
+				   "%s"
 				   /* Optional Active key */
 				   "%s"
 				   /* Optional serial number */
 				   "%s"
 				   ")"
 				   " VALUES (%u,'%s','%s','%s',%u,%u"
+				   /* Optional edata values */
+				   "%s%s%s"
 				   /* Optional Active values */
 				   "%s%s%s"
 				   /* Optional Serial number */
 				   "%s"
 				   ")",
 				   mydns_rr_table_name,
+				   (edatalen) ?",edata" : "",
 				   mydns_rr_use_active ? ",active" : "",
 				   mydns_rr_use_serial ? ",serial" : "",
 				   soa->id, xhost, mydns_qtype_str(rr->type), xdata, aux, rr->ttl,
+				   (edatalen) ? ",'" : "",
+				   (edatalen) ? xedata : "",
+				   (edatalen) ? "'" : "",
 				   (mydns_rr_use_active)? ",'" : "",
 				   (mydns_rr_use_active)? mydns_rr_active_types[0] : "",
 				   (mydns_rr_use_active)? "'" : "",
 				   (mydns_rr_use_serial)? serialstr : ""
 				   );
-	Free(serialstr);
+	RELEASE(serialstr);
   /* Execute the query */
 #if DEBUG_ENABLED && DEBUG_UPDATE
 	Debug("%s: DNS UPDATE: ADD RR: %s", desctask(t), query);
@@ -1103,27 +1141,27 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 
 	if (sql_nrquery(sql, query, querylen) != 0) {
 	  WarnSQL(sql, "%s: %s", desctask(t), _("error adding RR via DNS UPDATE"));
-	  Free(query);
+	  RELEASE(query);
 	  return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
 	}
       }
   }
 
-  Free(xhost);
-  Free(xname);
-  Free(xdata);
-  Free(query);
+  RELEASE(xhost);
+  RELEASE(xname);
+  RELEASE(xdata);
+  RELEASE(xedata);
+  RELEASE(query);
 
   /* Output info to verbose log */
   { char *tmp;
-    if (asprintf(&tmp, "ADD %s %u IN %s %u %s",
-		 UQRR_NAME(rr), rr->ttl, mydns_qtype_str(rr->type), aux, data) > 0) {
-      task_output_info(t, tmp);
-      Free(tmp);
-    }
+    ASPRINTF(&tmp, "ADD %s %u IN %s %u %s",
+	     UQRR_NAME(rr), rr->ttl, mydns_qtype_str(rr->type), aux, data);
+    task_output_info(t, tmp);
+    RELEASE(tmp);
   }
   t->update_done++;
-  Free(data);
+  RELEASE(data);
 
   return (TASK_EXECUTED);
 }
@@ -1179,7 +1217,7 @@ update_delete_rrset_all(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_
 #endif
 #endif
     res = sql_query(sql, query, querylen);
-    Free(query);
+    RELEASE(query);
     if (!(res)) {
       WarnSQL(sql, "%s: %s", desctask(t), _("error deleting all RRsets via DNS UPDATE"));
       return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
@@ -1196,9 +1234,9 @@ update_delete_rrset_all(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_
 				 soa->id, row[0], row[1],
 				 xdata, atou(row[3]), atou(row[4]),
 				 mydns_rr_active_types[2]);
-      Free(xdata);
+      RELEASE(xdata);
       res2 = sql_nrquery(sql, query, querylen);
-      Free(query);
+      RELEASE(query);
       if (res2 != 0) {
 	WarnSQL(sql, "%s: %s - %s", desctask(t), _("error purging DELETE RR via DNS UPDATE"), query);
 	return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
@@ -1227,22 +1265,21 @@ update_delete_rrset_all(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_
   Debug("%s: DNS UPDATE: %s", desctask(t), query);
 #endif
 #endif
-  Free(xname);
-  Free(xhost);
+  RELEASE(xname);
+  RELEASE(xhost);
 
   /* Execute the query */
   if (updates && sql_nrquery(sql, query, querylen) != 0) {
     WarnSQL(sql, "%s: %s", desctask(t), _("error deleting all RRsets via DNS UPDATE"));
-    Free(query);
+    RELEASE(query);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
   }
-  Free(query);
+  RELEASE(query);
 
   /* Output info to verbose log */
-  if(asprintf(&query, "DELETE_ALL_RRSET %s", UQRR_NAME(rr)) > 0) {
-    task_output_info(t, query);
-    Free(query);
-  }
+  ASPRINTF(&query, "DELETE_ALL_RRSET %s", UQRR_NAME(rr));
+  task_output_info(t, query);
+  RELEASE(query);
   if (updates) t->update_done++;
 
   return (TASK_EXECUTED);
@@ -1257,8 +1294,8 @@ update_delete_rrset_all(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_
 **************************************************************************************************/
 static taskexec_t
 update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
-  char		*data;
-  size_t	datalen;
+  char		*data, *edata;
+  size_t	datalen, edatalen;
   uint32_t	aux;
   char		*xname = NULL, *xhost = NULL, *xdata = NULL;
   char		*query;
@@ -1272,7 +1309,8 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
 	UQRR_NAME(rr), rr->ttl, mydns_class_str(rr->class), mydns_qtype_str(rr->type));
 #endif
 
-  if ((ures = update_get_rr_data(t, soa, q, rr, &data, &datalen, &aux)) != TASK_EXECUTED) {
+  if ((ures = update_get_rr_data(t, soa, q, rr,
+				 &data, &datalen, &edata, &edatalen, &aux)) != TASK_EXECUTED) {
     if (ures != TASK_FAILED)
       return dnserror(t, DNS_RCODE_FORMERR, ERR_INVALID_DATA);
     else
@@ -1315,7 +1353,7 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
 #endif
 #endif
     res = sql_query(sql, query, querylen);
-    Free(query);
+    RELEASE(query);
     if (!(res)) {
       WarnSQL(sql, "%s: %s", desctask(t), _("error deleting  RR via DNS UPDATE"));
       return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
@@ -1337,7 +1375,7 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
 #endif
 #endif
       res2 = sql_nrquery(sql, query, querylen);
-      Free(query);
+      RELEASE(query);
       if (res2 != 0) {
 	WarnSQL(sql, "%s: %s", desctask(t), _("error deleting RR via DNS UPDATE"));
 	return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
@@ -1371,27 +1409,26 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
   Debug("%s: DNS UPDATE: %s", desctask(t), query);
 #endif
 #endif
-  Free(xname);
-  Free(xhost);
-  Free(xdata);
+  RELEASE(xname);
+  RELEASE(xhost);
+  RELEASE(xdata);
 
   /* Execute the query */
   if (updates && sql_nrquery(sql, query, querylen) != 0) {
     WarnSQL(sql, "%s: %s", desctask(t), _("error deleting RR via DNS UPDATE"));
-    Free(query);
+    RELEASE(query);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
   }
-  Free(query);
+  RELEASE(query);
 
   /* Output info to verbose log */
   { char *tmp;
-    if(asprintf(&tmp, "DELETE %s IN %s %s", UQRR_NAME(rr), mydns_qtype_str(rr->type), data) > 0) {
-      task_output_info(t, tmp);
-      Free(tmp);
-    }
+    ASPRINTF(&tmp, "DELETE %s IN %s %s", UQRR_NAME(rr), mydns_qtype_str(rr->type), data);
+    task_output_info(t, tmp);
+    RELEASE(tmp);
   }
   if (updates) t->update_done++;
-  Free(data);
+  RELEASE(data);
 
   return (TASK_EXECUTED);
 }
@@ -1442,10 +1479,10 @@ update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_seri
 			       mydns_rr_active_types[0]);
     if (!(res = sql_query(sql, query, querylen))) {
       WarnSQL(sql, "%s: %s", desctask(t), _("error deleting RRset via DNS UPDATE"));
-      Free(query);
+      RELEASE(query);
       return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
     }
-    Free(query);
+    RELEASE(query);
     while ((row = sql_getrow(res, &lengths))) {
       char *xdata;
       int res2;
@@ -1459,9 +1496,9 @@ update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_seri
 				 soa->id, row[0], row[1],
 				 xdata, atou(row[3]), atou(row[4]),
 				 mydns_rr_active_types[2]);
-      Free(xdata);
+      RELEASE(xdata);
       res2 = sql_nrquery(sql, query, querylen);
-      Free(query);
+      RELEASE(query);
       if (res2 != 0) {
 	WarnSQL(sql, "%s: %s - %s", desctask(t), _("error purging DELETE RR via DNS UPDATE"), query);
 	return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
@@ -1492,23 +1529,22 @@ update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_seri
   Debug("%s: DNS UPDATE: %s", desctask(t), query);
 #endif
 #endif
-  Free(xname);
-  Free(xhost);
+  RELEASE(xname);
+  RELEASE(xhost);
 
   /* Execute the query */
   if (updates && sql_nrquery(sql, query, querylen) != 0) {
     WarnSQL(sql, "%s: %s", desctask(t), _("error deleting RRset via DNS UPDATE"));
-    Free(query);
+    RELEASE(query);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
   }
-  Free(query);
+  RELEASE(query);
 
   /* Output info to verbose log */
   { char *tmp;
-    if(asprintf(&tmp, "DELETE %s IN %s", UQRR_NAME(rr), mydns_qtype_str(rr->type)) > 0) {
-      task_output_info(t, tmp);
-      Free(tmp);
-    }
+    ASPRINTF(&tmp, "DELETE %s IN %s", UQRR_NAME(rr), mydns_qtype_str(rr->type));
+    task_output_info(t, tmp);
+    RELEASE(tmp);
   }
   if (updates) t->update_done++;
 
@@ -1691,7 +1727,9 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
 	for (rr = rr_first; rr && !found_match; rr = rr->next) {
 	  /* See if the DATA (and possibly the AUX) matches */
 	  if ((MYDNS_RR_DATA_LENGTH(rr) == TMPRR_DATA_LENGTH(q->tmprr[i]))
-	      && !strcasecmp(MYDNS_RR_DATA_VALUE(rr), TMPRR_DATA_VALUE(q->tmprr[i]))) {
+	      && !memcmp(MYDNS_RR_DATA_VALUE(rr),
+			 TMPRR_DATA_VALUE(q->tmprr[i]),
+			 TMPRR_DATA_LENGTH(q->tmprr[i]))) {
 	    if (current_type == DNS_QTYPE_MX || current_type == DNS_QTYPE_SRV) {
 	      if (q->tmprr[i]->aux == rr->aux)
 		found_match = 1;
@@ -1814,16 +1852,15 @@ update_soa_serial(TASK *t, MYDNS_SOA *soa) {
 #endif
   if(sql_nrquery(sql, query, querylen) != 0) {
     WarnSQL(sql, "%s: %s", desctask(t), _("error updating soa serial via DNS UPDATE"));
-    Free(query);
+    RELEASE(query);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
   }
-  Free(query);
+  RELEASE(query);
   sql_free(res);
 
-  if (asprintf(&query, "UPDATE SOA %s SERIAL %d", soa->origin, soa->serial) > 0) {
-    task_output_info(t, query);
-    Free(query);
-  }
+  ASPRINTF(&query, "UPDATE SOA %s SERIAL %d", soa->origin, soa->serial);
+  task_output_info(t, query);
+  RELEASE(query);
   t->update_done++;
 
   return (TASK_EXECUTED);
@@ -1848,7 +1885,7 @@ are_we_master(TASK *t, MYDNS_SOA *soa) {
   int ipcount ;
   ARRAY *nss = array_init(1);
 
-  array_append(nss, strdup(soa->ns));
+  array_append(nss, STRDUP(soa->ns));
 
   ips4 = array_init(8);
 #if HAVE_IPV6
@@ -1939,8 +1976,7 @@ dns_update(TASK *t) {
   }
 
   /* Parse the update query */
-  if (!(q = calloc(1, sizeof(UQ))))
-    Err(_("out of memory"));
+  q = ALLOCATE(sizeof(UQ), UQ);
   if (parse_update_query(t, soa, q) != TASK_EXECUTED) {
     goto dns_update_error;
   }

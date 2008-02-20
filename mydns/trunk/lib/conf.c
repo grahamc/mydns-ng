@@ -27,20 +27,17 @@
 	Trim comments from a line, obeying escape characters.
 **************************************************************************************************/
 static void
-conf_trim_comments(char *s)
-{
-	register char *c;
+conf_trim_comments(char *s) {
+  register char *c;
 
-	for (c = s; *c; c++)
-	{
-		if (*c == '\\')
-			c++;
-		else if (c[0] == '#' || (c[0] == '/' && (c[1] == '*' || c[1] == '/')))
-		{
-			*c = '\0';
-			return;
-		}
-	}
+  for (c = s; *c; c++) {
+    if (*c == '\\')
+      c++;
+    else if (c[0] == '#' || (c[0] == '/' && (c[1] == '*' || c[1] == '/'))) {
+      *c = '\0';
+      return;
+    }
+  }
 }
 /*--- conf_trim_comments() ----------------------------------------------------------------------*/
 
@@ -50,82 +47,62 @@ conf_trim_comments(char *s)
 	Parses the provided line, splitting a "name = value" pair, and escapes text.
 **************************************************************************************************/
 static void
-conf_get_option(char *str, char **namep, char **valuep)
-{
-	register char	*c;
-	register int	got_equal = 0;								/* Have we found a valid equal sign yet? */
-	register size_t nlen, vlen;
-	char	*name, *value;
+conf_get_option(char *str, char **namep, char **valuep) {
+  register char	*c;
+  register int	got_equal = 0;			/* Have we found a valid equal sign yet? */
+  register size_t nlen, vlen;
+  char	*name, *value;
 
-	if (!(name = malloc(1 * sizeof(char))))
-		Err("malloc");
-	if (!(value = malloc(1 * sizeof(char))))
-		Err("malloc");
-	nlen = vlen = (size_t)0;
-	name[0] = '\0';
-	value[0] = '\0';
+  name = ALLOCATE(sizeof(char), char);
+  value = ALLOCATE(sizeof(char), char);
+  nlen = vlen = (size_t)0;
+  name[0] = '\0';
+  value[0] = '\0';
 
-	*namep = *valuep = (char *)NULL;
+  *namep = *valuep = (char *)NULL;
 
-	for (c = str; *c; c++)
-	{
-		if (*c == '=' && !got_equal)
-		{
-			got_equal = 1;
-			continue;
-		}
+  for (c = str; *c; c++) {
+    if (*c == '=' && !got_equal) {
+      got_equal = 1;
+      continue;
+    }
 
-		if (*c == '\\')
-			c++;
+    if (*c == '\\')
+      c++;
 
-		if (!got_equal)
-		{
-			if (!name)
-			{
-				if (!(name = malloc(nlen + 2)))
-					Err("malloc");
-			}
-			else
-			{
-				if (!(name = realloc(name, (nlen + 2))))
-					Err("realloc");
-			}
-			name[nlen++] = *c;
-			name[nlen] = '\0';
-		}
-		else
-		{
-			if (!value)
-			{
-				if (!(value = malloc(vlen + 2)))
-					Err("malloc");
-			}
-			else
-			{
-				if (!(value = realloc(value, (vlen + 2))))
-					Err("realloc");
-			}
-			value[vlen++] = *c;
-			value[vlen] = '\0';
-		}
-	}
-	strtrim(name);
-	strtolower(name);
-	strtrim(value);
+    if (!got_equal) {
+      if (!name) {
+	name = ALLOCATE(nlen + 2, char[]);
+      } else {
+	name = REALLOCATE(name, (nlen + 2), char[]);
+      }
+      name[nlen++] = *c;
+      name[nlen] = '\0';
+    } else {
+      if (!value) {
+	value = ALLOCATE(vlen + 2, char[]);
+      } else {
+	value = REALLOCATE(value, (vlen + 2), char[]);
+      }
+      value[vlen++] = *c;
+      value[vlen] = '\0';
+    }
+  }
+  strtrim(name);
+  strtolower(name);
+  strtrim(value);
 
-	if (strlen(name))
-		*namep = name;
-	else
-	{
-		Free(name);
-	}
+  if (strlen(name))
+    *namep = name;
+  else {
+    RELEASE(name);
+  }
 
-	if (strlen(value))
-		*valuep = value;
-	else
-	{
-		Free(value);
-	}
+  if (strlen(value))
+    *valuep = value;
+  else {
+    RELEASE(value);
+  }
 }
 /*--- conf_get_option() -------------------------------------------------------------------------*/
 
@@ -135,19 +112,17 @@ conf_get_option(char *str, char **namep, char **valuep)
 	Overwrite a value if defaulted.
 **************************************************************************************************/
 void
-conf_clobber(CONF **confp, char *name, char *value)
-{
-	CONF *conf = *confp, *c;									/* Start of list/found item */
+conf_clobber(CONF **confp, char *name, char *value) {
+  CONF *conf = *confp, *c;				/* Start of list/found item */
 
-	if (!name || !value)
-		return;
+  if (!name || !value)
+    return;
 
-	for (c = conf; c; c = c->next)
-		if (c->name && !memcmp(c->name, name, strlen(c->name)) && c->defaulted)
-		{
-			Free(c->value);
-			c->value = strdup(value);
-		}
+  for (c = conf; c; c = c->next)
+    if (c->name && !memcmp(c->name, name, strlen(c->name)) && c->defaulted) {
+      RELEASE(c->value);
+      c->value = STRDUP(value);
+    }
 }
 /*--- conf_clobber() ----------------------------------------------------------------------------*/
 
@@ -157,52 +132,41 @@ conf_clobber(CONF **confp, char *name, char *value)
 	Sets a configuration value.
 **************************************************************************************************/
 void
-conf_set(CONF **confp, char *name, char *value, int defaulted)
-{
-	CONF *conf = *confp;											/* Start of list */
-	CONF *new;														/* New item to add */
-	register CONF *c;
+conf_set(CONF **confp, char *name, char *value, int defaulted) {
+  CONF *conf = *confp;								/* Start of list */
+  CONF *new;									/* New item to add */
+  register CONF *c;
 
-	if (!name)
-		return;
+  if (!name)
+    return;
 
-	/* Try to find the specified option in the current list */
-	for (c = conf; c; c = c->next)
-		if (c->name && !memcmp(c->name, name, strlen(c->name)))
-		{
-			/* Found in current list; append field separator and value */
-			if (!strcasecmp(c->name, "listen")
-				 || !strcasecmp(c->name, "no-listen")
-				 || !strcasecmp(c->name, "bind"))
-			{
-				if (!c->value)
-				{
-					if (!(c->value = malloc(strlen(value) + 2)))
-						Err("malloc");
-				}
-				else
-				{
-					if (!(c->value = realloc(c->value, strlen(c->value) + strlen(value) + 2)))
-						Err("realloc");
-				}
-				strcpy(c->value + strlen(c->value) + 1, value);
-				c->value[strlen(c->value)] = CONF_FS_CHAR;
-			}
-			return;
-		}
+  /* Try to find the specified option in the current list */
+  for (c = conf; c; c = c->next)
+    if (c->name && !memcmp(c->name, name, strlen(c->name))) {
+      /* Found in current list; append field separator and value */
+      if (!strcasecmp(c->name, "listen")
+	  || !strcasecmp(c->name, "no-listen")
+	  || !strcasecmp(c->name, "bind")) {
+	if (!c->value) {
+	  c->value = ALLOCATE(strlen(value) + 2, char[]);
+	} else {
+	  c->value = REALLOCATE(c->value, strlen(c->value) + strlen(value) + 2, char[]);
+	}
+	strcpy(c->value + strlen(c->value) + 1, value);
+	c->value[strlen(c->value)] = CONF_FS_CHAR;
+      }
+      return;
+    }
 
-	/* Add new item to array */
-	if (!(new = (CONF *)calloc(1, sizeof(CONF))))
-		Err("calloc");
-	if (!(new->name = strdup(name)))
-		Err("strdup");
-	if (!(new->value = value ? (char *)strdup(value) : (char *)NULL))
-		Err("strdup");
-	new->defaulted = defaulted;
-	new->next = conf;
-	conf = new;
+  /* Add new item to array */
+  new = (CONF *)ALLOCATE(sizeof(CONF), CONF);
+  new->name = STRDUP(name);
+  new->value = (char*)((value) ? STRDUP(value) : NULL);
+  new->defaulted = defaulted;
+  new->next = conf;
+  conf = new;
 
-	*confp = conf;
+  *confp = conf;
 }
 /*--- conf_set() --------------------------------------------------------------------------------*/
 
@@ -212,23 +176,21 @@ conf_set(CONF **confp, char *name, char *value, int defaulted)
 	Returns the value associated with the specified name.
 **************************************************************************************************/
 char *
-conf_get(CONF **confp, char *name, int *defaulted)
-{
-	CONF *conf = *confp;											/* Start of list */
-	register CONF *c;
+conf_get(CONF **confp, char *name, int *defaulted) {
+  CONF *conf = *confp;							/* Start of list */
+  register CONF *c;
 
-	if (defaulted)
-		*defaulted = 1;
+  if (defaulted)
+    *defaulted = 1;
 
-	for (c = conf; c; c = c->next)
-		if (!memcmp(c->name, name, strlen(c->name))
-			 || (c->altname && !memcmp(c->altname, name, strlen(c->name))))
-		{
-			if (defaulted)
-				*defaulted = c->defaulted;
-			return (c->value);
-		}
-	return (NULL);
+  for (c = conf; c; c = c->next)
+    if (!memcmp(c->name, name, strlen(c->name))
+	|| (c->altname && !memcmp(c->altname, name, strlen(c->name)))) {
+      if (defaulted)
+	*defaulted = c->defaulted;
+      return (c->value);
+    }
+  return (NULL);
 }
 /*--- conf_get() --------------------------------------------------------------------------------*/
 
@@ -238,56 +200,45 @@ conf_get(CONF **confp, char *name, int *defaulted)
 	Load the MyDNS configuration file.
 **************************************************************************************************/
 void
-conf_load(CONF **confp, const char *filename)
-{
-	FILE	*fp;														/* Input file pointer */
-	char	linebuf[BUFSIZ];										/* Input line buffer */
-	char	*name, *value;											/* Name and value from `linebuf' */
-	CONF	*conf = *confp;										/* Config list */
-	int	lineno = 0;												/* Current line number in config */
-	struct stat st;												/* File stat for conf file */
+conf_load(CONF **confp, const char *filename) {
+  FILE	*fp;							/* Input file pointer */
+  char	linebuf[BUFSIZ];					/* Input line buffer */
+  char	*name, *value;						/* Name and value from `linebuf' */
+  CONF	*conf = *confp;						/* Config list */
+  int	lineno = 0;						/* Current line number in config */
+  struct stat st;						/* File stat for conf file */
 
-	/* If the config file is not present at all, that's not an error */
-	if (stat(filename, &st))
-	{
-		Verbose("%s: %s", filename, strerror(errno));
-		return;
-	}
+  /* If the config file is not present at all, that's not an error */
+  if (stat(filename, &st)) {
+    Verbose("%s: %s", filename, strerror(errno));
+    return;
+  }
 
-	/* Read config file */
-	if ((fp = fopen(filename, "r")))
-	{
-		while (fgets(linebuf, sizeof(linebuf), fp))
-		{
-			lineno++;
-			conf_trim_comments(linebuf);
-			conf_get_option(linebuf, &name, &value);
-			if (name)
-			{
+  /* Read config file */
+  if ((fp = fopen(filename, "r"))) {
+    while (fgets(linebuf, sizeof(linebuf), fp)) {
+      lineno++;
+      conf_trim_comments(linebuf);
+      conf_get_option(linebuf, &name, &value);
+      if (name) {
+	if (value)
+	  conf_set(&conf, name, value, 0);
 #if 0
-				if (!value)
-					Warnx(_("%s: line %d: option \"%s\" given without a value - ignored"), filename, lineno, name);
-				else
-#endif
-				if (value)
-					conf_set(&conf, name, value, 0);
-
-				Free(name);
-			}
-			if (value)
-			{
-				Free(value);
-			}
-		}
-		fclose(fp);
-	}
 	else
-	{
-		Verbose("%s: %s", filename, strerror(errno));
-		return;
-	}
+	  Warnx(_("%s: line %d: option \"%s\" given without a value - ignored"),
+		filename, lineno, name);
+#endif
+	RELEASE(name);
+      }
+      RELEASE(value);
+    }
+    fclose(fp);
+  } else {
+    Verbose("%s: %s", filename, strerror(errno));
+    return;
+  }
 
-	*confp = conf;
+  *confp = conf;
 }
 /*--- conf_load() -------------------------------------------------------------------------------*/
 

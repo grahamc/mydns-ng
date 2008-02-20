@@ -173,12 +173,11 @@ dump_config(void) {
 	while ((cp = strchr(value, ',')))
 	  *cp = CONF_FS_CHAR;
       }
-      if (!(vbuf = strdup(value)))
-	Err("strdup");
+      vbuf = STRDUP(value);
       for (cp = vbuf; (v = strsep(&cp, CONF_FS_STR));)
 	if ((len = strlen(c->name) + strlen(v)) > w)
 	  w = len;
-      Free(vbuf);
+      RELEASE(vbuf);
     }
   }
   w += strlen(" = ");
@@ -230,8 +229,7 @@ dump_config(void) {
       char *cp, *vbuf, *v;
       while ((cp = strchr(value, ',')))
 	*cp = CONF_FS_CHAR;
-      if (!(vbuf = strdup(value)))
-	Err("strdup");
+      vbuf = STRDUP(value);
       for (cp = vbuf; (v = strsep(&cp, CONF_FS_STR));) {
 	if (v == vbuf) {
 	  snprintf(pair, sizeof(pair), "%s = %s", c->name, v);
@@ -240,7 +238,7 @@ dump_config(void) {
 	  printf("%s = %s\n", c->name, v);
 	}
       }
-      Free(vbuf);
+      RELEASE(vbuf);
     } else {
       snprintf(pair, sizeof(pair), "%s = %s", c->name, value);
       printf("%-*.*s\t# %s\n", w, w, pair, _(c->desc));
@@ -331,11 +329,11 @@ conf_set_recursive(void) {
     recursive_sa6.sin6_family = AF_INET6;
     recursive_sa6.sin6_port = htons(port);
     forward_recursive = 1;
-#if DEBUG_ENABLED
-    Debug(_("recursive forwarding service through %s:%u"), ipaddr(AF_INET6, &recursive_sa6.sin6_addr), port);
+#if DEBUG_ENABLED && DEBUG_CONF
+    Debug(_("recursive forwarding service through %s:%u"),
+	  ipaddr(AF_INET6, &recursive_sa6.sin6_addr), port);
 #endif
-    if (!(recursive_fwd_server = strdup(address)))
-      recursive_fwd_server = _("forwarder");
+    recursive_fwd_server = STRDUP(address);
   } else {			/* IPv4 - treat '+' or ':' as port separator  */
 #endif
     recursive_family = AF_INET;
@@ -350,12 +348,12 @@ conf_set_recursive(void) {
     }
     recursive_sa.sin_family = AF_INET;
     recursive_sa.sin_port = htons(port);
-#if DEBUG_ENABLED
-    Debug(_("recursive forwarding service through %s:%u"), ipaddr(AF_INET, &recursive_sa.sin_addr), port);
+#if DEBUG_ENABLED &&DEBUG_CONF
+    Debug(_("recursive forwarding service through %s:%u"),
+	  ipaddr(AF_INET, &recursive_sa.sin_addr), port);
 #endif
     forward_recursive = 1;
-    if (!(recursive_fwd_server = strdup(address)))
-      recursive_fwd_server = _("forwarder");
+    recursive_fwd_server = STRDUP(address);
 #if HAVE_IPV6
   }
 #endif

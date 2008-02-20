@@ -46,7 +46,7 @@ status_fake_rr(TASK *t, datasection_t ds, const char *name, const char *fmt, ...
 
 	/* Add to list */
 	rrlist_add(t, ds, DNS_RRTYPE_RR, (void *)rr, (char*)name);
-	Free(rr);
+	RELEASE(rr);
 }
 /*--- status_fake_rr() --------------------------------------------------------------------------*/
 

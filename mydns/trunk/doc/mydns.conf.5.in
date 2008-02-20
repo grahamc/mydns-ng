@@ -147,7 +147,32 @@ Incoming queries time out if a reply could not be sent after \fIseconds\fP
 have elapsed.
 
 .IP "\fBmulticpu\fP = \fIcpucount\fP (`\fI1\fP')"
-Run with multiple processes to support \fIcpucount\fP number of processors.
+Run with multiple processes to support \fIcpucount\fP number of processors.- deprecated use servers instead
+
+.IP "\fBservers\fP = \fIservercount\fP (`\fI1\fP')"
+Number of server processors to run. Set this to 0 to run just a single process,
+1 will run a master and a server process. n runs \fIn\fP servers plus a master.
+It is recommended that this be set to the number of CPUS time 2 plus 1.
+
+.IP "\fBrecursive\fP = \fIaddress\fP
+If this option is specified, \fIaddress\fP is the address of a DNS server that
+accepts recursive queries.
+If MyDNS receives a query where recursion is desired,
+and the zone is not local,
+MyDNS will forward the query to the server at \fIaddress\fP
+and return the result to the client.
+
+.IP "\fBrecursive-timeout\fP = \fIseconds\fP (`\fI60\fP')"
+Number of seconds to wait before first retry
+
+.IP "\fBrecursive-retries\fP = \fIcount\fP (`\fI5\fP')"
+Number of retries before abandoning recursion
+
+.IP "\fBrecursive-algorithm\fP = \fIalgorithm\fP (`\fIlinear\fP')"
+Algorithm to use when applying timeout.
+Linear - each timeout is equal to recursive-timeout,
+Exponential - double timeout on each retry,
+Progressive - increase timeout by number of retries.
 
 .IP "\fBallow-axfr\fP = \fIbool\fP (`\fIno\fP')"
 Should DNS-based zone transfers be allowed?
@@ -167,17 +192,55 @@ The name of the table containing SOA records.
 .IP "\fBrr-table\fP = \fIname\fP (`\fIrr\fP')"
 The name of the table containing resource record data.
 
+.IP "\fBuse-soa-active\fP = \fIboolean\fP (`\fIyes\fP')"
+Where there is an soa-active column use this to determine which zones to serve.
+
+.IP "\fBuse-rr-active\fP = \fIboolean\fP (`\fIyes\fP')"
+Where there is a rr-active column use this to determine which records to serve.
+
+.IP "\fBnotify-enabled\fP = \fIboolean\fP (`\fIyes\fP')"
+Support DNS NOTIFY message generation if this is enabled.
+
+.IP "\fBnotify-source\fP = \fIIPv4 address\fP (`\fI0.0.0.0\fP')"
+IPv4 address from which NOTIFY messages will be sent - set to 0.0.0.0 or
+leave blank for the default of using the outgoing interface address.
+
+.IP "\fBnotify-source6\fP = \fIIPv6 address\fP (`\fI;;\fP')"
+IPv6 address from which NOTIFY messages will be sent - set to :: or
+leave blank for the default of using the outgoing interface address.
+
+.IP "\fBnotify-timeout\fP = \fIseconds\fP (`\fI60\fP')"
+Number of seconds before first retry of NOTIFY message
+
+.IP "\fBnotify-retries\fP = \fIcount\fP (`\fI5\fP')
+Number of times to retry the NOTIFY message before giving up.
+
+.IP "\fBnotify-algorithm\fP = \fIstring\fP (`\fIlinear\fP')"
+Select type of notify algorithm to use - select oneof
+Linear - each timeout is equal to notify-timeout,
+Exponential - double timeout on each retry,
+Progressive - increase timeout by number of retries.
+
+.IP "\fBixfr-enabled\fP = \fIboolean\fP (`\fIyes\fP')"
+Enable IXFR functionality - requires DB schema change as well.
+
+.IP "\fBixfr-gc-enabled\fP = \fIboolean\fP (`\fIyes\fP')"
+Enable real-time IXFR garbage collection facility. With this switched on
+the server will periodically scan the database for expired records that
+have been marked deleted and will remove them from the DB.
+
+.IP "\fBixfr-gc-interval\fP = \fIseconds\fP (`\fI86400\fP')"
+Number of seconds between each GC scan. - default 86400 seconds = 1 day.
+
+.IP "\fBixfr-gc-delay\fP" = \fIseconds\fP (`\fI600\fP')"
+Number of seconds before first GC scan. - default 600 seconds = 10 minutes.
+
 .IP "\fBsoa-where\fP = \fIstring\fP
 An extra WHERE clause to append to queries selecting records from the `soa' table.
 
 .IP "\fBrr-where\fP = \fIstring\fP
 An extra WHERE clause to append to queries selecting records from the `rr' table.
 
-.IP "\fBrecursive\fP = \fIaddress\fP
-If this option is specified, \fIaddress\fP is the address of a DNS server that
-accepts recursive queries.  If MyDNS receives a query where recursion is desired,
-and the zone is not local, MyDNS will forward the query to the server at \fIaddress\fP
-and return the result to the client.
 
 
 .\"--------------------------------------------------------------------------

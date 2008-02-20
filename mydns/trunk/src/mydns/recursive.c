@@ -123,7 +123,7 @@ __recursive_fwd_write_free(TASK *t, void *data) {
   querypacket = (recursive_fwd_write_t*)data;
 
   if (querypacket) {
-    if (querypacket->query) Free(querypacket->query);
+    if (querypacket->query) RELEASE(querypacket->query);
     memset(querypacket, 0, sizeof(recursive_fwd_write_t));
   }
 }
@@ -135,7 +135,7 @@ __recursive_fwd_read_free(TASK *t, void * data) {
   replypacket = (recursive_fwd_read_t*)data;
 
   if (replypacket) {
-    if(replypacket->reply) Free(replypacket->reply);
+    if(replypacket->reply) RELEASE(replypacket->reply);
     memset(replypacket, 0, sizeof(recursive_fwd_read_t));
   }
   if (t->protocol == SOCK_STREAM && tcp_recursive_master == t) { tcp_recursive_master = NULL; }
@@ -198,7 +198,7 @@ __recursive_fwd_reconnect_tcp(TASK *t) {
   if (__recursive_start_comms(t, &recursive_tcp_fd, SOCK_STREAM) == TASK_COMPLETED) {
     if (t->extension) {
       t->freeextension(t, t->extension);
-      Free(t->extension);
+      RELEASE(t->extension);
       t->extension = NULL;
     }
     t->status = NEED_RECURSIVE_FWD_CONNECT;
@@ -226,9 +226,8 @@ __recursive_fwd_setup_query(TASK *t, recursive_fwd_write_t **querypacket) {
   *querypacket = qp = (recursive_fwd_write_t*)t->extension;
 
   if (!qp) {
-    *querypacket = qp = (recursive_fwd_write_t*)malloc(sizeof(recursive_fwd_write_t));
-    if (!qp)
-      Err("out of memory");
+    *querypacket = qp = (recursive_fwd_write_t*)ALLOCATE(sizeof(recursive_fwd_write_t),
+							 recursive_fwd_write_t);
     memset(qp, 0, sizeof(recursive_fwd_write_t));
     t->extension = (void*)qp;
   }
@@ -416,8 +415,7 @@ __recursive_fwd_read(TASK *t, char *reply, int replylen) {
   DNS_HEADER	hdr;
 
   /* Copy reply into task */
-  if (!(t->reply = malloc(replylen)))
-    Err(_("out of memory"));
+  t->reply = ALLOCATE(replylen, char[]);
 
   /* Preserve incoming id rather than the recursive one */
   r = t->reply;
@@ -462,9 +460,8 @@ __recursive_fwd_setup_reply1(TASK *t, recursive_fwd_read_t **replypacket) {
   *replypacket = rp = (recursive_fwd_read_t*)t->extension;
 
   if (!rp) {
-    *replypacket = rp = (recursive_fwd_read_t*)malloc(sizeof(recursive_fwd_read_t));
-    if (!rp)
-      Err("out of memory");
+    *replypacket = rp = (recursive_fwd_read_t*)ALLOCATE(sizeof(recursive_fwd_read_t),
+							recursive_fwd_read_t);
     memset(rp, 0, sizeof(recursive_fwd_read_t));
     t->extension = (void*)rp;
   }
@@ -482,10 +479,7 @@ __recursive_fwd_setup_reply2(TASK *t, recursive_fwd_read_t **replypacket, size_t
   *replypacket = rp = (recursive_fwd_read_t*)t->extension;
 
   if (!rp->reply) {
-    rp->reply = (char*)malloc(length);
-    if (!rp->reply)
-      Err("out of memory");
-
+    rp->reply = (char*)ALLOCATE(length, char[]);
     rp->replylength = length;
   }
 
@@ -553,8 +547,8 @@ __recursive_fwd_read_udp(TASK *t) {
 
   if (rv == 0) {
     t->extension = NULL;
-    Free(replypacket);
-    Free(reply);
+    RELEASE(replypacket);
+    RELEASE(reply);
     Warnx("%s: %s %s - %s(%d)", desctask(t), _("no reply from recursive forwarder connection failed"),
 	  recursive_fwd_server, strerror(errno), errno);
     return TASK_FAILED;
@@ -564,8 +558,8 @@ __recursive_fwd_read_udp(TASK *t) {
   replylen -= rv;
 
   if(replypacket->replylength < DNS_HEADERSIZE) {
-    Free(reply);
-    Free(replypacket);
+    RELEASE(reply);
+    RELEASE(replypacket);
     t->extension = NULL;
     Warn("%s: %s", recursive_fwd_server,  _("short message from recursive server"));
     return TASK_FAILED;
@@ -586,11 +580,11 @@ __recursive_fwd_read_udp(TASK *t) {
     /* Move task back to NORMAL Q */
     task_change_type(t, NORMAL_TASK);
     udp_recursion_running--;
-    Free(reply);
-    Free(replypacket);
+    RELEASE(reply);
+    RELEASE(replypacket);
   } else {
-    Free(reply);
-    Free(replypacket);
+    RELEASE(reply);
+    RELEASE(replypacket);
     Warn("%s: %s", recursive_fwd_server, _("Reply to unknown request"));
     return TASK_FAILED;
   }
@@ -654,7 +648,7 @@ __recursive_fwd_read_tcp(TASK *t) {
 	  if(__recursive_fwd_reconnect_read(t) == TASK_CONTINUE) {
 	    fd = t->fd = recursive_tcp_fd;
 	    replypacket->replylenread = 0;
-	    Free(replypacket->reply);
+	    RELEASE(replypacket->reply);
 	    t->status = NEED_RECURSIVE_FWD_CONNECT;
 	    return TASK_CONTINUE;
 	  }
@@ -699,7 +693,7 @@ __recursive_fwd_read_tcp(TASK *t) {
       if (__recursive_fwd_reconnect_read(t) == TASK_CONTINUE) {
 	fd = t->fd = recursive_tcp_fd;
 	replypacket->replylenread = 0;
-	Free(reply);
+	RELEASE(reply);
 	t->status = NEED_RECURSIVE_FWD_CONNECT;
 	return TASK_CONTINUE;
       }
@@ -714,8 +708,8 @@ __recursive_fwd_read_tcp(TASK *t) {
 
   if (rv == 0) {
     t->extension = NULL;
-    Free(replypacket);
-    Free(reply);
+    RELEASE(replypacket);
+    RELEASE(reply);
     Warnx("%s: %s", recursive_fwd_server, _("no reply from recursive forwarder connection failed"));
     if (__recursive_fwd_reconnect_tcp(t) == TASK_CONTINUE) {
       t->fd = recursive_tcp_fd;
@@ -734,7 +728,7 @@ __recursive_fwd_read_tcp(TASK *t) {
   if (replylen > 0) return TASK_CONTINUE;
 
   if(replypacket->replylength < DNS_HEADERSIZE) {
-    Free(reply);
+    RELEASE(reply);
     Warn("%s: %s", recursive_fwd_server,  _("short message from recursive server"));
     return TASK_FAILED;
   }
@@ -754,11 +748,11 @@ __recursive_fwd_read_tcp(TASK *t) {
   /* Move task back to IO Q */
     task_change_type(t, IO_TASK); 
     tcp_recursion_running--;
-    Free(reply);
-    Free(replypacket);
+    RELEASE(reply);
+    RELEASE(replypacket);
   } else {
-    Free(reply);
-    Free(replypacket);
+    RELEASE(reply);
+    RELEASE(replypacket);
     Warn("%s: %s", recursive_fwd_server, _("Reply to unknown request"));
     return TASK_FAILED;
   }

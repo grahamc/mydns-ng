@@ -126,8 +126,7 @@ read_tcp_length(TASK *t) {
     return (TASK_ABANDONED);
   }
 
-  if (!(t->query = calloc(1, t->len + 1)))
-    Err(_("out of memory"));
+  t->query = ALLOCATE(t->len + 1, char[]);
 
   t->offset = 0;
 

@@ -375,6 +375,10 @@ server_status(void) {
 }
 /*--- server_status() ---------------------------------------------------------------------------*/
 
+void
+kill_server(SERVER *server, int sig) {
+  kill(server->pid, sig);
+}
 
 /**************************************************************************************************
 	SIGUSR1
@@ -384,7 +388,7 @@ void
 master_sigusr1(int dummy) {
   int n;
   for (n = 0; n < array_numobjects(Servers); n++)
-    kill(((SERVER*)array_fetch(Servers, n))->pid, SIGUSR1);
+    kill_server((SERVER*)array_fetch(Servers, n), SIGUSR1);
   got_sigusr1 = 0;
 }
 
@@ -404,7 +408,7 @@ void
 master_sigusr2(int dummy) {
   int n;
   for (n = 0; n < array_numobjects(Servers); n++)
-    kill(((SERVER*)array_fetch(Servers, n))->pid, SIGUSR2);
+    kill_server((SERVER*)array_fetch(Servers, n), SIGUSR2);
   got_sigusr2 = 0;
 }
 
@@ -427,7 +431,7 @@ void
 master_sighup(int dummy) {
   int n;
   for (n = 0; n < array_numobjects(Servers); n++)
-    kill(((SERVER*)array_fetch(Servers, n))->pid, SIGHUP);
+    kill_server((SERVER*)array_fetch(Servers, n), SIGHUP);
   got_sighup = 0;
 }
 
@@ -586,7 +590,7 @@ master_shutdown(int signo) {
     SERVER	*server = (SERVER*)array_fetch(Servers, n);
     if(server->pid != -1) {
       running_procs += 1;
-      kill(server->pid, signo);
+      kill_server(server, signo);
     }
   }
 
@@ -656,6 +660,8 @@ reap_child() {
 
   if ((pid = waitpid(-1, &status, WNOHANG)) < 0) return -1;
 
+  if (pid == 0) return 0;
+
   if (WIFEXITED(status)) {
     ;
   } else {
@@ -677,6 +683,18 @@ reap_child() {
   return pid;
 }
 
+SERVER *
+find_server_for_task(TASK *t) {
+  int n;
+
+  for (n = 0; n < array_numobjects(Servers); n++) {
+    SERVER *server = (SERVER*)array_fetch(Servers, n);
+    if (server->listener == t) return server;
+  }
+
+  return NULL;
+}
+
 static void
 master_child_cleanup(int signo) {
   int n, pid;
@@ -688,12 +706,12 @@ master_child_cleanup(int signo) {
     for (n = 0; n < array_numobjects(Servers); n++) {
       SERVER	*server = (SERVER*)array_fetch(Servers, n);
       if (pid == server->pid) {
-	Notice("pid %d died", pid);
+	Notice("Server pid %d died", pid);
 	if (shutting_down) server->pid = -1;
 	else {
 	  if (server->listener) dequeue(server->listener);
 	  sockclose(server->serverfd);
-	  Free(server);
+	  RELEASE(server);
 	  array_store(Servers, n, NULL);
 	  if (n == 0) server = spawn_server(primary_initial_tasks);
 	  else server = spawn_server(process_initial_tasks);
@@ -1000,10 +1018,11 @@ spawn_server(INITIALTASK *initial_tasks) {
     Err("fork");
 
   if (pid > 0) { /* Parent === MASTER */
-    SERVER *server = (SERVER*)malloc(sizeof(SERVER));
+    SERVER *server = (SERVER*)ALLOCATE(sizeof(SERVER), SERVER);
     server->pid = pid;
     server->serverfd = masterfd;
     server->listener = NULL;
+    server->signalled = 0;
     close(serverfd);
 
     return server;
@@ -1019,7 +1038,7 @@ spawn_server(INITIALTASK *initial_tasks) {
       Debug("closing fd %d", server->serverfd);
 #endif
       close(server->serverfd);
-      Free(server);
+      RELEASE(server);
     }
   }
 

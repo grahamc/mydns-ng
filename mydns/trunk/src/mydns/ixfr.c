@@ -141,8 +141,7 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
     return formerr(t, DNS_RCODE_FORMERR, ERR_MALFORMED_REQUEST,
 		   _("ixfr query has answer or additional data"));
 
-  if (!(q = malloc(sizeof(IQ))))
-    Err(_("out of memory"));
+  q = ALLOCATE(sizeof(IQ), IQ);
 
   if (!(src = name_unencode(query, querylen, src, q->name, sizeof(q->name))))
     return formerr(t, DNS_RCODE_FORMERR, (task_error_t)q->name[0], NULL);
@@ -245,7 +244,7 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
 	    for (rr = ThisRR; rr; rr = rr->next) {
 	      char *name = mydns_rr_append_origin(MYDNS_RR_NAME(rr), soa->origin);
 	      rrlist_add(t, ANSWER, DNS_RRTYPE_RR, (void *)rr, name);
-	      if (name != MYDNS_RR_NAME(rr)) Free(name);
+	      if (name != MYDNS_RR_NAME(rr)) RELEASE(name);
 	    }
 	    t->sort_level++;
 	    mydns_rr_free(ThisRR);
@@ -266,7 +265,7 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
 	    for (rr = ThisRR; rr; rr = rr->next) {
 	      char *name = mydns_rr_append_origin(MYDNS_RR_NAME(rr), soa->origin);
 	      rrlist_add(t, ANSWER, DNS_RRTYPE_RR, (void *)rr, name);
-	      if (name != MYDNS_RR_NAME(rr)) Free(name);
+	      if (name != MYDNS_RR_NAME(rr)) RELEASE(name);
 	    }
 	    t->sort_level++;
 	    mydns_rr_free(ThisRR);
@@ -278,14 +277,14 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
 	    for (rr = ThisRR; rr; rr = rr->next) {
 	      char *name = mydns_rr_append_origin(MYDNS_RR_NAME(rr), soa->origin);
 	      rrlist_add(t, ANSWER, DNS_RRTYPE_RR, (void *)rr, name);
-	      if (name != MYDNS_RR_NAME(rr)) Free(name);
+	      if (name != MYDNS_RR_NAME(rr)) RELEASE(name);
 	    }
 	    t->sort_level++;
 	    mydns_rr_free(ThisRR);
 	    rrlist_add(t, ANSWER, DNS_RRTYPE_SOA, (void *)soa, soa->origin);
 	    t->sort_level++;
 	  }
-	  Free(deltafilter);
+	  RELEASE(deltafilter);
 	}
 	goto FINISHEDIXFR;
       }
@@ -337,7 +336,7 @@ ixfr_purge_all_soas(TASK *t, void *data) {
     ErrSQL(sql, "%s: %s", desctask(t),
 	   _("error loading zone id's for DELETED records"));
 
-  Free(query);
+  RELEASE(query);
 
   while((row = sql_getrow(res, NULL))) {
     unsigned int	id = atou(row[0]);
@@ -352,7 +351,7 @@ ixfr_purge_all_soas(TASK *t, void *data) {
       ErrSQL(sql, "%s: %s", desctask(t),
 	     _("error loading zone from DELETED record zone id"));
 
-    Free(query);
+    RELEASE(query);
 
     if (!(row = sql_getrow(res, NULL))) {
       Warnx("%s: no soa found for soa id %u", desctask(t),
@@ -370,14 +369,14 @@ ixfr_purge_all_soas(TASK *t, void *data) {
 	WarnSQL(sql, "%s: %s %s", desctask(t),
 		_("error deleting expired records for zone "), soa->origin);
 
-      Free(query);
+      RELEASE(query);
 
       sql_free(sres);
     }
   }
 
   sql_free(res);
-  Free(query);     
+  RELEASE(query);     
 
   return (TASK_CONTINUE);
 }

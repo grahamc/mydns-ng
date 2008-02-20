@@ -100,11 +100,9 @@ cmdline(int argc, char **argv) {
   /* Copy full command line into 'command_line' */
   for (n = 0; n < argc; n++) {
     if (!command_line) 	{
-      if (!(command_line = strdup(argv[n])))
-	Err("strdup");
+      command_line = STRDUP(argv[n]);
     } else {
-      if (!(command_line = realloc(command_line, strlen(command_line) + strlen(argv[n]) + 2)))
-	Err("realloc");
+      command_line = REALLOCATE(command_line, strlen(command_line) + strlen(argv[n]) + 2, char[]);
       strcat(command_line, " ");
       strcat(command_line, argv[n]);
     }
@@ -278,7 +276,7 @@ __EXPAND_DATA(char *s, MYDNS_SOA *soa) {
   if (*s) slen += 1;
   slen += strlen(soa->origin);
 
-  s = (char*)realloc(s, slen + 1);
+  s = REALLOCATE(s, slen + 1, char[]);
   if (*s) strcat(s, ".");
   strcat(s, soa->origin);
 
@@ -301,9 +299,9 @@ static void
 tinydns_dump_soa(MYDNS_SOA *soa) {
   char *origin, *ns, *mbox;
 
-  origin = strdup(soa->origin);
-  ns = strdup(soa->ns);
-  mbox = strdup(soa->mbox);
+  origin = STRDUP(soa->origin);
+  ns = STRDUP(soa->ns);
+  mbox = STRDUP(soa->mbox);
 
   if (*origin && LASTCHAR(origin) == '.') LASTCHAR(origin) = '\0';
   if (*ns && LASTCHAR(ns) == '.') LASTCHAR(ns) = '\0';
@@ -312,9 +310,9 @@ tinydns_dump_soa(MYDNS_SOA *soa) {
   printf("Z%s:%s:%s:%u:%u:%u:%u:%u:%u\n",
 	 origin, ns, mbox,
 	 soa->serial, soa->refresh, soa->retry, soa->expire, soa->minimum, soa->ttl); 
-  Free(origin);
-  Free(ns);
-  Free(mbox);
+  RELEASE(origin);
+  RELEASE(ns);
+  RELEASE(mbox);
 }
 /*--- tinydns_dump_soa() ------------------------------------------------------------------------*/
 
@@ -327,7 +325,7 @@ static void
 tinydns_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
   char *name = NULL, *data = NULL;
 
-  name = strdup(MYDNS_RR_NAME(rr));
+  name = STRDUP(MYDNS_RR_NAME(rr));
   TINYDNS_NAMEFIX(name);
 
   switch (rr->type) {
@@ -340,19 +338,19 @@ tinydns_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
     break;
 
   case DNS_QTYPE_CNAME:
-    data = strdup(MYDNS_RR_DATA_VALUE(rr));
+    data = STRDUP(MYDNS_RR_DATA_VALUE(rr));
     TINYDNS_NAMEFIX(data);
     printf("C%s:%s:%u\n", name, data, rr->ttl);
     break;
 
   case DNS_QTYPE_MX:
-    data = strdup(MYDNS_RR_DATA_VALUE(rr));
+    data = STRDUP(MYDNS_RR_DATA_VALUE(rr));
     TINYDNS_NAMEFIX(data);
     printf("@%s::%s:%u:%u\n", name, data, rr->aux, rr->ttl);
     break;
 
   case DNS_QTYPE_NS:
-    data = strdup(MYDNS_RR_DATA_VALUE(rr));
+    data = STRDUP(MYDNS_RR_DATA_VALUE(rr));
     TINYDNS_NAMEFIX(data);
     printf(".%s::%s:%u\n", name, data, rr->ttl);
     break;
@@ -361,7 +359,7 @@ tinydns_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
        (http://tinydns.org/srv-patch) to support it.  This code complies with
        its format, which is "Sfqdn:ip:x:port:weight:priority:ttl:timestamp" */
   case DNS_QTYPE_SRV:
-    data = strdup(MYDNS_RR_DATA_VALUE(rr));
+    data = STRDUP(MYDNS_RR_DATA_VALUE(rr));
     TINYDNS_NAMEFIX(data);
     printf("S%s::%s:%u:%u:%u:%u\n", name, data, MYDNS_RR_SRV_PORT(rr), MYDNS_RR_SRV_WEIGHT(rr), rr->aux, rr->ttl);
     break;
@@ -371,7 +369,7 @@ tinydns_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
       char *databuf, *c, *d;
       int databuflen = MYDNS_RR_DATA_LENGTH(rr);
       int len = databuflen;
-      databuf = (char*)malloc(databuflen + 1);
+      databuf = ALLOCATE(databuflen + 1, char[]);
       memcpy(databuf, MYDNS_RR_DATA_VALUE(rr), databuflen);
       databuf[databuflen] = '\0';
 
@@ -381,7 +379,7 @@ tinydns_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
 	  char *newdatabuf;
 	  databuflen += 3; /* Original Length + 3 more characters */
 	  /* Grow by a lump usually */
-	  newdatabuf = (char*)realloc(databuf, ((databuflen/512)+1)*512);
+	  newdatabuf = REALLOCATE(databuf, ((databuflen/512)+1)*512, char[]);
 	  if (newdatabuf != databuf) d = &newdatabuf[strlen(newdatabuf)];
 	  databuf = newdatabuf;
 	  d += sprintf(d, "\\%03o", *c);
@@ -390,7 +388,7 @@ tinydns_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
       }
       *d = '\0';
       printf("'%s:%s:%u\n", name, databuf, rr->ttl);
-      Free(databuf);
+      RELEASE(databuf);
     }
     break;
 
@@ -469,13 +467,13 @@ dump_rr_long(MYDNS_SOA *soa) {
   if (!maxlen)
     maxlen = DNS_MAXNAMELEN;
 
-  querylen = asprintf(&query,
+  querylen = ASPRINTF(&query,
 		      "SELECT "MYDNS_RR_FIELDS" FROM %s WHERE zone=%u ORDER BY name,type,aux",
 		      mydns_rr_table_name, soa->id);
 
   /* Submit query */
   res = sql_query(sql, query, querylen);
-  Free(query);
+  RELEASE(query);
   if (!res)
     return;
 
@@ -534,9 +532,9 @@ main(int argc, char **argv) {
     char *query;
     size_t querylen;
 
-    querylen = asprintf(&query, "SELECT origin FROM %s", mydns_soa_table_name);
+    querylen = ASPRINTF(&query, "SELECT origin FROM %s", mydns_soa_table_name);
     res = sql_query(sql, query, querylen);
-    Free(query);
+    RELEASE(query);
     if (!res)
       return (0);
 

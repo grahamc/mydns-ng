@@ -34,10 +34,8 @@ int mydns_soa_use_recursive = 0;
 /* Make this nonzero to enable debugging within this source file */
 #define	DEBUG_LIB_SOA	1
 
-
 void
-mydns_soa_get_active_types(SQL *sqlConn)
-{
+mydns_soa_get_active_types(SQL *sqlConn) {
   SQL_RES	*res;
   SQL_ROW	row;
   int		querylen;
@@ -50,7 +48,7 @@ mydns_soa_get_active_types(SQL *sqlConn)
 			     mydns_soa_table_name);
 
   if (!(res = sql_query(sqlConn, query, querylen))) {
-    Free(query);
+    RELEASE(query);
     return;
   }
 
@@ -61,7 +59,7 @@ mydns_soa_get_active_types(SQL *sqlConn)
   }
 #endif
 
-  Free(query);
+  RELEASE(query);
 
   while ((row = sql_getrow(res, NULL))) {
     char *VAL = row[0];
@@ -94,8 +92,7 @@ mydns_soa_get_active_types(SQL *sqlConn)
 	Returns the number of zones in the soa table.
 **************************************************************************************************/
 long
-mydns_soa_count(SQL *sqlConn)
-{
+mydns_soa_count(SQL *sqlConn) {
 	return sql_count(sqlConn, "SELECT COUNT(*) FROM %s", mydns_soa_table_name);
 }
 /*--- mydns_soa_count() -------------------------------------------------------------------------*/
@@ -105,12 +102,11 @@ mydns_soa_count(SQL *sqlConn)
 	MYDNS_SET_SOA_TABLE_NAME
 **************************************************************************************************/
 void
-mydns_set_soa_table_name(char *name)
-{
-	if (!name)
-		strncpy(mydns_soa_table_name, MYDNS_SOA_TABLE, sizeof(mydns_soa_table_name)-1);
-	else
-		strncpy(mydns_soa_table_name, name, sizeof(mydns_soa_table_name)-1);
+mydns_set_soa_table_name(char *name) {
+  if (!name)
+    strncpy(mydns_soa_table_name, MYDNS_SOA_TABLE, sizeof(mydns_soa_table_name)-1);
+  else
+    strncpy(mydns_soa_table_name, name, sizeof(mydns_soa_table_name)-1);
 }
 /*--- mydns_set_soa_table_name() ----------------------------------------------------------------*/
 
@@ -119,13 +115,10 @@ mydns_set_soa_table_name(char *name)
 	MYDNS_SET_SOA_WHERE_CLAUSE
 **************************************************************************************************/
 void
-mydns_set_soa_where_clause(char *where)
-{
-	if (where && strlen(where))
-	{
-		if (!(mydns_soa_where_clause = strdup(where)))
-			Errx("out of memory");
-	}
+mydns_set_soa_where_clause(char *where) {
+  if (where && strlen(where)) {
+    mydns_soa_where_clause = STRDUP(where);
+  }
 }
 /*--- mydns_set_soa_where_clause() --------------------------------------------------------------*/
 
@@ -137,51 +130,48 @@ mydns_set_soa_where_clause(char *where)
 inline
 #endif
 MYDNS_SOA *
-mydns_soa_parse(SQL_ROW row)
-{
-	MYDNS_SOA *rv;
-	int len;
+mydns_soa_parse(SQL_ROW row) {
+  MYDNS_SOA *rv;
+  int len;
 
-	if ((rv = (MYDNS_SOA *)malloc(sizeof(MYDNS_SOA))))
-	{
-		rv->next = NULL;
+  rv = (MYDNS_SOA *)ALLOCATE(sizeof(MYDNS_SOA), MYDNS_SOA);
 
-		rv->id = atou(row[0]);
-		strncpy(rv->origin, row[1], sizeof(rv->origin)-1);
-		strncpy(rv->ns, row[2], sizeof(rv->ns)-1);
-		if (!rv->ns[0])
-			snprintf(rv->ns, sizeof(rv->ns), "ns.%s", rv->origin);
-		strncpy(rv->mbox, row[3], sizeof(rv->mbox)-1);
-		if (!rv->mbox[0])
-			snprintf(rv->mbox, sizeof(rv->mbox), "hostmaster.%s", rv->origin);
-		rv->serial = atou(row[4]);
-		rv->refresh = atou(row[5]);
-		rv->retry = atou(row[6]);
-		rv->expire = atou(row[7]);
-		rv->minimum = atou(row[8]);
-		rv->ttl = atou(row[9]);
+  rv->next = NULL;
 
-		rv->recursive = ((mydns_soa_use_recursive)?GETBOOL(row[10]):0);
+  rv->id = atou(row[0]);
+  strncpy(rv->origin, row[1], sizeof(rv->origin)-1);
+  strncpy(rv->ns, row[2], sizeof(rv->ns)-1);
+  if (!rv->ns[0])
+    snprintf(rv->ns, sizeof(rv->ns), "ns.%s", rv->origin);
+  strncpy(rv->mbox, row[3], sizeof(rv->mbox)-1);
+  if (!rv->mbox[0])
+    snprintf(rv->mbox, sizeof(rv->mbox), "hostmaster.%s", rv->origin);
+  rv->serial = atou(row[4]);
+  rv->refresh = atou(row[5]);
+  rv->retry = atou(row[6]);
+  rv->expire = atou(row[7]);
+  rv->minimum = atou(row[8]);
+  rv->ttl = atou(row[9]);
 
-		/* If 'ns' or 'mbox' don't end in a dot, append the origin */
-		len = strlen(rv->ns);
-		if (rv->ns[len-1] != '.')
-		{
-			strncat(rv->ns, ".", sizeof(rv->ns) - len - 1);
-			strncat(rv->ns, rv->origin, sizeof(rv->ns) - len - 2);
-		}
-		len = strlen(rv->mbox);
-		if (rv->mbox[len-1] != '.')
-		{
-			strncat(rv->mbox, ".", sizeof(rv->mbox) - len - 1);
-			strncat(rv->mbox, rv->origin, sizeof(rv->mbox) - len - 2);
-		}
+  rv->recursive = ((mydns_soa_use_recursive)?GETBOOL(row[10]):0);
 
-		/* Make sure TTL for SOA is at least the minimum */
-		if (rv->ttl < rv->minimum)
-			rv->ttl = rv->minimum;
-	}
-	return (rv);
+  /* If 'ns' or 'mbox' don't end in a dot, append the origin */
+  len = strlen(rv->ns);
+  if (rv->ns[len-1] != '.') {
+    strncat(rv->ns, ".", sizeof(rv->ns) - len - 1);
+    strncat(rv->ns, rv->origin, sizeof(rv->ns) - len - 2);
+  }
+  len = strlen(rv->mbox);
+  if (rv->mbox[len-1] != '.') {
+    strncat(rv->mbox, ".", sizeof(rv->mbox) - len - 1);
+    strncat(rv->mbox, rv->origin, sizeof(rv->mbox) - len - 2);
+  }
+
+  /* Make sure TTL for SOA is at least the minimum */
+  if (rv->ttl < rv->minimum)
+    rv->ttl = rv->minimum;
+
+  return (rv);
 }
 /*--- mydns_soa_parse() -------------------------------------------------------------------------*/
 
@@ -193,39 +183,34 @@ mydns_soa_parse(SQL_ROW row)
 	in the list.
 **************************************************************************************************/
 MYDNS_SOA *
-mydns_soa_dup(MYDNS_SOA *start, int recurse)
-{
-	register MYDNS_SOA *first = NULL, *last = NULL, *soa, *s, *tmp;
+mydns_soa_dup(MYDNS_SOA *start, int recurse) {
+  register MYDNS_SOA *first = NULL, *last = NULL, *soa, *s, *tmp;
 
-	for (s = start; s; s = tmp)
-	{
-		tmp = s->next;
+  for (s = start; s; s = tmp) {
+    tmp = s->next;
 
-		if (!(soa = (MYDNS_SOA *)calloc(1, sizeof(MYDNS_SOA))))
-			Err(_("out of memory"));
+    soa = (MYDNS_SOA *)ALLOCATE(sizeof(MYDNS_SOA), MYDNS_SOA);
 
-		soa->id = s->id;
-		strncpy(soa->origin, s->origin, sizeof(soa->origin)-1);
-		strncpy(soa->ns, s->ns, sizeof(soa->ns)-1);
-		strncpy(soa->mbox, s->mbox, sizeof(soa->mbox)-1);
-		soa->serial = s->serial;
-		soa->refresh = s->refresh;
-		soa->retry = s->retry;
-		soa->expire = s->expire;
-		soa->minimum = s->minimum;
-		soa->ttl = s->ttl;
-		soa->recursive = s->recursive;
-		soa->next = NULL;
-		if (recurse)
-		{
-			if (!first) first = soa;
-			if (last) last->next = soa;
-			last = soa;
-		}
-		else
-			return (soa);
-	}
-	return (first);
+    soa->id = s->id;
+    strncpy(soa->origin, s->origin, sizeof(soa->origin)-1);
+    strncpy(soa->ns, s->ns, sizeof(soa->ns)-1);
+    strncpy(soa->mbox, s->mbox, sizeof(soa->mbox)-1);
+    soa->serial = s->serial;
+    soa->refresh = s->refresh;
+    soa->retry = s->retry;
+    soa->expire = s->expire;
+    soa->minimum = s->minimum;
+    soa->ttl = s->ttl;
+    soa->recursive = s->recursive;
+    soa->next = NULL;
+    if (recurse) {
+      if (!first) first = soa;
+      if (last) last->next = soa;
+      last = soa;
+    } else
+      return (soa);
+  }
+  return (first);
 }
 /*--- mydns_soa_dup() ---------------------------------------------------------------------------*/
 
@@ -237,15 +222,14 @@ mydns_soa_dup(MYDNS_SOA *start, int recurse)
 inline
 #endif
 size_t
-mydns_soa_size(MYDNS_SOA *first)
-{
-	register MYDNS_SOA *p;
-	register size_t size = 0;
+mydns_soa_size(MYDNS_SOA *first) {
+  register MYDNS_SOA *p;
+  register size_t size = 0;
 
-	for (p = first; p; p = p->next)
-		size += sizeof(MYDNS_SOA);
+  for (p = first; p; p = p->next)
+    size += sizeof(MYDNS_SOA);
 
-	return (size);
+  return (size);
 }
 /*--- mydns_soa_size() --------------------------------------------------------------------------*/
 
@@ -258,15 +242,13 @@ mydns_soa_size(MYDNS_SOA *first)
 inline
 #endif
 void
-_mydns_soa_free(MYDNS_SOA *first)
-{
-	register MYDNS_SOA *p, *tmp;
+_mydns_soa_free(MYDNS_SOA *first) {
+  register MYDNS_SOA *p, *tmp;
 
-	for (p = first; p; p = tmp)
-	{
-		tmp = p->next;
-		Free(p);
-	}
+  for (p = first; p; p = tmp) {
+    tmp = p->next;
+    RELEASE(p);
+  }
 }
 /*--- mydns_soa_free() --------------------------------------------------------------------------*/
 
@@ -337,7 +319,7 @@ mydns_soa_load(SQL *sqlConn, MYDNS_SOA **rptr, char *origin) {
   }
 #endif
 
-  Free(query);
+  RELEASE(query);
 
   /* Add results to list */
   while ((row = sql_getrow(res, NULL))) {

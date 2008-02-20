@@ -60,6 +60,31 @@ By default, @file{mydns} is installed as @file{/usr/local/sbin/mydns}.
 
 
 @c ***
+@c ***	Creating mydns.conf
+@c ***
+@node Creating mydns.conf
+@section Creating @file{mydns.conf}
+@cindex mydns.conf
+
+MyDNS probably won't start properly if it can't find its configuration file.  By default,
+the configuration file is called @file{/etc/mydns.conf}.
+
+Running @command{mydns --dump-config} will output a set of configuration
+options suitable for using as your configuration file.  @xref{Configuration}.
+
+So, for a fresh installation, this command will create your initial configuration
+file:
+
+@example
+# mydns --dump-config > /etc/mydns.conf
+@end example
+
+You should now edit your @file{mydns.conf} file.  Most defaults should be fine for most sites.
+
+The values you are most likely to want to modify are the values for @samp{db-host} and @samp{db-user},
+which should contain the database username and password that you will create at the end of step @xref{Database access}.
+
+@c ***
 @c ***	Creating the database
 @c ***
 @node Creating the database
@@ -67,7 +92,7 @@ By default, @file{mydns} is installed as @file{/usr/local/sbin/mydns}.
 @cindex database, creating
 
 
-Now that you have installed MyDNS, you'll need to set up a database and access permissions.
+Now that you have installed and configured MyDNS, you'll need to set up a database and access permissions.
 
 To create a database called @samp{mydns} on your database server:
 
@@ -135,32 +160,3 @@ mydns=# CREATE USER @i{user} WITH PASSWORD '@i{password}';
 mydns=# GRANT SELECT ON soa,soa_id_seq TO @i{user};
 mydns=# GRANT SELECT ON rr,rr_id_seq TO @i{user};
 @end example
-
-
-
-
-@c ***
-@c ***	Creating mydns.conf
-@c ***
-@node Creating mydns.conf
-@section Creating @file{mydns.conf}
-@cindex mydns.conf
-
-MyDNS probably won't start properly if it can't find its configuration file.  By default,
-the configuration file is called @file{/etc/mydns.conf}.
-
-Running @command{mydns --dump-config} will output a set of configuration
-options suitable for using as your configuration file.  @xref{Configuration}.
-
-So, for a fresh installation, this command will create your initial configuration
-file:
-
-@example
-# mydns --dump-config > /etc/mydns.conf
-@end example
-
-You should now edit your @file{mydns.conf} file.  Most defaults should be fine for most sites.
-
-The values you are most likely to want to modify are the values for @samp{db-host} and @samp{db-user},
-which should contain the database username and password that you created at the end of step 2.4.
-@xref{Database access}.

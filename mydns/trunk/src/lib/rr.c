@@ -37,7 +37,10 @@
 char mydns_rr_table_name[PATH_MAX] = MYDNS_RR_TABLE;
 char *mydns_rr_where_clause = NULL;
 
+size_t mydns_rr_data_length = DNS_DATALEN;
+
 /* Optional columns */
+int mydns_rr_extended_data = 1;
 int mydns_rr_use_active = 0;
 int mydns_rr_use_stamp = 0;
 int mydns_rr_use_serial = 0;
@@ -83,7 +86,7 @@ mydns_rr_get_active_types(SQL *sqlConn) {
   }
 #endif
 
-  Free(query);
+  RELEASE(query);
 
   while ((row = sql_getrow(res, NULL))) {
     char *VAL = row[0];
@@ -120,8 +123,7 @@ mydns_rr_get_active_types(SQL *sqlConn) {
 	Returns the number of records in the rr table.
 **************************************************************************************************/
 long
-mydns_rr_count(SQL *sqlConn)
-{
+mydns_rr_count(SQL *sqlConn) {
 	return sql_count(sqlConn, "SELECT COUNT(*) FROM %s", mydns_rr_table_name);
 }
 /*--- mydns_rr_count() --------------------------------------------------------------------------*/
@@ -131,12 +133,11 @@ mydns_rr_count(SQL *sqlConn)
 	MYDNS_SET_RR_TABLE_NAME
 **************************************************************************************************/
 void
-mydns_set_rr_table_name(char *name)
-{
-	if (!name)
-		strncpy(mydns_rr_table_name, MYDNS_RR_TABLE, sizeof(mydns_rr_table_name)-1);
-	else
-		strncpy(mydns_rr_table_name, name, sizeof(mydns_rr_table_name)-1);
+mydns_set_rr_table_name(char *name) {
+  if (!name)
+    strncpy(mydns_rr_table_name, MYDNS_RR_TABLE, sizeof(mydns_rr_table_name)-1);
+  else
+    strncpy(mydns_rr_table_name, name, sizeof(mydns_rr_table_name)-1);
 }
 /*--- mydns_set_rr_table_name() -----------------------------------------------------------------*/
 
@@ -145,13 +146,10 @@ mydns_set_rr_table_name(char *name)
 	MYDNS_SET_RR_WHERE_CLAUSE
 **************************************************************************************************/
 void
-mydns_set_rr_where_clause(char *where)
-{
-	if (where && strlen(where))
-	{
-		if (!(mydns_rr_where_clause = strdup(where)))
-			Errx("out of memory");
-	}
+mydns_set_rr_where_clause(char *where) {
+  if (where && strlen(where)) {
+    mydns_rr_where_clause = STRDUP(where);
+  }
 }
 /*--- mydns_set_rr_where_clause() ---------------------------------------------------------------*/
 
@@ -160,71 +158,69 @@ mydns_set_rr_where_clause(char *where)
 	MYDNS_RR_GET_TYPE
 **************************************************************************************************/
 inline dns_qtype_t
-mydns_rr_get_type(char *type)
-{
-	register char *c;
+mydns_rr_get_type(char *type) {
+  register char *c;
 
-	for (c = type; *c; c++)
-		*c = toupper(*c);
+  for (c = type; *c; c++)
+    *c = toupper(*c);
 
-	switch (type[0])
-	{
-		case 'A':
-			if (!type[1])
-				return DNS_QTYPE_A;
+  switch (type[0]) {
+  case 'A':
+    if (!type[1])
+      return DNS_QTYPE_A;
 
-			if (type[1] == 'A' && type[2] == 'A' && type[3] == 'A' && !type[4])
-				return DNS_QTYPE_AAAA;
+    if (type[1] == 'A' && type[2] == 'A' && type[3] == 'A' && !type[4])
+      return DNS_QTYPE_AAAA;
 
 #if ALIAS_ENABLED
-			if (type[1] == 'L' && type[2] == 'I' && type[3] == 'A' && type[4] == 'S' && !type[5])
-				return DNS_QTYPE_ALIAS;
+    if (type[1] == 'L' && type[2] == 'I' && type[3] == 'A' && type[4] == 'S' && !type[5])
+      return DNS_QTYPE_ALIAS;
 #endif
-			break;
+    break;
 
-		case 'C':
-			if (type[1] == 'N' && type[2] == 'A' && type[3] == 'M' && type[4] == 'E' && !type[5])
-				return DNS_QTYPE_CNAME;
-			break;
+  case 'C':
+    if (type[1] == 'N' && type[2] == 'A' && type[3] == 'M' && type[4] == 'E' && !type[5])
+      return DNS_QTYPE_CNAME;
+    break;
 
-		case 'H':
-			if (type[1] == 'I' && type[2] == 'N' && type[3] == 'F' && type[4] == 'O' && !type[5])
-				return DNS_QTYPE_HINFO;
-			break;
+  case 'H':
+    if (type[1] == 'I' && type[2] == 'N' && type[3] == 'F' && type[4] == 'O' && !type[5])
+      return DNS_QTYPE_HINFO;
+    break;
 
-		case 'M':
-			if (type[1] == 'X' && !type[2])
-				return DNS_QTYPE_MX;
-			break;
+  case 'M':
+    if (type[1] == 'X' && !type[2])
+      return DNS_QTYPE_MX;
+    break;
 
-		case 'N':
-			if (type[1] == 'S' && !type[2])
-				return DNS_QTYPE_NS;
-			if (type[1] == 'A' && type[2] == 'P' && type[3] == 'T' && type[4] == 'R' && !type[5])
-				return DNS_QTYPE_NAPTR;
-			break;
+  case 'N':
+    if (type[1] == 'S' && !type[2])
+      return DNS_QTYPE_NS;
+    if (type[1] == 'A' && type[2] == 'P' && type[3] == 'T' && type[4] == 'R' && !type[5])
+      return DNS_QTYPE_NAPTR;
+    break;
 
-		case 'T':
-			if (type[1] == 'X' && type[2] == 'T' && !type[3])
-				return DNS_QTYPE_TXT;
-			break;
+  case 'T':
+    if (type[1] == 'X' && type[2] == 'T' && !type[3])
+      return DNS_QTYPE_TXT;
+    break;
 
-		case 'P':
-			if (type[1] == 'T' && type[2] == 'R' && !type[3])
-				return DNS_QTYPE_PTR;
-			break;
+  case 'P':
+    if (type[1] == 'T' && type[2] == 'R' && !type[3])
+      return DNS_QTYPE_PTR;
+    break;
 
-		case 'R':
-			if (type[1] == 'P' && !type[2])
-				return DNS_QTYPE_RP;
-			break;
+  case 'R':
+    if (type[1] == 'P' && !type[2])
+      return DNS_QTYPE_RP;
+    break;
 
-		case 'S':
-			if (type[1] == 'R' && type[2] == 'V' && !type[3])
-				return DNS_QTYPE_SRV;
-			break;
-	}
-	return 0;
+  case 'S':
+    if (type[1] == 'R' && type[2] == 'V' && !type[3])
+      return DNS_QTYPE_SRV;
+    break;
+  }
+  return 0;
 }
 /*--- mydns_rr_get_type() -----------------------------------------------------------------------*/
 
@@ -235,26 +231,27 @@ mydns_rr_get_type(char *type)
 	NUL-terminate mbox and fill 'rp_txt' with the txt part of the record.
 **************************************************************************************************/
 static inline void
-mydns_rr_parse_rp(const char *origin, MYDNS_RR *rr)
-{
+mydns_rr_parse_rp(const char *origin, MYDNS_RR *rr) {
   char *c;
 
   /* If no space, set txt to '.' */
   if (!(c = strchr(__MYDNS_RR_DATA_VALUE(rr), ' '))) {
-    __MYDNS_RR_RP_TXT(rr) = strdup(".");
+    __MYDNS_RR_RP_TXT(rr) = STRDUP(".");
   } else {
     int namelen = strlen(&c[1]);
     if (LASTCHAR(&c[1]) != '.') {
       namelen += strlen(origin) + 1;
     }
-    __MYDNS_RR_RP_TXT(rr) = calloc(namelen + 1, sizeof(char));
+    __MYDNS_RR_RP_TXT(rr) = ALLOCATE_N(namelen + 1, sizeof(char), char[]);
     strncpy(__MYDNS_RR_RP_TXT(rr), &c[1], namelen);
     if (LASTCHAR(__MYDNS_RR_RP_TXT(rr)) != '.') {
       strncat(__MYDNS_RR_RP_TXT(rr), ".", namelen);
       strncat(__MYDNS_RR_RP_TXT(rr), origin, namelen);
     }
     *c = '\0';
-    __MYDNS_RR_DATA_VALUE(rr) = (char*)realloc(__MYDNS_RR_DATA_VALUE(rr), strlen(__MYDNS_RR_DATA_VALUE(rr))+1);
+    __MYDNS_RR_DATA_VALUE(rr) = REALLOCATE(__MYDNS_RR_DATA_VALUE(rr),
+					   strlen(__MYDNS_RR_DATA_VALUE(rr))+1,
+					   char[]);
     __MYDNS_RR_DATA_LENGTH(rr) = strlen(__MYDNS_RR_DATA_VALUE(rr));
   }
 }
@@ -282,7 +279,9 @@ mydns_rr_parse_srv(const char *origin, MYDNS_RR *rr) {
     if ((port = strsep(&target, " \t")))
       __MYDNS_RR_SRV_PORT(rr) = atoi(port);
     memmove(__MYDNS_RR_DATA_VALUE(rr), target, strlen(target)+1);
-    __MYDNS_RR_DATA_VALUE(rr) = (char*)realloc(__MYDNS_RR_DATA_VALUE(rr), strlen(__MYDNS_RR_DATA_VALUE(rr)) + 1);
+    __MYDNS_RR_DATA_VALUE(rr) = REALLOCATE(__MYDNS_RR_DATA_VALUE(rr),
+					   strlen(__MYDNS_RR_DATA_VALUE(rr)) + 1,
+					   char[]);
     __MYDNS_RR_DATA_LENGTH(rr) = strlen(__MYDNS_RR_DATA_VALUE(rr));
   }
 }
@@ -310,29 +309,50 @@ mydns_rr_parse_naptr(const char *origin, MYDNS_RR *rr) {
   if (!strsep_quotes(&p, __MYDNS_RR_NAPTR_FLAGS(rr), sizeof(__MYDNS_RR_NAPTR_FLAGS(rr))))
     return (-1);
 
-  __MYDNS_RR_NAPTR_SERVICE(rr) = (char*)calloc(strlen(p)+1, sizeof(char));
+  __MYDNS_RR_NAPTR_SERVICE(rr) = ALLOCATE_N(strlen(p)+1, sizeof(char), char[]);
   if (!strsep_quotes(&p, __MYDNS_RR_NAPTR_SERVICE(rr), sizeof(__MYDNS_RR_NAPTR_SERVICE(rr))))
     return (-1);
-  __MYDNS_RR_NAPTR_SERVICE(rr) = (char*)realloc(__MYDNS_RR_NAPTR_SERVICE(rr),
-					      strlen(__MYDNS_RR_NAPTR_SERVICE(rr)) + 1);
+  __MYDNS_RR_NAPTR_SERVICE(rr) = REALLOCATE(__MYDNS_RR_NAPTR_SERVICE(rr),
+					    strlen(__MYDNS_RR_NAPTR_SERVICE(rr)) + 1,
+					    char[]);
 
-  __MYDNS_RR_NAPTR_REGEX(rr) = (char*)calloc(strlen(p)+1, sizeof(char));
+  __MYDNS_RR_NAPTR_REGEX(rr) = ALLOCATE_N(strlen(p)+1, sizeof(char), char[]);
   if (!strsep_quotes(&p, __MYDNS_RR_NAPTR_REGEX(rr), sizeof(__MYDNS_RR_NAPTR_REGEX(rr))))
     return (-1);
-  __MYDNS_RR_NAPTR_REGEX(rr) = (char*)realloc(__MYDNS_RR_NAPTR_REGEX(rr), strlen(__MYDNS_RR_NAPTR_REGEX(rr)) + 1);
+  __MYDNS_RR_NAPTR_REGEX(rr) = REALLOCATE(__MYDNS_RR_NAPTR_REGEX(rr),
+					  strlen(__MYDNS_RR_NAPTR_REGEX(rr)) + 1,
+					  char[]);
 
-  __MYDNS_RR_NAPTR_REPLACEMENT(rr) = (char*)calloc(strlen(p)+1, sizeof(char));
+  __MYDNS_RR_NAPTR_REPLACEMENT(rr) = ALLOCATE_N(strlen(p)+1, sizeof(char), char[]);
   if (!strsep_quotes(&p, __MYDNS_RR_NAPTR_REPLACEMENT(rr), sizeof(__MYDNS_RR_NAPTR_REPLACEMENT(rr))))
     return (-1);
-  __MYDNS_RR_NAPTR_REPLACEMENT(rr) = (char*)realloc(__MYDNS_RR_NAPTR_REPLACEMENT(rr),
-						  strlen(__MYDNS_RR_NAPTR_REPLACEMENT(rr)) + 1);
+  __MYDNS_RR_NAPTR_REPLACEMENT(rr) = REALLOCATE(__MYDNS_RR_NAPTR_REPLACEMENT(rr),
+						strlen(__MYDNS_RR_NAPTR_REPLACEMENT(rr)) + 1,
+						char[]);
 
   __MYDNS_RR_DATA_LENGTH(rr) = 0;
-  Free(__MYDNS_RR_DATA_VALUE(rr));
+  RELEASE(__MYDNS_RR_DATA_VALUE(rr));
 
   return 0;
 }
 /*--- mydns_rr_parse_naptr() --------------------------------------------------------------------*/
+
+static inline int
+mydns_rr_parse_txt(const char *origin, MYDNS_RR *rr) {
+  int datalen = __MYDNS_RR_DATA_LENGTH(rr);
+  char *data = __MYDNS_RR_DATA_VALUE(rr);
+
+  if (datalen > DNS_MAXTXTLEN) return (-1);
+
+  while (datalen > 0) {
+    size_t elemlen = strlen(data);
+    if (elemlen > DNS_MAXTXTELEMLEN) return (-1);
+    data = &data[elemlen+1];
+    datalen -= elemlen + 1;
+  }
+  
+  return 0;
+}
 
 static char *
 __mydns_rr_append(char *s1, char *s2) {
@@ -341,7 +361,7 @@ __mydns_rr_append(char *s1, char *s2) {
   if (*s1) newlen += 1;
   newlen += strlen(s2);
 
-  name = (char*)malloc(newlen+1);
+  name = ALLOCATE(newlen+1, char[]);
   strcpy(name, s1);
   if (*name) { strcat(name, "."); }
   strcat(name, s2);
@@ -365,14 +385,14 @@ mydns_rr_append_origin(char *str, char *origin) {
 void
 mydns_rr_name_append_origin(MYDNS_RR *rr, char *origin) {
   char *res = mydns_rr_append_origin(__MYDNS_RR_NAME(rr), origin);
-  if (__MYDNS_RR_NAME(rr) != res) Free(__MYDNS_RR_NAME(rr));
+  if (__MYDNS_RR_NAME(rr) != res) RELEASE(__MYDNS_RR_NAME(rr));
   __MYDNS_RR_NAME(rr) = res;
 }
       
 void
 mydns_rr_data_append_origin(MYDNS_RR *rr, char *origin) {
   char *res = mydns_rr_append_origin(__MYDNS_RR_DATA_VALUE(rr), origin);
-  if (__MYDNS_RR_DATA_VALUE(rr) != res) Free(__MYDNS_RR_DATA_VALUE(rr));
+  if (__MYDNS_RR_DATA_VALUE(rr) != res) RELEASE(__MYDNS_RR_DATA_VALUE(rr));
   __MYDNS_RR_DATA_VALUE(rr) = res;
   __MYDNS_RR_DATA_LENGTH(rr) = strlen(__MYDNS_RR_DATA_VALUE(rr));
 }
@@ -387,22 +407,22 @@ _mydns_rr_free(MYDNS_RR *first) {
 
   for (p = first; p; p = tmp) {
     tmp = p->next;
-    Free(p->stamp);
-    Free(__MYDNS_RR_NAME(p));
-    Free(__MYDNS_RR_DATA_VALUE(p));
+    RELEASE(p->stamp);
+    RELEASE(__MYDNS_RR_NAME(p));
+    RELEASE(__MYDNS_RR_DATA_VALUE(p));
     switch (p->type) {
     case DNS_QTYPE_NAPTR:
-      Free(__MYDNS_RR_NAPTR_SERVICE(p));
-      Free(__MYDNS_RR_NAPTR_REGEX(p));
-      Free(__MYDNS_RR_NAPTR_REPLACEMENT(p));
+      RELEASE(__MYDNS_RR_NAPTR_SERVICE(p));
+      RELEASE(__MYDNS_RR_NAPTR_REGEX(p));
+      RELEASE(__MYDNS_RR_NAPTR_REPLACEMENT(p));
       break;
     case DNS_QTYPE_RP:
-      Free(__MYDNS_RR_RP_TXT(p));
+      RELEASE(__MYDNS_RR_RP_TXT(p));
       break;
     default:
       break;
     }
-    Free(p);
+    RELEASE(p);
   }
 }
 /*--- _mydns_rr_free() --------------------------------------------------------------------------*/
@@ -439,94 +459,100 @@ mydns_rr_build(uint32_t id,
     goto PARSEFAILED;
   }
 
-  if ((rr = (MYDNS_RR *)calloc(1, sizeof(MYDNS_RR)))) {
-    memset(rr, '\0', sizeof(MYDNS_RR));
-    rr->next = NULL;
+  rr = (MYDNS_RR *)ALLOCATE(sizeof(MYDNS_RR), MYDNS_RR);
+  memset(rr, '\0', sizeof(MYDNS_RR));
+  rr->next = NULL;
 
-    rr->id = id;
-    rr->zone = zone;
+  rr->id = id;
+  rr->zone = zone;
 
-    __MYDNS_RR_NAME(rr) = (char*)malloc(namelen+1);
-    memset(__MYDNS_RR_NAME(rr), 0, namelen+1);
-    if (name) strncpy(__MYDNS_RR_NAME(rr), name, namelen);
+  __MYDNS_RR_NAME(rr) = ALLOCATE(namelen+1, char[]);
+  memset(__MYDNS_RR_NAME(rr), 0, namelen+1);
+  if (name) strncpy(__MYDNS_RR_NAME(rr), name, namelen);
 
-    /* Should store length and buffer rather than handle as a string */
-    __MYDNS_RR_DATA_LENGTH(rr) = datalen;
-    __MYDNS_RR_DATA_VALUE(rr) = malloc(datalen+1);
-    memcpy(__MYDNS_RR_DATA_VALUE(rr), data, datalen);
-    
-    rr->class = class;
-    rr->aux = aux;
-    rr->ttl = ttl;
-    rr->type = type;
+  /* Should store length and buffer rather than handle as a string */
+  __MYDNS_RR_DATA_LENGTH(rr) = datalen;
+  __MYDNS_RR_DATA_VALUE(rr) = ALLOCATE(datalen+1, char[]);
+  memcpy(__MYDNS_RR_DATA_VALUE(rr), data, datalen);
+
+  rr->class = class;
+  rr->aux = aux;
+  rr->ttl = ttl;
+  rr->type = type;
 #if ALIAS_ENABLED
-    if (rr->type == DNS_QTYPE_ALIAS) {
-      rr->type = DNS_QTYPE_A;
-      rr->alias = 1;
-    } else
-      rr->alias = 0;
+  if (rr->type == DNS_QTYPE_ALIAS) {
+    rr->type = DNS_QTYPE_A;
+    rr->alias = 1;
+  } else
+    rr->alias = 0;
 #endif
 
-    /* Find a constant value so we do not have to allocate or free this one */
-    if (active) {
-      int i;
-      for (i = 0; i < 3; i++) {
-	if (!strcasecmp(mydns_rr_active_types[i], active)) { active = mydns_rr_active_types[i]; break; }
-      }
+  /* Find a constant value so we do not have to allocate or free this one */
+  if (active) {
+    int i;
+    for (i = 0; i < 3; i++) {
+      if (!strcasecmp(mydns_rr_active_types[i], active)) { active = mydns_rr_active_types[i]; break; }
     }
-    rr->active = active;
-    rr->stamp = stamp;
-    rr->serial = serial;
-
-    switch (rr->type) {
-
-    case DNS_QTYPE_NAPTR:
-      /* Populate special fields for NAPTR records */
-      if (mydns_rr_parse_naptr(origin, rr) < 0) {
-	goto PARSEFAILED;
-      }
-      break;
-
-    case DNS_QTYPE_RP:
-      /* Populate special fields for RP records */
-      mydns_rr_parse_rp(origin, rr);
-      goto DOORIGIN;
-
-    case DNS_QTYPE_SRV:
-      mydns_rr_parse_srv(origin, rr);
-      goto DOORIGIN;
-
-    DOORIGIN:
-    case DNS_QTYPE_CNAME:
-    case DNS_QTYPE_MX:
-    case DNS_QTYPE_NS:
-
-      /* Append origin to data if it's not there for these types: */
-      if (origin) {
-	datalen = __MYDNS_RR_DATA_LENGTH(rr);
-#ifdef DN_COLUMN_NAMES
-	datalen += 1;
-	__MYDNS_RR_DATA_LENGTH(rr) = datalen;
-	__MYDNS_RR_DATA_VALUE(rr) = realloc(__MYDNS_RR_DATA_VALUE(rr), datalen+1);
-	/* Just append dot for DN */
-	((char*)__MYDNS_RR_DATA_VALUE(rr))[datalen-1] = '.';
-#else
-	if (datalen && ((char*)__MYDNS_RR_DATA_VALUE(rr))[datalen-1] != '.') {
-	  datalen = datalen + 1 + strlen(origin);
-	  __MYDNS_RR_DATA_VALUE(rr) = realloc(__MYDNS_RR_DATA_VALUE(rr), datalen+1);
-	  ((char*)__MYDNS_RR_DATA_VALUE(rr))[__MYDNS_RR_DATA_LENGTH(rr)] = '.';
-	  memcpy(&((char*)__MYDNS_RR_DATA_VALUE(rr))[__MYDNS_RR_DATA_LENGTH(rr)+1], origin, strlen(origin));
-	  __MYDNS_RR_DATA_LENGTH(rr) = datalen;
-	}
-#endif
-	((char*)__MYDNS_RR_DATA_VALUE(rr))[__MYDNS_RR_DATA_LENGTH(rr)] = '\0';
-      }
-      break;
-    default:
-      break;
-    }
-
   }
+  rr->active = active;
+  rr->stamp = stamp;
+  rr->serial = serial;
+
+  switch (rr->type) {
+
+  case DNS_QTYPE_TXT:
+    if (mydns_rr_parse_txt(origin, rr) < 0) {
+      goto PARSEFAILED;
+    }
+    break;
+
+  case DNS_QTYPE_NAPTR:
+    /* Populate special fields for NAPTR records */
+    if (mydns_rr_parse_naptr(origin, rr) < 0) {
+      goto PARSEFAILED;
+    }
+    break;
+
+  case DNS_QTYPE_RP:
+    /* Populate special fields for RP records */
+    mydns_rr_parse_rp(origin, rr);
+    goto DOORIGIN;
+
+  case DNS_QTYPE_SRV:
+    mydns_rr_parse_srv(origin, rr);
+    goto DOORIGIN;
+
+  DOORIGIN:
+
+  case DNS_QTYPE_CNAME:
+  case DNS_QTYPE_MX:
+  case DNS_QTYPE_NS:
+
+    /* Append origin to data if it's not there for these types: */
+    if (origin) {
+      datalen = __MYDNS_RR_DATA_LENGTH(rr);
+#ifdef DN_COLUMN_NAMES
+      datalen += 1;
+      __MYDNS_RR_DATA_LENGTH(rr) = datalen;
+      __MYDNS_RR_DATA_VALUE(rr) = REALLOCATE(__MYDNS_RR_DATA_VALUE(rr), datalen+1, char[]);
+      /* Just append dot for DN */
+      ((char*)__MYDNS_RR_DATA_VALUE(rr))[datalen-1] = '.';
+#else
+      if (datalen && ((char*)__MYDNS_RR_DATA_VALUE(rr))[datalen-1] != '.') {
+	datalen = datalen + 1 + strlen(origin);
+	__MYDNS_RR_DATA_VALUE(rr) = REALLOCATE(__MYDNS_RR_DATA_VALUE(rr), datalen+1, char[]);
+	((char*)__MYDNS_RR_DATA_VALUE(rr))[__MYDNS_RR_DATA_LENGTH(rr)] = '.';
+	memcpy(&((char*)__MYDNS_RR_DATA_VALUE(rr))[__MYDNS_RR_DATA_LENGTH(rr)+1], origin, strlen(origin));
+	__MYDNS_RR_DATA_LENGTH(rr) = datalen;
+      }
+#endif
+      ((char*)__MYDNS_RR_DATA_VALUE(rr))[__MYDNS_RR_DATA_LENGTH(rr)] = '\0';
+    }
+    break;
+  default:
+    break;
+  }
+
 #if DEBUG_ENABLED && DEBUG_LIB_RR
   Debug("mydns_rr_build(): returning result=%p", rr);
 #endif
@@ -552,7 +578,10 @@ mydns_rr_parse(SQL_ROW row, unsigned long *lengths, const char *origin) {
   MYSQL_TIME	*stamp = NULL;
 #endif
   uint32_t	serial = 0;
-  int		ridx = 7;
+  int		ridx = MYDNS_RR_NUMFIELDS;
+  char		*data;
+  uint16_t	datalen;
+  MYDNS_RR	*rr;
 
 #if DEBUG_ENABLED && DEBUG_LIB_RR
   Debug("mydns_rr_parse(): called for origin %s", origin);
@@ -563,6 +592,19 @@ mydns_rr_parse(SQL_ROW row, unsigned long *lengths, const char *origin) {
     return (NULL);
   }
 
+  data = row[3];
+  datalen = lengths[3];
+  if (mydns_rr_extended_data) {
+    if (lengths[ridx]) {
+      char *newdata = ALLOCATE(datalen + lengths[ridx], char[]);
+      memcpy(newdata, data, datalen);
+      memcpy(&newdata[datalen], row[ridx], lengths[ridx]);
+      datalen += lengths[ridx];
+      data = newdata;
+    }
+    ridx++;
+  }
+
   /* Copy storage? */
   if (mydns_rr_use_active) active = row[ridx++];
   if (mydns_rr_use_stamp) {
@@ -570,7 +612,7 @@ mydns_rr_parse(SQL_ROW row, unsigned long *lengths, const char *origin) {
     /* Copy storage? */
     stamp = row[ridx++];
 #else
-    stamp = (MYSQL_TIME*)malloc(sizeof(MYSQL_TIME));
+    stamp = (MYSQL_TIME*)ALLOCATE(sizeof(MYSQL_TIME), MYSQL_TIME);
     memcpy(stamp, row[ridx++], sizeof(MYSQL_TIME));
 #endif
   }
@@ -578,19 +620,23 @@ mydns_rr_parse(SQL_ROW row, unsigned long *lengths, const char *origin) {
     serial = atou(row[ridx++]);
   }
 
-  return(mydns_rr_build(atou(row[0]),
-			atou(row[1]),
-			type,
-			DNS_CLASS_IN,
-			atou(row[4]),
-			atou(row[5]),
-			active,
-			stamp,
-			serial,
-			row[2],
-			row[3],
-			lengths[3],
-			origin));
+  rr = mydns_rr_build(atou(row[0]),
+		      atou(row[1]),
+		      type,
+		      DNS_CLASS_IN,
+		      atou(row[4]),
+		      atou(row[5]),
+		      active,
+		      stamp,
+		      serial,
+		      row[2],
+		      data,
+		      datalen,
+		      origin);
+
+  if (mydns_rr_extended_data && lengths[MYDNS_RR_NUMFIELDS]) RELEASE(data);
+
+  return (rr);
 }
 /*--- mydns_rr_parse() --------------------------------------------------------------------------*/
 
@@ -607,17 +653,16 @@ mydns_rr_dup(MYDNS_RR *start, int recurse) {
   for (s = start; s; s = tmp) {
     tmp = s->next;
 
-    if (!(rr = (MYDNS_RR *)calloc(1, sizeof(MYDNS_RR))))
-      Err(_("out of memory"));
+    rr = (MYDNS_RR *)ALLOCATE(sizeof(MYDNS_RR), MYDNS_RR);
 
     memset(rr, '\0', sizeof(MYDNS_RR));
     rr->id = s->id;
     rr->zone = s->zone;
-    __MYDNS_RR_NAME(rr) = strdup(__MYDNS_RR_NAME(s));
+    __MYDNS_RR_NAME(rr) = STRDUP(__MYDNS_RR_NAME(s));
     rr->type = s->type;
     rr->class = s->class;
     __MYDNS_RR_DATA_LENGTH(rr) = __MYDNS_RR_DATA_LENGTH(s);
-    __MYDNS_RR_DATA_VALUE(rr) = (char*)malloc(__MYDNS_RR_DATA_LENGTH(s)+1);
+    __MYDNS_RR_DATA_VALUE(rr) = ALLOCATE(__MYDNS_RR_DATA_LENGTH(s)+1, char[]);
     memcpy(__MYDNS_RR_DATA_VALUE(rr), __MYDNS_RR_DATA_VALUE(s), __MYDNS_RR_DATA_LENGTH(s));
     ((char*)__MYDNS_RR_DATA_VALUE(rr))[__MYDNS_RR_DATA_LENGTH(rr)] = '\0';
     rr->aux = s->aux;
@@ -631,7 +676,7 @@ mydns_rr_dup(MYDNS_RR *start, int recurse) {
 #if USE_PGSQL
       rr->stamp = s->stamp;
 #else
-      rr->stamp = (MYSQL_TIME*)malloc(sizeof(MYSQL_TIME));
+      rr->stamp = (MYSQL_TIME*)ALLOCATE(sizeof(MYSQL_TIME), MYSQL_TIME);
       memcpy(rr->stamp, s->stamp, sizeof(MYSQL_TIME));
 #endif
     } else
@@ -646,7 +691,7 @@ mydns_rr_dup(MYDNS_RR *start, int recurse) {
 
     case DNS_QTYPE_RP:
       /* Copy rp_txt only for RP records */
-      __MYDNS_RR_RP_TXT(rr) = strdup(__MYDNS_RR_RP_TXT(s));
+      __MYDNS_RR_RP_TXT(rr) = STRDUP(__MYDNS_RR_RP_TXT(s));
       break;
 
     case DNS_QTYPE_NAPTR:
@@ -654,9 +699,9 @@ mydns_rr_dup(MYDNS_RR *start, int recurse) {
       __MYDNS_RR_NAPTR_ORDER(rr) = __MYDNS_RR_NAPTR_ORDER(s);
       __MYDNS_RR_NAPTR_PREF(rr) = __MYDNS_RR_NAPTR_PREF(s);
       memcpy(__MYDNS_RR_NAPTR_FLAGS(rr), __MYDNS_RR_NAPTR_FLAGS(s), sizeof(__MYDNS_RR_NAPTR_FLAGS(rr)));
-      __MYDNS_RR_NAPTR_SERVICE(rr) = strdup(__MYDNS_RR_NAPTR_SERVICE(s));
-      __MYDNS_RR_NAPTR_REGEX(rr) = strdup(__MYDNS_RR_NAPTR_REGEX(s));
-      __MYDNS_RR_NAPTR_REPLACEMENT(rr) = strdup(__MYDNS_RR_NAPTR_REPLACEMENT(s));
+      __MYDNS_RR_NAPTR_SERVICE(rr) = STRDUP(__MYDNS_RR_NAPTR_SERVICE(s));
+      __MYDNS_RR_NAPTR_REGEX(rr) = STRDUP(__MYDNS_RR_NAPTR_REGEX(s));
+      __MYDNS_RR_NAPTR_REPLACEMENT(rr) = STRDUP(__MYDNS_RR_NAPTR_REPLACEMENT(s));
       break;
 
     default:
@@ -732,7 +777,7 @@ __mydns_rr_prepare_query(uint32_t zone, dns_qtype_t type, char *name, char *orig
 #endif
 
 #if DEBUG_ENABLED && DEBUG_LIB_RR
-  Debug("mydns_rr_load(zone=%u, type='%s', name='%s', origin='%s')",
+  Debug("_mydns_rr_prepare_query(zone=%u, type='%s', name='%s', origin='%s')",
 	zone, mydns_qtype_str(type), name ?: "NULL", origin ?: "NULL");
 #endif
 
@@ -851,7 +896,7 @@ __mydns_rr_prepare_query(uint32_t zone, dns_qtype_t type, char *name, char *orig
 			     /* Optional sorting */
 			     (mydns_rr_use_stamp)? " ORDER BY stamp DESC" : "");
 
-  Free(namequery);
+  RELEASE(namequery);
 
   return (query);
 }
@@ -888,21 +933,11 @@ int __mydns_rr_do_load(SQL *sqlConn, MYDNS_RR **rptr, char *query, char *origin)
   }
 #endif
 
-  Free(query);
+  RELEASE(query);
 
   /* Add results to list */
   while ((row = sql_getrow(res, &lengths))) {
     MYDNS_RR *new;
-
-#ifdef notdef
-    /* Done in the SQL query now */
-    /* Obey "active" column  - active in use and has a value and the value if not true */
-    /* This copes with both inactive and deleted fields */
-    if (mydns_rr_use_active
-	&& row[MYDNS_RR_NUMFIELDS]
-	&& strcasecmp(mydns_rr_active_types[0], row[MYDNS_RR_NUMFIELDS]))
-      continue;
-#endif
 
     if (!(new = mydns_rr_parse(row, lengths, origin)))
       continue;
@@ -939,7 +974,7 @@ __mydns_rr_count(SQL *sqlConn, uint32_t zone,
     return (-1);
   }
 
-  Free(query);
+  RELEASE(query);
 
   if ((row = sql_getrow(res, NULL)))
     result = atoi(row[0]);
@@ -959,8 +994,9 @@ __mydns_rr_load(SQL *sqlConn, MYDNS_RR **rptr, uint32_t zone,
   int		columnslen;
   char		*columns = NULL;
 
-  columnslen = sql_build_query(&columns, MYDNS_RR_FIELDS"%s%s%s",
+  columnslen = sql_build_query(&columns, MYDNS_RR_FIELDS"%s%s%s%s",
 			       /* Optional columns */
+			       (mydns_rr_extended_data ? ",edata" : ""),
 			       (mydns_rr_use_active ? ",active" : ""),
 			       (mydns_rr_use_stamp  ? ",stamp"  : ""),
 			       (mydns_rr_use_serial ? ",serial" : ""));
@@ -969,7 +1005,7 @@ __mydns_rr_load(SQL *sqlConn, MYDNS_RR **rptr, uint32_t zone,
 
   res = __mydns_rr_do_load(sqlConn, rptr, query, origin);
 
-  Free(columns);
+  RELEASE(columns);
 
   return res;
 }

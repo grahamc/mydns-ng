@@ -105,6 +105,7 @@ typedef struct _named_server {
   pid_t		pid;
   int		serverfd;
   TASK		*listener;
+  int		signalled;
 } SERVER;
 
 extern ARRAY	*Servers;
@@ -215,6 +216,8 @@ extern struct timeval	*gettick();
 extern int		Max_FDs;
 extern void		named_shutdown(int);
 extern void		free_other_tasks(TASK *, int);
+extern SERVER		*find_server_for_task(TASK*);
+extern void		kill_server(SERVER *, int);
 
 /* message.c */
 extern char		*dns_make_message(TASK *, uint16_t, uint8_t, dns_qtype_t,

@@ -62,29 +62,27 @@ mydns_set_ptr_table_name(char *name)
 **************************************************************************************************/
 inline MYDNS_PTR *
 mydns_parse_ptr(row)
-	SQL_ROW row;
-{
-	MYDNS_PTR *rv;
-	register int len;
+	SQL_ROW row; {
+  MYDNS_PTR *rv;
+  register int len;
 
-	if ((rv = (MYDNS_PTR *)calloc(1, sizeof(MYDNS_PTR))))
-	{
-		rv->next = NULL;
+  rv = (MYDNS_PTR *)ALLOCATE(sizeof(MYDNS_PTR), MYDNS_PTR);
 
-		rv->id = atou(row[0]);
-		rv->ip = atou(row[1]);
-		strncpy(rv->name, row[2], sizeof(rv->name)-1);
-		rv->ttl = atou(row[3]);
+  rv->next = NULL;
 
-		/* Add dot to end of name, if the user forgot */
-		len = strlen(rv->name);
-		if (rv->name[len-1] != '.' && len < sizeof(rv->name)-1)
-		{
-			rv->name[len] = '.';
-			rv->name[len+1] = '\0';
-		}
-	}
-	return (rv);
+  rv->id = atou(row[0]);
+  rv->ip = atou(row[1]);
+  strncpy(rv->name, row[2], sizeof(rv->name)-1);
+  rv->ttl = atou(row[3]);
+
+  /* Add dot to end of name, if the user forgot */
+  len = strlen(rv->name);
+  if (rv->name[len-1] != '.' && len < sizeof(rv->name)-1) {
+    rv->name[len] = '.';
+    rv->name[len+1] = '\0';
+  }
+
+  return (rv);
 }
 /*-----------------------------------------------------------------------------------------------*/
 
@@ -94,33 +92,30 @@ mydns_parse_ptr(row)
 **************************************************************************************************/
 MYDNS_PTR *
 mydns_ptr_dup(start, recurse)
-	MYDNS_PTR *start;
-	int recurse;
+     MYDNS_PTR *start;
+     int recurse;
 {
-	register MYDNS_PTR *first = NULL, *last = NULL, *ptr, *s, *tmp;
+  register MYDNS_PTR *first = NULL, *last = NULL, *ptr, *s, *tmp;
 
-	for (s = start; s; s = tmp)
-	{
-		tmp = s->next;
+  for (s = start; s; s = tmp) {
+    tmp = s->next;
 
-		if ((ptr = (MYDNS_PTR *)malloc(sizeof(MYDNS_PTR))))
-		{
-			ptr->id = s->id;
-			ptr->ip = s->ip;
-			strncpy(ptr->name, s->name, sizeof(ptr->name)-1);
-			ptr->ttl = s->ttl;
-			ptr->next = NULL;
-			if (recurse)
-			{
-				if (!first) first = ptr;
-				if (last) last->next = ptr;
-				last = ptr;
-			}
-			else
-				return (ptr);
-		}
-	}
-	return (first);
+    ptr = (MYDNS_PTR *)ALLOCATE(sizeof(MYDNS_PTR), MYDNS_PRT);
+
+    ptr->id = s->id;
+    ptr->ip = s->ip;
+    strncpy(ptr->name, s->name, sizeof(ptr->name)-1);
+    ptr->ttl = s->ttl;
+    ptr->next = NULL;
+    if (recurse) {
+      if (!first) first = ptr;
+      if (last) last->next = ptr;
+      last = ptr;
+    } else
+      return (ptr);
+  }
+
+  return (first);
 }
 /*-----------------------------------------------------------------------------------------------*/
 
@@ -155,7 +150,7 @@ _mydns_ptr_free(MYDNS_PTR *first)
 	for (p = first; p; p = tmp)
 	{
 		tmp = p->next;
-		Free(p);
+		RELEASE(p);
 	}
 }
 /*-----------------------------------------------------------------------------------------------*/
