@@ -50,6 +50,12 @@ $use_pgsql = 0;
 $soa_table_name = "soa";
 $rr_table_name = "rr";
 
+/*
+**  Define this if you define RR types via foreign keys, not as enumerated
+**  value in $rr_table_name table
+*/
+$rrtype_table_name = "rrtype";
+
 /* limits on TXT record sizes */
 $rr_maxtxtlen = 2048;
 $rr_txtelemlen = 255;
@@ -1709,10 +1715,25 @@ $available_rr_types = array(
 **************************************************************************************************/
 function db_get_known_types() {
   global $dbname, $rr_table_name, $use_pgsql, $available_rr_types;
+  global $rrtype_table_name;
 
   $type_values = array();
 
-  if ($use_pgsql) {
+  if ($rrtype_table_name) {
+    $res = sql_query("select type from $rrtype_table_name");
+    if (!$res) {
+      open_page();
+      ErrSQL("Error getting available values for " . quote("type") . " column in RR table.");
+    }
+ 
+    while ($row = sql_fetch_row($res)) {
+      $val = $row[0];
+      foreach ($available_rr_types as $rr_type)
+	if (!strcasecmp($val, $rr_type))
+	  $type_values[] = $val;
+    }
+ 
+  } elseif ($use_pgsql) {
     $res = sql_query("SELECT consrc FROM pg_constraint" .
 		     " WHERE conname LIKE '" . esc($rr_table_name) . "%'");
     if (!$res) {
