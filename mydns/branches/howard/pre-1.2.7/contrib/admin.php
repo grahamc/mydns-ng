@@ -241,11 +241,11 @@ function open_page() {
 <HTML lang="en">
 <HEAD>
    <META http-equiv="Content-Type" content="text/html; charset=US-ASCII">
-   <TITLE><?=$title?></TITLE>
+   <TITLE><?php echo $title?></TITLE>
    <SCRIPT type="text/javascript">
    <!--
       function imgSwap(name, type) {
-        eval("document." + name + ".src = '<?=$_SERVER['PHP_SELF']?>?img=" + name + type + ".png'");
+        eval("document." + name + ".src = '<?php echo $_SERVER['PHP_SELF']?>?img=" + name + type + ".png'");
       }
 
       function setFocus() {
@@ -261,17 +261,17 @@ function open_page() {
        <!--
           A { color: blue; text-decoration: none; }
           A:hover { color: red; text-decoration: underline; }
-          A.light { color: <?=$font_color?>; text-decoration: none; }
+          A.light { color: <?php echo $font_color?>; text-decoration: none; }
 	  A.light:hover { color: red; text-decoration: none; }
 
-	  TABLE { font: <?=$fontsize?>px sans-serif; }
+	  TABLE { font: <?php echo $fontsize?>px sans-serif; }
 	  UL { padding-left: 1.5em; }
 	  IMG.noborder { border: 0px; }
-	  TT { font: <?=$fontsize?>px monospace; }
+	  TT { font: <?php echo $fontsize?>px monospace; }
 
 	  BODY {
-	     background: <?=$page_bgcolor?>;
-	     color: <?=$font_color?>;
+	     background: <?php echo $page_bgcolor?>;
+	     color: <?php echo $font_color?>;
 	     margin: 1% 3% 3% 3%;
 	     text-align: center;
 	  }
@@ -280,37 +280,37 @@ function open_page() {
 	   **	Form styles
 	   */
 	  INPUT.mono {
-	     background: <?=$input_bgcolor?>;
-	     color: <?=$input_fgcolor?>;
+	     background: <?php echo $input_bgcolor?>;
+	     color: <?php echo $input_fgcolor?>;
 	     border-width: 1px;
 	     padding: 2px 4px;
-	     font: <?=$fontsize?>px monospace;
+	     font: <?php echo $fontsize?>px monospace;
 	  }
 	  INPUT.activeBox {
-	     background: <?=$input_bgcolor?>;
-	     color: <?=$input_fgcolor?>;
+	     background: <?php echo $input_bgcolor?>;
+	     color: <?php echo $input_fgcolor?>;
 	     vertical-align: middle;
 	     border-width: 1px;
 	  }
 	  INPUT.activeList {
-	     background: <?=$input_bgcolor?>;
-	     color: <?=$input_fgcolor?>;
+	     background: <?php echo $input_bgcolor?>;
+	     color: <?php echo $input_fgcolor?>;
 	     vertical-align: middle;
 	     border-width: 1px;
 	  }
 	  INPUT.recursiveBox {
-	     background: <?=$input_bgcolor?>;
-	     color: <?=$input_fgcolor?>;
+	     background: <?php echo $input_bgcolor?>;
+	     color: <?php echo $input_fgcolor?>;
 	     vertical-align: middle;
 	     border-width: 1px;
 	  }
 	  SELECT.rrTypes {
-	     background: <?=$input_bgcolor?>;
-	     color: <?=$input_fgcolor?>;
+	     background: <?php echo $input_bgcolor?>;
+	     color: <?php echo $input_fgcolor?>;
 	     border-width: 1px;
 	  }
 	  .formButton {
-	     font: bold <?=($fontsize - 1)?>px sans-serif;
+	     font: bold <?php echo ($fontsize - 1)?>px sans-serif;
 	     color: #FFFFCC;
 	     background-color: #663300;
 	     border-width: 1px;
@@ -319,10 +319,10 @@ function open_page() {
 	  padding: 2px 2px;
 	  }
 	  INPUT.hdrQuery {
-	     background: <?=$query_bgcolor?>;
-	     color: <?=$query_fgcolor?>;
+	     background: <?php echo $query_bgcolor?>;
+	     color: <?php echo $query_fgcolor?>;
 	     border-width: 1px;
-	     font: <?=$fontsize?>px monospace;
+	     font: <?php echo $fontsize?>px monospace;
 	     padding: 2px 4px;
 	  }
 
@@ -411,7 +411,7 @@ function open_page() {
 	   **	RR editor
 	   */
 	  DIV.rrBox {
-	     border: <?=$gray?> solid 1px;
+	     border: <?php echo $gray?> solid 1px;
 	     margin: 1em 0em;
 	  }
 	  TABLE.rrBox {
@@ -437,10 +437,10 @@ function open_page() {
 	   **	SOA editor
 	   */
 	  TABLE.soaBox {
-	     background: <?=$soa_bgcolor?>;
+	     background: <?php echo $soa_bgcolor?>;
 	     margin: 0px;
 	     padding: 10px 10px 6px 10px;
-	     border: <?=$gray?> solid 1px;
+	     border: <?php echo $gray?> solid 1px;
 	  }
 	  TD.soaFirstRow {
 	     vertical-align: middle;
@@ -457,7 +457,7 @@ function open_page() {
 	   **	Zone transfer access list
 	   */
 	  TABLE.xferBox {
-	     background: <?=$soa_bgcolor?>;
+	     background: <?php echo $soa_bgcolor?>;
 	     padding: 4px 8px;
 	     margin: 0px;
 	  }
@@ -466,7 +466,7 @@ function open_page() {
 	   **	Update access control list
 	   */
 	  TABLE.updateAclBox {
-	     background: <?=$soa_bgcolor?>;
+	     background: <?php echo $soa_bgcolor?>;
 	     padding: 4px 8px;
 	     margin: 0px;
 	  }
@@ -475,7 +475,7 @@ function open_page() {
 	   **	Also notify list
 	   */
 	  TABLE.alsoNotifyBox {
-	     background: <?=$soa_bgcolor?>;
+	     background: <?php echo $soa_bgcolor?>;
 	     padding: 4px 8px;
 	     margin: 0px;
 	  }
@@ -489,17 +489,17 @@ function open_page() {
 	     border: #663300 solid 1px;
 	  }
 	  TD.browserCellLeft {
-	     font: <?=$fontsize?>px monospace;
+	     font: <?php echo $fontsize?>px monospace;
 	     text-align: left;
 	     padding: 2px 5px;
 	  }
 	  TD.browserCellRight {
-	     font: <?=$fontsize?>px sans-serif;
+	     font: <?php echo $fontsize?>px sans-serif;
 	     text-align: right;
 	     padding: 2px 5px;
 	  }
 	  SPAN.highlight {
-	     background: <?=$highlight_color?>;
+	     background: <?php echo $highlight_color?>;
 	  }
 
 	  /*
@@ -519,13 +519,13 @@ function open_page() {
 	     padding-left: 1em;
 	  }
 	  TD.offsetCenter {
-	     font: <?=($fontsize - 1)?>px sans-serif;
+	     font: <?php echo ($fontsize - 1)?>px sans-serif;
 	     vertical-align: middle;
 	     text-align: center;
 	     padding: 2px 20px;
 	  }
 	  DIV.offsetTop {
-	     font: bold <?=$fontsize?>px sans-serif;
+	     font: bold <?php echo $fontsize?>px sans-serif;
 	  }
 
 	  /*
@@ -539,7 +539,7 @@ function open_page() {
 	   **	Help/welcome page
 	   */
 	  DIV.helpBox {
-	     background: <?=$help_bgcolor?>;
+	     background: <?php echo $help_bgcolor?>;
 	     border: #663300 solid 1px;
 	     padding: 1em 1em 0em 1em;
 	     width: 80%;
@@ -556,7 +556,7 @@ function open_page() {
 	     vertical-align: middle;
 	  }
 	  .revBox {
-	     background: <?=$page_bgcolor?>;
+	     background: <?php echo $page_bgcolor?>;
 	     border: #660033 solid 1px;
 	     padding: 1em;
 	     margin: 1em;
@@ -567,7 +567,7 @@ function open_page() {
 <BODY onLoad="setFocus()">
 
 <!-- BEGIN page header (query form, etc) -->
-<FORM method=POST action="<?=$_SERVER['PHP_SELF']?>" name="searchform">
+<FORM method=POST action="<?php echo $_SERVER['PHP_SELF']?>" name="searchform">
 <DIV><INPUT type=hidden name="action" value="search"></DIV>
 	<TABLE class=hdrBox>
 		<TR>
@@ -578,18 +578,18 @@ function open_page() {
 else
   echo "&nbsp;";
 ?></TD> -->
-			<TD class=hdrInput><INPUT class=hdrQuery type=TEXT name="query" value="<?=ent($query)?>" size=25
+			<TD class=hdrInput><INPUT class=hdrQuery type=TEXT name="query" value="<?php echo ent($query)?>" size=25
 				title="Enter zone or FQDN to view/edit DNS records.">
 
-			<TD class=hdrCell><A href="<?=$_SERVER['PHP_SELF']?>?action=browse" onMouseOver="imgSwap('browse','Hover')"
-				onMouseOut="imgSwap('browse','Reg')"><IMG name="browse" src="<?=$_SERVER['PHP_SELF']?>?img=browseReg.png"
+			<TD class=hdrCell><A href="<?php echo $_SERVER['PHP_SELF']?>?action=browse" onMouseOver="imgSwap('browse','Hover')"
+				onMouseOut="imgSwap('browse','Reg')"><IMG name="browse" src="<?php echo $_SERVER['PHP_SELF']?>?img=browseReg.png"
 				alt="BROWSE" title="Click this to load the zone browser" class=noborder></A>
 
-			<TD class=hdrCell><A href="<?=$_SERVER['PHP_SELF']?>?action=new" onMouseOver="imgSwap('add','Hover')"
-				onMouseOut="imgSwap('add','Reg')"><IMG name="add" src="<?=$_SERVER['PHP_SELF']?>?img=addReg.png"
+			<TD class=hdrCell><A href="<?php echo $_SERVER['PHP_SELF']?>?action=new" onMouseOver="imgSwap('add','Hover')"
+				onMouseOut="imgSwap('add','Reg')"><IMG name="add" src="<?php echo $_SERVER['PHP_SELF']?>?img=addReg.png"
 				alt="NEW" title="Click this to add a new zone" class=noborder></A>
 
-			<TD align=right class=hdrRight><A href="<?=$_SERVER['PHP_SELF']?>"><IMG src="<?=$_SERVER['PHP_SELF']?>?img=Logo.png"
+			<TD align=right class=hdrRight><A href="<?php echo $_SERVER['PHP_SELF']?>"><IMG src="<?php echo $_SERVER['PHP_SELF']?>?img=Logo.png"
 				alt="HOME" class=noborder></A>
 	</TABLE>
 </FORM>
@@ -1369,8 +1369,8 @@ function ErrBox($msg) {
 <DIV align=center>
 	<TABLE class=errBox>
 		<TR>
-			<TD class=errLeft><IMG src="<?=$_SERVER['PHP_SELF']?>?img=Error.png" alt="ERROR">
-			<TD class=errRight width="100%"><?=$msg?>
+			<TD class=errLeft><IMG src="<?php echo $_SERVER['PHP_SELF']?>?img=Error.png" alt="ERROR">
+			<TD class=errRight width="100%"><?php echo $msg?>
 	</TABLE>
 </DIV>
 <?php
@@ -1389,8 +1389,8 @@ function Warn($msg) {
 <DIV align=center>
 	<TABLE class=warnBox>
 		<TR>
-			<TD class=warnLeft><IMG src="<?=$_SERVER['PHP_SELF']?>?img=Warn.png" alt="WARNING">
-			<TD class=warnRight width="100%"><?=$msg?>
+			<TD class=warnLeft><IMG src="<?php echo $_SERVER['PHP_SELF']?>?img=Warn.png" alt="WARNING">
+			<TD class=warnRight width="100%"><?php echo $msg?>
 	</TABLE>
 </DIV>
 <?php
@@ -1409,8 +1409,8 @@ function Notice($msg) {
 <DIV align=center>
 	<TABLE class=noticeBox>
 		<TR>
-			<TD class=noticeLeft><IMG src="<?=$_SERVER['PHP_SELF']?>?img=Info.png" alt="INFO">
-			<TD class=noticeRight width="100%"><?=$msg?>
+			<TD class=noticeLeft><IMG src="<?php echo $_SERVER['PHP_SELF']?>?img=Info.png" alt="INFO">
+			<TD class=noticeRight width="100%"><?php echo $msg?>
 	</TABLE>
 </DIV>
 <?php
@@ -1532,15 +1532,15 @@ function offset_select($page, $total, $group_size, $xtra = "") {
 <!-- BEGIN page navigation bar -->
 <TABLE class=offsetBox cellspacing=0>
 	<TR>
-		<TD class=offsetLeft><?=$prev_button?>
-		<TD class=offsetLeft><?=$jump_prev_button?>
-		<TD class=offsetLeft><?=$home_button?>
+		<TD class=offsetLeft><?php echo $prev_button?>
+		<TD class=offsetLeft><?php echo $jump_prev_button?>
+		<TD class=offsetLeft><?php echo $home_button?>
 		<TD class=offsetCenter>
-			<DIV style="font-weight: bold; font-size: 150%"><?=nf($page + 1)?> of <?=nf($pages)?></DIV>
-			<?=nf($total)?> record<?=S($total)?>
-		<TD class=offsetRight><?=$end_button?>
-		<TD class=offsetRight><?=$jump_next_button?>
-		<TD class=offsetRight><?=$next_button?>
+			<DIV style="font-weight: bold; font-size: 150%"><?php echo nf($page + 1)?> of <?php echo nf($pages)?></DIV>
+			<?php echo nf($total)?> record<?php echo S($total)?>
+		<TD class=offsetRight><?php echo $end_button?>
+		<TD class=offsetRight><?php echo $jump_next_button?>
+		<TD class=offsetRight><?php echo $next_button?>
 </TABLE>
 <!-- END page navigation bar -->
 
@@ -1976,10 +1976,10 @@ function help_screen() {
 		<DIV class=revBox>
 		     <TABLE>
 			 <TR>
-			     <TD class=helpBtnLeft><IMG src="<?=$_SERVER['PHP_SELF']?>?img=browseReg.png" alt="BROWSE">
+			     <TD class=helpBtnLeft><IMG src="<?php echo $_SERVER['PHP_SELF']?>?img=browseReg.png" alt="BROWSE">
 			     <TD class=helpBtnRight>activates the zone browser, which lists all the zones in your database.
 			 <TR>
-			     <TD class=helpBtnLeft><IMG src="<?=$_SERVER['PHP_SELF']?>?img=addReg.png" alt="NEW">
+			     <TD class=helpBtnLeft><IMG src="<?php echo $_SERVER['PHP_SELF']?>?img=addReg.png" alt="NEW">
 			     <TD class=helpBtnRight>allows you to add a new zone to the database from scratch.
 		      </TABLE>
 		</DIV>
@@ -2070,7 +2070,7 @@ function soa_editor($soa = NULL, $error_message = NULL) {
       $values[$n] = '';
 ?>
 <!-- BEGIN SOA editor -->
-<FORM method=POST action="<?=$_SERVER['PHP_SELF']?>" name="soaform">
+<FORM method=POST action="<?php echo $_SERVER['PHP_SELF']?>" name="soaform">
 <DIV>
 <?php
    if ($new_soa)
@@ -2101,47 +2101,47 @@ function soa_editor($soa = NULL, $error_message = NULL) {
       echo " title=\"Uncheck this box to deactivate this zone.\">&nbsp;";
     }
 ?>
-<INPUT class=mono type=text name="origin" value="<?=ent($values['origin'])?>" maxlength=78 size=30
+<INPUT class=mono type=text name="origin" value="<?php echo ent($values['origin'])?>" maxlength=78 size=30
 	title="The name of this zone.">&nbsp;
-<INPUT class=mono type=text name="ttl" value="<?=ent($values['ttl'])?>" maxlength=15 size=6
+<INPUT class=mono type=text name="ttl" value="<?php echo ent($values['ttl'])?>" maxlength=15 size=6
 	title="The cache expiration time (TTL) for this zone.">&nbsp;
 <TT>IN SOA</TT>&nbsp;
-<INPUT class=mono type=text name="ns" value="<?=ent($values['ns'])?>" maxlength=255 size=30
+<INPUT class=mono type=text name="ns" value="<?php echo ent($values['ns'])?>" maxlength=255 size=30
 	title="The primary authoritative name server for this zone.">&nbsp;
-<INPUT class=mono type=text name="mbox" value="<?=ent($values['mbox'])?>" maxlength=255 size=35
+<INPUT class=mono type=text name="mbox" value="<?php echo ent($values['mbox'])?>" maxlength=255 size=35
 	title="The email address of the person responsible for this zone, with the '@' replaced by a dot.">&nbsp;
 <TT><B>(</B></TT>
 
 <TABLE class=soaFields>
 	<TR title="The serial number for this zone.">
-		<TD class="soaFields"><INPUT class=mono type=text name="serial" value="<?=ent($values['serial'])?>" size=20>
+		<TD class="soaFields"><INPUT class=mono type=text name="serial" value="<?php echo ent($values['serial'])?>" size=20>
 		<TD>&nbsp;
-		<TD nowrap><TT>; <B>Serial</B> (next is <?=next_serial(isset($soa['serial']) ? $soa['serial'] : '');?>)</TT>
+		<TD nowrap><TT>; <B>Serial</B> (next is <?php echo next_serial(isset($soa['serial']) ? $soa['serial'] : '');?>)</TT>
 		<TD>&nbsp;
 
 	<TR title="The number of seconds slave nameservers will wait before updating their zone data for this zone.">
-		<TD class=soaFields><INPUT class=mono type=text name="refresh" value="<?=ent($values['refresh'])?>" size=10>
+		<TD class=soaFields><INPUT class=mono type=text name="refresh" value="<?php echo ent($values['refresh'])?>" size=10>
 		<TD>&nbsp;
-		<TD nowrap><TT>; <B>Refresh</B> (currently <?=duration(isset($soa['refresh']) ? $soa['refresh'] : '')?>)</TT>
+		<TD nowrap><TT>; <B>Refresh</B> (currently <?php echo duration(isset($soa['refresh']) ? $soa['refresh'] : '')?>)</TT>
 		<TD>&nbsp;
 
 	<TR title="The number of seconds slave nameservers will wait before retrying a zone transfer if the last one failed.">
-		<TD class=soaFields><INPUT class=mono type=text name="retry" value="<?=ent($values['retry'])?>" size=10>
+		<TD class=soaFields><INPUT class=mono type=text name="retry" value="<?php echo ent($values['retry'])?>" size=10>
 		<TD>&nbsp;
-		<TD nowrap><TT>; <B>Retry</B> (currently <?=duration(isset($soa['retry']) ? $soa['retry'] : '')?>)</TT>
+		<TD nowrap><TT>; <B>Retry</B> (currently <?php echo duration(isset($soa['retry']) ? $soa['retry'] : '')?>)</TT>
 		<TD>&nbsp;
 
 	<TR title="The number of seconds after which slave nameservers will give up trying to transfer authoritative data if the master server cannot be reached.">
-		<TD class=soaFields><INPUT class=mono type=text name="expire" value="<?=ent($values['expire'])?>" size=10>
+		<TD class=soaFields><INPUT class=mono type=text name="expire" value="<?php echo ent($values['expire'])?>" size=10>
 		<TD>&nbsp;
-		<TD nowrap><TT>; <B>Expire</B> (currently <?=duration(isset($soa['expire']) ? $soa['expire'] : 0)?>)</TT>
+		<TD nowrap><TT>; <B>Expire</B> (currently <?php echo duration(isset($soa['expire']) ? $soa['expire'] : 0)?>)</TT>
 		<TD>&nbsp;
 
 	<TR title="The minimum TTL (cache timeout) value to list for any resource records in this zone.">
-		<TD class=soaFields><INPUT class=mono type=text name="minimum" value="<?=ent($values['minimum'])?>" size=10>
+		<TD class=soaFields><INPUT class=mono type=text name="minimum" value="<?php echo ent($values['minimum'])?>" size=10>
 		<TD><TT><B>)</B></TT>
-		<TD nowrap><TT>; <B>Minimum TTL</B> (currently <?=duration(isset($soa['minimum']) ? $soa['minimum'] : '')?>)</TT>
-		<TD align=right width="100%" valign=bottom><?=$buttons?>
+		<TD nowrap><TT>; <B>Minimum TTL</B> (currently <?php echo duration(isset($soa['minimum']) ? $soa['minimum'] : '')?>)</TT>
+		<TD align=right width="100%" valign=bottom><?php echo $buttons?>
 
 <?php
     if ($soa_use_recursive) {
@@ -2172,16 +2172,16 @@ function soa_editor($soa = NULL, $error_message = NULL) {
   /* If there's an 'xfer' column in the soa table, allow it */
   if ($soa_use_xfer && !$new_soa) {
 ?>
-<FORM method=POST action="<?=$_SERVER['PHP_SELF']?>">
-	<INPUT type=hidden name="zone" value="<?=ent($values['id'])?>">
+<FORM method=POST action="<?php echo $_SERVER['PHP_SELF']?>">
+	<INPUT type=hidden name="zone" value="<?php echo ent($values['id'])?>">
 	<DIV align=center>
 		<TABLE class=xferBox>
 			<TR title="Comma-separated list of IP addresses allowed to transfer this zone via AXFR.  Wildcards are OK.">
 				<TD><B>Zone transfer access list:</B>
 				<TD>&nbsp; &nbsp;
-				<TD><INPUT class=mono type=text name="xfer" value="<?=ent($values['xfer'])?>" size=60>
+				<TD><INPUT class=mono type=text name="xfer" value="<?php echo ent($values['xfer'])?>" size=60>
 				<TD>&nbsp; &nbsp;
-				<TD><?=formbutton("Update list",
+				<TD><?php echo formbutton("Update list",
 					"Click this button to save changes to the zone transfer access list.", $soa_bgcolor)?>
 		</TABLE>
 	</DIV>
@@ -2193,16 +2193,16 @@ function soa_editor($soa = NULL, $error_message = NULL) {
     /* If there's an 'update_acl' column in the soa table, allow it */
     if ($soa_use_update_acl && !$new_soa) {
 ?>
-<FORM method=POST action="<?=$_SERVER['PHP_SELF']?>">
-	<INPUT type=hidden name="zone" value="<?=ent($values['id'])?>">
+<FORM method=POST action="<?php echo $_SERVER['PHP_SELF']?>">
+	<INPUT type=hidden name="zone" value="<?php echo ent($values['id'])?>">
 	<DIV align=center>
 		<TABLE class=updateAclBox>
 			<TR title="Comma-separated list of IP addresses allowed to update this zone.  Wildcards are OK.">
 				<TD><B>Update access list:</B>
 				<TD>&nbsp; &nbsp;
-				<TD><INPUT class=mono type=text name="update_acl" value="<?=ent($values['update_acl'])?>" size=60>
+				<TD><INPUT class=mono type=text name="update_acl" value="<?php echo ent($values['update_acl'])?>" size=60>
 				<TD>&nbsp; &nbsp;
-				<TD><?=formbutton("Update ACL for updates",
+				<TD><?php echo formbutton("Update ACL for updates",
 					"Click this button to save changes to the update access list.", $soa_bgcolor)?>
 		</TABLE>
 	</DIV>
@@ -2214,16 +2214,16 @@ function soa_editor($soa = NULL, $error_message = NULL) {
     /* If there's an 'also_notify' column in the soa table, allow it */
     if ($soa_use_also_notify && !$new_soa) {
 ?>
-<FORM method=POST action="<?=$_SERVER['PHP_SELF']?>">
-	<INPUT type=hidden name="zone" value="<?=ent($values['id'])?>">
+<FORM method=POST action="<?php echo $_SERVER['PHP_SELF']?>">
+	<INPUT type=hidden name="zone" value="<?php echo ent($values['id'])?>">
 	<DIV align=center>
 		<TABLE class=alsoNotifyBox>
 			<TR title="Comma-separated list of IP addresses to be notified in addition to listed NS records.  '*' indicates just NS entries">
 				<TD><B>Also notify list:</B>
 				<TD>&nbsp; &nbsp;
-				<TD><INPUT class=mono type=text name="also_notify" value="<?=ent($values['also_notify'])?>" size=60>
+				<TD><INPUT class=mono type=text name="also_notify" value="<?php echo ent($values['also_notify'])?>" size=60>
 				<TD>&nbsp; &nbsp;
-				<TD><?=formbutton("Update Also Notify",
+				<TD><?php echo formbutton("Update Also Notify",
 					"Click this button to save changes to the also notify list.", $soa_bgcolor)?>
 		</TABLE>
 	</DIV>
@@ -2658,10 +2658,10 @@ function zone_browser($like = NULL, $highlight = NULL) {
        $output_origin = str_replace($highlight, "<span class=highlight>$highlight</span>",
 				    $output_origin);
 ?>
-	<TR bgcolor="<?=bgcolor();?>">
-		<TD class=browserCellLeft><A href="<?=$_SERVER['PHP_SELF']?>?zone=<?=$soa['id']?>"
-			title="Edit zone <?=$soa['id']?>"><?=$output_origin?></A>
-		<TD class=browserCellRight><?=nf($record_count);?> record(s)
+	<TR bgcolor="<?php echo bgcolor();?>">
+		<TD class=browserCellLeft><A href="<?php echo $_SERVER['PHP_SELF']?>?zone=<?php echo $soa['id']?>"
+			title="Edit zone <?php echo $soa['id']?>"><?php echo $output_origin?></A>
+		<TD class=browserCellRight><?php echo nf($record_count);?> record(s)
 <?php
    }
 
@@ -3517,8 +3517,8 @@ function rr_row($soa, $rr = NULL) {
 
 ?>
 <TABLE class=rrBox cellspacing=0>
-<FORM action="<?=$_SERVER['PHP_SELF']?>" method=POST>
-<TR bgcolor="<?=$bgcolor;?>">
+<FORM action="<?php echo $_SERVER['PHP_SELF']?>" method=POST>
+<TR bgcolor="<?php echo $bgcolor;?>">
 <TD class=rrCellLeft>
 <?php
    /* Output widget icon */
@@ -3551,7 +3551,7 @@ function rr_row($soa, $rr = NULL) {
    }
 ?>
 <TD class=rrCell title="The name (hostname or FQDN) with which this resource record is associated.">
-<INPUT type=hidden name="zone" value="<?=$soa['id']?>">
+<INPUT type=hidden name="zone" value="<?php echo $soa['id']?>">
 <?php
    if ($new_rr) {
      echo "<INPUT type=hidden name=\"done\" value=\"1\">\n";
@@ -3564,20 +3564,20 @@ function rr_row($soa, $rr = NULL) {
    if ($query)
      echo "<INPUT type=hidden name=\"query\" value=\"" . ent($query) . "\">\n";
 ?>
-<INPUT class=mono type=text name="name" maxlength=255 size=25 value="<?=ent($values['name'])?>">
+<INPUT class=mono type=text name="name" maxlength=255 size=25 value="<?php echo ent($values['name'])?>">
 </TD>
 <TD class=rrCell title="The cache expiration time (TTL) for this resource record.">
-<INPUT class=mono type=text name="ttl" maxlength=15 size=6 value="<?=ent($values['ttl'])?>">
+<INPUT class=mono type=text name="ttl" maxlength=15 size=6 value="<?php echo ent($values['ttl'])?>">
 </TD>
 <TD class=rrCell><TT>IN</TT></TD>
 <TD class=rrCell title="The resource record type.">
-<SELECT class=rrTypes name="type" size=1><?=rr_type_options($values['type']);?></SELECT>
+<SELECT class=rrTypes name="type" size=1><?php echo rr_type_options($values['type']);?></SELECT>
 </TD>
 <TD class=rrCell title="Auxillary data for this resource record.">
-<INPUT class=mono type=text name="aux" maxlength=15 size=5 value="<?=ent($values['aux'])?>">
+<INPUT class=mono type=text name="aux" maxlength=15 size=5 value="<?php echo ent($values['aux'])?>">
 </TD>
 <TD class=rrCell title="The data associated with this resource record.">
-<INPUT class=mono type=text name="data" maxlength=65535 size=40 value="<?=ent($values['data'])?>">
+<INPUT class=mono type=text name="data" maxlength=65535 size=40 value="<?php echo ent($values['data'])?>">
 </TD>
 <?php
   if ($allow_ixfr) {
@@ -3585,7 +3585,7 @@ function rr_row($soa, $rr = NULL) {
     echo "<TD class=rrCell title=\"Serial number of soa when last changed\">" . ent($values['serial']) . "</TD>\n"; 
    }
 ?>
-<TD class=rrCellRight><?=$buttons?>
+<TD class=rrCellRight><?php echo $buttons?>
 </TR>
 </FORM>
 </TABLE>
