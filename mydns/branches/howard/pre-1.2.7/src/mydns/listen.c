@@ -463,7 +463,7 @@ get_opt_addrlist(ADDRLIST *Addresses, const char *opt, int default_port, char *d
       if (inet_pton(AF_INET6, addr, &addr6) <= 0)
 	Warnx("%s: `%s' %s: %s", addr, desc, _("address"), _("invalid IPv6 address format"));
       else
-	addrlist_add(AF_INET6, &addr4, port);
+	addrlist_add(AF_INET6, &addr6, port);
     }
 #endif
   }
