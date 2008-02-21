@@ -1671,118 +1671,17 @@ function db_column_exists($table, $column) {
 }
 /*--- db_column_exists() ------------------------------------------------------------------------*/
 
-function db_column_width_and_type ($table, $column, &$type, &$width) {
-  global $use_pgsql;
+function db_get_column_width ($table, $column) {
 
   $width = 128;
 
-  if ($use_pgsql) {
-  } else {
-    $res = sql_query("SHOW COLUMNS FROM $table LIKE '$column'",
-		     "columns named '$column' from table '$table'");
-    if ($res) {
-      $basetype = "";
-      if ($row = sql_fetch_row($res)) {
-	$coltype = $row[1];
-	for ($n = 0; $n < strlen($coltype); $n++) {
-	  if ($coltype[$n] == '(') break;
-	  $basetype .= $coltype[$n];
-	}
-	$typewidth = 0;
-	for ($n++; $n < strlen($coltype); $n++) {
-	  if ($coltype[$n] == ')') break;
-	  $typewidth = $typewidth * 10 + $coltype[$n];
-	}
-      }
-      switch (strtolower($basetype)) {
-	/* Numeric types */
-      case "bit":
-	$width = ($typewidth)?$typewidth:1;
-	break;
-      case "tinyint": case "bool": case "boolean":
-	$width = ($typewidth)?$typewidth:1;
-	break;
-      case "smallint":
-	$width = ($typewidth)?$typewidth:2;
-	break;
-      case "mediumint":
-	$width = ($typewidth)?$typewidth:3;
-	break;
-      case "int": case "integer":
-	$width = ($typewidth)?$typewidth:4;
-	break;
-      case "bigint":
-	$width = ($typewidth)?$typewidth:8;
-	break;
-      case "float":
-	$width = ($typewidth)?$typewidth:4;
-	break;
-      case "double": case "double precision":	case "real":
-	$width = ($typewidth)?$typewidth:8;
-	break;
-      case "decimal":	case "dec": case "numeric":
-	$width = ($typewidth)?$typewidth:9;
-	break;
-	/* Date and Time */
-      case "date":
-	$width = ($typewidth)?$typewidth:3;
-	break;
-      case "datetime":
-	$width = ($typewidth)?$typewidth:8;
-	  break;
-      case "timestamp":
-	$width = ($typewidth)?$typewidth:4;
-	break;
-      case "time":
-	$width = ($typewidth)?$typewidth:3;
-	break;
-      case "year":
-	$width = ($typewidth)?$typewidth:1;
-	break;
-	/* String ... */
-      case "char":
-	$width = ($typewidth)?$typewidth:255;
-	break;
-      case "varchar":
-	$width = ($typewidth)?$typewidth:65535;
-	break;
-      case "binary":
-	$width = ($typewidth)?$typewidth:255;
-	break;
-      case "varbinary":
-	$width = ($typewidth)?$typewidth:65535;
-	break;
-      case "tinyblob": case "tinytext":
-	$width = ($typewidth)?$typewidth:255;
-	break;
-      case "blob": case "text":
-	$width = ($typewidth)?$typewidth:65535;
-	break;
-      case "mediumblob": case "mediumtext":
-	$width = ($typewidth)?$typewidth:16777216;
-	break;
-      case "longblob": case "longtext":
-	$width = ($typewidth)?$typewidth:4294967296;
-	break;
-      case "enum":
-	$width = ($typewidth)?$typewidth:2;
-	break;
-      case "set":
-	$width = ($typewidth)?$typewidth:4;
-	break;
-      default:
-	break;
-      }
+  $res = sql_query("SELECT character_maximum_length FROM information_schema.columns WHERE table_name='$table' and column_name='$column'",
+		   "columns named '$column' from table '$table'");
+  if ($res) {
+    if ($row = sql_fetch_row($res)) {
+      $width = $row[0];
     }
   }
-}
-function db_get_column_type($table, $column) {
-  db_get_column_width_and_type($table, $column, $type, $width);
-  return $type;
-}
-
-function db_get_column_width($table, $column) {
-  db_get_column_width_and_type($table, $column, $type, $width);
   return $width;
 }
 
@@ -1935,7 +1834,7 @@ function db_get_settings() {
   $soa_use_also_notify = db_column_exists($soa_table_name, "also_notify");
 
   $rr_extended_data = db_column_exists($rr_table_name, "edata");
-  $rr_datalen = db_column_width($rr_table_name, 'data');
+  $rr_datalen = db_get_column_width($rr_table_name, 'data');
 
   $rr_use_active = db_column_exists($rr_table_name, "active");
 
