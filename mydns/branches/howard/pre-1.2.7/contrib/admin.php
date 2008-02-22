@@ -1928,7 +1928,7 @@ function rr_select() {
 
   $select = "SELECT id,name,type,data,aux,ttl";
   if ($rr_extended_data)
-    $select .= ",edata";
+    $select .= ",edata,edatakey";
   if ($rr_use_active)
     $select.= ",active";
   if ($allow_ixfr)
@@ -3187,7 +3187,10 @@ function rr_add() {
 		       " zone=" . (int)$soa['id'] . "" .
 		       " AND name='" . esc($rr['name']) . "'" .
 		       " AND type='" . esc($rr['type']) . "'" .
-		       " AND data='" . esc($dataval) . "'",
+		       " AND data='" . esc($dataval) . "'" .
+		       (($rr_extended_data && $edataval)
+			? " AND edatakey=md5('" . esc($edataval) . "')"
+			: ""),
 		       "existing resource record count"))) {
     zone_editor($soa['id'], "The resource record specified already exists.");
     exit;
@@ -3197,7 +3200,7 @@ function rr_add() {
   rr_validate($soa, $rr, 1);
 
   /* Insert the record */
-  $edata = ($rr_extended_data && $edataval ? ",edata" : "");
+  $edata = ($rr_extended_data && $edataval ? ",edata,edatakey" : "");
   $active = ($rr_use_active ? ",active" : "");
   $serial = ($allow_ixfr ? ",serial" : "");
   $query = "INSERT INTO $rr_table_name" .
@@ -3206,7 +3209,9 @@ function rr_add() {
   $query .= ",'" . esc($rr['name']) . "'";
   $query .= ",'" . esc($rr['type']) . "'";
   $query .= ",'" . esc($dataval) . "'";
-  $query .= ($rr_extended_data && $edataval) ? ",'" . esc($edataval) . "'" : "";
+  $query .= (($rr_extended_data && $edataval)
+	     ? ",'" . esc($edataval) . "',md5('" . esc($edataval) . "')"
+	     : "");
   $query .= "," . (int)$rr['aux'];
   $query .= "," . (int)$rr['ttl'];
   if ($rr_use_active)
@@ -3260,7 +3265,9 @@ function rr_update() {
     " name='" . esc($rr['name']) . "'" .
     ",type='" . esc($rr['type']) . "'" .
     ",data='" . esc($dataval) . "'" .
-    ($rr_extended_data && $edataval) ? ",edata='" . esc($edataval) . "'" : "" .
+  (($rr_extended_data && $edataval)
+   ? ",edata='" . esc($edataval) . "',edatakey=md5('" . esc($edataval) . "'"
+   : "") .
     ",aux=" . (int)$rr['aux'] .
     ",ttl=" . (int)$rr['ttl'];
   if ($rr_use_active)

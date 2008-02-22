@@ -150,8 +150,10 @@ db_output_create_tables(void) {
 #endif
   printf("OR type='CNAME' OR type='HINFO' OR type='MX' OR type='NAPTR' OR type='NS' ");
   printf("OR type='PTR' OR type='RP' OR type='SRV' OR type='TXT'),\n");
-  if (mydns_rr_extended_data)
+  if (mydns_rr_extended_data) {
     printf("  edata      BYTEA DEFAULT NULL,\n");
+    printf("  edatakey   CHAR(32) DEFAULT NULL,\n");
+  }
   if (mydns_rr_use_active) {
     printf("  active     VARCHAR(1) NOT NULL CHECK ");
     printf("(active='Y' OR active='N'");
@@ -163,6 +165,7 @@ db_output_create_tables(void) {
     printf("  serial     INTEGER DEFAULT NULL,\n");
   }
   printf("  UNIQUE (zone,name,type,data");
+  if (mydns_rr_extended_data) printf(",edatakey");
   if (mydns_rr_use_active) printf(",active");
   printf("),\n");
   printf("  FOREIGN KEY (zone) REFERENCES soa (id) ON DELETE CASCADE\n");
@@ -180,8 +183,10 @@ db_output_create_tables(void) {
   printf("'ALIAS',");
 #endif
   printf("'CNAME','HINFO','MX','NAPTR','NS','PTR','RP','SRV','TXT'),\n");
-  if (mydns_rr_extended_data)
+  if (mydns_rr_extended_data) {
     printf("  edata      BLOB(65408) DEFAULT NULL,\n");
+    printf("  edatakey   CHAR(32) DEFAULT NULL,\n");
+  }
   if (mydns_rr_use_active)
     printf("  active     ENUM('Y', 'N'%s) NOT NULL DEFAULT 'Y',\n", (dns_ixfr_enabled)?", 'D'":"");
   if (dns_ixfr_enabled) {
@@ -189,6 +194,7 @@ db_output_create_tables(void) {
     printf("  serial     INT UNSIGNED DEFAULT NULL,\n");
   }
   printf("  UNIQUE KEY rr (zone,name,type,data");
+  if (mydns_rr_extended_data) printf(",edatakey");
   if (mydns_rr_use_active) printf(",active");
   printf(")\n");
   printf(") Engine=InnoDB;\n\n");
