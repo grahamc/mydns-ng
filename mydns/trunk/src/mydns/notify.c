@@ -27,19 +27,6 @@
 
 #define DOMAINPORT 53   /* Port for notification servers */
 
-typedef struct _notify_slave {
-  int			replied;	/* Have we had a reply from the slave */
-  int			retries;        /* How many retries have we made */
-  time_t		lastsent;	/* Last message was sent then */
-  union {
-    struct sockaddr	ips;
-    struct sockaddr_in	ips4;
-#if HAVE_IPV6
-    struct sockaddr_in6	ips6;
-#endif
-  } slaveaddr;
-} NOTIFYSLAVE;
-
 typedef struct _notify_data {
   char			*origin;	/* Zone origin */
   uint32_t		soa_id;		/* SOA id from DB we are processing */

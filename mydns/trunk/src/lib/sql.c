@@ -41,6 +41,7 @@ sql_open(char *user, char *password, char *host, char *database) {
   if (host && (portp = strchr(host, ':'))) {
     port = atoi(portp + 1);
     *portp = '\0';
+    portp = portp + 1;
   }
 
   /* Save connection information so that we can reconnect if necessary */
@@ -278,8 +279,11 @@ sql_nrquery(SQL *sqlConn, const char *query, size_t querylen) {
     return (-1);
   }
 #else
-  if (mysql_real_query(sqlConn, query, querylen))
+  if (mysql_real_query(sqlConn, query, querylen)) {
+    if (mysql_error(sql)[0] != '\0')
+      WarnSQL(sql, _("%s: error during query"), mysql_error(sql));
     return (-1);
+  }
 #endif
 
   return (0);
@@ -319,8 +323,12 @@ sql_query(SQL *sqlConn, const char *query, size_t querylen) {
     return (NULL);
   }
 #else
-  if (mysql_real_query(sqlConn, query, querylen) || !(res = mysql_store_result(sqlConn)))
+  if (mysql_real_query(sqlConn, query, querylen)
+      || !(res = mysql_store_result(sqlConn))) {
+    if (mysql_error(sql)[0] != '\0')
+      WarnSQL(sql, _("%s: error during query"), mysql_error(sql));
     return (NULL);
+  }
 #endif
 
   return (res);

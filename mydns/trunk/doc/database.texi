@@ -180,7 +180,7 @@ NOTIFY messages. Specified as a list of IP addresses.
 
 The @samp{rr} table contains all non-@code{SOA} resource record types.
 
-It has a unique key on the combination of @i{zone}, @i{name}, @i{type}, and @i{data}.
+It has a unique key on the combination of @i{zone}, @i{name}, @i{type}, and @i{data}. Plus optionally the @i{active} and @i{edatakey} columns.
 
 
 @table @asis
@@ -230,6 +230,17 @@ The time interval that this resource record may be cached before the
 source of the information should again be consulted.  Zero values are
 interpreted to mean that the RR can only be used for the transaction
 in progress, and should not be cached.
+
+@c *** EDATA
+@item @samp{edata BLOB(65408) DEFAULT NULL} (@i{MySQL})
+@item @samp{edata BYTEA DEFAULT NULL} (@i{PostgreSQL})
+Optional column thats hold data that will not fit into the data column.
+This allow much larger rr records to be stored.
+
+@c *** EDATAKEY
+@item @samp{edatakey CHAR(32) DEFAULT NULL} (@i{MySQL})
+@item @samp{edatakey CHAR(32) DEFAULT NULL} (@i{PostgreSQL})
+Optional column that holds the MD5 hash of the data stored in the edata column.
 
 @c *** ACTIVE
 @item @samp{active ENUM('Y', 'N', 'D') NOT NULL DEFAULT 'Y'} (@i{MySQL})
@@ -421,6 +432,8 @@ rescan the tables by sending it a SIGHUP signal (@pxref{Signals}).
 * soa.recursive::   Zone will be handled by the recursive server.
 * rr.stamp::        Modification timestamp.
 * rr.serial::       Creation serial number.
+* rr.edata::	    Overflow column for data
+* rr.edatakey::     MD5 hash of edata column used in index.
 @end menu
 
 
@@ -663,3 +676,60 @@ mysql> ALTER TABLE mydns.rr ADD COLUMN serial INT UNSIGNED DEFAULT NULL;
 mydns=# ALTER TABLE rr ADD COLUMN stamp INTEGER DEFAULT NULL;
 @end example
 
+@c ***
+@c ***  OPTIONAL: RR.EDATA
+@c ***
+@node rr.edata
+@subsection rr.data
+@cindex rr.edata
+
+If the @samp{rr} table contains a column named @samp{edata} the column will be used to extend
+the data column when responding to queries and when updates are stored in the db. This allows
+maximum length records to be stored without compromising the index function.
+
+To create an @samp{edata} column on your @samp{rr} table, for example, you
+might issue SQL statements like this:
+
+@i{MySQL}
+@example
+mysql> ALTER TABLE mydns.rr ADD COLUMN edata BLOB(65408) DEFAULT NULL;
+mysql> ALTER TABLE mydns.rr ADD COLUMN edatakey CHAR(32) DEFAULT NULL;
+mysql> ALTER TABLE mydns.rr ADD INDEX edatakey;
+@end example
+
+@i{PostgreSQL}
+@example
+mydns=# ALTER TABLE rr ADD COLUMN edata BYTEA DEFAULT NULL;
+mydns=# ALTER TABLE rr ADD COLUMN edatakey CHAR(32) DEFAULT NULL;
+mydns=# DROP INDEX rr;
+mydns=# CREATE INDEX rr ON rr (zone,name,type,data,edatakey,active);
+@end example
+
+@c ***
+@c ***  OPTIONAL: RR.EDATAKEY
+@c ***
+@node rr.edatakey
+@subsection rr.datakey
+@cindex rr.edatakey
+
+If the @samp{rr} table contains a column named @samp{edatakey} the column will be used to key
+the edata extension column when responding to queries and when updates are stored in the db.
+This allows maximum length records to be stored without compromising the index function.
+
+To create an @samp{edatakey} column on your @samp{rr} table, for example, you
+might issue SQL statements like this:
+
+@i{MySQL}
+@example
+mysql> ALTER TABLE mydns.rr ADD COLUMN edata BLOB(65408) DEFAULT NULL;
+mysql> ALTER TABLE mydns.rr ADD COLUMN edatakey CHAR(32) DEFAULT NULL;
+mysql> ALTER TABLE mydns.rr ADD INDEX edatakey;
+@end example
+
+@i{PostgreSQL}
+@example
+mydns=# ALTER TABLE rr ADD COLUMN edata BYTEA DEFAULT NULL;
+mydns=# ALTER TABLE rr ADD COLUMN edatakey CHAR(32) DEFAULT NULL;
+mydns=# DROP INDEX rr;
+mydns=# CREATE INDEX rr ON rr (zone,name,type,data,edatakey,active);
+@end example

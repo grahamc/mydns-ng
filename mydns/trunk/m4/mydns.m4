@@ -694,7 +694,7 @@ AC_DEFUN([AC_HEADER_PQ],
 					PQ_INCLUDE="-I$dir"
 
 					AC_MSG_CHECKING([for PostgreSQL version number])
-					PG_VERSION=`grep "PG_VERSION " /usr/local/pgsql/include/pg_config.h | cut -f3 -d' '`
+					PG_VERSION=`grep "PG_VERSION " $dir/pg_config.h | cut -f3 -d' '`
 					AC_MSG_RESULT([$PG_VERSION])
 					AC_DEFINE_UNQUOTED(PGSQL_VERSION, [$PG_VERSION], [PostgreSQL version])
 

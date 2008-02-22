@@ -67,6 +67,7 @@ usage(int status) {
     puts("");
     puts(_("Import DNS data."));
     puts("");
+    puts(_("  -c, --conf=FILE         read config from FILE instead of the default"));
     puts(_("  -a, --axfr=HOST         import zones from HOST via AXFR"));
 #ifdef TINYDNS_IMPORT
     puts(_("  -t, --tinydns=FILE      import zones from tinydns-data format FILE"));
@@ -114,6 +115,7 @@ cmdline(int argc, char **argv) {
     {"tinydns",			required_argument,	NULL,	't'},
 #endif
 
+    {"conf",			required_argument,	NULL,	'c'},
     {"database",		required_argument,	NULL,	'D'},
     {"host",			required_argument,	NULL,	'h'},
     {"password",		optional_argument,	NULL,	'p'},
@@ -173,6 +175,10 @@ cmdline(int argc, char **argv) {
       input_format = INPUT_TINYDNS;
       break;
 #endif
+    case 'c':								/* -c, --conf=FILE */
+      opt_conf = optarg;
+      break;
+
     case 'd':								/* -d, --debug */
 #if DEBUG_ENABLED
       err_verbose = err_debug = 1;

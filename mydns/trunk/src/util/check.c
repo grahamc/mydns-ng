@@ -28,7 +28,6 @@ char		*name = NULL;				/* Current expanded name */
 char		*data = NULL;				/* Current expanded data */
 int		opt_consistency = 0;			/* Consistency check? */
 int		opt_consistency_only = 0;		/* Consistency check only? */
-int		ignore_minimum = 0;			/* Ignore minimum TTL? */
 
 #ifdef EXTENDED_CHECK_WRITTEN
 int		opt_extended_check = 0;			/* Extended check? */
@@ -71,6 +70,7 @@ usage(int status) {
     puts("");
     puts(_("Check zone(s) or entire database for errors and consistency."));
     puts("");
+    puts(_("  -c, --conf=FILE         read config from FILE instead of the default"));
     puts(_("  -c, --consistency       do key consistency checks"));
     puts(_("  -C, --consistency-only  do only the key consistency checks"));
 #ifdef EXTENDED_CHECK_WRITTEN
@@ -105,6 +105,7 @@ cmdline(int argc, char **argv) {
   char	*optstr;
   int	optc, optindex;
   struct option const longopts[] = {
+    {"conf",			required_argument,	NULL,	'f'},
     {"consistency-only",	no_argument,		NULL,	'C'},
     {"consistency",		no_argument,		NULL,	'c'},
 #ifdef EXTENDED_CHECK_WRITTEN
@@ -157,6 +158,9 @@ cmdline(int argc, char **argv) {
     case 'D':							/* -D, --database=DB */
       conf_set(&Conf, "database", optarg, 0);
       break;
+    case 'f':							/* -f, --conf=FILE */
+      opt_conf = optarg;
+      break;
     case 'h':							/* -h, --host=HOST */
       conf_set(&Conf, "db-host", optarg, 0);
       break;
@@ -183,6 +187,7 @@ cmdline(int argc, char **argv) {
       usage(EXIT_FAILURE);
     }
   }
+  load_config();
 }
 /*--- cmdline() -----------------------------------------------------------------------------*/
 
@@ -282,8 +287,9 @@ check_name(const char *name_in, const char *col, int is_rr) {
   if (is_rr && *name_in && LASTCHAR(name_in) != '.') fqdnlen += strlen(soa->origin) + 1;
 
   fqdn = ALLOCATE(fqdnlen + 1, char[]);
+  memset(fqdn, 0, fqdnlen + 1);
 
-  strncpy(fqdn, name_in, sizeof(fqdn)-1);
+  strncpy(fqdn, name_in, fqdnlen);
 
   /* If last character isn't '.', append the origin */
   if (is_rr && *fqdn && LASTCHAR(fqdn) != '.') {
@@ -476,7 +482,9 @@ check_rr(void) {
   int	namelen = strlen(MYDNS_RR_NAME(rr));
 
   name = REALLOCATE(name, namelen+1, char[]);
+  memset(name, 0, namelen+1);
   data = REALLOCATE(data, MYDNS_RR_DATA_LENGTH(rr)+1, char[]);
+  memset(data, 0, MYDNS_RR_DATA_LENGTH(rr)+1);
   strncpy(name, MYDNS_RR_NAME(rr), namelen);
   strncpy(data, MYDNS_RR_DATA_VALUE(rr), MYDNS_RR_DATA_LENGTH(rr));
   EXPAND_DATA(name);
@@ -595,10 +603,19 @@ check_zone(void) {
   SQL_RES *res;
   SQL_ROW row;
   unsigned long *lengths;
+  char * columns = NULL;
 
+  columns = mydns_rr_columns();
+
+  query = mydns_rr_prepare_query(soa->id, DNS_QTYPE_ANY, NULL, soa->origin, mydns_rr_active_types[0],
+				 columns, NULL);
+  RELEASE(columns);
+
+#ifdef notdef
   querylen = ASPRINTF(&query, "SELECT "MYDNS_RR_FIELDS" FROM %s WHERE zone=%u",
 		      mydns_rr_table_name, soa->id);
-  res = sql_query(sql, query, querylen);
+#endif
+  res = sql_query(sql, query, strlen(query));
   RELEASE(query);
   if (!res) 
     return;
@@ -677,9 +694,10 @@ main(int argc, char **argv) {
   bindtextdomain(PACKAGE, LOCALEDIR);
   textdomain(PACKAGE);
   cmdline(argc, argv);
-  load_config();
-  ignore_minimum = GETBOOL(conf_get(&Conf, "ignore-minimum", NULL));
+
   db_connect();
+
+  db_check_optional();
 
   if (!opt_consistency_only) {
     if (optind >= argc)	{					/* Check all zones */

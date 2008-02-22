@@ -119,38 +119,6 @@ extern int	max_used_fd;
 
 extern CACHE	*Cache;				/* Zone cache */
 extern time_t	current_time;			/* Current time */
-extern time_t	task_timeout;			/* Task timeout */
-extern int	axfr_enabled;			/* Allow AXFR? */
-extern int	tcp_enabled;			/* Enable TCP? */
-extern int	dns_update_enabled;		/* Enable DNS UPDATE? */
-extern int	dns_notify_enabled;		/* Enable DNS NOTIFY? */
-extern int	notify_timeout;
-extern int	notify_retries;
-extern char	*notify_algorithm;
-
-extern int	dns_ixfr_enabled;		/* Enable IXFR functionality */
-extern int	ixfr_gc_enabled;		/* Enable IXFR GC Processing */
-extern uint32_t	ixfr_gc_interval;		/* Run the IXFR GC this often */
-extern uint32_t	ixfr_gc_delay;			/* Delay before running first IXFR GC */
-extern int	ignore_minimum;			/* Ignore minimum TTL? */
-extern char	hostname[256];			/* This machine's hostname */
-
-extern uint32_t answer_then_quit;		/* Answer this many queries then quit */
-extern int	show_data_errors;		/* Output data errors? */
-
-extern int	forward_recursive;		/* Forward recursive queries? */
-extern int	recursion_timeout;
-extern int	recursion_connect_timeout;
-extern int	recursion_retries;
-extern char	*recursion_algorithm;
-extern char	*recursive_fwd_server;		/* Name of server for recursive forwarding */
-extern int	recursive_family;		/* Protocol family for recursion */
-
-#if HAVE_IPV6
-extern struct sockaddr_in6	recursive_sa6;	/* Recursive server (IPv6) */
-#endif
-extern struct sockaddr_in	recursive_sa;	/* Recursive server (IPv4) */
-
 
 #if ALIAS_ENABLED
 /* alias.c */
@@ -181,12 +149,6 @@ extern void		check_config_file_perms(void);
 /* data.c */
 extern MYDNS_SOA	*find_soa(TASK *, char *, char *);
 extern MYDNS_RR	*find_rr(TASK *, MYDNS_SOA *, dns_qtype_t, char *);
-
-
-/* db.c */
-extern void		db_connect(void);
-extern void		db_output_create_tables(void);
-extern void		db_verify_tables(void);
 
 
 /* encode.c */
@@ -229,6 +191,20 @@ extern char		*dns_make_message(TASK *, uint16_t, uint8_t, dns_qtype_t,
   dns_make_message((t),(id),DNS_OPCODE_NOTIFY,(qtype),(name),(rd),(length))
 
 /* notify.c */
+
+typedef struct _notify_slave {
+  int			replied;	/* Have we had a reply from the slave */
+  int			retries;        /* How many retries have we made */
+  time_t		lastsent;	/* Last message was sent then */
+  union {
+    struct sockaddr	ips;
+    struct sockaddr_in	ips4;
+#if HAVE_IPV6
+    struct sockaddr_in6	ips6;
+#endif
+  } slaveaddr;
+} NOTIFYSLAVE;
+
 extern taskexec_t	notify_write(TASK *);
 extern taskexec_t	notify_read(TASK*);
 extern void		notify_slaves(TASK *, MYDNS_SOA *);

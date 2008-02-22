@@ -1,3 +1,14 @@
+22-Feb-2008	Howard Wilkinson	<howard@cohtech.com>	[1.2.7]
+	*	Modified Memory management so that initial hooks are in place for
+		arena based memory management.
+	*	Extended database to allow very large RR's 'edata' & 'edatakey'
+		columns added.
+	*	Fixed lots of dynamic memory allocation - more to do.
+	*	Integrated patches from mydns sourceforge project where appropriate
+	*	Checked all reported bugs and fixed where I can see what needs to be done.
+		Where I can't have asked for new submission with additional data.
+	*	Bug fixes for problems found with 1.2.6 release.
+	
 18-Jan-2006	 Don Moore	<bboy@bboy.net>  [1.1.0]
 
 	*	Implemented RFC 2136 (DNS UPDATE).  See the manual

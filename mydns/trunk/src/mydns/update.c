@@ -94,15 +94,24 @@ typedef struct _update_query {
 **************************************************************************************************/
 static void
 free_uqrr(UQRR *uqrr) {
+#if DEBUG_ENABLED && DEBUG_UPDATE
+  Debug("free_uqrr freeing %p", uqrr);
+#endif
   UQRR_DATA_LENGTH(uqrr) = 0;
   RELEASE(UQRR_DATA_VALUE(uqrr));
   RELEASE(UQRR_NAME(uqrr));
 
   RELEASE(uqrr);
+#if DEBUG_ENABLED && DEBUG_UPDATE
+  Debug("free_uqrr freed %p", uqrr);
+#endif
 }
 
 static void
 free_tmprr(TMPRR *tmprr) {
+#if DEBUG_ENABLED && DEBUG_UPDATE
+  Debug("free_tmprr freeing %p", tmprr);
+#endif
   TMPRR_DATA_LENGTH(tmprr) = 0;
   RELEASE(TMPRR_DATA_VALUE(tmprr));
   TMPRR_EDATA_LENGTH(tmprr) = 0;
@@ -110,17 +119,26 @@ free_tmprr(TMPRR *tmprr) {
   RELEASE(TMPRR_NAME(tmprr));
 
   RELEASE(tmprr);
+#if DEBUG_ENABLED && DEBUG_UPDATE
+  Debug("free_tmprr freed %p", tmprr);
+#endif
 }
 
 static void
 free_uq(UQ *uq) {
-  free_uqrr(uq->PR);
-  free_uqrr(uq->UP);
-  free_uqrr(uq->AD);
+  int n;
+
+#if DEBUG_ENABLED && DEBUG_UPDATE
+  Debug("free_uq freeing %p", uq);
+#endif
+  for (n = 0; n < uq->numPR; n++)
+    free_uqrr(&uq->PR[n]);
+  for (n = 0; n < uq->numUP; n++)
+    free_uqrr(&uq->UP[n]);
+  for (n = 0; n < uq->numAD; n++)
+    free_uqrr(&uq->AD[n]);
 
   if (uq->num_tmprr) {
-    int n;
-
     for (n = 0; n < uq->num_tmprr; n++)
       free_tmprr(uq->tmprr[n]);
     RELEASE(uq->tmprr);
@@ -129,6 +147,9 @@ free_uq(UQ *uq) {
   RELEASE(UQ_NAME(uq));
 
   RELEASE(uq);
+#if DEBUG_ENABLED && DEBUG_UPDATE
+  Debug("free_uq freed %p", uq);
+#endif
 }
 /*--- free_uq() ---------------------------------------------------------------------------------*/
 
@@ -220,6 +241,10 @@ check_update(TASK *t, MYDNS_SOA *soa) {
   }
   sql_free(res);
 
+#if DEBUG_ENABLED && DEBUG_UPDATE
+  Debug("%s: checked DNS UPDATE access rule '%s' res = %s", desctask(t), row[0],
+	(ok)?"OK":"FAILED");
+#endif
   if (!ok)
     return dnserror(t, DNS_RCODE_REFUSED, ERR_NO_UPDATE);
 
@@ -275,11 +300,20 @@ update_rrdump(TASK *t, char *section, int which, UQRR *rr) {
 static char *
 update_gobble_rr(TASK *t, MYDNS_SOA *soa, char *query, size_t querylen, char *current, UQRR *rr) {
   char *src = current;
+  task_error_t	errcode = 0;
+#if DEBUG_ENABLED && DEBUG_UPDATE
+  Debug("%s: update_gobble_rr soa=%p, query=%s, querylen=%d, current=%p, rr=%p",
+	desctask(t), soa, query, querylen, current, rr);
+#endif
 
-  if (!(src = name_unencode(query, querylen, src, UQRR_NAME(rr), sizeof(UQRR_NAME(rr)))))	{
-    formerr(t, DNS_RCODE_FORMERR, (task_error_t)UQRR_NAME(rr)[0], NULL);
+  if (!(UQRR_NAME(rr) = name_unencode2(query, querylen, &src, &errcode))) {
+    formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
     return NULL;
   }
+
+#if DEBUG_ENABLED && DEBUG_UPDATE
+  Debug("%s: update_gobble_rr unencoded name src=%s", desctask(t), UQRR_NAME(rr));
+#endif
 
   DNS_GET16(rr->type, src);
   DNS_GET16(rr->class, src);
@@ -289,6 +323,10 @@ update_gobble_rr(TASK *t, MYDNS_SOA *soa, char *query, size_t querylen, char *cu
 
   memcpy(UQRR_DATA_VALUE(rr), src, UQRR_DATA_LENGTH(rr));
   src += UQRR_DATA_LENGTH(rr);
+
+#if DEBUG_ENABLED && DEBUG_UPDATE
+  Debug("%s: update_gobble_rr returning %s", desctask(t), src);
+#endif
 
   return src;
 }
@@ -316,6 +354,7 @@ parse_update_query(TASK *t, MYDNS_SOA *soa, UQ *q) {
   DNS_GET16(q->type, src);
   DNS_GET16(q->class, src);
 #if DEBUG_ENABLED && DEBUG_UPDATE
+  Debug("%s: parse_update_query called with soa = %p, q = %p", desctask(t), soa, q);
   Debug("%s:   ZONE: name=[%s]  type=%s  class=%s", desctask(t),
 	UQ_NAME(q), mydns_qtype_str(q->type), mydns_class_str(q->class));
 #endif
@@ -332,6 +371,10 @@ parse_update_query(TASK *t, MYDNS_SOA *soa, UQ *q) {
   */
   q->numPR = t->ancount;
   q->PR = ALLOCATE_N(q->numPR, sizeof(UQRR), UQRR[]);
+#if DEBUG_ENABLED && DEBUG_UPDATE
+  Debug("%s: parse_update_query checking prerequisites q->numPR = %d, q->PR = %p",
+	desctask(t), q->numPR, q->PR);
+#endif
   for (n = 0; n < q->numPR; n++)
     if (!(src = update_gobble_rr(t, soa, query, querylen, src, &q->PR[n])))
       return -1;
@@ -346,6 +389,10 @@ parse_update_query(TASK *t, MYDNS_SOA *soa, UQ *q) {
   */
   q->numUP = t->nscount;
   q->UP = ALLOCATE_N(q->numUP, sizeof(UQRR), UQRR[]);
+#if DEBUG_ENABLED && DEBUG_UPDATE
+  Debug("%s: parse_update_query doing update section q->numUP = %d, q->UP = %p",
+	desctask(t), q->numUP, q->UP);
+#endif
   for (n = 0; n < q->numUP; n++)
     if (!(src = update_gobble_rr(t, soa, query, querylen, src, &q->UP[n])))
       return -1;
@@ -360,6 +407,10 @@ parse_update_query(TASK *t, MYDNS_SOA *soa, UQ *q) {
   */
   q->numAD = t->arcount;
   q->AD = ALLOCATE_N(q->numAD, sizeof(UQRR), UQRR[]);
+#if DEBUG_ENABLED && DEBUG_UPDATE
+  Debug("%s: parse_update_query doing additional data section q->numAD = %d, q->AD = %p",
+	desctask(t), q->numAD, q->AD);
+#endif
   for (n = 0; n < q->numAD; n++)
     if (!(src = update_gobble_rr(t, soa, query, querylen, src, &q->AD[n])))
       return -1;
@@ -368,6 +419,9 @@ parse_update_query(TASK *t, MYDNS_SOA *soa, UQ *q) {
     update_rrdump(t, " ADD'L", n, &q->AD[n]);
 #endif
 
+#if DEBUG_ENABLED && DEBUG_UPDATE
+  Debug("%s: parse_update_query returning OK", desctask(t));
+#endif
   return (TASK_EXECUTED);
 }
 /*--- parse_update_query() ----------------------------------------------------------------------*/
@@ -495,9 +549,6 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
       RELEASE(*data);
       return dnserror(t, DNS_RCODE_FORMERR, ERR_INVALID_DATA);
     }
-    if (*datalen > mydns_rr_data_length) {
-      *datalen = mydns_rr_data_length;
-    }
     break;
 
   case DNS_QTYPE_PTR:
@@ -548,6 +599,7 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
   if (mydns_rr_extended_data && *datalen > mydns_rr_data_length) {
     *edatalen = *datalen - mydns_rr_data_length;
     *edata = &((*data)[mydns_rr_data_length]);
+    *datalen = mydns_rr_data_length;
   }
 
   return (TASK_EXECUTED);
@@ -1009,15 +1061,20 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
   /* IXFR support code */
   if(mydns_rr_use_active && mydns_rr_use_stamp && mydns_rr_use_serial) {
     SQL_RES	*res = NULL;
-    /* Find out if the record exists - update active records otherwise insert a new active one */
-    /* We do not check edata as this is not indexed ? does it matter if other fields are */
+    /*
+    **  Find out if the record exists - update active records otherwise insert a new active one
+    ** We check edatakey as this is indexed
+    */
     querylen = sql_build_query(&query,
 			       "SELECT id,serial FROM %s "
 			       "WHERE zone=%u AND (name='%s' OR name='%s') AND type='%s' "
-			       "AND data='%s' AND active='%s'",
+			       "AND data='%s' AND active='%s'%s%s%s",
 			       mydns_rr_table_name, soa->id,
 			       xhost, xname, mydns_qtype_str(rr->type), xdata,
-			       mydns_rr_active_types[0]);
+			       mydns_rr_active_types[0],
+			       (edatalen)?" AND edatakey=md5('":"",
+			       (edatalen)?xedata:"",
+			       (edatalen)?"')":"");
 
     res = sql_query(sql, query, querylen);
     RELEASE(query);
@@ -1034,14 +1091,17 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
     /* Record needs inserting */
     querylen = sql_build_query(&query,
 			       "INSERT INTO %s (zone,name,type,data,aux,ttl,serial,active%s)"
-			       " VALUES (%u,'%s','%s','%s',%u,%u,%u,'%s'%s%s%s)",
+			       " VALUES (%u,'%s','%s','%s',%u,%u,%u,'%s'%s%s%s%s%s%s)",
 			       mydns_rr_table_name,
-			       (edatalen)?",edata":"",
+			       (edatalen)?",edata,edatakey":"",
 			       soa->id, xhost, mydns_qtype_str(rr->type),
 			       xdata, aux, rr->ttl, next_serial, mydns_rr_active_types[0],
 			       (edatalen)?",'":"",
 			       (edatalen)?xedata:"",
-			       (edatalen)?"'":"");
+			       (edatalen)?"'":"",
+			       (edatalen)?",md5('":"",
+			       (edatalen)?xedata:"",
+			       (edatalen)?"')":"");
     if (sql_nrquery(sql, query, querylen) != 0) {
       WarnSQL(sql, "%s: %s %s", desctask(t), _("error updating entries using"), query);
       RELEASE(query);
@@ -1054,13 +1114,18 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 #if USE_PGSQL
     SQL_RES	*res = NULL;
 
-    /* This is only necessary for Postgres, we can use "INSERT IGNORE" with MySQL */
+    /*
+    ** This is only necessary for Postgres, we can use "INSERT IGNORE" with MySQL
+    */
     querylen = sql_build_query(&query,
 			       "SELECT id FROM %s "
 			       "WHERE zone=%u AND (name='%s' OR name='%s') AND type='%s' "
-			       "AND data='%s' LIMIT 1",
+			       "AND data='%s'%s%s%s LIMIT 1",
 			       mydns_rr_table_name, soa->id,
-			       xhost, xname, mydns_qtype_str(rr->type), xdata);
+			       xhost, xname, mydns_qtype_str(rr->type), xdata,
+			       (edatalen)?" AND edatakey=md5('":"",
+			       (edatalen)?xedata:"",
+			       (edatalen)?"')":"");
 #if DEBUG_ENABLED && DEBUG_UPDATE
     Debug("%s: DNS UPDATE: UPDATE_ADD_RR: %s", desctask(t), query);
 #else
@@ -1110,20 +1175,23 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 				   ")"
 				   " VALUES (%u,'%s','%s','%s',%u,%u"
 				   /* Optional edata values */
-				   "%s%s%s"
+				   "%s%s%s%s%s%s"
 				   /* Optional Active values */
 				   "%s%s%s"
 				   /* Optional Serial number */
 				   "%s"
 				   ")",
 				   mydns_rr_table_name,
-				   (edatalen) ?",edata" : "",
+				   (edatalen) ?",edata,edatakey" : "",
 				   mydns_rr_use_active ? ",active" : "",
 				   mydns_rr_use_serial ? ",serial" : "",
 				   soa->id, xhost, mydns_qtype_str(rr->type), xdata, aux, rr->ttl,
 				   (edatalen) ? ",'" : "",
 				   (edatalen) ? xedata : "",
 				   (edatalen) ? "'" : "",
+				   (edatalen) ? ",md5('" : "",
+				   (edatalen) ? xedata : "",
+				   (edatalen) ? "')" : "",
 				   (mydns_rr_use_active)? ",'" : "",
 				   (mydns_rr_use_active)? mydns_rr_active_types[0] : "",
 				   (mydns_rr_use_active)? "'" : "",
@@ -1206,9 +1274,11 @@ update_delete_rrset_all(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_
      * We can't do this with an inner select as this is an operation on the same table?
      */
     querylen = sql_build_query(&query,
-			       "SELECT name,type,data,aux,ttl FROM %s "
+			       "SELECT name,type,data,aux,ttl%s FROM %s "
 			       "WHERE zone=%u AND (name='%s' OR name='%s') AND active='%s'",
-			       mydns_rr_table_name, soa->id, xname, xhost, mydns_rr_active_types[0]);
+			       ((mydns_rr_extended_data)?",edatakey":""),
+			       mydns_rr_table_name, soa->id, xname, xhost,
+			       mydns_rr_active_types[0]);
 #if DEBUG_ENABLED && DEBUG_UPDATE
     Debug("%s: DNS UPDATE: DELETE RR: %s", desctask(t), query);
 #else
@@ -1223,18 +1293,25 @@ update_delete_rrset_all(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_
       return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
     }
     while ((row = sql_getrow(res, &lengths))) {
-      char *xdata;
+      char *xdata, *xedatakey = NULL;
       xdata = sql_escstr2(sql, row[2], lengths[2]);
+      if (mydns_rr_extended_data && row[5] && lengths[5]) {
+	xedatakey = sql_escstr2(sql, row[5], lengths[5]);
+      }
       querylen = sql_build_query(&query,
 				 "DELETE FROM %s "
 				 "WHERE zone=%u AND name='%s' AND type='%s' "
 				 "AND data='%s' AND aux=%u AND ttl=%u "
-				 "AND active='%s'",
+				 "AND active='%s'%s%s%s",
 				 mydns_rr_table_name,
 				 soa->id, row[0], row[1],
 				 xdata, atou(row[3]), atou(row[4]),
-				 mydns_rr_active_types[2]);
+				 mydns_rr_active_types[2],
+				 ((xedatakey) ? " AND edatakey='" : ""),
+				 ((xedatakey) ? xedatakey : ""),
+				 ((xedatakey) ? "'" : ""));
       RELEASE(xdata);
+      RELEASE(xedatakey);
       res2 = sql_nrquery(sql, query, querylen);
       RELEASE(query);
       if (res2 != 0) {
@@ -1297,7 +1374,7 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
   char		*data, *edata;
   size_t	datalen, edatalen;
   uint32_t	aux;
-  char		*xname = NULL, *xhost = NULL, *xdata = NULL;
+  char		*xname = NULL, *xhost = NULL, *xdata = NULL, *xedata = NULL;
   char		*query;
   size_t	querylen;
   SQL_RES	*res = NULL;
@@ -1326,6 +1403,9 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
 
   xdata = sql_escstr2(sql, data, datalen);
 
+  if(edatalen)
+    xedata = sql_escstr2(sql, edata, edatalen);
+
   if (mydns_rr_use_active && mydns_rr_use_stamp && mydns_rr_use_serial) {
     SQL_ROW	row;
     /*
@@ -1341,10 +1421,13 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
     querylen = sql_build_query(&query,
 			       "SELECT name,type,data,aux,ttl FROM %s "
 			       "WHERE zone=%u AND (name='%s' OR name='%s') AND type='%s' "
-			       "AND data='%s' AND aux=%u AND active='%s'",
+			       "AND data='%s' AND aux=%u AND active='%s'%s%s%s",
 			       mydns_rr_table_name,
 			       soa->id, xname, xhost, mydns_qtype_str(rr->type),
-			       xdata, aux, mydns_rr_active_types[0]);
+			       xdata, aux, mydns_rr_active_types[0],
+			       (edatalen)?" AND edatakey=md5('":"",
+			       (edatalen)?xedata:"",
+			       (edatalen)?"')":"");
 #if DEBUG_ENABLED && DEBUG_UPDATE
     Debug("%s: DNS UPDATE: DELETE RR: %s", desctask(t), query);
 #else
@@ -1355,6 +1438,10 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
     res = sql_query(sql, query, querylen);
     RELEASE(query);
     if (!(res)) {
+      RELEASE(xname);
+      RELEASE(xhost);
+      RELEASE(xdata);
+      RELEASE(xedata);
       WarnSQL(sql, "%s: %s", desctask(t), _("error deleting  RR via DNS UPDATE"));
       return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
     }
@@ -1363,10 +1450,13 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
       querylen = sql_build_query(&query,
 				 "DELETE FROM %s "
 				 "WHERE zone=%u AND (name='%s' OR name='%s') AND type='%s' "
-				 "AND data='%s' AND aux=%u AND active='%s'",
+				 "AND data='%s' AND aux=%u AND active='%s'%s%s%s",
 				 mydns_rr_table_name,
 				 soa->id, xname, xhost, mydns_qtype_str(rr->type),
-				 xdata, aux, mydns_rr_active_types[2]);
+				 xdata, aux, mydns_rr_active_types[2],
+				 (edatalen)?" AND edatakey=md5('":"",
+				 (edatalen)?xedata:"",
+				 (edatalen)?"')":"");
 #if DEBUG_ENABLED && DEBUG_UPDATE
       Debug("%s: DNS UPDATE: DELETE RR: %s", desctask(t), query);
 #else
@@ -1377,6 +1467,10 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
       res2 = sql_nrquery(sql, query, querylen);
       RELEASE(query);
       if (res2 != 0) {
+	RELEASE(xname);
+	RELEASE(xhost);
+	RELEASE(xdata);
+	RELEASE(xedata);
 	WarnSQL(sql, "%s: %s", desctask(t), _("error deleting RR via DNS UPDATE"));
 	return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
       }
@@ -1389,18 +1483,24 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
     querylen = sql_build_query(&query,
 			       "UPDATE %s SET active='%s',serial=%u "
 			       "WHERE zone=%u AND (name='%s' OR name='%s') AND type='%s' "
-			       "AND data='%s' AND aux=%u AND active='%s'",
+			       "AND data='%s' AND aux=%u AND active='%s'%s%s%s",
 			       mydns_rr_table_name, mydns_rr_active_types[2], next_serial,
 			       soa->id, xname, xhost, mydns_qtype_str(rr->type), xdata, aux,
-			       mydns_rr_active_types[0]);
+			       mydns_rr_active_types[0],
+			       (edatalen)?" AND edatakey=md5('":"",
+			       (edatalen)?xedata:"",
+			       (edatalen)?"')":"");
   } else {
     updates++;
     querylen = sql_build_query(&query,
 			       "DELETE FROM %s "
 			       "WHERE zone=%u AND (name='%s' OR name='%s') AND type='%s' "
-			       "AND data='%s' AND aux=%u",
+			       "AND data='%s' AND aux=%u%s%s%s",
 			       mydns_rr_table_name,
-			       soa->id, xname, xhost, mydns_qtype_str(rr->type), xdata, aux);
+			       soa->id, xname, xhost, mydns_qtype_str(rr->type), xdata, aux,
+			       (edatalen)?" AND edatakey=md5('":"",
+			       (edatalen)?xedata:"",
+			       (edatalen)?"')":"");
   }
 #if DEBUG_ENABLED && DEBUG_UPDATE
   Debug("%s: DNS UPDATE: DELETE RR: %s", desctask(t), query);
@@ -1412,6 +1512,7 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
   RELEASE(xname);
   RELEASE(xhost);
   RELEASE(xdata);
+  RELEASE(xedata);
 
   /* Execute the query */
   if (updates && sql_nrquery(sql, query, querylen) != 0) {
@@ -1471,36 +1572,45 @@ update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_seri
      * We can't do this with an inner select as this is an operation on the same table?
      */
     querylen = sql_build_query(&query,
-			       "SELECT name,type,data,aux,ttl FROM %s "
+			       "SELECT name,type,data,aux,ttl%s FROM %s "
 			       "WHERE zone=%u AND (name='%s' OR name='%s') AND type='%s' "
 			       "AND active='%s'",
+			       (mydns_rr_extended_data)?",edatakey":"",
 			       mydns_rr_table_name,
 			       soa->id, xname, xhost, mydns_qtype_str(rr->type),
 			       mydns_rr_active_types[0]);
+    RELEASE(query);
     if (!(res = sql_query(sql, query, querylen))) {
+      RELEASE(xname);
+      RELEASE(xhost);
       WarnSQL(sql, "%s: %s", desctask(t), _("error deleting RRset via DNS UPDATE"));
-      RELEASE(query);
       return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
     }
-    RELEASE(query);
     while ((row = sql_getrow(res, &lengths))) {
-      char *xdata;
+      char *xdata, *xedata = NULL;
       int res2;
       xdata = sql_escstr2(sql, row[2], lengths[2]);
+      if (mydns_rr_extended_data && lengths[5])
+	xedata = sql_escstr2(sql, row[5], lengths[5]);
       querylen = sql_build_query(&query,
 				 "DELETE FROM %s "
 				 "WHERE zone=%u AND name='%s' AND type='%s' "
 				 "AND data='%s' AND aux=%u AND ttl=%u "
-				 "AND active='%s'",
+				 "AND active='%s'%s%s%s",
 				 mydns_rr_table_name,
 				 soa->id, row[0], row[1],
 				 xdata, atou(row[3]), atou(row[4]),
-				 mydns_rr_active_types[2]);
+				 mydns_rr_active_types[2],
+				 (xedata)?" AND edatakey='":"",
+				 (xedata)?xedata:"",
+				 (xedata)?"'":"");
       RELEASE(xdata);
       res2 = sql_nrquery(sql, query, querylen);
       RELEASE(query);
       if (res2 != 0) {
 	WarnSQL(sql, "%s: %s - %s", desctask(t), _("error purging DELETE RR via DNS UPDATE"), query);
+	RELEASE(xname);
+	RELEASE(xhost);
 	return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
       }
       updates++;
@@ -1872,10 +1982,8 @@ are_we_master(TASK *t, MYDNS_SOA *soa) {
   char buf[512];
 
   ARRAY *ips4 = NULL;
-  struct sockaddr_in *ip4 = NULL;
 #if HAVE_IPV6
   ARRAY *ips6 = NULL;
-  struct sockaddr_in6 *ip6 = NULL;
 #endif
 
   extern char **all_interface_addresses();
@@ -1902,10 +2010,11 @@ are_we_master(TASK *t, MYDNS_SOA *soa) {
 
   if(array_numobjects(ips4)) {
     for (i = 0; i < array_numobjects(ips4); i++) {
-      ip4 = array_fetch(ips4, i);
-      inet_ntop(AF_INET, &ip4->sin_addr, buf, sizeof(struct sockaddr_in));
+      NOTIFYSLAVE *slave = array_fetch(ips4, i);
+      struct sockaddr_in *ip4 = (struct sockaddr_in*)&(slave->slaveaddr.ips4);
+      const char *ip4addr = inet_ntop(AF_INET, &(ip4->sin_addr), &buf[0], INET_ADDRSTRLEN);
       for (j = 0; allLocalAddresses[j]; j++) {
-	if(!strcmp(allLocalAddresses[j], buf)) goto FINISHEDSEARCH;
+	if(!strcmp(allLocalAddresses[j], ip4addr)) goto FINISHEDSEARCH;
       }
     }
   }
@@ -1913,10 +2022,11 @@ are_we_master(TASK *t, MYDNS_SOA *soa) {
 #if HAVE_IPV6
   if (array_numobjects(ips6)) {
     for (i = 0; i < array_numobjects(ips6); i++) {
-      ip6 = array_fetch(ips6, i);
-      inet_ntop(AF_INET6, &ip6->sin6_addr, buf, sizeof(struct sockaddr_in6));
+      NOTIFYSLAVE *slave = array_fetch(ips6, i);
+      struct sockaddr_in6 *ip6 = (struct sockaddr_in6*)&(slave->slaveaddr.ips6);
+      const char *ip6addr = inet_ntop(AF_INET6, &(ip6->sin6_addr), &buf[0], INET6_ADDRSTRLEN);
       for (j = 0; allLocalAddresses[j]; j++) {
-	if(!strcmp(allLocalAddresses[j], buf)) goto FINISHEDSEARCH;
+	if(!strcmp(allLocalAddresses[j], ip6addr)) goto FINISHEDSEARCH;
       }
     }
   }

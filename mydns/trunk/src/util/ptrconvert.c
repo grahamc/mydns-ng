@@ -23,7 +23,7 @@
 #include "util.h"
 #include "libptr.h"
 
-char  hostname[256];                                 /* Hostname of local machine */
+char  thishostname[256];                                 /* Hostname of local machine */
 char	ns[256], mbox[256];										/* Default NS/MBOX */
 
 /* Information about an imported zone */
@@ -56,6 +56,7 @@ usage(int status) {
     puts(_("Convert pre-0.9.12 PTR table format to in-addr.arpa zones."));
     puts("");
     /*	puts("----------------------------------------------------------------------------78");  */
+    puts(_("  -c, --conf=FILE         read config from FILE instead of the default"));
     puts(_("  -D, --database=DB       database name to use"));
     puts(_("  -h, --host=HOST         connect to SQL server at HOST"));
     puts(_("  -p, --password=PASS     password for SQL server (or prompt from tty)"));
@@ -84,23 +85,24 @@ cmdline(int argc, char **argv) {
   char	*optstr;
   int	optc, optindex;
   struct option const longopts[] = {
+    {"conf",			required_argument,	NULL,	'c'},
     {"database",		required_argument,	NULL,	'D'},
-    {"host",				required_argument,	NULL,	'h'},
+    {"host",			required_argument,	NULL,	'h'},
     {"password",		optional_argument,	NULL,	'p'},
-    {"user",				required_argument,	NULL,	'u'},
+    {"user",			required_argument,	NULL,	'u'},
     
-    {"debug",			no_argument,			NULL,	'd'},
-    {"verbose",			no_argument,			NULL,	'v'},
-    {"help",				no_argument,			NULL,	0},
-    {"version",			no_argument,			NULL,	0},
+    {"debug",			no_argument,		NULL,	'd'},
+    {"verbose",			no_argument,		NULL,	'v'},
+    {"help",			no_argument,		NULL,	0},
+    {"version",			no_argument,		NULL,	0},
 
     {NULL, 0, NULL, 0}
   };
 
   /* Set default NS and MBOX based on this machine's hostname */
-  gethostname(hostname, sizeof(hostname)-1);
-  snprintf(ns, sizeof(ns), "%s.", hostname);
-  snprintf(mbox, sizeof(mbox), "hostmaster.%s.", hostname);
+  gethostname(thishostname, sizeof(thishostname)-1);
+  snprintf(ns, sizeof(ns), "%s.", thishostname);
+  snprintf(mbox, sizeof(mbox), "hostmaster.%s.", thishostname);
 
   err_file = stdout;
   error_init(argv[0], LOG_USER);					/* Init output routines */
@@ -120,6 +122,10 @@ cmdline(int argc, char **argv) {
 	} else if (!strcmp(opt, "help"))				/* --help */
 	  usage(EXIT_SUCCESS);
       }
+      break;
+
+    case 'c':								/* -c, --conf=FILE */
+      opt_conf = optarg;
       break;
 
     case 'd':								/* -d, --debug */
