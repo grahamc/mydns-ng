@@ -70,7 +70,7 @@ mydns_soa_get_active_types(SQL *sqlConn) {
 	   || !strcasecmp(VAL, "active")
 	   || !strcasecmp(VAL, "a")
 	   || !strcasecmp(VAL, "on")
-	   || !strcasecmp(VAL, "1") ) { YES = VAL; continue; }
+	   || !strcasecmp(VAL, "1") ) { YES = STRDUP(VAL); continue; }
     if (   !strcasecmp(VAL, "no")
 	   || !strcasecmp(VAL, "n")
 	   || !strcasecmp(VAL, "false")
@@ -78,7 +78,7 @@ mydns_soa_get_active_types(SQL *sqlConn) {
 	   || !strcasecmp(VAL, "inactive")
 	   || !strcasecmp(VAL, "i")
 	   || !strcasecmp(VAL, "off")
-	   || !strcasecmp(VAL, "0") ) { NO = VAL; continue; }
+	   || !strcasecmp(VAL, "0") ) { NO = STRDUP(VAL); continue; }
   }
 
   sql_free(res);

@@ -191,6 +191,20 @@ extern char		*dns_make_message(TASK *, uint16_t, uint8_t, dns_qtype_t,
   dns_make_message((t),(id),DNS_OPCODE_NOTIFY,(qtype),(name),(rd),(length))
 
 /* notify.c */
+
+typedef struct _notify_slave {
+  int			replied;	/* Have we had a reply from the slave */
+  int			retries;        /* How many retries have we made */
+  time_t		lastsent;	/* Last message was sent then */
+  union {
+    struct sockaddr	ips;
+    struct sockaddr_in	ips4;
+#if HAVE_IPV6
+    struct sockaddr_in6	ips6;
+#endif
+  } slaveaddr;
+} NOTIFYSLAVE;
+
 extern taskexec_t	notify_write(TASK *);
 extern taskexec_t	notify_read(TASK*);
 extern void		notify_slaves(TASK *, MYDNS_SOA *);
