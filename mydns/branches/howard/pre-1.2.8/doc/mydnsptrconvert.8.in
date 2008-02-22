@@ -1,0 +1,40 @@
+.TH mydnsptrconvert "8" "January 2004" "mydns 0.10.1" "System Administrator's Manual"
+.SH NAME
+mydnsptrconvert \- Convert pre-0.9.12 PTR table format to in-addr.arpa zones.
+.SH SYNOPSIS
+.B mydnsptrconvert
+[\fIOPTIONS\fR]... \fINS MBOX\fR
+.SH DESCRIPTION
+\fBmydnsptrconvert\fP is a utility mainly used in upgrade processes.
+It converts the old-style PTR table to ressource records in in-addr.arpa.
+zones.
+.SH OPTIONS
+.TP
+\fB\-D\fR, \fB\-\-database\fR=\fIDB\fR
+database name to use
+.TP
+\fB\-h\fR, \fB\-\-host\fR=\fIHOST\fR
+connect to SQL server at HOST
+.TP
+\fB\-p\fR, \fB\-\-password\fR=\fIPASS\fR
+password for SQL server (or prompt from tty)
+.TP
+\fB\-u\fR, \fB\-\-user\fR=\fIUSER\fR
+username for SQL server if not current user
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+be more verbose while running (on by default)
+.TP
+\fB\-\-help\fR
+display this help and exit
+.TP
+\fB\-\-version\fR
+output version information and exit
+.SH AUTHOR
+Don Moore <bboy@bboy.net>
+.SH HOMEPAGE
+http://mydns.bboy.net
+.SH "SEE ALSO"
+.BR mydns (8),
+.BR mydns.conf (5),
+.BR mydnscheck (8)
