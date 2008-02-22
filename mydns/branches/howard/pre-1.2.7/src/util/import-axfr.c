@@ -23,7 +23,7 @@
 #include "util.h"
 #include <netdb.h>
 
-static char *hostname, *zone;				/* Hostname of remote host and zone */
+static char *thishostname, *zone;			/* Hostname of remote host and zone */
 static char origin[DNS_MAXNAMELEN+1];			/* The origin name reported by the peer */
 static uint32_t got_soa = 0;				/* Have we read the initial SOA record? */
 
@@ -244,7 +244,7 @@ process_axfr_answer(char *reply, size_t replylen, char *src) {
   uint32_t ttl;
 
   if (!(name = name_unencode2(reply, replylen, &src, &errcode)))
-    Errx("%s: %s: %s", hostname, _("error reading name from answer section"), name);
+    Errx("%s: %s: %s", thishostname, _("error reading name from answer section"), name);
 
   DNS_GET16(type, src);
   DNS_GET16(class, src);
@@ -435,7 +435,7 @@ process_axfr_reply(char *reply, size_t replylen) {
   DNS_GET16(ancount, src);
   src += SIZE16 * 2;
   if (hdr.rcode != DNS_RCODE_NOERROR)
-    Errx("%s: %s: %s", hostname, _("server responded to our request with error"),
+    Errx("%s: %s: %s", thishostname, _("server responded to our request with error"),
 	 mydns_rcode_str(hdr.rcode));
 
 #if DEBUG_ENABLED
@@ -447,7 +447,7 @@ process_axfr_reply(char *reply, size_t replylen) {
   /* Read question section(s) */
   for (n = 0; n < qdcount; n++) {
     if (!(name = name_unencode2(reply, replylen, &src, &errcode)))
-      Errx("%s: %s: %s", hostname, _("error reading name from question section"), name);
+      Errx("%s: %s: %s", thishostname, _("error reading name from question section"), name);
     src += (SIZE16 * 2);
     RELEASE(name);
   }
@@ -475,20 +475,20 @@ import_axfr(char *hostport, char *import_zone) {
   Debug("STARTING AXFR of \"%s\" from %s", import_zone, hostport);
 #endif
 
-  hostname = zone = NULL;
+  thishostname = zone = NULL;
   got_soa = 0;
 
   zone = import_zone;
 
   /* Connect to remote host */
-  if ((fd = axfr_connect(hostport, &hostname)) < 0)
+  if ((fd = axfr_connect(hostport, &thishostname)) < 0)
     Errx("%s: %s", hostport, _("failed to connect"));
 #if DEBUG_ENABLED
   Debug("connected to %s", hostport);
 #endif
 
   /* Send AXFR request */
-  request_axfr(fd, hostname, zone);
+  request_axfr(fd, thishostname, zone);
 
   /* Read packets from server and process them */
   while (recv(fd, len, 2, MSG_WAITALL) == 2) {

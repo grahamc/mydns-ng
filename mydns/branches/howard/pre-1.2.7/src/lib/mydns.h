@@ -31,6 +31,44 @@
 #define	MYDNS_SOA_TABLE	"soa"
 #define	MYDNS_RR_TABLE		"rr"
 
+extern int	opt_daemon;
+extern char	*opt_conf;
+extern uid_t	perms_uid;
+extern gid_t	perms_gid;
+
+extern time_t	task_timeout;			/* Task timeout */
+
+extern int	axfr_enabled;			/* Allow AXFR? */
+extern int	tcp_enabled;			/* Enable TCP? */
+extern int	dns_update_enabled;		/* Enable DNS UPDATE? */
+extern int	dns_notify_enabled;		/* Enable DNS NOTIFY? */
+extern int	notify_timeout;
+extern int	notify_retries;
+extern char	*notify_algorithm;
+
+extern int	dns_ixfr_enabled;		/* Enable IXFR functionality */
+extern int	ixfr_gc_enabled;		/* Enable IXFR GC Processing */
+extern uint32_t	ixfr_gc_interval;		/* Run the IXFR GC this often */
+extern uint32_t	ixfr_gc_delay;			/* Delay before running first IXFR GC */
+extern int	ignore_minimum;			/* Ignore minimum TTL? */
+extern char	hostname[256];			/* This machine's hostname */
+
+extern uint32_t answer_then_quit;		/* Answer this many queries then quit */
+extern int	show_data_errors;		/* Output data errors? */
+
+extern int	forward_recursive;		/* Forward recursive queries? */
+extern int	recursion_timeout;
+extern int	recursion_connect_timeout;
+extern int	recursion_retries;
+extern char	*recursion_algorithm;
+extern char	*recursive_fwd_server;		/* Name of server for recursive forwarding */
+extern int	recursive_family;		/* Protocol family for recursion */
+
+#if HAVE_IPV6
+extern struct sockaddr_in6	recursive_sa6;	/* Recursive server (IPv6) */
+#endif
+extern struct sockaddr_in	recursive_sa;	/* Recursive server (IPv4) */
+
 /* Configurable table names */
 extern char mydns_soa_table_name[PATH_MAX];
 extern char mydns_rr_table_name[PATH_MAX];
@@ -462,6 +500,9 @@ extern MYDNS_RR		*mydns_rr_build(uint32_t, uint32_t, dns_qtype_t, dns_class_t, u
 #endif
 					uint32_t, char *, char *,  uint16_t, const char *);
 extern MYDNS_RR		*mydns_rr_parse(SQL_ROW, unsigned long *, const char *);
+extern char		*mydns_rr_columns();
+extern char		*mydns_rr_prepare_query(uint32_t, dns_qtype_t, char *,
+						char *, char *, char *, char *);
 extern int		mydns_rr_load_all(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, char *, char *);
 extern int		mydns_rr_load_active(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, char *, char *);
 extern int		mydns_rr_load_inactive(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, char *, char *);
@@ -529,6 +570,12 @@ extern int		hinfo_parse(char *, char *, char *, size_t);
 /* unencode.c */
 extern char		*name_unencode(char *, size_t, char *, char *, size_t);
 extern char		*name_unencode2(char *, size_t, char **, task_error_t *);
+
+/* db.c */
+extern void		db_connect(void);
+extern void		db_output_create_tables(void);
+extern void		db_check_optional(void);
+extern void		db_verify_tables(void);
 
 
 #endif /* !_MYDNS_H */

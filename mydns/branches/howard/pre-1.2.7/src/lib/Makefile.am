@@ -5,7 +5,7 @@
 noinst_LIBRARIES	=	libmydns.a
 INCLUDES		=	@INTLINCLUDE@ @UTILINCLUDE@ @SQLINCLUDE@
 noinst_HEADERS		=	bits.h header.h mydns.h
-libmydns_a_SOURCES	=	ip.c rr.c soa.c sql.c str.c unencode.c
+libmydns_a_SOURCES	=	conf.c db.c ip.c rr.c soa.c sql.c str.c unencode.c
 
 ctags:
 	ctags @UTILDIR@/*.[ch] *.[ch]

@@ -278,67 +278,6 @@ db_verify_table(char *database, char *table, char *columns) {
 
 
 /**************************************************************************************************
-	DB_CHECK_OPTIONAL
-	Check optional columns.
-**************************************************************************************************/
-void
-db_check_optional(void) {
-  int		old_soa_use_active = mydns_soa_use_active;
-  int		old_soa_use_xfer = mydns_soa_use_xfer;
-  int		old_soa_use_update_acl = mydns_soa_use_update_acl;
-  int		old_soa_use_recursive = mydns_soa_use_recursive;
-  int		old_rr_use_active = mydns_rr_use_active;
-  int		old_rr_use_stamp = mydns_rr_use_stamp;
-  int		old_rr_use_serial = mydns_rr_use_serial;
-
-  /* Check for soa.active */
-  mydns_set_soa_use_active(sql);
-  if (mydns_soa_use_active != old_soa_use_active)
-    Verbose(_("optional 'active' column found in '%s' table"), mydns_soa_table_name);
-
-  if (mydns_soa_use_active) mydns_soa_get_active_types(sql);
-
-  /* Check for soa.xfer */
-  mydns_set_soa_use_xfer(sql);
-  if (mydns_soa_use_xfer != old_soa_use_xfer)
-    Verbose(_("optional 'xfer' column found in '%s' table"), mydns_soa_table_name);
-
-  /* Check for soa.update_acl */
-  mydns_set_soa_use_update_acl(sql);
-  if (mydns_soa_use_update_acl != old_soa_use_update_acl)
-    Verbose(_("optional 'update_acl' column found in '%s' table"), mydns_soa_table_name);
-
-  /* Check for soa.recursive */
-  mydns_set_soa_use_recursive(sql);
-  if (mydns_soa_use_recursive != old_soa_use_recursive)
-    Verbose(_("optional 'recursive' column found in '%s' table"), mydns_soa_table_name);
-
-  /* Check for rr.edata */
-  mydns_set_rr_extended_data(sql);
-  if (mydns_rr_extended_data)
-    Verbose(_("optional 'edata' column found in '%s' table"), mydns_rr_table_name);
-
-  /* Check for rr.active */
-  mydns_set_rr_use_active(sql);
-  if (mydns_rr_use_active != old_rr_use_active)
-    Verbose(_("optional 'active' column found in '%s' table"), mydns_rr_table_name);
-
-  if (mydns_rr_use_active) mydns_rr_get_active_types(sql);
-
-  /* Check for rr.stamp */
-  mydns_set_rr_use_stamp(sql);
-  if (mydns_rr_use_stamp != old_rr_use_stamp)
-    Verbose(_("optional 'stamp' column found in '%s' table"), mydns_rr_table_name);
-
-  /* Check for rr.serial */
-  mydns_set_rr_use_serial(sql);
-  if (mydns_rr_use_serial != old_rr_use_serial)
-    Verbose(_("optional 'serial' column found in '%s' table"), mydns_rr_table_name);
-}
-/*--- db_check_optional() -----------------------------------------------------------------------*/
-
-
-/**************************************************************************************************
 	DB_CHECK_PTR_TABLE
 	See if the obsolete "ptr" table exists.  If so, warn the user.
 **************************************************************************************************/

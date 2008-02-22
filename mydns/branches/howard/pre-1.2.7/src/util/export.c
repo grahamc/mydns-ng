@@ -22,14 +22,14 @@
 
 #include "util.h"
 
-char *zone;							/* Zone name to dump */
+char *zone = NULL;							/* Zone name to dump */
 unsigned int zones_out = 0;					/* Number of zones output */
 enum _output_format {						/* Output format types */
 	OUTPUT_BIND,
 	OUTPUT_TINYDNS
 } output_format = OUTPUT_BIND;
 
-char  hostname[256];                                            /* Hostname of local machine */
+char  thishostname[256];                                            /* Hostname of local machine */
 char *command_line = NULL;					/* Full command line */
 
 #define DNSBUFLEN	DNS_MAXNAMELEN+1
@@ -54,6 +54,7 @@ usage(status)
     puts(_("  -b, --bind              output in BIND format (the default)"));
     puts(_("  -t, --tinydns-data      output in tinydns-data format"));
     puts("");
+    puts(_("  -c, --conf=FILE         read config from FILE instead of the default"));
     puts(_("  -D, --database=DB       database name to use"));
     puts(_("  -h, --host=HOST         connect to SQL server at HOST"));
     puts(_("  -p, --password=PASS     password for SQL server (or prompt from tty)"));
@@ -83,6 +84,7 @@ cmdline(int argc, char **argv) {
   int	optc, optindex, n;
   struct option const longopts[] = {
     {"bind",		no_argument,		NULL,	'b'},
+    {"conf",		required_argument,	NULL,	'c'},
     {"database",	required_argument,	NULL,	'D'},
     {"host",		required_argument,	NULL,	'h'},
     {"password",	optional_argument,	NULL,	'p'},
@@ -108,7 +110,7 @@ cmdline(int argc, char **argv) {
     }
   }
 
-  gethostname(hostname, sizeof(hostname)-1);
+  gethostname(thishostname, sizeof(thishostname)-1);
 
   err_file = stdout;
   error_init(argv[0], LOG_USER);				/* Init output routines */
@@ -128,6 +130,10 @@ cmdline(int argc, char **argv) {
 	} else if (!strcmp(opt, "help"))			/* --help */
 	  usage(EXIT_SUCCESS);
       }
+      break;
+
+    case 'c':						/* -c, --conf=FILE */
+      opt_conf = optarg;
       break;
 
     case 'd':							/* -d, --debug */
@@ -166,6 +172,7 @@ cmdline(int argc, char **argv) {
       usage(EXIT_FAILURE);
     }
   }
+  load_config();
 }
 /*--- cmdline() ---------------------------------------------------------------------------------*/
 
@@ -370,8 +377,8 @@ tinydns_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
       int databuflen = MYDNS_RR_DATA_LENGTH(rr);
       int len = databuflen;
       databuf = ALLOCATE(databuflen + 1, char[]);
+      memset(databuf, 0, databuflen + 1);
       memcpy(databuf, MYDNS_RR_DATA_VALUE(rr), databuflen);
-      databuf[databuflen] = '\0';
 
       /* Need to output colons as octal - also any other wierd chars */
       for (c = (char*)MYDNS_RR_DATA_VALUE(rr), d = databuf; len; len--, c++) {
@@ -453,6 +460,7 @@ dump_rr_long(MYDNS_SOA *soa) {
   SQL_RES *res;
   SQL_ROW row;
   unsigned long *lengths;
+  char		*columns = NULL;
 
   /* No records in zone - return immediately */
   if (!sql_count(sql, "SELECT COUNT(*) FROM %s WHERE zone=%u", mydns_rr_table_name, soa->id)) {
@@ -467,12 +475,20 @@ dump_rr_long(MYDNS_SOA *soa) {
   if (!maxlen)
     maxlen = DNS_MAXNAMELEN;
 
+  columns = mydns_rr_columns();
+
+  query = mydns_rr_prepare_query(soa->id, DNS_QTYPE_ANY, NULL, soa->origin, mydns_rr_active_types[0],
+				   columns, NULL);
+  RELEASE(columns);
+
+#ifdef notdef
   querylen = ASPRINTF(&query,
 		      "SELECT "MYDNS_RR_FIELDS" FROM %s WHERE zone=%u ORDER BY name,type,aux",
 		      mydns_rr_table_name, soa->id);
+#endif
 
   /* Submit query */
-  res = sql_query(sql, query, querylen);
+  res = sql_query(sql, query, strlen(query));
   RELEASE(query);
   if (!res)
     return;
@@ -500,14 +516,17 @@ dump_rr_long(MYDNS_SOA *soa) {
 static void
 dump_zone(char *zone_name) {
   MYDNS_SOA *soa;
-
-  strncpy(zone, zone_name, sizeof(zone)-2);
+  int zonelen = (strlen(zone_name) + ((LASTCHAR(zone_name) != '.')?2:1));
+  zone = ALLOCATE(zonelen, char[]);
+  memset(zone, 0, zonelen);
+  strcpy(zone, zone_name);
   if (LASTCHAR(zone) != '.')
     strcat(zone, ".");
   if ((soa = dump_soa())) {
     dump_rr_long(soa);
     mydns_soa_free(soa);
   }
+  RELEASE(zone);
   zones_out++;
 }
 /*--- dump_zone() -------------------------------------------------------------------------------*/
@@ -522,8 +541,10 @@ main(int argc, char **argv) {
   bindtextdomain(PACKAGE, LOCALEDIR);
   textdomain(PACKAGE);
   cmdline(argc, argv);
-  load_config();
+
   db_connect();
+
+  db_check_optional();
 
   dump_header();
   if (optind >= argc) {

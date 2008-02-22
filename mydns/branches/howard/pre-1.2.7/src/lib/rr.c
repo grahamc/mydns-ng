@@ -97,7 +97,7 @@ mydns_rr_get_active_types(SQL *sqlConn) {
 	   || !strcasecmp(VAL, "active")
 	   || !strcasecmp(VAL, "a")
 	   || !strcasecmp(VAL, "on")
-	   || !strcmp(VAL, "1") ) { YES = VAL; continue; }
+	   || !strcmp(VAL, "1") ) { YES = STRDUP(VAL); continue; }
     if (   !strcasecmp(VAL, "no")
 	   || !strcasecmp(VAL, "n")
 	   || !strcasecmp(VAL, "false")
@@ -105,10 +105,10 @@ mydns_rr_get_active_types(SQL *sqlConn) {
 	   || !strcasecmp(VAL, "inactive")
 	   || !strcasecmp(VAL, "i")
 	   || !strcasecmp(VAL, "off")
-	   || !strcmp(VAL, "0") ) { NO = VAL; continue; }
+	   || !strcmp(VAL, "0") ) { NO = STRDUP(VAL); continue; }
     if (   !strcasecmp(VAL, "d")
 	   || !strcasecmp(VAL, "deleted")
-	   || !strcmp(VAL, "2") ) { DELETED = VAL; continue; }
+	   || !strcmp(VAL, "2") ) { DELETED = STRDUP(VAL); continue; }
   }
 
   sql_free(res);
@@ -764,8 +764,22 @@ mydns_rr_size(MYDNS_RR *first) {
 	If "name" is NULL, all resource records for the zone will be loaded.
 **************************************************************************************************/
 char *
-__mydns_rr_prepare_query(uint32_t zone, dns_qtype_t type, char *name, char *origin,
-			 char *active, char *columns, char *filter) {
+mydns_rr_columns() {
+  char		*columns = NULL;
+  size_t	columnslen = 0;
+
+  columnslen = sql_build_query(&columns, MYDNS_RR_FIELDS"%s%s%s%s",
+			       /* Optional columns */
+			       (mydns_rr_extended_data ? ",edata" : ""),
+			       (mydns_rr_use_active ? ",active" : ""),
+			       (mydns_rr_use_stamp  ? ",stamp"  : ""),
+			       (mydns_rr_use_serial ? ",serial" : ""));
+  return columns;
+}
+
+char *
+mydns_rr_prepare_query(uint32_t zone, dns_qtype_t type, char *name, char *origin,
+		       char *active, char *columns, char *filter) {
   size_t	querylen;
   char		*query = NULL;
   char		*namequery = NULL;
@@ -777,7 +791,7 @@ __mydns_rr_prepare_query(uint32_t zone, dns_qtype_t type, char *name, char *orig
 #endif
 
 #if DEBUG_ENABLED && DEBUG_LIB_RR
-  Debug("_mydns_rr_prepare_query(zone=%u, type='%s', name='%s', origin='%s')",
+  Debug("mydns_rr_prepare_query(zone=%u, type='%s', name='%s', origin='%s')",
 	zone, mydns_qtype_str(type), name ?: "NULL", origin ?: "NULL");
 #endif
 
@@ -967,7 +981,7 @@ __mydns_rr_count(SQL *sqlConn, uint32_t zone,
   SQL_RES	*res;
   SQL_ROW	row;
 
-  query = __mydns_rr_prepare_query(zone, type, name, origin, active, "COUNT(*)", filter);
+  query = mydns_rr_prepare_query(zone, type, name, origin, active, "COUNT(*)", filter);
 
   if (!(res = sql_query(sqlConn, query, strlen(query)))) {
     WarnSQL(sqlConn, _("error processing count with filter %s"), filter);
@@ -991,21 +1005,15 @@ __mydns_rr_load(SQL *sqlConn, MYDNS_RR **rptr, uint32_t zone,
 		dns_qtype_t type, char *name, char *origin, char *active, char *filter) {
   char		*query = NULL;
   int		res;
-  int		columnslen;
   char		*columns = NULL;
 
-  columnslen = sql_build_query(&columns, MYDNS_RR_FIELDS"%s%s%s%s",
-			       /* Optional columns */
-			       (mydns_rr_extended_data ? ",edata" : ""),
-			       (mydns_rr_use_active ? ",active" : ""),
-			       (mydns_rr_use_stamp  ? ",stamp"  : ""),
-			       (mydns_rr_use_serial ? ",serial" : ""));
+  columns = mydns_rr_columns();
 
-  query = __mydns_rr_prepare_query(zone, type, name, origin, active, columns, filter);
-
-  res = __mydns_rr_do_load(sqlConn, rptr, query, origin);
+  query = mydns_rr_prepare_query(zone, type, name, origin, active, columns, filter);
 
   RELEASE(columns);
+
+  res = __mydns_rr_do_load(sqlConn, rptr, query, origin);
 
   return res;
 }

@@ -57,12 +57,6 @@ SERVERSTATUS	Status;				/* Server status information */
 int		Max_FDs = 64;			/* Maximum number of File Descriptors available */
 
 extern void	create_listeners(void);
-extern void	db_check_optional(void);
-
-extern int	opt_daemon;
-extern char	*opt_conf;
-extern uid_t	perms_uid;
-extern gid_t	perms_gid;
 
 
 typedef void (*INITIALTASKSTART)();
