@@ -41,6 +41,7 @@ sql_open(char *user, char *password, char *host, char *database) {
   if (host && (portp = strchr(host, ':'))) {
     port = atoi(portp + 1);
     *portp = '\0';
+    portp = portp + 1;
   }
 
   /* Save connection information so that we can reconnect if necessary */
