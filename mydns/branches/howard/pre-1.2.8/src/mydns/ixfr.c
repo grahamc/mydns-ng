@@ -26,12 +26,12 @@
 #define DEBUG_IXFR_SQL 1
 
 typedef struct _ixfr_authority_rr {
-  char			name[DNS_MAXNAMELEN];
+  char			*name;
   dns_qtype_t		type;
   dns_class_t		class;
   uint32_t		ttl;
-  char			mname[DNS_MAXNAMELEN];
-  char			rname[DNS_MAXNAMELEN];
+  char			*mname;
+  char			*rname;
   uint32_t		serial;
   uint32_t		refresh;
   uint32_t		retry;
@@ -39,22 +39,54 @@ typedef struct _ixfr_authority_rr {
   uint32_t		minimum;
 } IARR;
 
+#define IARR_NAME(__rrp)		((__rrp)->name)
+#define IARR_MNAME(__rrp)		((__rrp)->mname)
+#define IARR_RNAME(__rrp)		((__rrp)->rname)
+
 typedef struct _ixfr_query {
   /* Zone section */
-  char			name[DNS_MAXNAMELEN];		/* The zone name */
+  char			*name;				/* The zone name */
   dns_qtype_t		type;				/* Must be DNS_QTYPE_SOA */
   dns_class_t		class;				/* The zone's class */
 
   IARR			IR;
 } IQ;
 
+#define IQ_NAME(__iqp)			((__iqp)->name)
+
+static IQ *
+allocate_iq() {
+  IQ *q = ALLOCATE(sizeof(IQ), IQ);
+
+  memset(q, 0, sizeof(IQ));
+
+  return q;
+}
+
+static void
+free_iarr_data(IARR *rr) {
+  RELEASE(IARR_NAME(rr));
+  RELEASE(IARR_MNAME(rr));
+  RELEASE(IARR_RNAME(rr));
+}
+
+static void
+free_iq(IQ *q) {
+  free_iarr_data(&q->IR);
+
+  RELEASE(IQ_NAME(q));
+
+  RELEASE(q);
+}
+
 static char *
 ixfr_gobble_authority_rr(TASK *t, MYDNS_SOA *soa, char *query, size_t querylen, char *current, IARR *rr){
   char * src = current;
   int rdlength;
+  task_error_t errcode = 0;
 
-  if (!(src = name_unencode(query, querylen, src, rr->name, sizeof(rr->name)))) {
-    formerr(t, DNS_RCODE_FORMERR, (task_error_t)rr->name[0], NULL);
+  if (!(IARR_NAME(rr) = name_unencode2(query, querylen, &src, &errcode))) {
+    formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
     return NULL;
   }
   DNS_GET16(rr->type, src);
@@ -62,13 +94,13 @@ ixfr_gobble_authority_rr(TASK *t, MYDNS_SOA *soa, char *query, size_t querylen, 
   DNS_GET32(rr->ttl, src);
 
   DNS_GET16(rdlength, src);
-  if (!(src = name_unencode(query, querylen, src, rr->mname, sizeof(rr->mname)))) {
-    formerr(t, DNS_RCODE_FORMERR, (task_error_t)rr->mname[0], NULL);
+  if (!(IARR_MNAME(rr) = name_unencode2(query, querylen, &src, &errcode))) {
+    formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
     return NULL;
   }
 
-  if (!(src = name_unencode(query, querylen, src, rr->rname, sizeof(rr->rname)))) {
-    formerr(t, DNS_RCODE_FORMERR, (task_error_t)rr->rname[0], NULL);
+  if (!(IARR_RNAME(rr) = name_unencode2(query, querylen, &src, &errcode))) {
+    formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
     return NULL;
   }
 
@@ -88,6 +120,7 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
   int		querylen = t->len;
   char		*src = query + DNS_HEADERSIZE;
   IQ		*q;
+  task_error_t	errcode = 0;
 
 #if DEBUG_ENABLED && DEBUG_IXFR
   Debug("%s: ixfr(%s, %s, \"%s\", %d)", desctask(t),
@@ -141,15 +174,18 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
     return formerr(t, DNS_RCODE_FORMERR, ERR_MALFORMED_REQUEST,
 		   _("ixfr query has answer or additional data"));
 
-  q = ALLOCATE(sizeof(IQ), IQ);
+  q = allocate_iq();
 
-  if (!(src = name_unencode(query, querylen, src, q->name, sizeof(q->name))))
-    return formerr(t, DNS_RCODE_FORMERR, (task_error_t)q->name[0], NULL);
+  if (!(IQ_NAME(q) = name_unencode2(query, querylen, &src, &errcode))) {
+    free_iq(q);
+    return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
+  }
 
   DNS_GET16(q->type, src);
   DNS_GET16(q->class, src);
 
   if (!(src = ixfr_gobble_authority_rr(t, soa, query, querylen, src, &q->IR))) {
+    free_iq(q);
     return (TASK_FAILED);
   }
 
@@ -297,6 +333,8 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
 
  FINISHEDIXFR:
   mydns_soa_free(soa);
+
+  free_iq(q);
 
   t->hdr.aa = 1;
 
