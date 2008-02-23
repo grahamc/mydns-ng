@@ -93,13 +93,25 @@ typedef struct _update_query {
 	Frees a 'UQ' structure.
 **************************************************************************************************/
 static void
-free_uqrr(UQRR *uqrr) {
+free_uqrr_data(UQRR *uqrr) {
 #if DEBUG_ENABLED && DEBUG_UPDATE
-  Debug("free_uqrr freeing %p", uqrr);
+  Debug("free_uqrr_data freeing %p", uqrr);
 #endif
   UQRR_DATA_LENGTH(uqrr) = 0;
   RELEASE(UQRR_DATA_VALUE(uqrr));
   RELEASE(UQRR_NAME(uqrr));
+
+#if DEBUG_ENABLED && DEBUG_UPDATE
+  Debug("free_uqrr_data freed %p", uqrr);
+#endif
+}
+
+static void
+free_uqrr(UQRR *uqrr) {
+#if DEBUG_ENABLED && DEBUG_UPDATE
+  Debug("free_uqrr freeing %p", uqrr);
+#endif
+  free_uqrr_data(uqrr);
 
   RELEASE(uqrr);
 #if DEBUG_ENABLED && DEBUG_UPDATE
@@ -132,11 +144,14 @@ free_uq(UQ *uq) {
   Debug("free_uq freeing %p", uq);
 #endif
   for (n = 0; n < uq->numPR; n++)
-    free_uqrr(&uq->PR[n]);
+    free_uqrr_data(&uq->PR[n]);
+  RELEASE(uq->PR);
   for (n = 0; n < uq->numUP; n++)
-    free_uqrr(&uq->UP[n]);
+    free_uqrr_data(&uq->UP[n]);
+  RELEASE(uq->UP);
   for (n = 0; n < uq->numAD; n++)
-    free_uqrr(&uq->AD[n]);
+    free_uqrr_data(&uq->AD[n]);
+  RELEASE(uq->AD);
 
   if (uq->num_tmprr) {
     for (n = 0; n < uq->num_tmprr; n++)

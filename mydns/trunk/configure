@@ -16874,7 +16874,7 @@ fi
 
 					{ echo "$as_me:$LINENO: checking for PostgreSQL version number" >&5
 echo $ECHO_N "checking for PostgreSQL version number... $ECHO_C" >&6; }
-					PG_VERSION=`grep "PG_VERSION " /usr/local/pgsql/include/pg_config.h | cut -f3 -d' '`
+					PG_VERSION=`grep "PG_VERSION " $dir/pg_config.h | cut -f3 -d' '`
 					{ echo "$as_me:$LINENO: result: $PG_VERSION" >&5
 echo "${ECHO_T}$PG_VERSION" >&6; }
 
@@ -17015,7 +17015,7 @@ fi
 
 					{ echo "$as_me:$LINENO: checking for PostgreSQL version number" >&5
 echo $ECHO_N "checking for PostgreSQL version number... $ECHO_C" >&6; }
-					PG_VERSION=`grep "PG_VERSION " /usr/local/pgsql/include/pg_config.h | cut -f3 -d' '`
+					PG_VERSION=`grep "PG_VERSION " $dir/pg_config.h | cut -f3 -d' '`
 					{ echo "$as_me:$LINENO: result: $PG_VERSION" >&5
 echo "${ECHO_T}$PG_VERSION" >&6; }
 
