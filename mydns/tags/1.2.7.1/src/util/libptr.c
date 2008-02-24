@@ -70,10 +70,10 @@ mydns_parse_ptr(row)
 
   rv->next = NULL;
 
-  rv->id = atou(row[0]);
-  rv->ip = atou(row[1]);
-  strncpy(rv->name, row[2], sizeof(rv->name)-1);
-  rv->ttl = atou(row[3]);
+  rv->id = atou((const char*)row[0]);
+  rv->ip = atou((const char*)row[1]);
+  strncpy(rv->name, (const char*)row[2], sizeof(rv->name)-1);
+  rv->ttl = atou((const char*)row[3]);
 
   /* Add dot to end of name, if the user forgot */
   len = strlen(rv->name);

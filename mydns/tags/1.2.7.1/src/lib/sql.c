@@ -234,7 +234,7 @@ int sql_get_column_width(SQL *sqlConn, const char *tablename, const char *column
 
     row = sql_getrow(res, NULL);
     if (row) {
-      width = atoi(row[0]);
+      width = atoi((const char*)row[0]);
     }
     sql_free(res);
   }
@@ -417,7 +417,7 @@ sql_getrow(SQL_RES *res, unsigned long **lengths) {
   if (res->current_tuple >= res->tuples)
     return (NULL);
   for (n = 0; n < res->fields; n++) {
-    res->current_row[n] = PQgetvalue(res->result, res->current_tuple, n);
+    res->current_row[n] = (unsigned char*)PQgetvalue(res->result, res->current_tuple, n);
     res->current_length[n] = PQgetlength(res->result, res->current_tuple, n);
   }
   if (lengths) *lengths = res->current_length;

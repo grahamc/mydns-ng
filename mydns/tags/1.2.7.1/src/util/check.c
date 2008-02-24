@@ -714,7 +714,7 @@ main(int argc, char **argv) {
 	total = sql_num_rows(res);
 	while ((row = sql_getrow(res, NULL))) {
 	  meter(current++, total);
-	  if ((soa = check_soa(row[0]))) {
+	  if ((soa = check_soa((const char*)row[0]))) {
 	    check_zone();
 	    mydns_soa_free(soa);
 	  }

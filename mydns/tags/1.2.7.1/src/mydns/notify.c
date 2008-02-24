@@ -518,7 +518,7 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
     ErrSQL(sql, "%s: %s", desctask(t), _("error loading DNS NOTIFY also_notify nameservers"));
 
   if ((row = sql_getrow(res, NULL))) {
-    char *also_notify_servers = row[0];
+    char *also_notify_servers = (char*)row[0];
     char *also_notify_server;
     int scanned = 0;
 
@@ -1012,10 +1012,10 @@ notify_all_soas(TASK *t, void *data) {
   }
 
   if ((row = sql_getrow(res, NULL))) {
-    char *origin = row[0];
+    char *origin = (char*)row[0];
     MYDNS_SOA *soa;
 
-    initdata->lastzoneid = atou(row[1]);
+    initdata->lastzoneid = atou((const char*)row[1]);
     if (mydns_soa_load(sql, &soa, origin) == 0) {
       if (!soa->recursive) {
 	notify_slaves(t, soa);

@@ -246,7 +246,7 @@ check_update(TASK *t, MYDNS_SOA *soa) {
 #if DEBUG_ENABLED && DEBUG_UPDATE
     Debug("%s: checking DNS UPDATE access rule '%s'", desctask(t), row[0]);
 #endif
-    for (r = row[0]; !ok && (wild = strsep(&r, ",")); ) {
+    for (r = (char*)row[0]; !ok && (wild = strsep(&r, ",")); ) {
       if (strchr(wild, '/')) {
 	if (t->family == AF_INET)
 	  ok = in_cidr(wild, t->addr4.sin_addr);
@@ -1309,9 +1309,9 @@ update_delete_rrset_all(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_
     }
     while ((row = sql_getrow(res, &lengths))) {
       char *xdata, *xedatakey = NULL;
-      xdata = sql_escstr2(sql, row[2], lengths[2]);
+      xdata = sql_escstr2(sql, (char*)row[2], lengths[2]);
       if (mydns_rr_extended_data && row[5] && lengths[5]) {
-	xedatakey = sql_escstr2(sql, row[5], lengths[5]);
+	xedatakey = sql_escstr2(sql, (char*)row[5], lengths[5]);
       }
       querylen = sql_build_query(&query,
 				 "DELETE FROM %s "
@@ -1320,7 +1320,7 @@ update_delete_rrset_all(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_
 				 "AND active='%s'%s%s%s",
 				 mydns_rr_table_name,
 				 soa->id, row[0], row[1],
-				 xdata, atou(row[3]), atou(row[4]),
+				 xdata, atou((const char*)row[3]), atou((const char*)row[4]),
 				 mydns_rr_active_types[2],
 				 ((xedatakey) ? " AND edatakey='" : ""),
 				 ((xedatakey) ? xedatakey : ""),
@@ -1604,9 +1604,9 @@ update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_seri
     while ((row = sql_getrow(res, &lengths))) {
       char *xdata, *xedata = NULL;
       int res2;
-      xdata = sql_escstr2(sql, row[2], lengths[2]);
+      xdata = sql_escstr2(sql, (char*)row[2], lengths[2]);
       if (mydns_rr_extended_data && lengths[5])
-	xedata = sql_escstr2(sql, row[5], lengths[5]);
+	xedata = sql_escstr2(sql, (char*)row[5], lengths[5]);
       querylen = sql_build_query(&query,
 				 "DELETE FROM %s "
 				 "WHERE zone=%u AND name='%s' AND type='%s' "
@@ -1614,7 +1614,7 @@ update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_seri
 				 "AND active='%s'%s%s%s",
 				 mydns_rr_table_name,
 				 soa->id, row[0], row[1],
-				 xdata, atou(row[3]), atou(row[4]),
+				 xdata, atou((const char*)row[3]), atou((const char*)row[4]),
 				 mydns_rr_active_types[2],
 				 (xedata)?" AND edatakey='":"",
 				 (xedata)?xedata:"",

@@ -560,7 +560,7 @@ main(int argc, char **argv) {
       return (0);
 
     while ((row = sql_getrow(res, NULL)))
-      dump_zone(row[0]);
+      dump_zone((char*)row[0]);
     sql_free(res);
   }
 

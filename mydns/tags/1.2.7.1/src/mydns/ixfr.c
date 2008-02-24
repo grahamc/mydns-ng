@@ -339,7 +339,7 @@ ixfr_purge_all_soas(TASK *t, void *data) {
   RELEASE(query);
 
   while((row = sql_getrow(res, NULL))) {
-    unsigned int	id = atou(row[0]);
+    unsigned int	id = atou((const char*)row[0]);
     char		*origin;
     MYDNS_SOA		*soa;
     SQL_RES		*sres = NULL;
@@ -359,7 +359,7 @@ ixfr_purge_all_soas(TASK *t, void *data) {
       continue;
     }
 
-    origin = row[0];
+    origin = (char*)row[0];
 
     if (mydns_soa_load(sql, &soa, origin) == 0) {
       querylen = sql_build_query(&query, QUERY2,

@@ -181,7 +181,7 @@ check_xfer(TASK *t, MYDNS_SOA *soa) {
   if ((row = sql_getrow(res, NULL))) {
     char *wild, *r;
 
-    for (r = row[0]; !ok && (wild = strsep(&r, ",")); )	{
+    for (r = (char*)row[0]; !ok && (wild = strsep(&r, ",")); )	{
       if (strchr(wild, '/')) {
 	if (t->family == AF_INET)
 	  ok = in_cidr(wild, t->addr4.sin_addr);

@@ -62,7 +62,7 @@ mydns_soa_get_active_types(SQL *sqlConn) {
   RELEASE(query);
 
   while ((row = sql_getrow(res, NULL))) {
-    char *VAL = row[0];
+    char *VAL = (char*)row[0];
     if (   !strcasecmp(VAL, "yes")
 	   || !strcasecmp(VAL, "y")
 	   || !strcasecmp(VAL, "true")
@@ -138,20 +138,20 @@ mydns_soa_parse(SQL_ROW row) {
 
   rv->next = NULL;
 
-  rv->id = atou(row[0]);
-  strncpy(rv->origin, row[1], sizeof(rv->origin)-1);
-  strncpy(rv->ns, row[2], sizeof(rv->ns)-1);
+  rv->id = atou((const char*)row[0]);
+  strncpy(rv->origin, (const char*)row[1], sizeof(rv->origin)-1);
+  strncpy(rv->ns, (const char*)row[2], sizeof(rv->ns)-1);
   if (!rv->ns[0])
     snprintf(rv->ns, sizeof(rv->ns), "ns.%s", rv->origin);
-  strncpy(rv->mbox, row[3], sizeof(rv->mbox)-1);
+  strncpy(rv->mbox, (const char*)row[3], sizeof(rv->mbox)-1);
   if (!rv->mbox[0])
     snprintf(rv->mbox, sizeof(rv->mbox), "hostmaster.%s", rv->origin);
-  rv->serial = atou(row[4]);
-  rv->refresh = atou(row[5]);
-  rv->retry = atou(row[6]);
-  rv->expire = atou(row[7]);
-  rv->minimum = atou(row[8]);
-  rv->ttl = atou(row[9]);
+  rv->serial = atou((const char*)row[4]);
+  rv->refresh = atou((const char*)row[5]);
+  rv->retry = atou((const char*)row[6]);
+  rv->expire = atou((const char*)row[7]);
+  rv->minimum = atou((const char*)row[8]);
+  rv->ttl = atou((const char*)row[9]);
 
   rv->recursive = ((mydns_soa_use_recursive)?GETBOOL(row[10]):0);
 

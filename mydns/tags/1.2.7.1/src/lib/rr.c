@@ -89,7 +89,7 @@ mydns_rr_get_active_types(SQL *sqlConn) {
   RELEASE(query);
 
   while ((row = sql_getrow(res, NULL))) {
-    char *VAL = row[0];
+    char *VAL = (char*)row[0];
     if (   !strcasecmp(VAL, "yes")
 	   || !strcasecmp(VAL, "y")
 	   || !strcasecmp(VAL, "true")
@@ -587,12 +587,12 @@ mydns_rr_parse(SQL_ROW row, unsigned long *lengths, const char *origin) {
   Debug("mydns_rr_parse(): called for origin %s", origin);
 #endif
 
-  if (!(type = mydns_rr_get_type(row[6]))) {
+  if (!(type = mydns_rr_get_type((char*)row[6]))) {
     /* Ignore unknown RR type(s) */
     return (NULL);
   }
 
-  data = row[3];
+  data = (char*)row[3];
   datalen = lengths[3];
   if (mydns_rr_extended_data) {
     if (lengths[ridx]) {
@@ -606,30 +606,30 @@ mydns_rr_parse(SQL_ROW row, unsigned long *lengths, const char *origin) {
   }
 
   /* Copy storage? */
-  if (mydns_rr_use_active) active = row[ridx++];
+  if (mydns_rr_use_active) active = (char*)row[ridx++];
   if (mydns_rr_use_stamp) {
 #if USE_PGSQL
     /* Copy storage? */
-    stamp = row[ridx++];
+    stamp = (timestamp*)row[ridx++];
 #else
     stamp = (MYSQL_TIME*)ALLOCATE(sizeof(MYSQL_TIME), MYSQL_TIME);
     memcpy(stamp, row[ridx++], sizeof(MYSQL_TIME));
 #endif
   }
   if (mydns_rr_use_serial && row[ridx]) {
-    serial = atou(row[ridx++]);
+    serial = atou((const char*)row[ridx++]);
   }
 
-  rr = mydns_rr_build(atou(row[0]),
-		      atou(row[1]),
+  rr = mydns_rr_build(atou((const char*)row[0]),
+		      atou((const char*)row[1]),
 		      type,
 		      DNS_CLASS_IN,
-		      atou(row[4]),
-		      atou(row[5]),
+		      atou((const char*)row[4]),
+		      atou((const char*)row[5]),
 		      active,
 		      stamp,
 		      serial,
-		      row[2],
+		      (char *)row[2],
 		      data,
 		      datalen,
 		      origin);
@@ -991,7 +991,7 @@ __mydns_rr_count(SQL *sqlConn, uint32_t zone,
   RELEASE(query);
 
   if ((row = sql_getrow(res, NULL)))
-    result = atoi(row[0]);
+    result = atoi((const char*)row[0]);
   else
     result = 0;
 
