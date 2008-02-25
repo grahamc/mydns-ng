@@ -101,23 +101,28 @@ rdata_enlarge(TASK *t, size_t size) {
 **************************************************************************************************/
 static inline int
 reply_start_rr(TASK *t, RR *r, char *name, dns_qtype_t type, uint32_t ttl, char *desc) {
-  char	enc[DNS_MAXNAMELEN+1];
+  char	*enc;
   char	*dest;
   int	enclen;
 
   /* name_encode returns dnserror() */
-  if ((enclen = name_encode(t, enc, name, t->replylen + t->rdlen, 1)) < 0)
+  if ((enclen = name_encode2(t, &enc, name, t->replylen + t->rdlen, 1)) < 0) {
+    RELEASE(enc);
     return rr_error(r->id, "rr %u: %s (%s %s) (name=\"%s\")", r->id,
 		    _("invalid name in \"name\""), desc, _("record"), name);
+  }
 
   r->length = enclen + SIZE16 + SIZE16 + SIZE32;
 
-  if (!(dest = rdata_enlarge(t, r->length)))
+  if (!(dest = rdata_enlarge(t, r->length))) {
+    RELEASE(enc);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_INTERNAL);
+  }
 
   r->offset = dest - t->rdata + DNS_HEADERSIZE + t->qdlen;
 
   DNS_PUT(dest, enc, enclen);
+  RELEASE(enc);
   DNS_PUT16(dest, type);
 #if STATUS_ENABLED
   if (r->rrtype == DNS_RRTYPE_RR && r->rr)
@@ -139,25 +144,30 @@ reply_start_rr(TASK *t, RR *r, char *name, dns_qtype_t type, uint32_t ttl, char 
 **************************************************************************************************/
 static inline int
 reply_add_generic_rr(TASK *t, RR *r, char *desc) {
-  char		enc[DNS_MAXNAMELEN+1], *dest;
+  char		*enc, *dest;
   int		size, enclen;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
 
   if (reply_start_rr(t, r, (char*)r->name, rr->type, rr->ttl, desc) < 0)
     return (-1);
 
-  if ((enclen = name_encode(t, enc, MYDNS_RR_DATA_VALUE(rr), CUROFFSET(t), 1)) < 0)
+  if ((enclen = name_encode2(t, &enc, MYDNS_RR_DATA_VALUE(rr), CUROFFSET(t), 1)) < 0) {
+    RELEASE(enc);
     return rr_error(r->id, "rr %u: %s (%s) (data=\"%s\")", r->id,
 		    _("invalid name in \"data\""), desc, (char*)MYDNS_RR_DATA_VALUE(rr));
+  }
 
   size = enclen;
   r->length += SIZE16 + size;
 
-  if (!(dest = rdata_enlarge(t, SIZE16 + size)))
+  if (!(dest = rdata_enlarge(t, SIZE16 + size))) {
+    RELEASE(enc);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_INTERNAL);
+  }
 
   DNS_PUT16(dest, size);
   DNS_PUT(dest, enc, enclen);
+  RELEASE(enc);
   return (0);
 }
 /*--- reply_add_generic_rr() --------------------------------------------------------------------*/
@@ -287,26 +297,31 @@ reply_add_hinfo(TASK *t, RR *r) {
 **************************************************************************************************/
 static inline int
 reply_add_mx(TASK *t, RR *r) {
-  char		enc[DNS_MAXNAMELEN+1], *dest;
+  char		*enc, *dest;
   int		size, enclen;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
 
   if (reply_start_rr(t, r, (char*)r->name, DNS_QTYPE_MX, rr->ttl, "MX") < 0)
     return (-1);
 
-  if ((enclen = name_encode(t, enc, MYDNS_RR_DATA_VALUE(rr), CUROFFSET(t) + SIZE16, 1)) < 0)
+  if ((enclen = name_encode2(t, &enc, MYDNS_RR_DATA_VALUE(rr), CUROFFSET(t) + SIZE16, 1)) < 0) {
+    RELEASE(enc);
     return rr_error(r->id, "rr %u: %s (MX %s) (data=\"%s\")", r->id,
 		    _("invalid name in \"data\""), _("record"), (char*)MYDNS_RR_DATA_VALUE(rr));
+  }
 
   size = SIZE16 + enclen;
   r->length += SIZE16 + size;
 
-  if (!(dest = rdata_enlarge(t, SIZE16 + size)))
+  if (!(dest = rdata_enlarge(t, SIZE16 + size))) {
+    RELEASE(enc);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_INTERNAL);
+  }
 
   DNS_PUT16(dest, size);
   DNS_PUT16(dest, (uint16_t)rr->aux);
   DNS_PUT(dest, enc, enclen);
+  RELEASE(enc);
   return (0);
 }
 /*--- reply_add_mx() ----------------------------------------------------------------------------*/
@@ -321,7 +336,7 @@ static inline int
 reply_add_naptr(TASK *t, RR *r) {
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
   size_t	flags_len, service_len, regex_len;
-  char		enc[DNS_MAXNAMELEN+1], *dest;
+  char		*enc, *dest;
   int		size, enclen, offset;
 
   flags_len = sizeof(MYDNS_RR_NAPTR_FLAGS(rr));
@@ -337,16 +352,20 @@ reply_add_naptr(TASK *t, RR *r) {
   offset = SIZE16 + SIZE16 + 1 + flags_len + 1 + service_len + 1 + regex_len;
 
   /* Encode the name at the offset */
-  if ((enclen = name_encode(t, enc, MYDNS_RR_NAPTR_REPLACEMENT(rr), CUROFFSET(t) + offset, 1)) < 0)
+  if ((enclen = name_encode2(t, &enc, MYDNS_RR_NAPTR_REPLACEMENT(rr), CUROFFSET(t) + offset, 1)) < 0) {
+    RELEASE(enc);
     return rr_error(r->id, "rr %u: %s (NAPTR %s) (%s=\"%s\")", r->id,
 		    _("invalid name in \"replacement\""), _("record"), _("replacement"),
 		    MYDNS_RR_NAPTR_REPLACEMENT(rr));
+  }
 
   size = offset + enclen;
   r->length += SIZE16 + size;
 
-  if (!(dest = rdata_enlarge(t, SIZE16 + size)))
+  if (!(dest = rdata_enlarge(t, SIZE16 + size))) {
+    RELEASE(enc);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_INTERNAL);
+  }
 
   DNS_PUT16(dest, size);
   DNS_PUT16(dest, (uint16_t)MYDNS_RR_NAPTR_ORDER(rr));
@@ -365,6 +384,7 @@ reply_add_naptr(TASK *t, RR *r) {
   dest += regex_len;
 
   DNS_PUT(dest, enc, enclen);
+  RELEASE(enc);
 
   return (0);
 }
@@ -379,7 +399,7 @@ reply_add_naptr(TASK *t, RR *r) {
 static inline int
 reply_add_rp(TASK *t, RR *r) {
   char		*mbox, *txt, *dest;
-  char		encmbox[DNS_MAXNAMELEN+1], enctxt[DNS_MAXNAMELEN+1];
+  char		*encmbox, *enctxt;
   int		size, mboxlen, txtlen;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
 
@@ -389,23 +409,33 @@ reply_add_rp(TASK *t, RR *r) {
   if (reply_start_rr(t, r, (char*)r->name, DNS_QTYPE_RP, rr->ttl, "RP") < 0)
     return (-1);
 
-  if ((mboxlen = name_encode(t, encmbox, mbox, CUROFFSET(t), 1)) < 0)
+  if ((mboxlen = name_encode2(t, &encmbox, mbox, CUROFFSET(t), 1)) < 0) {
+    RELEASE(encmbox);
     return rr_error(r->id, "rr %u: %s (RP %s) (mbox=\"%s\")", r->id,
 		    _("invalid name in \"mbox\""), _("record"), mbox);
+  }
 
-  if ((txtlen = name_encode(t, enctxt, txt, CUROFFSET(t) + mboxlen, 1)) < 0)
+  if ((txtlen = name_encode2(t, &enctxt, txt, CUROFFSET(t) + mboxlen, 1)) < 0) {
+    RELEASE(encmbox);
+    RELEASE(enctxt);
     return rr_error(r->id, "rr %u: %s (RP %s) (txt=\"%s\")", r->id,
 		    _("invalid name in \"txt\""), _("record"), txt);
+  }
 
   size = mboxlen + txtlen;
   r->length += SIZE16 + size;
 
-  if (!(dest = rdata_enlarge(t, SIZE16 + size)))
+  if (!(dest = rdata_enlarge(t, SIZE16 + size))) {
+    RELEASE(encmbox);
+    RELEASE(enctxt);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_INTERNAL);
+  }
 
   DNS_PUT16(dest, size);
   DNS_PUT(dest, encmbox, mboxlen);
   DNS_PUT(dest, enctxt, txtlen);
+  RELEASE(encmbox);
+  RELEASE(enctxt);
   return (0);
 }
 /*--- reply_add_rp() ----------------------------------------------------------------------------*/
@@ -418,30 +448,40 @@ reply_add_rp(TASK *t, RR *r) {
 **************************************************************************************************/
 static inline int
 reply_add_soa(TASK *t, RR *r) {
-  char		*dest, ns[DNS_MAXNAMELEN+1], mbox[DNS_MAXNAMELEN+1];
+  char		*dest, *ns, *mbox;
   int		size, nslen, mboxlen;
   MYDNS_SOA	*soa = (MYDNS_SOA *)r->rr;
 
   if (reply_start_rr(t, r, (char*)r->name, DNS_QTYPE_SOA, soa->ttl, "SOA") < 0)
     return (-1);
 
-  if ((nslen = name_encode(t, ns, soa->ns, CUROFFSET(t), 1)) < 0)
+  if ((nslen = name_encode2(t, &ns, soa->ns, CUROFFSET(t), 1)) < 0) {
+    RELEASE(ns);
     return rr_error(r->id, "rr %u: %s (SOA %s) (ns=\"%s\")", r->id,
 		    _("invalid name in \"ns\""), _("record"), soa->ns);
+  }
 
-  if ((mboxlen = name_encode(t, mbox, soa->mbox, CUROFFSET(t) + nslen, 1)) < 0)
+  if ((mboxlen = name_encode2(t, &mbox, soa->mbox, CUROFFSET(t) + nslen, 1)) < 0) {
+    RELEASE(ns);
+    RELEASE(mbox);
     return rr_error(r->id, "rr %u: %s (SOA %s) (mbox=\"%s\")", r->id,
 		    _("invalid name in \"mbox\""), _("record"), soa->mbox);
+  }
 
   size = nslen + mboxlen + (SIZE32 * 5);
   r->length += SIZE16 + size;
 
-  if (!(dest = rdata_enlarge(t, SIZE16 + size)))
+  if (!(dest = rdata_enlarge(t, SIZE16 + size))) {
+    RELEASE(ns);
+    RELEASE(mbox);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_INTERNAL);
+  }
 
   DNS_PUT16(dest, size);
   DNS_PUT(dest, ns, nslen);
   DNS_PUT(dest, mbox, mboxlen);
+  RELEASE(ns);
+  RELEASE(mbox);
   DNS_PUT32(dest, soa->serial);
   DNS_PUT32(dest, soa->refresh);
   DNS_PUT32(dest, soa->retry);
@@ -459,7 +499,7 @@ reply_add_soa(TASK *t, RR *r) {
 **************************************************************************************************/
 static inline int
 reply_add_srv(TASK *t, RR *r) {
-  char		enc[DNS_MAXNAMELEN+1], *dest;
+  char		*enc, *dest;
   int		size, enclen;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
 
@@ -469,21 +509,26 @@ reply_add_srv(TASK *t, RR *r) {
   /* RFC 2782 says that we can't use name compression on this field... */
   /* Arnt Gulbrandsen advises against using compression in the SRV target, although
      most clients should support it */
-  if ((enclen = name_encode(t, enc, MYDNS_RR_DATA_VALUE(rr), CUROFFSET(t) + SIZE16 + SIZE16 + SIZE16, 0)) < 0)
+  if ((enclen = name_encode2(t, &enc, MYDNS_RR_DATA_VALUE(rr), CUROFFSET(t) + SIZE16 + SIZE16 + SIZE16, 0)) < 0) {
+    RELEASE(enc);
     return rr_error(r->id, "rr %u: %s (SRV %s) (data=\"%s\")", r->id,
 		    _("invalid name in \"data\""), _("record"), (char*)MYDNS_RR_DATA_VALUE(rr));
+  }
 
   size = SIZE16 + SIZE16 + SIZE16 + enclen;
   r->length += SIZE16 + size;
 
-  if (!(dest = rdata_enlarge(t, SIZE16 + size)))
+  if (!(dest = rdata_enlarge(t, SIZE16 + size))) {
+    RELEASE(enc);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_INTERNAL);
+  }
 
   DNS_PUT16(dest, size);
   DNS_PUT16(dest, (uint16_t)rr->aux);
   DNS_PUT16(dest, (uint16_t)MYDNS_RR_SRV_WEIGHT(rr));
   DNS_PUT16(dest, (uint16_t)MYDNS_RR_SRV_PORT(rr));
   DNS_PUT(dest, enc, enclen);
+  RELEASE(enc);
   return (0);
 }
 /*--- reply_add_srv() ---------------------------------------------------------------------------*/

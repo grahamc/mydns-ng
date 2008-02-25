@@ -157,6 +157,7 @@ extern void		name_forget(TASK *);
 extern unsigned int	name_find(TASK *, char *);
 extern char		*name_unencode(char *, size_t, char *, char *, size_t);
 extern int		name_encode(TASK *, char *, char *, unsigned int, int);
+extern int		name_encode2(TASK *, char **, char *, unsigned int, int);
 
 
 /* error.c */

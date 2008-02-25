@@ -97,7 +97,7 @@ name_find(TASK *t, char *name) {
 **************************************************************************************************/
 int
 name_encode(TASK *t, char *dest, char *name, unsigned int dest_offset, int compression) {
-  char			namebuf[DNS_MAXNAMELEN+1];
+  char			namebuf[DNS_MAXNAMELEN+1];;
   register char		*c, *d, *this_name, *cp;
   register int		len = 0;
   register unsigned int	offset;
@@ -151,6 +151,78 @@ name_encode(TASK *t, char *dest, char *name, unsigned int dest_offset, int compr
 	    return (-1);
 	}
     }
+  return (len);
+}
+
+int
+name_encode2(TASK *t, char **dest, char *name, unsigned int dest_offset, int compression) {
+  char			*namebuf;
+  register char		*c, *d, *this_name, *cp;
+  register int		len = 0;
+  register unsigned int	offset;
+
+  namebuf = STRDUP(name);
+
+  /* Label must end in the root zone (with a dot) */
+  if (LASTCHAR(namebuf) != '.')
+    return dnserror(t, DNS_RCODE_SERVFAIL, ERR_NAME_FORMAT);
+
+  *dest = ALLOCATE(strlen(namebuf) + 1, char[]); /* If not compressing this should be equal
+						    If compressing then it should be bigger */
+
+  /* Examine name one label at a time */
+  for (c = namebuf, d = *dest; *c; c++) {
+    if (c == namebuf || *c == '.') {
+      if (!c[1]) {
+	RELEASE(namebuf);
+	len++;
+	if (len > DNS_MAXNAMELEN)
+	  return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_NAME_TOO_LONG);
+	*d++ = 0;
+	return (len);
+      }
+      this_name = (c == namebuf) ? c : (++c);
+
+#if !NO_ENCODING
+      if (compression && !t->no_markers && (offset = name_find(t, this_name))) {
+	RELEASE(namebuf);
+	/* Found marker for this name - output offset pointer and we're done */
+	len += SIZE16;
+	if (len > DNS_MAXNAMELEN)
+	  return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_NAME_TOO_LONG);
+	offset |= 0xC000;
+	DNS_PUT16(d, offset);
+	return (len);
+      } else	/* No marker for this name; encode current label and store marker */
+#endif
+	{
+	  register unsigned int nlen;
+
+	  if ((cp = strchr(this_name, '.')))
+	    *cp = '\0';
+	  nlen = strlen(this_name);
+	  if (nlen > DNS_MAXLABELLEN) {
+	    RELEASE(namebuf);
+	    return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_LABEL_TOO_LONG);
+	  }
+	  len += nlen + 1;
+	  if (len > DNS_MAXNAMELEN) {
+	    RELEASE(namebuf);
+	    return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_NAME_TOO_LONG);
+	  }
+	  *d++ = (unsigned char)nlen;
+	  memcpy(d, this_name, nlen);
+	  d += nlen;
+	  if (cp)
+	    *cp = '.';
+	  if (!t->no_markers && (name_remember(t, this_name, dest_offset + (c - namebuf)) < 0)) {
+	    RELEASE(namebuf);
+	    return (-1);
+	  }
+	}
+    }
+  }
+  RELEASE(namebuf);
   return (len);
 }
 /*--- name_encode() -----------------------------------------------------------------------------*/
