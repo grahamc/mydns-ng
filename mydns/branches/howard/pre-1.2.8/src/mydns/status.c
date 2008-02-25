@@ -31,22 +31,22 @@
 	Generates a fake TXT rr and adds it to the requested data section.
 **************************************************************************************************/
 static inline void
-status_fake_rr(TASK *t, datasection_t ds, const char *name, const char *fmt, ...)
-{
-	va_list ap;
-	char buf[128];
-	MYDNS_RR *rr;													/* Temporary resource record */
+status_fake_rr(TASK *t, datasection_t ds, const char *name, const char *fmt, ...) {
+  va_list	ap;
+  char		*buf = NULL;
+  MYDNS_RR 	*rr;						/* Temporary resource record */
 
-	va_start(ap, fmt);
-	vsnprintf(buf, sizeof(buf), fmt, ap);
-	va_end(ap);
+  va_start(ap, fmt);
+  VASPRINTF(&buf, fmt, ap);
+  va_end(ap);
 
-	rr = mydns_rr_build(-1, -1, DNS_QTYPE_TXT, DNS_CLASS_CHAOS, 0, 0, NULL, NULL, 0,
-			    (char*)name, buf, strlen(buf), NULL);
+  rr = mydns_rr_build(-1, -1, DNS_QTYPE_TXT, DNS_CLASS_CHAOS, 0, 0, NULL, NULL, 0,
+		      (char*)name, buf, strlen(buf), NULL);
+  RELEASE(buf);
 
-	/* Add to list */
-	rrlist_add(t, ds, DNS_RRTYPE_RR, (void *)rr, (char*)name);
-	RELEASE(rr);
+  /* Add to list */
+  rrlist_add(t, ds, DNS_RRTYPE_RR, (void *)rr, (char*)name);
+  RELEASE(rr);
 }
 /*--- status_fake_rr() --------------------------------------------------------------------------*/
 
@@ -56,12 +56,11 @@ status_fake_rr(TASK *t, datasection_t ds, const char *name, const char *fmt, ...
 	Respond to 'version.bind.' query.
 **************************************************************************************************/
 static int
-status_version_bind(TASK *t)
-{
-	/* Generate fake TXT rr with version number and add to reply list */
-	status_fake_rr(t, ANSWER, t->qname, "%s", VERSION);
+status_version_bind(TASK *t) {
+  /* Generate fake TXT rr with version number and add to reply list */
+  status_fake_rr(t, ANSWER, t->qname, "%s", VERSION);
 
-	return (0);
+  return (0);
 }
 /*--- status_version_bind() ---------------------------------------------------------------------*/
 
@@ -71,44 +70,44 @@ status_version_bind(TASK *t)
 	Respond to 'version.mydns.' query.
 **************************************************************************************************/
 static int
-status_version_mydns(TASK *t)
-{
-	time_t uptime = time(NULL) - Status.start_time;
-	unsigned long requests = Status.udp_requests + Status.tcp_requests;
-	int n;
+status_version_mydns(TASK *t) {
+  time_t uptime = time(NULL) - Status.start_time;
+  unsigned long requests = Status.udp_requests + Status.tcp_requests;
+  int n;
 
-	/* Generate fake TXT rr with version number and add to reply list */
-	status_fake_rr(t, ANSWER, t->qname, "%s", VERSION);
+  /* Generate fake TXT rr with version number and add to reply list */
+  status_fake_rr(t, ANSWER, t->qname, "%s", VERSION);
 
-	/* Now add some extra stuff in ADDITIONAL section */
+  /* Now add some extra stuff in ADDITIONAL section */
 
-	/* Package release date */
-	status_fake_rr(t, ADDITIONAL, "release-date.mydns.", "%s", PACKAGE_RELEASE_DATE);
+  /* Package release date */
+  status_fake_rr(t, ADDITIONAL, "release-date.mydns.", "%s", PACKAGE_RELEASE_DATE);
 
-	/* Current uptime */
-	status_fake_rr(t, ADDITIONAL, "uptime.mydns.", "%s", strsecs(uptime));
+  /* Current uptime */
+  status_fake_rr(t, ADDITIONAL, "uptime.mydns.", "%s", strsecs(uptime));
 
-	/* Number of requests */
-	status_fake_rr(t, ADDITIONAL, "requests.mydns.", "%lu", requests);
+  /* Number of requests */
+  status_fake_rr(t, ADDITIONAL, "requests.mydns.", "%lu", requests);
 
-	/* Request rate */
-	status_fake_rr(t, ADDITIONAL, "request.rate.mydns.", "%.0f/s", requests ? AVG(requests, uptime) : 0.0);
+  /* Request rate */
+  status_fake_rr(t, ADDITIONAL, "request.rate.mydns.", "%.0f/s", requests ? AVG(requests, uptime) : 0.0);
 
-	/* Report TCP requests if server allows TCP */
-	if (Status.tcp_requests)
-		status_fake_rr(t, ADDITIONAL, "tcp.requests.mydns.", "%lu", Status.tcp_requests);
+  /* Report TCP requests if server allows TCP */
+  if (Status.tcp_requests)
+    status_fake_rr(t, ADDITIONAL, "tcp.requests.mydns.", "%lu", Status.tcp_requests);
 
-	/* Result status */
-	for (n = 0; n < MAX_RESULTS; n++)
-		if (Status.results[n])
-		{
-			char namebuf[80];
+  /* Result status */
+  for (n = 0; n < MAX_RESULTS; n++) {
+    if (Status.results[n]) {
+      char *namebuf = NULL;
 
-			snprintf(namebuf, sizeof(namebuf), "results.%s.mydns.", mydns_rcode_str(n));
-			status_fake_rr(t, ADDITIONAL, namebuf, "%u", Status.results[n]);
-		}
+      ASPRINTF(&namebuf, "results.%s.mydns.", mydns_rcode_str(n));
+      status_fake_rr(t, ADDITIONAL, namebuf, "%u", Status.results[n]);
+      RELEASE(namebuf);
+    }
+  }
 
-	return (0);
+  return (0);
 }
 /*--- status_version_mydns() --------------------------------------------------------------------*/
 
@@ -121,15 +120,15 @@ remote_status(TASK *t) {
   if (t->qtype != DNS_QTYPE_TXT)
     return formerr(t, DNS_RCODE_NOTIMP, ERR_NO_CLASS, NULL);
 
-	/* Emulate BIND's 'version.bind.' ("dig txt chaos version.bind") */
-	if (!strcasecmp(t->qname, "version.bind."))
-		return status_version_bind(t);
+  /* Emulate BIND's 'version.bind.' ("dig txt chaos version.bind") */
+  if (!strcasecmp(t->qname, "version.bind."))
+    return status_version_bind(t);
 
-	/* Extended MyDNS 'version.mydns.' ("dig txt chaos version.mydns") */
-	else if (!strcasecmp(t->qname, "version.mydns."))
-		return status_version_mydns(t);
+  /* Extended MyDNS 'version.mydns.' ("dig txt chaos version.mydns") */
+  else if (!strcasecmp(t->qname, "version.mydns."))
+    return status_version_mydns(t);
 
-	return formerr(t, DNS_RCODE_NOTIMP, ERR_NO_CLASS, NULL);
+  return formerr(t, DNS_RCODE_NOTIMP, ERR_NO_CLASS, NULL);
 }
 /*--- remote_status() ---------------------------------------------------------------------------*/
 

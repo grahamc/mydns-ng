@@ -36,7 +36,7 @@ uint32_t	rr_err_memory[MAX_RR_ERR_MEMORY];
 **************************************************************************************************/
 char *
 err_reason_str(TASK *t, task_error_t reason) {
-  static char buf[128];
+  static char *buf = NULL;
 
   switch (reason) {
   case ERR_NONE:			return ("-");
@@ -66,8 +66,8 @@ err_reason_str(TASK *t, task_error_t reason) {
   case ERR_MULTI_AUTHORITY:		return ((char *)_("Multiple_authority_records_in_ixfr_query"));
   case ERR_QUESTION_TRUNCATED: 		return ((char *)_("Question_truncated"));
   case ERR_UNSUPPORTED_OPCODE:
-    snprintf(buf,
-	     sizeof(buf),
+    if (buf) RELEASE(buf);
+    ASPRINTF(&buf,
 	     "%s_%s",
 	     _("Unsupported_opcode"),
 	     mydns_opcode_str(t->hdr.opcode));
@@ -184,15 +184,16 @@ rr_error_repeat(uint32_t id) {
 int
 rr_error(uint32_t id, const char *fmt, ...) {
   if (show_data_errors && !rr_error_repeat(id)) {
-    char msg[BUFSIZ];
+    char *msg = NULL;
     va_list ap;
 
     /* Construct output string */
     va_start(ap, fmt);
-    vsnprintf(msg, sizeof(msg), fmt, ap);
+    VASPRINTF(&msg, fmt, ap);
     va_end(ap);
 
     Warnx("%s", msg);
+    RELEASE(msg);
   }
   return -1;
 }

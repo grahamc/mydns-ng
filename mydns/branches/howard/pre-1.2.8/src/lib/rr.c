@@ -34,7 +34,7 @@
 #define __MYDNS_RR_NAPTR_REGEX(__rrp)		((__rrp)->recData.naptr._regex)
 #define __MYDNS_RR_NAPTR_REPLACEMENT(__rrp)	((__rrp)->recData.naptr._replacement)
 
-char mydns_rr_table_name[PATH_MAX] = MYDNS_RR_TABLE;
+char *mydns_rr_table_name = NULL;
 char *mydns_rr_where_clause = NULL;
 
 size_t mydns_rr_data_length = DNS_DATALEN;
@@ -74,8 +74,7 @@ mydns_rr_get_active_types(SQL *sqlConn) {
   char		*NO = "N";
   char		*DELETED = "D";
 
-  querylen = sql_build_query(&query, "SELECT DISTINCT(active) FROM %s",
-			     mydns_rr_table_name);
+  querylen = sql_build_query(&query, "SELECT DISTINCT(active) FROM %s", mydns_rr_table_name);
 
   if (!(res = sql_query(sqlConn, query, querylen))) return;
 
@@ -124,7 +123,7 @@ mydns_rr_get_active_types(SQL *sqlConn) {
 **************************************************************************************************/
 long
 mydns_rr_count(SQL *sqlConn) {
-	return sql_count(sqlConn, "SELECT COUNT(*) FROM %s", mydns_rr_table_name);
+  return sql_count(sqlConn, "SELECT COUNT(*) FROM %s", mydns_rr_table_name);
 }
 /*--- mydns_rr_count() --------------------------------------------------------------------------*/
 
@@ -134,10 +133,11 @@ mydns_rr_count(SQL *sqlConn) {
 **************************************************************************************************/
 void
 mydns_set_rr_table_name(char *name) {
+  RELEASE(mydns_rr_table_name);
   if (!name)
-    strncpy(mydns_rr_table_name, MYDNS_RR_TABLE, sizeof(mydns_rr_table_name)-1);
+    mydns_rr_table_name = STRDUP(MYDNS_RR_TABLE);
   else
-    strncpy(mydns_rr_table_name, name, sizeof(mydns_rr_table_name)-1);
+    mydns_rr_table_name = STRDUP(name);
 }
 /*--- mydns_set_rr_table_name() -----------------------------------------------------------------*/
 
@@ -278,11 +278,13 @@ mydns_rr_parse_srv(const char *origin, MYDNS_RR *rr) {
     __MYDNS_RR_SRV_WEIGHT(rr) = atoi(weight);
     if ((port = strsep(&target, " \t")))
       __MYDNS_RR_SRV_PORT(rr) = atoi(port);
+
+    /* Strip the leading data off and just hold target */
     memmove(__MYDNS_RR_DATA_VALUE(rr), target, strlen(target)+1);
-    __MYDNS_RR_DATA_VALUE(rr) = REALLOCATE(__MYDNS_RR_DATA_VALUE(rr),
-					   strlen(__MYDNS_RR_DATA_VALUE(rr)) + 1,
-					   char[]);
     __MYDNS_RR_DATA_LENGTH(rr) = strlen(__MYDNS_RR_DATA_VALUE(rr));
+    __MYDNS_RR_DATA_VALUE(rr) = REALLOCATE(__MYDNS_RR_DATA_VALUE(rr),
+					   __MYDNS_RR_DATA_LENGTH(rr) + 1,
+					   char[]);
   }
 }
 /*--- mydns_rr_parse_srv() ----------------------------------------------------------------------*/
@@ -294,41 +296,31 @@ mydns_rr_parse_srv(const char *origin, MYDNS_RR *rr) {
 **************************************************************************************************/
 static inline int
 mydns_rr_parse_naptr(const char *origin, MYDNS_RR *rr) {
-  char int_tmp[12], *p;
+  char 		*int_tmp, *p;
 
   p = __MYDNS_RR_DATA_VALUE(rr);
 
-  if (!strsep_quotes(&p, int_tmp, sizeof(int_tmp)))
+  if (!strsep_quotes2(&p, &int_tmp))
     return (-1);
   __MYDNS_RR_NAPTR_ORDER(rr) = atoi(int_tmp);
+  RELEASE(int_tmp);
 
-  if (!strsep_quotes(&p, int_tmp, sizeof(int_tmp)))
+  if (!strsep_quotes2(&p, &int_tmp))
     return (-1);
   __MYDNS_RR_NAPTR_PREF(rr) = atoi(int_tmp);
+  RELEASE(int_tmp);
 
   if (!strsep_quotes(&p, __MYDNS_RR_NAPTR_FLAGS(rr), sizeof(__MYDNS_RR_NAPTR_FLAGS(rr))))
     return (-1);
 
-  __MYDNS_RR_NAPTR_SERVICE(rr) = ALLOCATE_N(strlen(p)+1, sizeof(char), char[]);
-  if (!strsep_quotes(&p, __MYDNS_RR_NAPTR_SERVICE(rr), sizeof(__MYDNS_RR_NAPTR_SERVICE(rr))))
+  if (!strsep_quotes2(&p, &__MYDNS_RR_NAPTR_SERVICE(rr)))
     return (-1);
-  __MYDNS_RR_NAPTR_SERVICE(rr) = REALLOCATE(__MYDNS_RR_NAPTR_SERVICE(rr),
-					    strlen(__MYDNS_RR_NAPTR_SERVICE(rr)) + 1,
-					    char[]);
 
-  __MYDNS_RR_NAPTR_REGEX(rr) = ALLOCATE_N(strlen(p)+1, sizeof(char), char[]);
-  if (!strsep_quotes(&p, __MYDNS_RR_NAPTR_REGEX(rr), sizeof(__MYDNS_RR_NAPTR_REGEX(rr))))
+  if (!strsep_quotes2(&p, &__MYDNS_RR_NAPTR_REGEX(rr)))
     return (-1);
-  __MYDNS_RR_NAPTR_REGEX(rr) = REALLOCATE(__MYDNS_RR_NAPTR_REGEX(rr),
-					  strlen(__MYDNS_RR_NAPTR_REGEX(rr)) + 1,
-					  char[]);
 
-  __MYDNS_RR_NAPTR_REPLACEMENT(rr) = ALLOCATE_N(strlen(p)+1, sizeof(char), char[]);
-  if (!strsep_quotes(&p, __MYDNS_RR_NAPTR_REPLACEMENT(rr), sizeof(__MYDNS_RR_NAPTR_REPLACEMENT(rr))))
+  if (!strsep_quotes2(&p, &__MYDNS_RR_NAPTR_REPLACEMENT(rr)))
     return (-1);
-  __MYDNS_RR_NAPTR_REPLACEMENT(rr) = REALLOCATE(__MYDNS_RR_NAPTR_REPLACEMENT(rr),
-						strlen(__MYDNS_RR_NAPTR_REPLACEMENT(rr)) + 1,
-						char[]);
 
   __MYDNS_RR_DATA_LENGTH(rr) = 0;
   RELEASE(__MYDNS_RR_DATA_VALUE(rr));

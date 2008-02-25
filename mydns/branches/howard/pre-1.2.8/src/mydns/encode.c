@@ -24,7 +24,7 @@
 #define	DEBUG_ENCODE	1
 
 /* Set this to nonzero to disable encoding */
-#define	NO_ENCODING		0
+#define	NO_ENCODING	0
 
 
 /**************************************************************************************************

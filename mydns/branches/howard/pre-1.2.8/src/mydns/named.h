@@ -148,7 +148,8 @@ extern void		check_config_file_perms(void);
 
 /* data.c */
 extern MYDNS_SOA	*find_soa(TASK *, char *, char *);
-extern MYDNS_RR	*find_rr(TASK *, MYDNS_SOA *, dns_qtype_t, char *);
+extern MYDNS_SOA	*find_soa2(TASK *, char *, char **);
+extern MYDNS_RR		*find_rr(TASK *, MYDNS_SOA *, dns_qtype_t, char *);
 
 
 /* encode.c */

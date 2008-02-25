@@ -255,9 +255,9 @@ dump_config(void) {
 **************************************************************************************************/
 void
 conf_set_logging(void) {
-  char logtype[80];
+  char *logtype;
 
-  strncpy(logtype, conf_get(&Conf, "log", NULL), sizeof(logtype)-1);
+  logtype = STRDUP(conf_get(&Conf, "log", NULL));
   strtolower(logtype);
 
   if (!err_file)
@@ -282,6 +282,7 @@ conf_set_logging(void) {
     err_file = fp;
     closelog();
   }
+  RELEASE(logtype);
 }
 /*--- conf_set_logging() ------------------------------------------------------------------------*/
 

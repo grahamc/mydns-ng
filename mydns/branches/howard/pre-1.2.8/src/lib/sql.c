@@ -57,7 +57,7 @@ sql_open(char *user, char *password, char *host, char *database) {
 #if USE_PGSQL
   sql = PQsetdbLogin(host, portp, NULL, NULL, database, user, password);
   if (PQstatus(sql) == CONNECTION_BAD) {
-    char *errmsg = PQerrorMessage(sql), *c, out[512];
+    char *errmsg = PQerrorMessage(sql), *c, *out = NULL;
 
     /* Save the first error message so that the user gets the error message they "expect" */
     for (c = errmsg; *c; c++)
@@ -65,7 +65,7 @@ sql_open(char *user, char *password, char *host, char *database) {
 	*c = ' ';
     strtrim(errmsg);
 
-    snprintf(out, sizeof(out), "%s %s: %s (errno=%d)",
+    ASPRINTF(&out, "%s %s: %s (errno=%d)",
 	     _("Error connecting to PostgreSQL server at"), host, errmsg, errno);
 
     if (sql)
@@ -74,6 +74,7 @@ sql_open(char *user, char *password, char *host, char *database) {
     sql = PQsetdbLogin(NULL, NULL, NULL, NULL, database, user, password);
     if (PQstatus(sql) == CONNECTION_BAD)
       Errx("%s", out);
+    RELEASE(out);
   }
 #else
   sql = NULL;
@@ -342,15 +343,19 @@ sql_query(SQL *sqlConn, const char *query, size_t querylen) {
 **************************************************************************************************/
 SQL_RES *
 sql_queryf(SQL *sqlConn, const char *fmt, ...) {
-  va_list ap;
-  char buf[DNS_QUERYBUFSIZ];
-  size_t buflen;
+  va_list	ap;
+  char		*buf = NULL;
+  size_t	buflen;
+  SQL_RES	*res;
 
   va_start(ap, fmt);
-  buflen = vsnprintf(buf, sizeof(buf), fmt, ap);
+  buflen = VASPRINTF(&buf, fmt, ap);
   va_end(ap);
 
-  return sql_query(sqlConn, buf, buflen);
+  res = sql_query(sqlConn, buf, buflen);
+  RELEASE(buf);
+
+  return (res);
 }
 /*--- sql_queryf() ------------------------------------------------------------------------------*/
 
@@ -362,17 +367,20 @@ sql_queryf(SQL *sqlConn, const char *fmt, ...) {
 **************************************************************************************************/
 long
 sql_count(SQL *sqlConn, const char *fmt, ...) {
-  va_list ap;
-  char buf[DNS_QUERYBUFSIZ];
-  size_t buflen;
-  SQL_RES *res = NULL;
-  long rv = 0;
+  va_list	ap;
+  char		*buf = NULL;
+  size_t	buflen;
+  SQL_RES	*res = NULL;
+  long		rv = 0;
 
   va_start(ap, fmt);
-  buflen = vsnprintf(buf, sizeof(buf), fmt, ap);
+  buflen = VASPRINTF(&buf, fmt, ap);
   va_end(ap);
 
-  if (!(res = sql_query(sqlConn, buf, buflen)))
+  res = sql_query(sqlConn, buf, buflen);
+  RELEASE(buf);
+
+  if (!res)
     return (-1);
   if (sql_num_rows(res)) {
 #if USE_PGSQL

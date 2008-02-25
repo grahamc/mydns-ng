@@ -35,7 +35,7 @@ char *resolve_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITION
 **************************************************************************************************/
 static taskexec_t
 resolve_soa(TASK *t, datasection_t section, char *fqdn, int level) {
-  MYDNS_SOA *soa = find_soa(t, fqdn, NULL);
+  MYDNS_SOA *soa = find_soa2(t, fqdn, NULL);
 
 #if DEBUG_ENABLED && DEBUG_RESOLVE
   Debug("%s: resolve_soa(%s) -> `%p'", desctask(t), fqdn, soa);
@@ -190,17 +190,18 @@ process_rr(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn,
   if (rv)
     for (r = rr; r; r = r->next)
       if (r->type == DNS_QTYPE_NS && add_ns) {
-	char ns[DNS_MAXNAMELEN+1];
+	char *ns = NULL;
 
 	/* If the rr is for something like "*.bboy.net.", show the labelized name */
 	if (MYDNS_RR_NAME(r)[0] == '*' && MYDNS_RR_NAME(r)[1] == '.' && MYDNS_RR_NAME(r)[2])
-	  snprintf(ns, sizeof(ns), "%s.%s", MYDNS_RR_NAME(r)+2, soa->origin);
+	  ASPRINTF(&ns, "%s.%s", MYDNS_RR_NAME(r)+2, soa->origin);
 	else if (MYDNS_RR_NAME(r)[0] && MYDNS_RR_NAME(r)[0] != '*')
-	  snprintf(ns, sizeof(ns), "%s.%s", MYDNS_RR_NAME(r), soa->origin);
+	  ASPRINTF(&ns, "%s.%s", MYDNS_RR_NAME(r), soa->origin);
 	else
-	  strncpy(ns, soa->origin, sizeof(ns)-1);
+	  ns = STRDUP(soa->origin);
 
 	rrlist_add(t, AUTHORITY, DNS_RRTYPE_RR, (void *)r, ns);
+	RELEASE(ns);
 
 	/* If the NS data is a FQDN, look in THIS zone for an A record.  That way glue
 	   records can be stored out of baliwick a la BIND */
@@ -252,10 +253,11 @@ add_authority_ns(TASK *t, datasection_t section, MYDNS_SOA *soa, char *match_lab
 	if (*label != '*') {
 	  if ((rr = find_rr(t, soa, DNS_QTYPE_NS, label))) {
 	    for (r = rr; r; r = r->next) {
-	      char name[DNS_MAXNAMELEN+1];
+	      char *name = NULL;
 
-	      snprintf(name, sizeof(name), "%s.%s", label, soa->origin);
+	      ASPRINTF(&name, "%s.%s", label, soa->origin);
 	      rrlist_add(t, AUTHORITY, DNS_RRTYPE_RR, (void *)r, name);
+	      RELEASE(name);
 	    }
 	    t->sort_level++;
 	    mydns_rr_free(rr);
@@ -302,20 +304,22 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
   /* No exact match.  If `label' isn't empty, replace the first part of the label with `*' and
      check for wildcard matches. */
   if (*label) { /* ASSERT(rv == 0); */
-    char wclabel[DNS_MAXNAMELEN+1], *c;
+    char *wclabel = NULL, *c;
 
     /* Generate wildcarded label, i.e. `*.example' or maybe just `*'. */
     if (!(c = strchr(label, '.')))
-      wclabel[0] = '*', wclabel[1] = '\0';
+      wclabel = STRDUP("*");
     else
-      wclabel[0] = '*', strncpy(wclabel+1, c, sizeof(wclabel)-2);
+      ASPRINTF(&wclabel, "*.%s", c);
 
     if ((rr = find_rr(t, soa, DNS_QTYPE_ANY, wclabel)))	{
       rv = process_rr(t, section, qtype, fqdn, soa, wclabel, rr, level);
       mydns_rr_free(rr);
       add_authority_ns(t, section, soa, wclabel);
+      RELEASE(wclabel);
       return (rv);
     }
+    RELEASE(wclabel);
   }
 
   /* STILL no match - check for NS records for child delegation */
@@ -339,7 +343,7 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
 **************************************************************************************************/
 taskexec_t
 resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level) {
-  char			name[DNS_MAXNAMELEN+1];
+  char			*name = NULL;
   register MYDNS_SOA	*soa;
   taskexec_t		rv = TASK_COMPLETED;
   register char		*label;
@@ -361,13 +365,15 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
   if (t->qtype == DNS_QTYPE_SOA && section == ANSWER)
     return resolve_soa(t, section, fqdn, level);
 
-  /* Load SOA record for this name - if section is ANSWER and no SOA is found, we're not
-     authoritative */
-  memset(name, 0, sizeof(name));
-  /* Go recursive if the SOA is so labelled */
-  soa = find_soa(t, fqdn, name);
+  /*
+  ** Load SOA record for this name - if section is ANSWER and no SOA is found, we're not
+  ** authoritative
+  ** Go recursive if the SOA is so labelled
+  */
+  soa = find_soa2(t, fqdn, &name);
 
   if (!soa || soa->recursive) {
+    RELEASE(name);
     if ((section == ANSWER) && !level) {
 #if DEBUG_ENABLED && DEBUG_RESOLVE
       Debug("%s: Checking for recursion soa = %p, soa->recursive = %d, "
@@ -409,6 +415,7 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
     if (!*label)
       break;
   }
+  RELEASE(name);
 
   /* If we got this far and there are NO records, set result and send the SOA */
   if (!level && !t->an.size && !t->ns.size && !t->ar.size) {

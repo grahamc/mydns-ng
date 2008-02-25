@@ -24,7 +24,7 @@
 #include <netdb.h>
 
 static char *thishostname, *zone;			/* Hostname of remote host and zone */
-static char origin[DNS_MAXNAMELEN+1];			/* The origin name reported by the peer */
+static char *origin = NULL;				/* The origin name reported by the peer */
 static uint32_t got_soa = 0;				/* Have we read the initial SOA record? */
 
 extern int opt_notrim;					/* Don't remove trailing origin */
@@ -198,7 +198,8 @@ process_axfr_soa(char *name, char *reply, size_t replylen, char *src, uint32_t t
   DNS_GET32(minimum, src);
   if (ttl < minimum)
     ttl = minimum;
-  strncpy(origin, name, sizeof(origin)-1);
+  if (origin) RELEASE(origin);
+  origin = STRDUP(name);
   got_soa = import_soa(origin, ns, mbox, serial, refresh, retry, expire, minimum, ttl);
   RELEASE(ns);
   RELEASE(mbox);

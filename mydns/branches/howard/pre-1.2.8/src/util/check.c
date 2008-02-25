@@ -439,35 +439,38 @@ check_rr_hinfo(void) {
 static void
 check_rr_naptr(void) {
   char *tmp, *data_copy, *p;
-  int tmplen = MYDNS_RR_DATA_LENGTH(rr);
 
-  data_copy = STRDUP(MYDNS_RR_DATA(rr));
-  tmp = ALLOCATE(tmplen, char[]);
+  data_copy = STRNDUP(MYDNS_RR_DATA(rr), MYDNS_RR_DATA_LENGTH(rr));
   p = data_copy;
 
-  if (!strsep_quotes(&p, tmp, tmplen))
+  if (!strsep_quotes2(&p, &tmp))
     return rrproblem(_("'order' field missing from NAPTR record"));
+  RELEASE(tmp);
 
-  if (!strsep_quotes(&p, tmp, tmplen))
+  if (!strsep_quotes2(&p, &tmp))
     return rrproblem(_("'preference' field missing from NAPTR record"));
+  RELEASE(tmp);
 
-  if (!strsep_quotes(&p, tmp, tmplen))
+  if (!strsep_quotes2(&p, &tmp))
     return rrproblem(_("'flags' field missing from NAPTR record"));
+  RELEASE(tmp);
 
-  if (!strsep_quotes(&p, tmp, tmplen))
+  if (!strsep_quotes2(&p, &tmp))
     return rrproblem(_("'service' field missing from NAPTR record"));
+  RELEASE(tmp);
 
-  if (!strsep_quotes(&p, tmp, tmplen))
+  if (!strsep_quotes2(&p, &tmp))
     return rrproblem(_("'regexp' field missing from NAPTR record"));
+  RELEASE(tmp);
 
-  if (!strsep_quotes(&p, tmp, tmplen))
+  if (!strsep_quotes2(&p, &tmp))
     return rrproblem(_("'replacement' field missing from NAPTR record"));
+  RELEASE(tmp);
 
   /* For now, don't check 'replacement'.. the example in the RFC even contains illegal chars */
   /* EXPAND_DATA(tmp); */
   /* check_name(tmp, "replacement", 1); */
   RELEASE(data_copy);
-  RELEASE(tmp);
 }
 /*--- check_rr_naptr() --------------------------------------------------------------------------*/
 
@@ -658,13 +661,14 @@ consistency_rr_zone(void) {
   if (!res)
     return;
   while ((row = sql_getrow(res, NULL))) {
-    char msg[80];
+    char *msg = NULL;
 
     meter(0,0);
-    snprintf(msg, sizeof(msg),
+    ASPRINTF(&msg,
 	     _("%s id %s references invalid %s id %s"),
 	     mydns_rr_table_name, row[0], mydns_soa_table_name, row[1]);
     printf("%s\t-\t%s\t-\t-\t-\t-\t-\n", msg, row[0]);
+    RELEASE(msg);
     fflush(stdout);
 
     consistency_errors++;

@@ -70,8 +70,8 @@ extern struct sockaddr_in6	recursive_sa6;	/* Recursive server (IPv6) */
 extern struct sockaddr_in	recursive_sa;	/* Recursive server (IPv4) */
 
 /* Configurable table names */
-extern char mydns_soa_table_name[PATH_MAX];
-extern char mydns_rr_table_name[PATH_MAX];
+extern char *mydns_soa_table_name;
+extern char *mydns_rr_table_name;
 
 /* Configurable WHERE clauses */
 extern char *mydns_soa_where_clause;
@@ -405,16 +405,21 @@ typedef struct _mydns_rr {				/* `rr' table data (resource records) */
     /* For RP records, this points to the "txt" part of the data, which is preceded by a NUL */
     char		*_rp_txt;	/* Max contents is DNS_MAXNAMELEN */
 
-    /* Data for NAPTR records: */
-    /* This is potentially a lot of data.  I'm a little unclear from the RFC on what the
-       maximum length of some of these fields are, so I'm just making them big for now.
-       Hopefully these extra fields won't take up too much extra memory in the cache, slowing
-       down the mere mortals who don't use NAPTR -- these fields add over 700 bytes to this
-       structure */
+    /*
+    ** Data for NAPTR records:
+    **
+    ** This is potentially a lot of data.  I'm a little unclear from the RFC on what the
+    ** maximum length of some of these fields are, so I'm just making them big for now.
+    ** Hopefully these extra fields won't take up too much extra memory in the cache, slowing
+    ** down the mere mortals who don't use NAPTR
+    **
+    ** The replacement field could be aliased to the data structure above e.g. _data
+    ** but as this is a true NUL terminated string we zero out _data instead
+    */
     struct {
       uint16_t		order;
       uint16_t		pref;
-      char		flags[8];
+      char		flags[8];	/* Stored in binary in the database ? */
       char		*_service;	/* Max contents is DNS_MAXNAMELEN */
       char		*_regex;	/* Max contents is DNS_MAXNAMELEN */
       char		*_replacement;	/* Max contents is DNS_MAXNAMELEN */

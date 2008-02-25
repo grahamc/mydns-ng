@@ -265,7 +265,7 @@ db_get_column_width(char *database, char *table, char *name) {
 **************************************************************************************************/
 static void
 db_verify_table(char *database, char *table, char *columns) {
-  char fields[80], *f = fields, *name;
+  char *fields = NULL, *f, *name;
 
   /* Check that the table itself exists */
   if (!sql_istable(sql, table)) {
@@ -276,9 +276,11 @@ db_verify_table(char *database, char *table, char *columns) {
   }
 
   /* Check each field in field list */
-  strncpy(fields, columns, sizeof(fields)-1);
+  fields = STRDUP(columns);
+  f = fields;
   while ((name = strsep(&f, ",")))
     db_check_column(database, table, name);
+  RELEASE(fields);
 }
 /*--- db_verify_table() -------------------------------------------------------------------------*/
 

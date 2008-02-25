@@ -47,8 +47,9 @@ task_exec_name(taskexec_t rv) {
 
   default:
     {
-      static char msg[32];
-      snprintf(msg, sizeof(msg), "Task Exec Code %d", rv);
+      static char *msg = NULL;
+      if (msg) RELEASE(msg);
+      ASPRINTF(&msg, "Task Exec Code %d", rv);
       return msg;
     }
   }
@@ -65,8 +66,8 @@ task_type_name(int type) {
 
   default:
     {
-      static char msg[32];
-      snprintf(msg, sizeof(msg), "Task Type %d", type);
+      static char *msg = NULL;
+      ASPRINTF(&msg, "Task Type %d", type);
       return msg;
     }
   }
@@ -83,8 +84,8 @@ task_priority_name(int priority) {
 
   default:
     {
-      static char msg[32];
-      snprintf(msg, sizeof(msg), "Task Priority %d", priority);
+      static char *msg = NULL;
+      ASPRINTF(&msg, "Task Priority %d", priority);
       return msg;
     }
   }
@@ -120,8 +121,8 @@ task_status_name(TASK *t) {
 
   default:
     {
-      static char msg[32];
-      snprintf(msg, sizeof(msg), "Task Status %X", t->status);
+      static char *msg = NULL;
+      ASPRINTF(&msg, "Task Status %X", t->status);
       return msg;
     }
   }
@@ -337,17 +338,26 @@ task_new(TASK *t, unsigned char *data, size_t len) {
 char *
 clientaddr(TASK *t) {
   /* Needs to use dynamic memory and reallocate when required - in task structure? */
-  static char buf[256];
+  static char	*buf = NULL;
+  static size_t	buflen = 0;
 
-  buf[0] = '\0';
+  if (!buf) {
+    buflen = INET_ADDRSTRLEN;
+#if HAVE_IPV6
+    buflen = MAX(buflen, INET6_ADDRSTRLEN);
+#endif
+
+    buf = ALLOCATE(buflen, char[]);
+    buf[0] = '\0';
+  }
 
 #if HAVE_IPV6
   if (t->family == AF_INET6)
-    inet_ntop(AF_INET6, &t->addr6.sin6_addr, buf, sizeof(buf) - 1);
+    inet_ntop(AF_INET6, &t->addr6.sin6_addr, buf, buflen);
   else
 #endif
     if (t->family == AF_INET)
-      inet_ntop(AF_INET, &t->addr4.sin_addr, buf, sizeof(buf) - 1);
+      inet_ntop(AF_INET, &t->addr4.sin_addr, buf, buflen);
     else
       return("Address Unknown");
   return (buf);
@@ -361,14 +371,17 @@ clientaddr(TASK *t) {
 **************************************************************************************************/
 char *
 desctask(TASK *t) {
-	static char desc[1024];
+  static char *desc = NULL;
 
-	snprintf(desc, sizeof(desc), "%s: %s %s (%u) %s, %s %s",
-		 clientaddr(t), mydns_qtype_str(t->qtype),
-		 t->qname ? (char *)t->qname : "<NONE>",
-		 t->internal_id, task_status_name(t), task_priority_name(t->priority),
-		 task_type_name(t->type));
-	return (desc);
+  if (desc) RELEASE(desc);
+
+  ASPRINTF(&desc, "%s: %s %s (%u) %s, %s %s",
+	   clientaddr(t), mydns_qtype_str(t->qtype),
+	   t->qname ? (char *)t->qname : "<NONE>",
+	   t->internal_id, task_status_name(t), task_priority_name(t->priority),
+	   task_type_name(t->type));
+
+  return (desc);
 }
 /*--- desctask() --------------------------------------------------------------------------------*/
 
@@ -547,7 +560,7 @@ task_output_info(TASK *t, char *update_desc) {
 	struct timeval tv;
 	time_t tt;
 	struct tm *tm;
-	char datebuf[80];
+	char datebuf[80]; /* This is magic and needs rethinking - string should be ~ 23 characters */
 #endif
 
 	/* If we've already outputted the info for this (i.e. multiple DNS UPDATE requests), ignore */

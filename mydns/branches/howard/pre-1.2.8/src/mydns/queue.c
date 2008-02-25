@@ -26,14 +26,16 @@
 static void
 _queue_stats(QUEUE *q) {
 #if DEBUG_ENABLED && DEBUG_QUEUE
-  char msg[512];
+  char		*msg;
+  int		msgsize = 512;
+  int		msglen = 0;
   TASK *t;
 
 #if !DISABLE_DATE_LOGGING
   struct timeval tv;
   time_t tt;
   struct tm *tm;
-  char datebuf[80];
+  char datebuf[80]; /* This is magic and needs rethinking - string should be ~ 23 characters */
 
   gettimeofday(&tv, NULL);
   tt = tv.tv_sec;
@@ -52,12 +54,16 @@ _queue_stats(QUEUE *q) {
 #endif
 	  q->queuename, q->size, q->max_size);
 	  
+  msg = ALLOCATE(msgsize, char[]);
+
   msg[0] = '\0';
   for (t = q->head; t; t = t->next) {
-    int msglen = strlen(msg);
-    snprintf(&msg[msglen], sizeof(msg) - msglen, " %u", t->internal_id);
+    int idsize;
+    idsize = snprintf(&msg[msglen], msgsize - msglen, " %u", t->internal_id);
+    msglen += idsize;
+    if ((msglen + 2*idsize) >= msgsize) msg = REALLOCATE(msg, msgsize *= 2, char[]);
   }
-  if (strlen(msg))
+  if (msglen)
     Debug("Queued tasks %s", msg);
 #endif
 }

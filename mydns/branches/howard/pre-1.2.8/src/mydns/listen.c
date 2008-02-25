@@ -303,10 +303,10 @@ addrlist_load(int port) {
   }
 
   for (n = 0; n < ifc.ifc_len;) {					/* Scan interfaces */
-    char addressBuffer[64]; /*Magic number greater than the longest address!*/
-    struct in_addr addr4;
+    char		*addressBuffer = NULL;
+    struct in_addr	addr4;
 #if HAVE_IPV6
-    struct in6_addr addr6;
+    struct in6_addr	addr6;
 #endif
 
     ifr = (struct ifreq *)((char *)ifc.ifc_req + n);
@@ -327,20 +327,21 @@ addrlist_load(int port) {
     case AF_INET:
       memcpy(&addr4, &((struct sockaddr_in *)&ifr->ifr_addr)->sin_addr, sizeof(struct in_addr));
       addrlist_add(AF_INET, &addr4, port);
-      addAllInterfaceAddress(inet_ntop(AF_INET, &addr4,
-				       addressBuffer, INET_ADDRSTRLEN));
+      addressBuffer = ALLOCATE(INET_ADDRSTRLEN, struct sockaddr_in);
+      addAllInterfaceAddress(inet_ntop(AF_INET, &addr4, addressBuffer, INET_ADDRSTRLEN));
       break;
 #if HAVE_IPV6
     case AF_INET6:
       memcpy(&addr6, &((struct sockaddr_in6 *)&ifr->ifr_addr)->sin6_addr, sizeof(struct in6_addr));
       addrlist_add(AF_INET6, &addr6, port);
-      addAllInterfaceAddress(inet_ntop(AF_INET6, &addr6,
-				       addressBuffer, INET6_ADDRSTRLEN));
+      addressBuffer = ALLOCATE(INET6_ADDRSTRLEN, struct sockaddr_in6);
+      addAllInterfaceAddress(inet_ntop(AF_INET6, &addr6, addressBuffer, INET6_ADDRSTRLEN));
       break;
 #endif
     default:
       continue;
     }
+    RELEASE(addressBuffer);
   }
   RELEASE(buf);
   close(sockfd);

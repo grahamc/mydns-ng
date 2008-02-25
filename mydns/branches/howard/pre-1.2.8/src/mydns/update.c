@@ -1890,7 +1890,7 @@ static uint32_t
 increment_soa_serial(TASK *t, MYDNS_SOA *soa) {
   unsigned int current_serial = soa->serial;
   unsigned int new_serial = 0;
-  char datebuffer[12];
+  char *datebuffer = NULL;
 
   struct timeval timenow;
   struct tm *current_time;
@@ -1907,12 +1907,13 @@ increment_soa_serial(TASK *t, MYDNS_SOA *soa) {
 
   curyear = current_time->tm_year + 1900;
 
-  sprintf(datebuffer, "%04d%02d%02d%02d",
-	  curyear,
-	  current_time->tm_mon + 1,
-	  current_time->tm_mday,
-	  0);
+  ASPRINTF(&datebuffer, "%04d%02d%02d%02d",
+	   curyear,
+	   current_time->tm_mon + 1,
+	   current_time->tm_mday,
+	   0);
   sscanf(datebuffer, "%d", &new_serial);
+  RELEASE(datebuffer);
 
   if (!current_serial) {
     current_serial = new_serial;
@@ -1921,9 +1922,10 @@ increment_soa_serial(TASK *t, MYDNS_SOA *soa) {
     current_serial = now;
   } else {
     unsigned int year;
-    sprintf(datebuffer, "%d", current_serial);
+    int datelength = ASPRINTF(&datebuffer, "%.12d", current_serial);
     datebuffer[4] = '\0';
     sscanf(datebuffer, "%d", &year);
+    RELEASE(datebuffer);
     if (year >= (curyear - 10) && year <= (curyear +1)) {
       int n;
       for (n = 0; n < 3650; n++) {
@@ -1994,7 +1996,7 @@ update_soa_serial(TASK *t, MYDNS_SOA *soa) {
 
 static int
 are_we_master(TASK *t, MYDNS_SOA *soa) {
-  char buf[512];
+  char *buf = NULL;
 
   ARRAY *ips4 = NULL;
 #if HAVE_IPV6
@@ -2024,6 +2026,7 @@ are_we_master(TASK *t, MYDNS_SOA *soa) {
   /* name_server2ip frees this up - array_free(nss, 1); */
 
   if(array_numobjects(ips4)) {
+    buf = ALLOCATE(INET_ADDRSTRLEN, char[]);
     for (i = 0; i < array_numobjects(ips4); i++) {
       NOTIFYSLAVE *slave = array_fetch(ips4, i);
       struct sockaddr_in *ip4 = (struct sockaddr_in*)&(slave->slaveaddr.ips4);
@@ -2032,10 +2035,12 @@ are_we_master(TASK *t, MYDNS_SOA *soa) {
 	if(!strcmp(allLocalAddresses[j], ip4addr)) goto FINISHEDSEARCH;
       }
     }
+    RELEASE(buf);
   }
 
 #if HAVE_IPV6
   if (array_numobjects(ips6)) {
+    buf = ALLOCATE(INET6_ADDRSTRLEN, char[]);
     for (i = 0; i < array_numobjects(ips6); i++) {
       NOTIFYSLAVE *slave = array_fetch(ips6, i);
       struct sockaddr_in6 *ip6 = (struct sockaddr_in6*)&(slave->slaveaddr.ips6);
@@ -2044,12 +2049,15 @@ are_we_master(TASK *t, MYDNS_SOA *soa) {
 	if(!strcmp(allLocalAddresses[j], ip6addr)) goto FINISHEDSEARCH;
       }
     }
+    RELEASE(buf);
   }
 #endif
 
   res = 0;
 
  FINISHEDSEARCH:
+
+  RELEASE(buf);
 
   array_free(ips4, 1);
 #if HAVE_IPV4

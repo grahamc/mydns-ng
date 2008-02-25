@@ -156,21 +156,23 @@ notify_write(TASK *t) {
 
     if ((rv = sendto(t->fd, out, reqlen, 0, slaveaddr, slavelen)) < 0) {
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-      char msg[512];
-      int port = 0;
+      char	*msg = NULL;
+      int	port = 0;
       if (slaveaddr->sa_family == AF_INET) {
-	inet_ntop(AF_INET, (void*)&(((struct sockaddr_in*)slaveaddr)->sin_addr), msg, sizeof(msg));
+	msg = ALLOCATE(INET_ADDRSTRLEN, struct sockaddr_in);
+	inet_ntop(AF_INET, (void*)&(((struct sockaddr_in*)slaveaddr)->sin_addr), msg, INET_ADDRSTRLEN);
 	port = ntohs(((struct sockaddr_in*)slaveaddr)->sin_port);
 #if HAVE_IPV6
       } else if (slaveaddr->sa_family == AF_INET6) {
-	inet_ntop(AF_INET6, (void*)&(((struct sockaddr_in6*)slaveaddr)->sin6_addr), msg,
-		  sizeof(msg));
+	msg = ALLOCATE(INET6_ADDRSTRLEN, struct sockaddr_in6);
+	inet_ntop(AF_INET6, (void*)&(((struct sockaddr_in6*)slaveaddr)->sin6_addr), msg, INET6_ADDRSTRLEN);
 	port = ntohs(((struct sockaddr_in6*)slaveaddr)->sin6_port);
 #endif
       }
-    Debug("%s: send to slave %s(%d) failed - %s(%d)", desctask(t),
-	  msg, port, strerror(errno), errno);
+      Debug("%s: send to slave %s(%d) failed - %s(%d)", desctask(t),
+	    msg, port, strerror(errno), errno);
 #endif
+      RELEASE(msg);
       if (
 	  (errno == EINTR)
 #ifdef EAGAIN
@@ -211,7 +213,7 @@ notify_write(TASK *t) {
 /* Record the reply from the slave */
 static int
 _notify_read(TASK *t, struct sockaddr *from, socklen_t fromlen) {
-  char		msg[512];
+  char		*msg = NULL;
 
   NOTIFYDATA	*notify = (NOTIFYDATA*)t->extension;
   int		i;
@@ -220,12 +222,12 @@ _notify_read(TASK *t, struct sockaddr *from, socklen_t fromlen) {
   if (from->sa_family != t->family) return 1; /* Ignore this ... */
 
   if (from->sa_family == AF_INET) {
-    inet_ntop(AF_INET, (void*)(&((struct sockaddr_in*)from)->sin_addr),
-	      msg, sizeof(struct sockaddr_in));
+    msg = ALLOCATE(INET_ADDRSTRLEN, struct sockaddr_in);
+    inet_ntop(AF_INET, (void*)(&((struct sockaddr_in*)from)->sin_addr), msg, INET_ADDRSTRLEN);
 #if HAVE_IPV6
   } else if (from->sa_family == AF_INET6) {
-    inet_ntop(AF_INET6, (void*)(&((struct sockaddr_in6*)from)->sin6_addr),
-	      msg, sizeof(struct sockaddr_in6));
+    msg = ALLOCATE(INET6_ADDRSTRLEN, struct sockaddr_in6);
+    inet_ntop(AF_INET6, (void*)(&((struct sockaddr_in6*)from)->sin6_addr), msg, INET6_ADDRSTRLEN);
 #endif
   }
 
@@ -270,6 +272,8 @@ _notify_read(TASK *t, struct sockaddr *from, socklen_t fromlen) {
     slavecount--;
 
   }
+
+  RELEASE(msg);
   
   return slavecount;
 }
@@ -277,6 +281,14 @@ _notify_read(TASK *t, struct sockaddr *from, socklen_t fromlen) {
 taskexec_t
 notify_read(TASK *t) {
   int			rv;
+  char			*msg = NULL;
+  size_t		msglen;
+
+  msglen = INET_ADDRSTRLEN;
+#if HAVE_IPV6
+  msglen = MAX(msglen, INET6_ADDRSTRLEN);
+#endif
+  msg = ALLOCATE(msglen, void[]);
 
   do {
     char		in[DNS_MAXPACKETLEN_UDP];
@@ -289,28 +301,26 @@ notify_read(TASK *t) {
     uint16_t		qdcount, ancount, nscount, arcount;
 #endif
     char		*src;
-    char		msg[512];
+    int			port = 0;
 
     src = in;
 
     fromlen = sizeof(from);
-    if ((rv = recvfrom(t->fd, (void*)in, sizeof(in), 0, &from, &fromlen)) < 0) {
-#if DEBUG_ENABLED && DEBUG_NOTIFY
-      char msg[512];
-      int port = 0;
-      if (from.sa_family == AF_INET) {
-	inet_ntop(AF_INET, (void*)&(((struct sockaddr_in*)&from)->sin_addr), msg, sizeof(msg));
-	port = ntohs(((struct sockaddr_in*)&from)->sin_port);
+    rv = recvfrom(t->fd, (void*)in, sizeof(in), 0, &from, &fromlen);
+    if (from.sa_family == AF_INET) {
+      inet_ntop(AF_INET, (void*)&(((struct sockaddr_in*)&from)->sin_addr), msg, msglen);
+      port = ntohs(((struct sockaddr_in*)&from)->sin_port);
 #if HAVE_IPV6
-      } else if (from.sa_family == AF_INET6) {
-	inet_ntop(AF_INET6, (void*)&(((struct sockaddr_in6*)&from)->sin6_addr), msg,
-		  sizeof(msg));
-	port = ntohs(((struct sockaddr_in6*)&from)->sin6_port);
+    } else if (from.sa_family == AF_INET6) {
+      inet_ntop(AF_INET6, (void*)&(((struct sockaddr_in6*)&from)->sin6_addr), msg, msglen);
+      port = ntohs(((struct sockaddr_in6*)&from)->sin6_port);
 #endif
-      }
+    }
+#if DEBUG_ENABLED && DEBUG_NOTIFY
     Debug("%s: recv from slave %s(%d) failed - %s(%d)", desctask(t),
 	  msg, port, strerror(errno), errno);
 #endif
+    if (rv < 0) {
       if (
 	  (errno = EINTR)
 #ifdef EAGAIN
@@ -325,16 +335,6 @@ notify_read(TASK *t) {
       }
       Warn("%s", _("recvfrom (UDP)"));
       goto CLEANUP;
-    }
-
-    if (from.sa_family == AF_INET) {
-      inet_ntop(AF_INET, (void*)(&((struct sockaddr_in*)&from)->sin_addr),
-		msg, sizeof(struct sockaddr_in));
-#if HAVE_IPV6
-    } else if (from.sa_family == AF_INET6) {
-      inet_ntop(AF_INET6, (void*)(&((struct sockaddr_in6*)&from)->sin6_addr),
-		msg, sizeof(struct sockaddr_in6));
-#endif
     }
 
     if (rv < sizeof(DNS_HEADERSIZE)) {
@@ -385,6 +385,7 @@ notify_read(TASK *t) {
 	      goto DECODEDQUERY;
 	    }
 	  }
+	  RELEASE(msg2);
 	}
 	Debug("%s: DNS NOTIFY %s sent malformed query - ignored", desctask(t), msg);
       DECODEDQUERY: ;
@@ -437,6 +438,7 @@ notify_read(TASK *t) {
   } while(1);
 
  CLEANUP:
+  RELEASE(msg);
   if (t->family == AF_INET)
     rv = notify_tasks_running;
 #if HAVE_IPV6
@@ -578,15 +580,14 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
   if(!name_servers) return 0;
 
   for (i = 0; i < array_numobjects(name_servers); i++) {
-    char *name_server = array_fetch(name_servers, i);
-    char label[512];
-    int resolved = 0;
+    char	*name_server = array_fetch(name_servers, i);
+    char	*label = NULL;
+    int		resolved = 0;
 
     MYDNS_SOA *nsoa;
     MYDNS_RR *rr;
 
-    label[0] = '\0';
-    nsoa = find_soa(t, name_server, label);
+    nsoa = find_soa2(t, name_server, &label);
 
     if (nsoa) {
       MYDNS_RR *r;
@@ -654,6 +655,9 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
       mydns_soa_free(nsoa);
 
     }
+
+    RELEASE(label);
+
 #if DEBUG_ENABLED && DEBUG_NOTIFY
     Debug("%s: name_servers2ip() - done local try DNS - %d", desctask(t), resolved);
 #endif
@@ -665,7 +669,7 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 	int j, k;
 
 	for (j = 0; hostdata->h_addr_list[j]; j++) {
-	  char ipaddress[512];
+	  char *ipaddress = NULL;
 	  NOTIFYSLAVE *slave = (NOTIFYSLAVE*)ALLOCATE(sizeof(NOTIFYSLAVE), NOTIFYSLAVE);
 	  slave->lastsent = 0;
 	  slave->replied = 0;
@@ -675,14 +679,16 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 	    ipaddr4->sin_family = AF_INET;
 	    ipaddr4->sin_port = htons(DOMAINPORT);
 	    memcpy((void*)&ipaddr4->sin_addr, (void*)hostdata->h_addr_list[j], hostdata->h_length);
-	    inet_ntop(AF_INET, (void*)&ipaddr4->sin_addr, ipaddress, sizeof(ipaddress));
+	    ipaddress = ALLOCATE(INET_ADDRSTRLEN, struct sockaddr_in);
+	    inet_ntop(AF_INET, (void*)&ipaddr4->sin_addr, ipaddress, INET_ADDRSTRLEN);
 #if HAVE_IPV6
 	  } else if (hostdata->h_addrtype == AF_INET6) {
 	    struct sockaddr_in6 *ipaddr6 = (struct sockaddr_in6*)&(slave->slaveaddr.ips6);
 	    ipaddr6->sin6_family = AF_INET6;
 	    ipaddr6->sin6_port = htons(DOMAINPORT);
 	    memcpy((void*)&ipaddr6->sin6_addr, (void*)hostdata->h_addr_list[j], hostdata->h_length);
-	    inet_ntop(AF_INET6, (void*)&ipaddr6->sin6_addr, ipaddress, sizeof(ipaddress));
+	    ipaddress = ALLOCATE(INET6_ADDRSTRLEN, struct sockaddr_in6);
+	    inet_ntop(AF_INET6, (void*)&ipaddr6->sin6_addr, ipaddress, INET6_ADDRSTRLEN);
 #endif
 	  }
 
@@ -691,10 +697,11 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 	    if (!ipa) continue;
 	    if(!strcmp(ipaddress, ipa)) {
 	      RELEASE(slave);
+	      RELEASE(ipaddress);
 	      goto DONETHATONE;
 	    }
 	  }
-	  array_append(ipaddresses, STRDUP(ipaddress));
+	  array_append(ipaddresses, ipaddress);
 	  if (hostdata->h_addrtype == AF_INET) {
 	    array_append(ips4, slave);
 #if HAVE_IPV6
@@ -745,18 +752,22 @@ notify_allocate_fd(int family, struct sockaddr *sourceaddr)
 	     (family == AF_INET6)?sizeof(struct sockaddr_in6):
 #endif
 	     sizeof(struct sockaddr_in)) < 0) {
-      char msg[512];
-      int port = 0;
+      char	*msg = NULL;
+      int	port = 0;
       if (family == AF_INET) {
-	inet_ntop(AF_INET, (void*)&(((struct sockaddr_in*)sourceaddr)->sin_addr), msg, sizeof(msg));
+	msg = ALLOCATE(INET_ADDRSTRLEN, struct sockaddr_in);
+	inet_ntop(AF_INET, (void*)&(((struct sockaddr_in*)sourceaddr)->sin_addr), msg, INET_ADDRSTRLEN);
 	port = ntohs(((struct sockaddr_in*)sourceaddr)->sin_port);
 #if HAVE_IPV6
       } else if (family == AF_INET6) {
-	inet_ntop(AF_INET6, (void*)&(((struct sockaddr_in6*)sourceaddr)->sin6_addr), msg, sizeof(msg));
+	msg = ALLOCATE(INET6_ADDRSTRLEN, struct sockaddr_in6);
+	inet_ntop(AF_INET6, (void*)&(((struct sockaddr_in6*)sourceaddr)->sin6_addr), msg, INET6_ADDRSTRLEN);
 	port = ntohs(((struct sockaddr_in6*)sourceaddr)->sin6_port);
 #endif
       }
       Err("bind (UDP): %s:%d", msg, port);
+      /* NOTREACHED */
+      RELEASE(msg);
     }
     for (n = 1; n < 1024; n++) {
       opt = n * 1024;

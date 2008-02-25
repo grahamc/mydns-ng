@@ -20,7 +20,7 @@
 
 #include "mydns.h"
 
-char mydns_soa_table_name[PATH_MAX] = MYDNS_SOA_TABLE;
+char *mydns_soa_table_name = NULL;
 char *mydns_soa_where_clause = NULL;
 
 char *mydns_soa_active_types[] = { "Y", "N" };
@@ -44,8 +44,7 @@ mydns_soa_get_active_types(SQL *sqlConn) {
   char		*YES = "Y";
   char		*NO = "N";
 
-  querylen = sql_build_query(&query, "SELECT DISTINCT(active) FROM %s LIMIT 1",
-			     mydns_soa_table_name);
+  querylen = sql_build_query(&query, "SELECT DISTINCT(active) FROM %s LIMIT 1", mydns_soa_table_name);
 
   if (!(res = sql_query(sqlConn, query, querylen))) {
     RELEASE(query);
@@ -93,7 +92,7 @@ mydns_soa_get_active_types(SQL *sqlConn) {
 **************************************************************************************************/
 long
 mydns_soa_count(SQL *sqlConn) {
-	return sql_count(sqlConn, "SELECT COUNT(*) FROM %s", mydns_soa_table_name);
+  return sql_count(sqlConn, "SELECT COUNT(*) FROM %s", mydns_soa_table_name);
 }
 /*--- mydns_soa_count() -------------------------------------------------------------------------*/
 
@@ -103,10 +102,11 @@ mydns_soa_count(SQL *sqlConn) {
 **************************************************************************************************/
 void
 mydns_set_soa_table_name(char *name) {
+  RELEASE(mydns_soa_table_name);
   if (!name)
-    strncpy(mydns_soa_table_name, MYDNS_SOA_TABLE, sizeof(mydns_soa_table_name)-1);
+    mydns_soa_table_name = STRDUP(MYDNS_SOA_TABLE);
   else
-    strncpy(mydns_soa_table_name, name, sizeof(mydns_soa_table_name)-1);
+    mydns_soa_table_name = STRDUP(name);
 }
 /*--- mydns_set_soa_table_name() ----------------------------------------------------------------*/
 

@@ -525,6 +525,7 @@ extern char		*comma3(unsigned long);
 
 /* strsep_quotes.c */
 extern char		*strsep_quotes(char **, char *, size_t);
+extern int		strsep_quotes2(char **, char **);
 
 /* wildcard.c */
 extern int		wildcard_valid(char *p);

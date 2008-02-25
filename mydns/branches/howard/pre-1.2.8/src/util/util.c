@@ -55,45 +55,45 @@ db_connect(void)
 	If "total" is zero, the meter is erased.
 **************************************************************************************************/
 inline void
-meter(unsigned long current, unsigned long total)
-{
-	char m[80];
-	int num;
-	time_t now;
-	static time_t last_update = 0;
+meter(unsigned long current, unsigned long total) {
+  static char *m = NULL;
+  int num;
+  time_t now;
+  static time_t last_update = 0;
 
-	if (!isatty(STDERR_FILENO))
-		return;
+  if (!isatty(STDERR_FILENO))
+    return;
 
-	if (!total || current > total)							/* Erase meter */
-	{
-		memset(m, ' ', 73);
-		m[72] = '\r';
-		fwrite(m, 73, 1, stderr);
-		fflush(stderr);
-		last_update = 0;
-		return;
-	}
+  if (!m) m = ALLOCATE(80, char[]);
 
-	if (current % 5)
-		return;
+  if (!total || current > total) {						/* Erase meter */
+    memset(m, ' ', 73);
+    m[72] = '\r';
+    fwrite(m, 73, 1, stderr);
+    fflush(stderr);
+    last_update = 0;
+    return;
+  }
 
-	time(&now);
-	if (now == last_update)
-		return;
-	last_update = now;
+  if (current % 5)
+    return;
 
-	/* Create meter */
-	memset(m, '.', 63);
-	m[0] = m[60] = '|';
-	m[5] = m[10] = m[15] = m[20] = m[25] = m[30] = m[35] = m[40] = m[45] = m[50] = m[55] = ':';
-	m[61] = '\r';
-	m[62] = '\0';
+  time(&now);
+  if (now == last_update)
+    return;
+  last_update = now;
 
-	num = ((double)((double)current / (double)total) * 58.0) + 1;
-	memset(m + 1, '#', num < 0 || num > 58 ? 58 : num);
-	fprintf(stderr, "  %6.2f%% %s\r", PCT(total,current), m);
-	fflush(stderr);
+  /* Create meter */
+  memset(m, '.', 63);
+  m[0] = m[60] = '|';
+  m[5] = m[10] = m[15] = m[20] = m[25] = m[30] = m[35] = m[40] = m[45] = m[50] = m[55] = ':';
+  m[61] = '\r';
+  m[62] = '\0';
+
+  num = ((double)((double)current / (double)total) * 58.0) + 1;
+  memset(m + 1, '#', num < 0 || num > 58 ? 58 : num);
+  fprintf(stderr, "  %6.2f%% %s\r", PCT(total,current), m);
+  fflush(stderr);
 }
 /*--- meter() -----------------------------------------------------------------------------------*/
 
