@@ -164,6 +164,7 @@ cmdline(int argc, char **argv) {
   error_init(argv[0], LOG_DAEMON);			/* Init output/logging routines */
 
   optstr = getoptstr(longopts);
+
   while ((optc = getopt_long(argc, argv, optstr, longopts, &optindex)) != -1) {
     switch (optc) {
     case 0:

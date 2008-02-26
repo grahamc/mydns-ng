@@ -79,7 +79,7 @@ __error_out(int priority, const char *out, int len, char **err_last) {
 
   if (err_last) {
     /* Don't output the same error message again and again */
-    if (*err_last && strcmp(out, *err_last)) {
+    if (*err_last && !strcmp(out, *err_last)) {
       repeat++;
       return;
     }

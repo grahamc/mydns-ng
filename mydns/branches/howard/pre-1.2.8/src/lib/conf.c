@@ -436,20 +436,25 @@ load_config(void) {
   task_timeout = atou(conf_get(&Conf, "timeout", NULL));
 
   axfr_enabled = GETBOOL(conf_get(&Conf, "allow-axfr", NULL));
+  Verbose(_("AXFR is %senabled"), (axfr_enabled)?"":_("not "));
 
   tcp_enabled = GETBOOL(conf_get(&Conf, "allow-tcp", NULL));
+  Verbose(_("TCP ports are %senabled"), (tcp_enabled)?"":_("not "));
 
   dns_update_enabled = GETBOOL(conf_get(&Conf, "allow-update", NULL));
+  Verbose(_("DNS UPDATE is %senabled"), (dns_update_enabled)?"":_("not "));
 
   mydns_soa_use_active = GETBOOL(conf_get(&Conf, "use-soa-active", NULL));
   mydns_rr_use_active = GETBOOL(conf_get(&Conf, "use-rr-active", NULL));
 
   dns_notify_enabled = dns_update_enabled && GETBOOL(conf_get(&Conf, "notify-enabled", NULL));
+  Verbose(_("DNS NOTIFY is %senabled"), (dns_notify_enabled)?"":_("not "));
   notify_timeout = atou(conf_get(&Conf, "notify-timeout", NULL));
   notify_retries = atou(conf_get(&Conf, "notify-retries", NULL));
   notify_algorithm = conf_get(&Conf, "notify-algorithm", NULL);
 
   dns_ixfr_enabled = GETBOOL(conf_get(&Conf, "ixfr-enabled", NULL));
+  Verbose(_("DNS IXFR is %senabled"), (dns_ixfr_enabled)?"":_("not "));
   ixfr_gc_enabled = GETBOOL(conf_get(&Conf, "ixfr-gc-enabled", NULL));
   ixfr_gc_interval = atou(conf_get(&Conf, "ixfr-gc-interval", NULL));
   ixfr_gc_delay = atou(conf_get(&Conf, "ixfr-gc-delay", NULL));
