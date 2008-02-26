@@ -168,7 +168,7 @@ notify_write(TASK *t) {
 	port = ntohs(((struct sockaddr_in6*)slaveaddr)->sin6_port);
 #endif
       }
-      Debug("%s: send to slave %s(%d) failed - %s(%d)", desctask(t),
+      Debug(_("%s: send to slave %s(%d) failed - %s(%d)"), desctask(t),
 	    msg, port, strerror(errno), errno);
 #endif
       if (
@@ -201,7 +201,7 @@ notify_write(TASK *t) {
   }
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-  Debug("%s: DNS NOTIFY wrote notifies to slaves, %d left to reply, timeout %ld - %ld = %ld", desctask(t),
+  Debug(_("%s: DNS NOTIFY wrote notifies to slaves, %d left to reply, timeout %ld - %ld = %ld"), desctask(t),
 	slavecount, t->timeout, current_time, t->timeout - current_time);
 #endif
 
@@ -228,7 +228,7 @@ _notify_read(TASK *t, struct sockaddr *from, socklen_t fromlen) {
   }
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-  Debug("%s: DNS NOTIFY read response from slave %s", desctask(t), msg);
+  Debug(_("%s: DNS NOTIFY read response from slave %s"), desctask(t), msg);
 #endif
 
   slavecount = array_numobjects(notify->slaves);
@@ -259,7 +259,7 @@ _notify_read(TASK *t, struct sockaddr *from, socklen_t fromlen) {
     }
 
     if (slave->replied) {
-      Verbose("%s: DNS NOTIFY Duplicate reply from %s", desctask(t), msg);
+      Verbose(_("%s: DNS NOTIFY Duplicate reply from %s"), desctask(t), msg);
     } else {
       /* Mark this slave as finished */
       slave->replied = 1;
@@ -304,7 +304,7 @@ notify_read(TASK *t) {
 #endif
     }
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-    Debug("%s: recv from slave %s(%d) failed - %s(%d)", desctask(t),
+    Debug(_("%s: recv from slave %s(%d) failed - %s(%d)"), desctask(t),
 	  msg, port, strerror(errno), errno);
 #endif
     if (rv < 0) {
@@ -337,10 +337,10 @@ notify_read(TASK *t) {
     DNS_GET16(ancount, src);
     DNS_GET16(nscount, src);
     DNS_GET16(arcount, src);
-    Debug("%s: DNS NOTIFY read response from slave %s length %d for id = %d, "
-	  "qr = %d, opcode = %d, aa = %d, tc = %d, rd = %d, "
-	  "ra = %d, z = %d, ad = %d, cd = %d, rcode = %d, "
-	  "qdcount = %d, ancount = %d, nscount = %d, arcount = %d",
+    Debug(_("%s: DNS NOTIFY read response from slave %s length %d for id = %d, "
+	    "qr = %d, opcode = %d, aa = %d, tc = %d, rd = %d, "
+	    "ra = %d, z = %d, ad = %d, cd = %d, rcode = %d, "
+	    "qdcount = %d, ancount = %d, nscount = %d, arcount = %d"),
 	  desctask(t), msg, rv, id,
 	  hdr.qr, hdr.opcode, hdr.aa, hdr.tc, hdr.rd,
 	  hdr.ra, hdr.z, hdr.ad, hdr.cd, hdr.rcode,
@@ -352,12 +352,12 @@ notify_read(TASK *t) {
     if (!hdr.qr || (hdr.opcode != DNS_OPCODE_NOTIFY)) {
       TASK *newt = NULL;
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-      Debug("%s: DNS NOTIFY got a non-notify response from %s", desctask(t), msg);
+      Debug(_("%s: DNS NOTIFY got a non-notify response from %s"), desctask(t), msg);
       if ((hdr.opcode == DNS_OPCODE_QUERY) && !hdr.qr) {
 	char *current = src;
 	char *msg2;
 	task_error_t errcode;
-	Debug("%s: DNS NOTIFY response is a query", desctask(t));
+	Debug(_("%s: DNS NOTIFY response is a query"), desctask(t));
 	msg2 = name_unencode2(src, rv - DNS_HEADERSIZE, &current, &errcode);
 	if(msg2) {
 	  dns_qtype_t qtype;
@@ -366,7 +366,7 @@ notify_read(TASK *t) {
 	    DNS_GET16(qtype, current);
 	    if (current+SIZE16 <= &in[rv]) {
 	      DNS_GET16(qclass, current);
-	      Debug("%s: DNS NOTIFY %s asks for %s - %s against %s", desctask(t),
+	      Debug(_("%s: DNS NOTIFY %s asks for %s - %s against %s"), desctask(t),
 		    msg, mydns_qtype_str(qtype), mydns_class_str(qclass), msg2);
 	      RELEASE(msg2);
 	      goto DECODEDQUERY;
@@ -374,7 +374,7 @@ notify_read(TASK *t) {
 	  }
 	  RELEASE(msg2);
 	}
-	Debug("%s: DNS NOTIFY %s sent malformed query - ignored", desctask(t), msg);
+	Debug(_("%s: DNS NOTIFY %s sent malformed query - ignored"), desctask(t), msg);
       DECODEDQUERY: ;
       }
 #endif
@@ -393,7 +393,7 @@ notify_read(TASK *t) {
 
     if (!readT) {
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-      Debug("%s: no task found for id %d from %s", desctask(t), id, msg);
+      Debug(_("%s: no task found for id %d from %s"), desctask(t), id, msg);
 #endif
       continue;
     }
@@ -401,7 +401,7 @@ notify_read(TASK *t) {
     rv = _notify_read(readT, &from, fromlen);
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-    Debug("%s: %d slaves still to be matched", desctask(readT), rv);
+    Debug(_("%s: %d slaves still to be matched"), desctask(readT), rv);
 #endif
     if (rv <= 0) {
       /* Task has finished */
@@ -416,7 +416,7 @@ notify_read(TASK *t) {
       timeout.tv_usec = 0;
       if(select(t->fd+1, &rfds, NULL, NULL, &timeout) < 0) {
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-	Debug("%s: select poll on fd %d failed with %s(%d)", desctask(t), t->fd, strerror(errno), errno);
+	Debug(_("%s: select poll on fd %d failed with %s(%d)"), desctask(t), t->fd, strerror(errno), errno);
 #endif
 	break;
       }
@@ -544,7 +544,7 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
   sql_free(res);
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-  Debug("%s: DNS NOTIFY found %d name servers in zone data and also-notify", desctask(t),
+  Debug(_("%s: DNS NOTIFY found %d name servers in zone data and also-notify"), desctask(t),
 	array_numobjects(name_servers));
 #endif
 
@@ -560,7 +560,7 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
   int i = 0;
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-  Debug("%s: name_servers2ip() called name_servers = %p", desctask(t), name_servers);
+  Debug(_("%s: name_servers2ip() called name_servers = %p"), desctask(t), name_servers);
 #endif
 
   if(!name_servers) return 0;
@@ -645,7 +645,7 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
     RELEASE(label);
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-    Debug("%s: name_servers2ip() - done local try DNS - %d", desctask(t), resolved);
+    Debug(_("%s: name_servers2ip() - done local try DNS - %d"), desctask(t), resolved);
 #endif
     if (!resolved) {
       /* Look up via DNS instead */
@@ -700,7 +700,7 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
   }
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-  Debug("%s: name_servers2ip() - releasing data and then returning ipaddresses=%p, name_servers=%p",
+  Debug(_("%s: name_servers2ip() - releasing data and then returning ipaddresses=%p, name_servers=%p"),
 	desctask(t), ipaddresses, name_servers);
 #endif
 
@@ -708,7 +708,7 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
   array_free(name_servers, 1);
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-  Debug("%s: name_servers2ip() - returning", desctask(t));
+  Debug(_("%s: name_servers2ip() - returning"), desctask(t));
 #endif
 
   return array_numobjects(ips4)
@@ -728,7 +728,7 @@ notify_allocate_fd(int family, struct sockaddr *sourceaddr)
 
     /* Set REUSEADDR in case anything is left lying around. */
     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-      Warn("setsockopt");
+      Warn(_("setsockopt"));
     fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
     if (bind(fd, sourceaddr,
 #if HAVE_IPV6
@@ -746,7 +746,7 @@ notify_allocate_fd(int family, struct sockaddr *sourceaddr)
 	port = ntohs(((struct sockaddr_in6*)sourceaddr)->sin6_port);
 #endif
       }
-      Err("bind (UDP): %s:%d", msg, port);
+      Err(_("bind (UDP): %s:%d"), msg, port);
     }
     for (n = 1; n < 1024; n++) {
       opt = n * 1024;
@@ -824,7 +824,7 @@ notify_slaves(TASK *t, MYDNS_SOA *soa)
   NOTIFYDATA *notify = NULL;
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-  Debug("%s: notify_slaves called for %s", desctask(t), soa->origin);
+  Debug(_("%s: notify_slaves called for %s"), desctask(t), soa->origin);
 #endif
 
   if(!dns_notify_enabled) return;
@@ -872,7 +872,7 @@ notify_slaves(TASK *t, MYDNS_SOA *soa)
 				     );
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-    Debug("%s: notify_slaves has %d slaves to notify for %s", desctask(t), slavecount, soa->origin);
+    Debug(_("%s: notify_slaves has %d slaves to notify for %s"), desctask(t), slavecount, soa->origin);
 #endif
 
     if (!slavecount) {
@@ -1018,7 +1018,7 @@ notify_all_soas(TASK *t, void *data) {
   initdata->zonecount -= 1;
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-  Debug("%s: DNS NOTIFY loaded a soa for notification zoneid %d, zonesremaining %d",
+  Debug(_("%s: DNS NOTIFY loaded a soa for notification zoneid %d, zonesremaining %d"),
 	desctask(t), initdata->lastzoneid, initdata->zonecount);
 #endif
 

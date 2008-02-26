@@ -204,7 +204,7 @@ linux_load_ip6(int port) {
 	pl = (uint16_t)strtoul(prefix_length, NULL, 16);
 	sv = (uint16_t)strtoul(scope_value, NULL, 16);
 	f = (uint16_t)strtoul(if_flags, NULL, 16);
-	Debug("IPv6 %s: device_number=%u prefix_length=%u scope_value=%u if_flags=%u",
+	Debug(_("IPv6 %s: device_number=%u prefix_length=%u scope_value=%u if_flags=%u"),
 	      buf, dn, pl, sv, f);
       }
 #endif
@@ -214,7 +214,7 @@ linux_load_ip6(int port) {
 	if (IN6_IS_ADDR_LINKLOCAL(&addr))
 	  continue;
 #if DEBUG_ENABLED && DEBUG_LISTEN
-	Debug("  extra: %s", ip6_extra(&addr));
+	Debug(_("  extra: %s"), ip6_extra(&addr));
 #endif
 	addrlist_add(AF_INET6, &addr, port);
       }
@@ -281,7 +281,7 @@ addrlist_load(int port) {
   freeAllInterfaceAddresses();
 
   if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-    Warn("error creating socket for interface scan");
+    Warn(_("error creating socket for interface scan"));
     return NULL;
   }
 
@@ -296,7 +296,7 @@ addrlist_load(int port) {
 	break;
     }
     if ((n == -1) && errno != EINVAL) {
-      Err("error setting SIOCGIFCONF for interface scan");
+      Err(_("error setting SIOCGIFCONF for interface scan"));
       return NULL;
     }
     buf = REALLOCATE(buf, buflen += 4096, char[]);
@@ -479,16 +479,16 @@ ipv4_listener(struct sockaddr_in *sa, int protocol) {
   int fd, opt = 1;
 
   if ((fd = socket(AF_INET, protocol, (protocol == SOCK_STREAM) ? IPPROTO_TCP : IPPROTO_UDP)) < 0)
-    Err("socket");
+    Err(_("socket"));
   if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-    Warn("setsockopt");
+    Warn(_("setsockopt"));
   fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
   if (bind(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in)) < 0)
-    Err("bind (%s): %s:%d",
+    Err(_("bind (%s): %s:%d"),
 	(protocol == SOCK_STREAM) ? "TCP" : "UDP", inet_ntoa(sa->sin_addr), ntohs(sa->sin_port));
   if (protocol == SOCK_STREAM) {
     if (listen(fd, SOMAXCONN) < 0)
-      Err("listen");
+      Err(_("listen"));
   } else {
     int n, size;
 
@@ -500,7 +500,7 @@ ipv4_listener(struct sockaddr_in *sa, int protocol) {
   }
 
 #if DEBUG_ENABLED && DEBUG_LISTEN
-  Debug("listening on %s, %s port %d", ipaddr(AF_INET, &sa->sin_addr),
+  Debug(_("listening on %s, %s port %d"), ipaddr(AF_INET, &sa->sin_addr),
 	protocol == SOCK_STREAM ? "TCP" : "UDP", ntohs(sa->sin_port));
 #endif
 
@@ -519,17 +519,17 @@ ipv6_listener(struct sockaddr_in6 *sa, int protocol) {
   int fd, opt = 1;
 
   if ((fd = socket(AF_INET6, protocol, (protocol == SOCK_STREAM) ? IPPROTO_TCP : IPPROTO_UDP)) < 0)
-    Err("socket");
+    Err(_("socket"));
 
   if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-    Warn("setsockopt");
+    Warn(_("setsockopt"));
   fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
   if (bind(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in6)) < 0)
-    Err("bind (%s): %s+%d", (protocol == SOCK_STREAM) ? "TCP" : "UDP",
+    Err(_("bind (%s): %s+%d"), (protocol == SOCK_STREAM) ? "TCP" : "UDP",
 	ipaddr(AF_INET6, &sa->sin6_addr), ntohs(sa->sin6_port));
   if (protocol == SOCK_STREAM) {
     if (listen(fd, 5) < 0)
-      Err("listen");
+      Err(_("listen"));
   } else {
     int n, size;
 
@@ -541,7 +541,7 @@ ipv6_listener(struct sockaddr_in6 *sa, int protocol) {
   }
 
 #if DEBUG_ENABLED && DEBUG_LISTEN
-  Debug("listening on %s, %s port %d", ipaddr(AF_INET6, &sa->sin6_addr), 
+  Debug(_("listening on %s, %s port %d"), ipaddr(AF_INET6, &sa->sin6_addr), 
 	protocol == SOCK_STREAM ? "TCP" : "UDP", ntohs(sa->sin6_port));
 #endif
 
@@ -573,10 +573,10 @@ create_listeners(void) {
   Debug(" ");
   for (L = Addresses; L; L = L->next)
     if (L->family == AF_INET)
-      Debug("Address: %s (port %d)", ipaddr(AF_INET, &L->addr4), L->port);
+      Debug(_("Address: %s (port %d)"), ipaddr(AF_INET, &L->addr4), L->port);
 #if HAVE_IPV6
     else if (L->family == AF_INET6)
-      Debug("Address: %s (port %d)", ipaddr(AF_INET6, &L->addr6), L->port);
+      Debug(_("Address: %s (port %d)"), ipaddr(AF_INET6, &L->addr6), L->port);
 #endif
   Debug(" ");
 #endif
@@ -588,10 +588,10 @@ create_listeners(void) {
 #if DEBUG_ENABLED && DEBUG_LISTEN
   for (L = NoListen; L; L = L->next)
     if (L->family == AF_INET)
-      Debug("NoListen: %s (port %d)", ipaddr(AF_INET, &L->addr4), L->port);
+      Debug(_("NoListen: %s (port %d)"), ipaddr(AF_INET, &L->addr4), L->port);
 #if HAVE_IPV6
     else if (L->family == AF_INET6)
-      Debug("NoListen: %s (port %d)", ipaddr(AF_INET6, &L->addr6), L->port);
+      Debug(_("NoListen: %s (port %d)"), ipaddr(AF_INET6, &L->addr6), L->port);
 #endif
   Debug(" ");
 #endif
@@ -599,10 +599,10 @@ create_listeners(void) {
 #if DEBUG_ENABLED && DEBUG_LISTEN
   for (L = Listen; L; L = L->next)
     if (L->family == AF_INET)
-      Debug("Listen: %s (port %d)", ipaddr(AF_INET, &L->addr4), L->port);
+      Debug(_("Listen: %s (port %d)"), ipaddr(AF_INET, &L->addr4), L->port);
 #if HAVE_IPV6
     else if (L->family == AF_INET6)
-      Debug("Listen: %s (port %d)", ipaddr(AF_INET6, &L->addr6), L->port);
+      Debug(_("Listen: %s (port %d)"), ipaddr(AF_INET6, &L->addr6), L->port);
 #endif
   Debug(" ");
 #endif

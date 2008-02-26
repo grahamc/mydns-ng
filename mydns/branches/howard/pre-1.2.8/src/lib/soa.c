@@ -54,7 +54,7 @@ mydns_soa_get_active_types(SQL *sqlConn) {
 #if DEBUG_ENABLED && DEBUG_LIB_SOA
   {
     int numresults = sql_num_rows(res);
-    Debug("SOA get active types: %d row%s: %s", numresults, S(numresults), query);
+    Debug(_("SOA get active types: %d row%s: %s"), numresults, S(numresults), query);
   }
 #endif
 
@@ -270,7 +270,7 @@ mydns_soa_load(SQL *sqlConn, MYDNS_SOA **rptr, char *origin) {
 #endif
 
 #if DEBUG_ENABLED && DEBUG_LIB_SOA
-  Debug("mydns_soa_load(%s)", origin);
+  Debug(_("mydns_soa_load(%s)"), origin);
 #endif
 
   if (rptr) *rptr = NULL;
@@ -315,7 +315,7 @@ mydns_soa_load(SQL *sqlConn, MYDNS_SOA **rptr, char *origin) {
   {
     int numresults = sql_num_rows(res);
 
-    Debug("SOA query: %d row%s: %s", numresults, S(numresults), query);
+    Debug(_("SOA query: %d row%s: %s"), numresults, S(numresults), query);
   }
 #endif
 
@@ -326,9 +326,10 @@ mydns_soa_load(SQL *sqlConn, MYDNS_SOA **rptr, char *origin) {
     MYDNS_SOA *new;
 
 #if DEBUG_ENABLED && DEBUG_LIB_SOA
-    Debug("SOA query: use_soa_active=%d soa_active=%s,%d", mydns_soa_use_active,
+    Debug(_("SOA query: use_soa_active=%d soa_active=%s,%d"), mydns_soa_use_active,
 	  row[MYDNS_SOA_NUMFIELDS], GETBOOL(row[MYDNS_SOA_NUMFIELDS]));
-    Debug("SOA query: id=%s, origin=%s, ns=%s, mbox=%s, serial=%s, refresh=%s, retry=%s, expire=%s, minimum=%s, ttl=%s",
+    Debug(_("SOA query: id=%s, origin=%s, ns=%s, mbox=%s, serial=%s, refresh=%s, "
+	    "retry=%s, expire=%s, minimum=%s, ttl=%s"),
 	  row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]);
 #endif
 

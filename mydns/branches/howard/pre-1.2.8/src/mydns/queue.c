@@ -44,11 +44,11 @@ _queue_stats(QUEUE *q) {
   strftime(datebuf, sizeof(datebuf)-1, "%d-%b-%Y %H:%M:%S", tm);
 #endif
 
-  Debug(
+  Debug(_(
 #if !DISABLE_DATE_LOGGING
 	  "%s+%06lu "
 #endif
-	  "%s size=%d, max size=%d",
+	  "%s size=%d, max size=%d"),
 #if !DISABLE_DATE_LOGGING
 	  datebuf, tv.tv_usec,
 #endif
@@ -64,7 +64,7 @@ _queue_stats(QUEUE *q) {
     if ((msglen + 2*idsize) >= msgsize) msg = REALLOCATE(msg, msgsize *= 2, char[]);
   }
   if (msglen)
-    Debug("Queued tasks %s", msg);
+    Debug(_("Queued tasks %s"), msg);
 #endif
 }
 
@@ -135,7 +135,7 @@ _enqueue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
     Status.udp_requests++;
 
 #if DEBUG_ENABLED && DEBUG_QUEUE
-  Debug("%s: enqueued (by %s:%u)", desctask(t), file, line);
+  Debug(_("%s: enqueued (by %s:%u)"), desctask(t), file, line);
 #endif
 
   return (0);
@@ -188,7 +188,7 @@ _dequeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 
   task_free(t);
 #if DEBUG_ENABLED && DEBUG_QUEUE
-  Debug("%s: dequeued (by %s:%u)", taskdesc, file, line);
+  Debug(_("%s: dequeued (by %s:%u)"), taskdesc, file, line);
 #endif
 }
 /*--- _dequeue() --------------------------------------------------------------------------------*/
@@ -197,7 +197,7 @@ void
 _requeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 #if DEBUG_ENABLED && DEBUG_QUEUE
   char *taskdesc = desctask(t);
-  Debug("%s: requeuing (by %s:%u) called", taskdesc, file, line);
+  Debug(_("%s: requeuing (by %s:%u) called"), taskdesc, file, line);
 #endif
 
   __queue_remove(t->TaskQ, t);

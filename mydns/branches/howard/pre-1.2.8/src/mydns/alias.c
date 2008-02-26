@@ -47,13 +47,13 @@ find_alias(TASK *t, char *fqdn) {
     if (label == name || *label == '.') {
       if (label[0] == '.' && label[1]) label++;		/* Advance past leading dot */
 #if DEBUG_ENABLED && DEBUG_ALIAS
-      Debug("%s: label=`%s'", desctask(t), label);
+      Debug(_("%s: label=`%s'"), desctask(t), label);
 #endif
 
       /* Do an exact match if the label is the first in the list */
       if (label == name) {
 #if DEBUG_ENABLED && DEBUG_ALIAS
-	Debug("%s: trying exact match `%s'", desctask(t), label);
+	Debug(_("%s: trying exact match `%s'"), desctask(t), label);
 #endif
 	if ((rr = find_rr(t, soa, DNS_QTYPE_A, label))) {
 	  RELEASE(name);
@@ -73,7 +73,7 @@ find_alias(TASK *t, char *fqdn) {
 	  ASPRINTF(&wclabel, "*.%s", c);
 
 #if DEBUG_ENABLED && DEBUG_ALIAS
-	Debug("%s: trying wildcard `%s'", desctask(t), wclabel);
+	Debug(_("%s: trying wildcard `%s'"), desctask(t), wclabel);
 #endif
 	if ((rr = find_rr(t, soa, DNS_QTYPE_A, wclabel))) {
 	  RELEASE(name);
@@ -110,7 +110,7 @@ alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, char *
 
   for (depth = 0; depth < MAX_ALIAS_LEVEL; depth++) {
 #if DEBUG_ENABLED && DEBUG_ALIAS
-    Debug("%s: ALIAS -> `%s'", desctask(t), name);
+    Debug(_("%s: ALIAS -> `%s'"), desctask(t), name);
 #endif
     /* Are there any alias records? */
     if ((rr = find_alias(t, name))) {
@@ -138,7 +138,7 @@ alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, char *
       for (n = 0; n < depth; n++)
 	if (aliases[n] == rr->id) {
 	  /* ALIAS loop: We aren't going to find an A record, so we're done. */
-	  Verbose("%s: %s: %s (depth %d)", desctask(t), _("ALIAS loop detected"), fqdn, depth);
+	  Verbose(_("%s: %s: %s (depth %d)"), desctask(t), _("ALIAS loop detected"), fqdn, depth);
 	  mydns_rr_free(rr);
 	  RELEASE(name);
 	  return (0);
@@ -154,7 +154,8 @@ alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, char *
       return (0);
     }
   }
-  Verbose("%s: %s: %s -> %s (depth %d)", desctask(t), _("max ALIAS depth exceeded"), fqdn, alias->data, depth);
+  Verbose(_("%s: %s: %s -> %s (depth %d)"), desctask(t), _("max ALIAS depth exceeded"),
+	  fqdn, alias->data, depth);
   RELEASE(name);
   return (0);
 }

@@ -344,7 +344,7 @@ comms_sendcommand(TASK *t, void *data, char *commandstring) {
   COMMS		*comms;
 
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-  Debug("%s: Sending commands %s", desctask(t), commandstring);
+  Debug(_("%s: Sending commands %s"), desctask(t), commandstring);
 #endif
 
   comms = __comms_allocate();
@@ -374,7 +374,7 @@ scomms_tick(TASK *t, void* data) {
   if (rv == TASK_FAILED) {
     /* Nothing from the master for 5 cycles assume one of us has gone AWOL */
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-    Debug("%s: Server comms tick - master has not pinged for %d seconds", desctask(t),
+    Debug(_("%s: Server comms tick - master has not pinged for %d seconds"), desctask(t),
 	  lastseen);
 #endif
     named_shutdown(0);
@@ -407,7 +407,7 @@ mcomms_tick(TASK *t, void* data) {
     /* Shutdown and restart server at other end of connection */
     SERVER *server = find_server_for_task(t);
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-    Debug("%s: Master comms tick - connection to server has not pinged for %d seconds", desctask(t),
+    Debug(_("%s: Master comms tick - connection to server has not pinged for %d seconds"), desctask(t),
 	  lastseen);
 #endif
     if (!server) {

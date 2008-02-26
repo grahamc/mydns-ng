@@ -50,10 +50,10 @@ db_output_create_tables(void) {
 
   /* Header */
   printf("--\n");
-  printf("--  Table layouts for "PACKAGE_STRING" ("PACKAGE_DATE")\n");
-  printf("--  "PACKAGE_COPYRIGHT"\n");
+  printf(_("--  Table layouts for "PACKAGE_STRING" ("PACKAGE_DATE")\n"));
+  printf(_("--  "PACKAGE_COPYRIGHT"\n"));
   printf("--\n");
-  printf("--  You might create these tables with a command like:\n");
+  printf(_("--  You might create these tables with a command like:\n"));
   printf("--\n");
 
 #if USE_PGSQL
@@ -65,7 +65,7 @@ db_output_create_tables(void) {
   printf("--\n\n");
 
   /* Zone/SOA table */
-  printf("--\n--  Table structure for table '%s' (zones of authority)\n--\n", mydns_soa_table_name);
+  printf(_("--\n--  Table structure for table '%s' (zones of authority)\n--\n"), mydns_soa_table_name);
 
 #if USE_PGSQL
   printf("CREATE TABLE %s (\n", mydns_soa_table_name);
@@ -133,7 +133,7 @@ db_output_create_tables(void) {
 #endif
 
   /* Resource record table */
-  printf("--\n--  Table structure for table '%s' (resource records)\n--\n", mydns_rr_table_name);
+  printf(_("--\n--  Table structure for table '%s' (resource records)\n--\n"), mydns_rr_table_name);
 
 #if USE_PGSQL
   printf("CREATE TABLE %s (\n", mydns_rr_table_name);

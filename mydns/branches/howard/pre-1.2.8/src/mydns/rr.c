@@ -114,7 +114,7 @@ rrlist_add(
     case DNS_RRTYPE_SOA:
       {
 	MYDNS_SOA *soa = (MYDNS_SOA *)rr;
-	Debug("%s: RRLIST_ADD: %s (id=%u) (%s) (`%s')", desctask(t),
+	Debug(_("%s: RRLIST_ADD: %s (id=%u) (%s) (`%s')"), desctask(t),
 	      datasection_str[ds], soa->id, soa->origin, name);
       }
       break;
@@ -122,7 +122,7 @@ rrlist_add(
     case DNS_RRTYPE_RR:
       {
 	MYDNS_RR *r = (MYDNS_RR *)rr;
-	Debug("%s: RRLIST_ADD: %s (id=%u) (name='%s',qtype='%s',data='%s') (`%s')", desctask(t),
+	Debug(_("%s: RRLIST_ADD: %s (id=%u) (name='%s',qtype='%s',data='%s') (`%s')"), desctask(t),
 	      datasection_str[ds], r->id,
 	      (char *)(strlen(MYDNS_RR_NAME(r)) ? MYDNS_RR_NAME(r) : (char *)""),
 	      mydns_qtype_str(r->type), (char*)MYDNS_RR_DATA_VALUE(r), name);
@@ -149,7 +149,7 @@ rrlist_add(
     if (t->qtype == DNS_QTYPE_IXFR) break;
     if (rrdup(&t->an, rrtype, id)) {
 #if DEBUG_ENABLED && DEBUG_RR
-      Debug("%s: Duplicate record, ignored", desctask(t));
+      Debug(_("%s: Duplicate record, ignored"), desctask(t));
 #endif
       return;
     }
@@ -159,7 +159,7 @@ rrlist_add(
     list = &t->ns;
     if (rrdup(&t->ns, rrtype, id) || rrdup(&t->an, rrtype, id)) {
 #if DEBUG_ENABLED && DEBUG_RR
-      Debug("%s: Duplicate record, ignored", desctask(t));
+      Debug(_("%s: Duplicate record, ignored"), desctask(t));
 #endif
       return;
     }
@@ -169,7 +169,7 @@ rrlist_add(
     list = &t->ar;
     if (rrdup(&t->ar, rrtype, id) || rrdup(&t->an, rrtype, id)) {
 #if DEBUG_ENABLED && DEBUG_RR
-      Debug("%s: Duplicate record, ignored", desctask(t));
+      Debug(_("%s: Duplicate record, ignored"), desctask(t));
 #endif
       return;
     }

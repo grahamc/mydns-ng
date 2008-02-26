@@ -118,11 +118,11 @@ read_tcp_length(TASK *t) {
   }
 
   if ((t->len = ((len[0] << 8) | (len[1]))) < DNS_HEADERSIZE) {
-    Warnx("%s: %s (%d octet%s)", clientaddr(t), _("TCP message too short"), t->len, S(t->len));
+    Warnx(_("%s: %s (%d octet%s)"), clientaddr(t), _("TCP message too short"), t->len, S(t->len));
     return (TASK_ABANDONED);
   }
   if (t->len > DNS_MAXPACKETLEN_TCP) {
-    Warnx("%s: %s (%d octet%s)", clientaddr(t), _("TCP message too long"), t->len, S(t->len));
+    Warnx(_("%s: %s (%d octet%s)"), clientaddr(t), _("TCP message too long"), t->len, S(t->len));
     return (TASK_ABANDONED);
   }
 
@@ -181,7 +181,7 @@ read_tcp_query(TASK *t) {
   }
 
 #if DEBUG_ENABLED && DEBUG_TCP
-  Debug("%s: 2+%d TCP octets in", clientaddr(t), rv);
+  Debug(_("%s: 2+%d TCP octets in"), clientaddr(t), rv);
 #endif
 
   t->offset += rv;

@@ -38,16 +38,18 @@ static size_t total_records, total_octets;
 static void
 axfr_error(TASK *t, const char *fmt, ...) {
   va_list	ap; 
-  char		msg[BUFSIZ];
+  char		*msg = NULL;
 
-  va_start(ap, fmt);
-  vsnprintf(msg, sizeof(msg), fmt, ap);
-  va_end(ap);
-
-  if (t)
+  if (t) {
     task_output_info(t, NULL);
-  else
+  } else {
+    va_start(ap, fmt);
+    VASPRINTF(&msg, fmt, ap);
+    va_end(ap);
+
     Warnx("%s", msg);
+    RELEASE(msg);
+  }
 
   sockclose(t->fd);
 
@@ -63,7 +65,7 @@ axfr_error(TASK *t, const char *fmt, ...) {
 **************************************************************************************************/
 static void
 axfr_timeout(int dummy) {
-	axfr_error(NULL, _("AXFR timed out"));
+  axfr_error(NULL, _("AXFR timed out"));
 }
 /*--- axfr_timeout() ----------------------------------------------------------------------------*/
 
@@ -102,7 +104,7 @@ axfr_write(TASK *t, char *buf, size_t size) {
   do {
     axfr_write_wait(t);
     if ((rv = write(t->fd, buf+offset, size-offset)) < 0)
-      axfr_error(t, "write: %s", strerror(errno));
+      axfr_error(t, _("write: %s"), strerror(errno));
     if (!rv)
       axfr_error(t, _("client closed connection"));
     offset += rv;
@@ -301,7 +303,7 @@ axfr(TASK *t) {
 
 #if DEBUG_ENABLED && DEBUG_AXFR
   gettimeofday(&start, NULL);
-  Debug("%s: Starting AXFR for task ID %u", desctask(t), t->internal_id);
+  Debug(_("%s: Starting AXFR for task ID %u"), desctask(t), t->internal_id);
 #endif
   total_records = total_octets = 0;
   t->no_markers = 1;
@@ -317,7 +319,7 @@ axfr(TASK *t) {
 #if DEBUG_ENABLED && DEBUG_AXFR
   /* Report result */
   gettimeofday(&finish, NULL);
-  Debug("AXFR: %u records, %u octets, %.3fs", 
+  Debug(_("AXFR: %u records, %u octets, %.3fs"), 
 	total_records, total_octets,
 	((finish.tv_sec + finish.tv_usec / 1000000.0) - (start.tv_sec + start.tv_usec / 1000000.0)));
 #endif
@@ -337,12 +339,12 @@ axfr_fork(TASK *t) {
   pid_t pid, parent;
 
   if (pipe(pfd))
-    Err("pipe");
+    Err(_("pipe"));
   parent = getpid();
   if ((pid = fork()) < 0) {
     close(pfd[0]);
     close(pfd[1]);
-    Warn("%s: fork", clientaddr(t));
+    Warn(_("%s: fork"), clientaddr(t));
     return;
   }
 
@@ -384,14 +386,14 @@ axfr_fork(TASK *t) {
 
     for (errct = 0; errct < 5; errct++) {
       if (read(pfd[0], &buf, 4) != 2)
-	Warn("%s (%d of 5)", _("error reading startup notification"), errct+1);
+	Warn(_("%s (%d of 5)"), _("error reading startup notification"), errct+1);
       else
 	break;
     }
     close(pfd[0]);
 
 #if DEBUG_ENABLED && DEBUG_AXFR
-    Debug("AXFR: process started on pid %d for TCP fd %d, task ID %u", pid, t->fd, t->internal_id);
+    Debug(_("AXFR: process started on pid %d for TCP fd %d, task ID %u"), pid, t->fd, t->internal_id);
 #endif
   }
   /* NOTREACHED*/

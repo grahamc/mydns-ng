@@ -110,13 +110,13 @@ _cache_init(uint32_t limit, uint32_t expire, const char *desc) {
 
 #if DEBUG_ENABLED && DEBUG_CACHE
 #if (HASH_TYPE == ORIGINAL_HASH)
-  Debug("%s cache initialized (%u nodes, %u elements max) (original hash)", desc, C->slots, limit);
+  Debug(_("%s cache initialized (%u nodes, %u elements max) (original hash)"), desc, C->slots, limit);
 #elif (HASH_TYPE == ADDITIVE_HASH)
-  Debug("%s cache initialized (%u nodes, %u elements max) (additive hash)", desc, C->slots, limit);
+  Debug(_("%s cache initialized (%u nodes, %u elements max) (additive hash)"), desc, C->slots, limit);
 #elif (HASH_TYPE == ROTATING_HASH)
-  Debug("%s cache initialized (%u nodes, %u elements max) (rotating hash)", desc, C->slots, limit);
+  Debug(_("%s cache initialized (%u nodes, %u elements max) (rotating hash)"), desc, C->slots, limit);
 #elif (HASH_TYPE == FNV_HASH)
-  Debug("%s cache initialized (%u nodes, %u elements max) (%d-bit FNV hash)", desc, C->slots, limit,
+  Debug(_("%s cache initialized (%u nodes, %u elements max) (%d-bit FNV hash)"), desc, C->slots, limit,
 	C->bits);
 #else
 #	error Hash method unknown or unspecified
@@ -464,7 +464,7 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
   CACHE			*C;				/* Which cache to use when inserting */
 
 #if DEBUG_ENABLED && DEBUG_CACHE
-  Debug("%s: zone_cache_find(%d, %s, %s, %s, %d, %d, %p)", desctask(t), zone, origin,
+  Debug(_("%s: zone_cache_find(%d, %s, %s, %s, %d, %d, %p)"), desctask(t), zone, origin,
 	mydns_qtype_str(type), name, namelen, *errflag, parent);
 #endif
 
@@ -535,7 +535,7 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
   if (type == DNS_QTYPE_SOA) {
     /* Try to load from database */
 #if DEBUG_ENABLED && DEBUG_SQL_QUERIES
-    Debug("%s: SQL query: table \"%s\", origin=\"%s\"", desctask(t), mydns_soa_table_name, name);
+    Debug(_("%s: SQL query: table \"%s\", origin=\"%s\""), desctask(t), mydns_soa_table_name, name);
 #endif
     if (mydns_soa_load(sql, &soa, name) != 0) {
       sql_reopen();
@@ -563,7 +563,7 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
       return ((void *)soa);
   } else {
 #if DEBUG_ENABLED && DEBUG_SQL_QUERIES
-    Debug("%s: SQL query: table \"%s\", zone=%u,type=\"%s\",name=\"%s\"",
+    Debug(_("%s: SQL query: table \"%s\", zone=%u,type=\"%s\",name=\"%s\""),
 	  desctask(t), mydns_rr_table_name, zone, mydns_qtype_str(type), name);
 #endif
     if (mydns_rr_load_active(sql, &rr, zone, type, name, origin) != 0) {

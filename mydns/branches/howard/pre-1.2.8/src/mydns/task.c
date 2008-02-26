@@ -34,22 +34,22 @@ char *
 task_exec_name(taskexec_t rv) {
   switch(rv) {
 
-  case TASK_ABANDONED:			return "Task Abandoned";
-  case TASK_FAILED:			return "Task Failed";
+  case TASK_ABANDONED:			return _("Task Abandoned");
+  case TASK_FAILED:			return _("Task Failed");
 
-  case TASK_COMPLETED:			return "Task Completed";
-  case TASK_FINISHED:			return "Task Finished";
-  case TASK_TIMED_OUT:			return "Task Timed Out";
+  case TASK_COMPLETED:			return _("Task Completed");
+  case TASK_FINISHED:			return _("Task Finished");
+  case TASK_TIMED_OUT:			return _("Task Timed Out");
 
-  case TASK_EXECUTED:			return "Task Executed";
-  case TASK_DID_NOT_EXECUTE:		return "Task did not execute";
-  case TASK_CONTINUE:			return "Task Continue";
+  case TASK_EXECUTED:			return _("Task Executed");
+  case TASK_DID_NOT_EXECUTE:		return _("Task did not execute");
+  case TASK_CONTINUE:			return _("Task Continue");
 
   default:
     {
       static char *msg = NULL;
       if (msg) RELEASE(msg);
-      ASPRINTF(&msg, "Task Exec Code %d", rv);
+      ASPRINTF(&msg, _("Task Exec Code %d"), rv);
       return msg;
     }
   }
@@ -60,14 +60,14 @@ char *
 task_type_name(int type) {
   switch (type) {
 
-  case NORMAL_TASK:			return "Normal Task";
-  case IO_TASK:				return "IO Driven Task";
-  case PERIODIC_TASK:			return "Clock Driven Task";
+  case NORMAL_TASK:			return _("Normal Task");
+  case IO_TASK:				return _("IO Driven Task");
+  case PERIODIC_TASK:			return _("Clock Driven Task");
 
   default:
     {
       static char *msg = NULL;
-      ASPRINTF(&msg, "Task Type %d", type);
+      ASPRINTF(&msg, _("Task Type %d"), type);
       return msg;
     }
   }
@@ -78,14 +78,14 @@ char *
 task_priority_name(int priority) {
   switch (priority) {
 
-  case HIGH_PRIORITY_TASK:		return "High Priority";
-  case NORMAL_PRIORITY_TASK:		return "Normal Priority";
-  case LOW_PRIORITY_TASK:		return "Low Priority";
+  case HIGH_PRIORITY_TASK:		return _("High Priority");
+  case NORMAL_PRIORITY_TASK:		return _("Normal Priority");
+  case LOW_PRIORITY_TASK:		return _("Low Priority");
 
   default:
     {
       static char *msg = NULL;
-      ASPRINTF(&msg, "Task Priority %d", priority);
+      ASPRINTF(&msg, _("Task Priority %d"), priority);
       return msg;
     }
   }
@@ -97,32 +97,32 @@ task_status_name(TASK *t) {
 
   switch (t->status) {
 
-  case NEED_READ:			return "NEED_READ";
-  case NEED_IXFR:			return "NEED_IXFR";
-  case NEED_ANSWER:			return "NEED_ANSWER";
-  case NEED_WRITE:			return "NEED_WRITE";
+  case NEED_READ:			return _("NEED_READ");
+  case NEED_IXFR:			return _("NEED_IXFR");
+  case NEED_ANSWER:			return _("NEED_ANSWER");
+  case NEED_WRITE:			return _("NEED_WRITE");
 
-  case NEED_RECURSIVE_FWD_CONNECT:	return "NEED_RECURSIVE_FWD_CONNECT";
-  case NEED_RECURSIVE_FWD_CONNECTING:	return "NEED_RECURSIVE_FWD_CONNECTING";
-  case NEED_RECURSIVE_FWD_WRITE:	return "NEED_RECURSIVE_FWD_WRITE";
-  case NEED_RECURSIVE_FWD_RETRY:	return "NEED_RECURSIVE_FWD_RETRY";
-  case NEED_RECURSIVE_FWD_READ:		return "NEED_RECURSIVE_FWD_READ";
+  case NEED_RECURSIVE_FWD_CONNECT:	return _("NEED_RECURSIVE_FWD_CONNECT");
+  case NEED_RECURSIVE_FWD_CONNECTING:	return _("NEED_RECURSIVE_FWD_CONNECTING");
+  case NEED_RECURSIVE_FWD_WRITE:	return _("NEED_RECURSIVE_FWD_WRITE");
+  case NEED_RECURSIVE_FWD_RETRY:	return _("NEED_RECURSIVE_FWD_RETRY");
+  case NEED_RECURSIVE_FWD_READ:		return _("NEED_RECURSIVE_FWD_READ");
 
-  case NEED_NOTIFY_READ:		return "NEED_NOTIFY_READ";
-  case NEED_NOTIFY_WRITE:		return "NEED_NOTIFY_WRITE";
-  case NEED_NOTIFY_RETRY:		return "NEED_NOTIFY_RETRY";
+  case NEED_NOTIFY_READ:		return _("NEED_NOTIFY_READ");
+  case NEED_NOTIFY_WRITE:		return _("NEED_NOTIFY_WRITE");
+  case NEED_NOTIFY_RETRY:		return _("NEED_NOTIFY_RETRY");
 
-  case NEED_TASK_RUN:			return "NEED_TASK_RUN";
-  case NEED_AXFR:			return "NEED_AXFR";
-  case NEED_TASK_READ:			return "NEED_TASK_READ";
+  case NEED_TASK_RUN:			return _("NEED_TASK_RUN");
+  case NEED_AXFR:			return _("NEED_AXFR");
+  case NEED_TASK_READ:			return _("NEED_TASK_READ");
 
-  case NEED_COMMAND_READ:		return "NEED_COMMAND_READ";
-  case NEED_COMMAND_WRITE:		return "NEED_COMMAND_WRITE";
+  case NEED_COMMAND_READ:		return _("NEED_COMMAND_READ");
+  case NEED_COMMAND_WRITE:		return _("NEED_COMMAND_WRITE");
 
   default:
     {
       static char *msg = NULL;
-      ASPRINTF(&msg, "Task Status %X", t->status);
+      ASPRINTF(&msg, _("Task Status %X"), t->status);
       return msg;
     }
   }
@@ -137,7 +137,7 @@ task_find_by_id(TASK *t, QUEUE *TaskQ, unsigned long id) {
     if (ThisT->internal_id == id) return ThisT;
   }
 #if DEBUG_ENABLED && DEBUG_TASK
-  Debug("%s: task_find_by_id(%s, %ld) cannot find task on queue", desctask(t), TaskQ->queuename, id);
+  Debug(_("%s: task_find_by_id(%s, %ld) cannot find task on queue"), desctask(t), TaskQ->queuename, id);
 #endif
   return NULL;
 }
@@ -154,7 +154,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
   task_error_t errcode;
 
 #if DEBUG_ENABLED && DEBUG_TASK
-  Debug("task_new(%p, %p, %u)", t, data, len);
+  Debug(_("task_new(%p, %p, %u)"), t, data, len);
 #endif
 
   /* Query needs to at least contain a proper header */
@@ -164,7 +164,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
 
   /* Refuse queries that are too long */
   if (len > ((t->protocol == SOCK_STREAM) ? DNS_MAXPACKETLEN_TCP : DNS_MAXPACKETLEN_UDP)) {
-    Warnx("%s: FORMERR in query - too large", desctask(t));
+    Warnx(_("%s: FORMERR in query - too large"), desctask(t));
     return formerr(t, DNS_RCODE_FORMERR, ERR_MALFORMED_REQUEST, _("query too large"));
   }
 
@@ -184,7 +184,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
    */
   if (t->hdr.qr) {
 #if DEBUG_ENABLED && DEBUG_TASK
-    Debug("%s: task_new(): %s %s %s",
+    Debug(_("%s: task_new(): %s %s %s"),
 	  desctask(t), mydns_rcode_str(DNS_RCODE_FORMERR),
 	  err_reason_str(t, ERR_RESPONSE_BIT_SET),
 	  _("response bit set on query"));
@@ -193,10 +193,10 @@ task_new(TASK *t, unsigned char *data, size_t len) {
   }
 
 #if DEBUG_ENABLED && DEBUG_TASK
-  Debug("%s: id=%u qr=%u opcode=%s aa=%u tc=%u rd=%u ra=%u z=%u rcode=%u", desctask(t),
+  Debug(_("%s: id=%u qr=%u opcode=%s aa=%u tc=%u rd=%u ra=%u z=%u rcode=%u"), desctask(t),
 	t->id, t->hdr.qr, mydns_opcode_str(t->hdr.opcode),
 	t->hdr.aa, t->hdr.tc, t->hdr.rd, t->hdr.ra, t->hdr.z, t->hdr.rcode);
-  Debug("%s: qd=%u an=%u ns=%u ar=%u", desctask(t),
+  Debug(_("%s: qd=%u an=%u ns=%u ar=%u"), desctask(t),
 	t->qdcount, t->ancount, t->nscount, t->arcount);
 #endif
 
@@ -204,7 +204,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
 
   t->qdlen = len - DNS_HEADERSIZE;			/* Fill in question data */
   if (t->qdlen <= 0) {
-    Warnx("%s: FORMERR in query - zero length", desctask(t));
+    Warnx(_("%s: FORMERR in query - zero length"), desctask(t));
     return formerr(t, DNS_RCODE_FORMERR, ERR_MALFORMED_REQUEST, _("question has zero length"));
   }
 
@@ -215,7 +215,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
 
   /* Get query name */
   if (!(qname = (unsigned char*)name_unencode2((char*)t->qd, t->qdlen, (char**)&src, &errcode))) {
-    Warnx("%s: FORMERR in query decoding name", desctask(t));
+    Warnx(_("%s: FORMERR in query decoding name"), desctask(t));
     return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
   }
   strncpy(t->qname, (char*)qname, sizeof(t->qname)-1);
@@ -229,7 +229,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
 
   /* Get query type */
   if (src + SIZE16 > data + len) {
-    Warnx("%s: FORMERR in query - too short no qtype", desctask(t));
+    Warnx(_("%s: FORMERR in query - too short no qtype"), desctask(t));
     return formerr(t, DNS_RCODE_FORMERR, ERR_MALFORMED_REQUEST, _("query too short; no qtype"));
   }
 
@@ -237,13 +237,13 @@ task_new(TASK *t, unsigned char *data, size_t len) {
 
   /* If this request is TCP and TCP is disabled, refuse the request */
   if (t->protocol == SOCK_STREAM && !tcp_enabled && (t->qtype != DNS_QTYPE_AXFR || !axfr_enabled)) {
-    Warnx("%s: REFUSED query - TCP not enabled", desctask(t));
+    Warnx(_("%s: REFUSED query - TCP not enabled"), desctask(t));
     return formerr(t, DNS_RCODE_REFUSED, ERR_TCP_NOT_ENABLED, NULL);
   }
 
   /* Get query class */
   if (src + SIZE16 > data + len) {
-    Warnx("%s: FORMERR in query - too short no qclass", desctask(t));
+    Warnx(_("%s: FORMERR in query - too short no qclass"), desctask(t));
     return formerr(t, DNS_RCODE_FORMERR, ERR_MALFORMED_REQUEST, _("query too short; no qclass"));
   }
 
@@ -253,20 +253,20 @@ task_new(TASK *t, unsigned char *data, size_t len) {
 
   /* Request must have at least one question */
   if (!t->qdcount) {
-    Warnx("%s: FORMERR in query - no questions", desctask(t));
+    Warnx(_("%s: FORMERR in query - no questions"), desctask(t));
     return formerr(t, DNS_RCODE_FORMERR, ERR_NO_QUESTION, _("query contains no questions"));
   }
 
   /* Server can't handle more than 1 question per packet */
   if (t->qdcount > 1) {
-    Warnx("%s: FORMERR in query - more than one question", desctask(t));
+    Warnx(_("%s: FORMERR in query - more than one question"), desctask(t));
     return formerr(t, DNS_RCODE_FORMERR, ERR_MULTI_QUESTIONS,
 		   _("query contains more than one question"));
   }
 
   /* Server won't accept truncated query */
   if (t->hdr.tc) {
-    Warnx("%s: FORMERR in query - truncated query", desctask(t));
+    Warnx(_("%s: FORMERR in query - truncated query"), desctask(t));
     return formerr(t, DNS_RCODE_FORMERR, ERR_QUESTION_TRUNCATED, _("query is truncated"));
   }
 
@@ -289,12 +289,14 @@ task_new(TASK *t, unsigned char *data, size_t len) {
     return (dns_update(t));
 
   /* Handle Notify messages - currently do nothing so return not implemented */
-  if (t->hdr.opcode == DNS_OPCODE_NOTIFY)
+  if (t->hdr.opcode == DNS_OPCODE_NOTIFY) {
+    Warnx(_("%s: FORMERR in query - NOTIFY is currently not a supported opcode"), desctask(t));
     return formerr(t, DNS_RCODE_NOTIMP, ERR_UNSUPPORTED_OPCODE, NULL);
+  }
 
   /* Server only handles QUERY opcode */
   if (t->hdr.opcode != DNS_OPCODE_QUERY) {
-    Warnx("%s: FORMERR in query - not a supported opcode", desctask(t));
+    Warnx(_("%s: FORMERR in query - not a supported opcode"), desctask(t));
     return formerr(t, DNS_RCODE_NOTIMP, ERR_UNSUPPORTED_OPCODE, NULL);
   }
 
@@ -304,7 +306,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
       && (t->qclass != DNS_CLASS_CHAOS)
 #endif
       ) {
-    Warnx("%s: NOTIMP - qclass not availbale", desctask(t));
+    Warnx(_("%s: NOTIMP - qclass not available"), desctask(t));
     return formerr(t, DNS_RCODE_NOTIMP, ERR_NO_CLASS, NULL);
   }
 
@@ -366,7 +368,7 @@ desctask(TASK *t) {
 
   ASPRINTF(&desc, "%s: %s %s (%u) %s, %s %s",
 	   clientaddr(t), mydns_qtype_str(t->qtype),
-	   t->qname ? (char *)t->qname : "<NONE>",
+	   t->qname ? (char *)t->qname : _("<NONE>"),
 	   t->internal_id, task_status_name(t), task_priority_name(t->priority),
 	   task_type_name(t->type));
 
@@ -458,7 +460,7 @@ _task_free(TASK *t, const char *file, int line) {
   if (!t) return;
 
 #if DEBUG_ENABLED && DEBUG_TASK
-  Debug("%s: Freeing task at %s:%d", desctask(t), file, line);
+  Debug(_("%s: Freeing task at %s:%d"), desctask(t), file, line);
 #endif
 
   if (t->protocol == SOCK_STREAM) {
@@ -1096,7 +1098,7 @@ task_process(TASK *t, fd_set *rfd, fd_set *wfd, fd_set *efd) {
   DEQUEUETASK:
 
 #if DEBUG_ENABLED && DEBUG_TASK
-    Debug("%s: dequeuing task because %s", desctask(t), task_exec_name(res));
+    Debug(_("%s: dequeuing task because %s"), desctask(t), task_exec_name(res));
 #endif
 
     if ((res == TASK_ABANDONED) || (res == TASK_TIMED_OUT))

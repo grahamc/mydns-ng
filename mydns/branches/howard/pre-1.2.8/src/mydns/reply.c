@@ -108,7 +108,7 @@ reply_start_rr(TASK *t, RR *r, char *name, dns_qtype_t type, uint32_t ttl, char 
   /* name_encode returns dnserror() */
   if ((enclen = name_encode2(t, &enc, name, t->replylen + t->rdlen, 1)) < 0) {
     RELEASE(enc);
-    return rr_error(r->id, "rr %u: %s (%s %s) (name=\"%s\")", r->id,
+    return rr_error(r->id, _("rr %u: %s (%s %s) (name=\"%s\")"), r->id,
 		    _("invalid name in \"name\""), desc, _("record"), name);
   }
 
@@ -153,7 +153,7 @@ reply_add_generic_rr(TASK *t, RR *r, char *desc) {
 
   if ((enclen = name_encode2(t, &enc, MYDNS_RR_DATA_VALUE(rr), CUROFFSET(t), 1)) < 0) {
     RELEASE(enc);
-    return rr_error(r->id, "rr %u: %s (%s) (data=\"%s\")", r->id,
+    return rr_error(r->id, _("rr %u: %s (%s) (data=\"%s\")"), r->id,
 		    _("invalid name in \"data\""), desc, (char*)MYDNS_RR_DATA_VALUE(rr));
   }
 
@@ -188,7 +188,7 @@ reply_add_a(TASK *t, RR *r) {
 
   if (inet_pton(AF_INET, MYDNS_RR_DATA_VALUE(rr), (void *)&addr) <= 0) {
     dnserror(t, DNS_RCODE_SERVFAIL, ERR_INVALID_ADDRESS);
-    return rr_error(r->id, "rr %u: %s (A %s) (address=\"%s\")", r->id,
+    return rr_error(r->id, _("rr %u: %s (A %s) (address=\"%s\")"), r->id,
 		    _("invalid address in \"data\""), _("record"), (char*)MYDNS_RR_DATA_VALUE(rr));
   }
   ip = ntohl(addr.s_addr);
@@ -224,7 +224,7 @@ reply_add_aaaa(TASK *t, RR *r) {
 
   if (inet_pton(AF_INET6, MYDNS_RR_DATA_VALUE(rr), (void *)&addr) <= 0) {
     dnserror(t, DNS_RCODE_SERVFAIL, ERR_INVALID_ADDRESS);
-    return rr_error(r->id, "rr %u: %s (AAAA %s) (address=\"%s\")", r->id,
+    return rr_error(r->id, _("rr %u: %s (AAAA %s) (address=\"%s\")"), r->id,
 		    _("invalid address in \"data\""), _("record"), (char*)MYDNS_RR_DATA_VALUE(rr));
   }
 
@@ -260,7 +260,7 @@ reply_add_hinfo(TASK *t, RR *r) {
 
   if (hinfo_parse(MYDNS_RR_DATA_VALUE(rr), cpu, os, DNS_MAXNAMELEN) < 0) {
     dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_NAME_TOO_LONG);
-    return rr_error(r->id, "rr %u: %s (HINFO %s) (data=\"%s\")", r->id,
+    return rr_error(r->id, _("rr %u: %s (HINFO %s) (data=\"%s\")"), r->id,
 		    _("name too long in \"data\""), _("record"), (char*)MYDNS_RR_DATA_VALUE(rr));
   }
 
@@ -306,7 +306,7 @@ reply_add_mx(TASK *t, RR *r) {
 
   if ((enclen = name_encode2(t, &enc, MYDNS_RR_DATA_VALUE(rr), CUROFFSET(t) + SIZE16, 1)) < 0) {
     RELEASE(enc);
-    return rr_error(r->id, "rr %u: %s (MX %s) (data=\"%s\")", r->id,
+    return rr_error(r->id, _("rr %u: %s (MX %s) (data=\"%s\")"), r->id,
 		    _("invalid name in \"data\""), _("record"), (char*)MYDNS_RR_DATA_VALUE(rr));
   }
 
@@ -354,7 +354,7 @@ reply_add_naptr(TASK *t, RR *r) {
   /* Encode the name at the offset */
   if ((enclen = name_encode2(t, &enc, MYDNS_RR_NAPTR_REPLACEMENT(rr), CUROFFSET(t) + offset, 1)) < 0) {
     RELEASE(enc);
-    return rr_error(r->id, "rr %u: %s (NAPTR %s) (%s=\"%s\")", r->id,
+    return rr_error(r->id, _("rr %u: %s (NAPTR %s) (%s=\"%s\")"), r->id,
 		    _("invalid name in \"replacement\""), _("record"), _("replacement"),
 		    MYDNS_RR_NAPTR_REPLACEMENT(rr));
   }
@@ -411,14 +411,14 @@ reply_add_rp(TASK *t, RR *r) {
 
   if ((mboxlen = name_encode2(t, &encmbox, mbox, CUROFFSET(t), 1)) < 0) {
     RELEASE(encmbox);
-    return rr_error(r->id, "rr %u: %s (RP %s) (mbox=\"%s\")", r->id,
+    return rr_error(r->id, _("rr %u: %s (RP %s) (mbox=\"%s\")"), r->id,
 		    _("invalid name in \"mbox\""), _("record"), mbox);
   }
 
   if ((txtlen = name_encode2(t, &enctxt, txt, CUROFFSET(t) + mboxlen, 1)) < 0) {
     RELEASE(encmbox);
     RELEASE(enctxt);
-    return rr_error(r->id, "rr %u: %s (RP %s) (txt=\"%s\")", r->id,
+    return rr_error(r->id, _("rr %u: %s (RP %s) (txt=\"%s\")"), r->id,
 		    _("invalid name in \"txt\""), _("record"), txt);
   }
 
@@ -457,14 +457,14 @@ reply_add_soa(TASK *t, RR *r) {
 
   if ((nslen = name_encode2(t, &ns, soa->ns, CUROFFSET(t), 1)) < 0) {
     RELEASE(ns);
-    return rr_error(r->id, "rr %u: %s (SOA %s) (ns=\"%s\")", r->id,
+    return rr_error(r->id, _("rr %u: %s (SOA %s) (ns=\"%s\")"), r->id,
 		    _("invalid name in \"ns\""), _("record"), soa->ns);
   }
 
   if ((mboxlen = name_encode2(t, &mbox, soa->mbox, CUROFFSET(t) + nslen, 1)) < 0) {
     RELEASE(ns);
     RELEASE(mbox);
-    return rr_error(r->id, "rr %u: %s (SOA %s) (mbox=\"%s\")", r->id,
+    return rr_error(r->id, _("rr %u: %s (SOA %s) (mbox=\"%s\")"), r->id,
 		    _("invalid name in \"mbox\""), _("record"), soa->mbox);
   }
 
@@ -511,7 +511,7 @@ reply_add_srv(TASK *t, RR *r) {
      most clients should support it */
   if ((enclen = name_encode2(t, &enc, MYDNS_RR_DATA_VALUE(rr), CUROFFSET(t) + SIZE16 + SIZE16 + SIZE16, 0)) < 0) {
     RELEASE(enc);
-    return rr_error(r->id, "rr %u: %s (SRV %s) (data=\"%s\")", r->id,
+    return rr_error(r->id, _("rr %u: %s (SRV %s) (data=\"%s\")"), r->id,
 		    _("invalid name in \"data\""), _("record"), (char*)MYDNS_RR_DATA_VALUE(rr));
   }
 
@@ -688,7 +688,7 @@ truncate_rrlist(TASK *t, off_t maxpkt, RRLIST *rrlist, datasection_t ds) {
       t->rdlen += rr->length;
   }
 #if DEBUG_ENABLED && DEBUG_REPLY
-  Debug("%s section truncated from %d records to %d records",
+  Debug(_("%s section truncated from %d records to %d records"),
 	reply_datasection_str[ds], orig_recs, recs);
 #endif
   return (recs);
@@ -709,7 +709,7 @@ reply_check_truncation(TASK *t, int *ancount, int *nscount, int *arcount) {
     return;
 
 #if DEBUG_ENABLED && DEBUG_REPLY
-  Debug("reply_check_truncation() needs to truncate reply (%d) to fit packet max (%d)",
+  Debug(_("reply_check_truncation() needs to truncate reply (%d) to fit packet max (%d)"),
 	t->rdlen, maxrd);
 #endif
 
@@ -807,21 +807,21 @@ build_reply(TASK *t, int want_additional) {
   DNS_PUT(dest, t->rdata, t->rdlen);				/* Resource record data */
 
 #if DEBUG_ENABLED && DEBUG_REPLY
-  Debug("%s: reply:     id = %u", desctask(t),
+  Debug(_("%s: reply:     id = %u"), desctask(t),
 	t->id);
-  Debug("%s: reply:     qr = %u (message is a %s)", desctask(t),
+  Debug(_("%s: reply:     qr = %u (message is a %s)"), desctask(t),
 	t->hdr.qr, t->hdr.qr ? "response" : "query");
-  Debug("%s: reply: opcode = %u (%s)", desctask(t),
+  Debug(_("%s: reply: opcode = %u (%s)"), desctask(t),
 	t->hdr.opcode, mydns_opcode_str(t->hdr.opcode));
-  Debug("%s: reply:     aa = %u (answer %s)", desctask(t),
+  Debug(_("%s: reply:     aa = %u (answer %s)"), desctask(t),
 	t->hdr.aa, t->hdr.aa ? "is authoritative" : "not authoritative");
-  Debug("%s: reply:     tc = %u (message %s)", desctask(t),
+  Debug(_("%s: reply:     tc = %u (message %s)"), desctask(t),
 	t->hdr.tc, t->hdr.tc ? "truncated" : "not truncated");
-  Debug("%s: reply:     rd = %u (%s)", desctask(t),
+  Debug(_("%s: reply:     rd = %u (%s)"), desctask(t),
 	t->hdr.rd, t->hdr.rd ? "recursion desired" : "no recursion");
-  Debug("%s: reply:     ra = %u (recursion %s)", desctask(t),
+  Debug(_("%s: reply:     ra = %u (recursion %s)"), desctask(t),
 	t->hdr.ra, t->hdr.ra ? "available" : "unavailable");
-  Debug("%s: reply:  rcode = %u (%s)", desctask(t),
+  Debug(_("%s: reply:  rcode = %u (%s)"), desctask(t),
 	t->hdr.rcode, mydns_rcode_str(t->hdr.rcode));
   /* escdata(t->reply, t->replylen); */
 #endif

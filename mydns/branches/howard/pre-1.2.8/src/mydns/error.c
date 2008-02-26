@@ -102,7 +102,7 @@ _formerr_internal(
   char	*dest;
 
 #if DEBUG_ENABLED && DEBUG_ERROR
-  Debug("%s: formerr(): %s %s from %s:%u: %s",
+  Debug(_("%s: formerr(): %s %s from %s:%u: %s"),
 	desctask(t), mydns_rcode_str(rcode), err_reason_str(t, reason), filename, lineno,
 	xtra ?: _("no additional information"));
 #endif
@@ -142,7 +142,7 @@ _dnserror_internal(
 ) {
   if (t->hdr.rcode == DNS_RCODE_NOERROR) {
 #if DEBUG_ENABLED && DEBUG_ERROR
-    Debug("%s: dnserror(): %s %s from %s:%u",
+    Debug(_("%s: dnserror(): %s %s from %s:%u"),
 	  desctask(t), mydns_rcode_str(rcode), err_reason_str(t, reason), filename, lineno);
 #endif
     t->hdr.rcode = rcode;

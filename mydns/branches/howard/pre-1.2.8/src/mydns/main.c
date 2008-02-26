@@ -304,7 +304,7 @@ become_daemon(void) {
   sql_close(sql);
 
   if ((pid = fork()) < 0)
-    Err("fork");
+    Err(_("fork"));
   if (pid)
     _exit(EXIT_SUCCESS);
 
@@ -593,7 +593,7 @@ master_shutdown(int signo) {
     n = waitpid(-1, &status, WNOHANG);
     if (n < 0) {
       if (errno == ECHILD) break;
-      Notice("waitpid returned error %s(%d)", strerror(errno), errno);
+      Notice(_("waitpid returned error %s(%d)"), strerror(errno), errno);
     }
     if (n <= 0) {
       i += 1;
@@ -611,12 +611,12 @@ master_shutdown(int signo) {
     }
   }
   if (running_procs) {
-    Notice("%d Clones did not die", running_procs);
+    Notice(_("%d Clones did not die"), running_procs);
   }
   for (n = 0; n < array_numobjects(Servers); n++) {
       SERVER	*server = (SERVER*)array_fetch(Servers, n);
     if (server->pid != -1) {
-      Notice("Did not see clone %d - pid %d die", n, server->pid);
+      Notice(_("Did not see clone %d - pid %d die"), n, server->pid);
     }
   }
    
@@ -661,16 +661,16 @@ reap_child() {
   } else {
 #ifdef WCOREDUMP
     if (WIFSIGNALED(status))
-      Warnx("pid %d exited due to signal %d%s", pid, WTERMSIG(status),
-	    WCOREDUMP(status) ? " (core dumped)" : "");
+      Warnx(_("pid %d exited due to signal %d%s"), pid, WTERMSIG(status),
+	    WCOREDUMP(status) ? _(" (core dumped)") : "");
     else
-      Warnx("pid %d exited with status %d%s", pid, WEXITSTATUS(status),
-	    WCOREDUMP(status) ? " (core dumped)" : "");
+      Warnx(_("pid %d exited with status %d%s"), pid, WEXITSTATUS(status),
+	    WCOREDUMP(status) ? _(" (core dumped)") : "");
 #else
     if (WIFSIGNALED(status))
-      Warnx("pid %d exited due to signal %d", pid, WTERMSIG(status));
+      Warnx(_("pid %d exited due to signal %d"), pid, WTERMSIG(status));
     else
-      Warnx("pid %d exited with status %d", pid, WEXITSTATUS(status));
+      Warnx(_("pid %d exited with status %d"), pid, WEXITSTATUS(status));
 #endif
   }
 
@@ -700,7 +700,7 @@ master_child_cleanup(int signo) {
     for (n = 0; n < array_numobjects(Servers); n++) {
       SERVER	*server = (SERVER*)array_fetch(Servers, n);
       if (pid == server->pid) {
-	Notice("Server pid %d died", pid);
+	Notice(_("Server pid %d died"), pid);
 	if (shutting_down) server->pid = -1;
 	else {
 	  if (server->listener) dequeue(server->listener);
@@ -737,20 +737,19 @@ child_cleanup(int signo) {
 	init_rlimits().
 **************************************************************************************************/
 static int
-_init_rlimit(int resource, const char *desc, long long set)
-{
-	struct rlimit rl;
+_init_rlimit(int resource, const char *desc, long long set) {
+  struct rlimit rl;
 
-	if (getrlimit(resource, &rl) < 0)
-		Err("getrlimit");
-	if (set == -1)
-		rl.rlim_cur = rl.rlim_max;
-	else if (set > 0 && rl.rlim_cur < set)
-		rl.rlim_cur = set;
-	setrlimit(resource, &rl);
-	if (getrlimit(resource, &rl) < 0)
-		Err("getrlimit");
-	return rl.rlim_cur;
+  if (getrlimit(resource, &rl) < 0)
+    Err(_("getrlimit"));
+  if (set == -1)
+    rl.rlim_cur = rl.rlim_max;
+  else if (set > 0 && rl.rlim_cur < set)
+    rl.rlim_cur = set;
+  setrlimit(resource, &rl);
+  if (getrlimit(resource, &rl) < 0)
+    Err(_("getrlimit"));
+  return rl.rlim_cur;
 }
 /*--- _init_rlimit() ----------------------------------------------------------------------------*/
 
@@ -959,7 +958,7 @@ server_loop(int plain_maxfd, INITIALTASK *initial_tasks, int serverfd) {
 
     if (rv < 0) {
       if (errno == EINTR) continue;
-      Err("select");
+      Err(_("select"));
     }
 
     gettick();
@@ -991,7 +990,7 @@ spawn_server(INITIALTASK *initial_tasks) {
   res = socketpair(PF_UNIX, SOCK_DGRAM, 0, fd);
 
   if (res < 0)
-    Err("socketpair");
+    Err(_("socketpair"));
 
   for (n = 1; n < 1024; n++) {
     int opt = n *1024;
@@ -1009,7 +1008,7 @@ spawn_server(INITIALTASK *initial_tasks) {
   fcntl(serverfd, F_SETFL, fcntl(serverfd, F_GETFL, 0) | O_NONBLOCK);
 
   if ((pid = fork()) < 0)
-    Err("fork");
+    Err(_("fork"));
 
   if (pid > 0) { /* Parent === MASTER */
     SERVER *server = (SERVER*)ALLOCATE(sizeof(SERVER), SERVER);
@@ -1029,7 +1028,7 @@ spawn_server(INITIALTASK *initial_tasks) {
     SERVER *server = array_remove(Servers);
     if (server) {
 #if DEBUG_ENABLED
-      Debug("closing fd %d", server->serverfd);
+      Debug(_("closing fd %d"), server->serverfd);
 #endif
       close(server->serverfd);
       RELEASE(server);
@@ -1044,7 +1043,7 @@ spawn_server(INITIALTASK *initial_tasks) {
   /* Delete pre-existing tasks as they belong to master */
   free_all_tasks();
 #if DEBUG_ENABLED
-  Debug("Cleaned up master structures - starting work");
+  Debug(_("Cleaned up master structures - starting work"));
 #endif
 
   db_connect();
@@ -1103,7 +1102,7 @@ master_loop(INITIALTASK *initial_tasks) {
 
     if (rv < 0) {
       if (errno == EINTR) continue;
-      Err("select");
+      Err(_("select"));
     }
 
     gettick();

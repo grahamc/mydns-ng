@@ -38,7 +38,7 @@ resolve_soa(TASK *t, datasection_t section, char *fqdn, int level) {
   MYDNS_SOA *soa = find_soa2(t, fqdn, NULL);
 
 #if DEBUG_ENABLED && DEBUG_RESOLVE
-  Debug("%s: resolve_soa(%s) -> `%p'", desctask(t), fqdn, soa);
+  Debug(_("%s: resolve_soa(%s) -> `%p'"), desctask(t), fqdn, soa);
 #endif
 
   /* Resolve with this new CNAME record as the FQDN */
@@ -116,14 +116,14 @@ cname_recurse(TASK *t, datasection_t section, dns_qtype_t qtype,
   for (n = 0; n < level; n++)
     if (t->Cnames[n] == cname->id) {
       /* CNAME loop: Send what we have so far and consider the resolution complete */
-      Verbose("%s: %s: %s %s %s (depth %d)", desctask(t), _("CNAME loop detected"),
+      Verbose(_("%s: %s: %s %s %s (depth %d)"), desctask(t), _("CNAME loop detected"),
 	      MYDNS_RR_NAME(cname), mydns_qtype_str(cname->type), (char*)MYDNS_RR_DATA_VALUE(cname), level);
       return (TASK_COMPLETED);
     }
   t->Cnames[level] = cname->id;
 
 #if DEBUG_ENABLED && DEBUG_RESOLVE
-  Debug("%s: CNAME -> `%s'", desctask(t), (char*)MYDNS_RR_DATA_VALUE(cname));
+  Debug(_("%s: CNAME -> `%s'"), desctask(t), (char*)MYDNS_RR_DATA_VALUE(cname));
 #endif
 
   /* Resolve with this new CNAME record as the FQDN */
@@ -349,7 +349,7 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
   register char		*label;
 
 #if DEBUG_ENABLED && DEBUG_RESOLVE
-  Debug("%s: resolve(%s, %s, \"%s\", %d)",
+  Debug(_("%s: resolve(%s, %s, \"%s\", %d)"),
 	desctask(t), resolve_datasection_str[section], mydns_qtype_str(qtype), fqdn, level);
 #endif
 
@@ -376,8 +376,8 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
     RELEASE(name);
     if ((section == ANSWER) && !level) {
 #if DEBUG_ENABLED && DEBUG_RESOLVE
-      Debug("%s: Checking for recursion soa = %p, soa->recursive = %d, "
-	    "forward_recursive = %d, t->hdr.rd = %d, section = %d, level = %d",
+      Debug(_("%s: Checking for recursion soa = %p, soa->recursive = %d, "
+	      "forward_recursive = %d, t->hdr.rd = %d, section = %d, level = %d"),
 	    desctask(t),
 	    soa, (soa)?soa->recursive:-1,
 	    forward_recursive, t->hdr.aa, section, level);

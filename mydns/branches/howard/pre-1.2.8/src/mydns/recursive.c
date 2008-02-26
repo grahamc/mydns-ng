@@ -178,7 +178,7 @@ __recursive_fwd_read_timeout(TASK *t, void *data) {
 
   if (t->protocol == SOCK_STREAM) {
 #if DEBUG_ENABLED && DEBUG_RECURSIVE
-    Debug("%s: read_timeout with tcp_recursion_running = %d", desctask(t), tcp_recursion_running);
+    Debug(_("%s: read_timeout with tcp_recursion_running = %d"), desctask(t), tcp_recursion_running);
 #endif
     if (!((t->status == NEED_RECURSIVE_FWD_CONNECT) || (t->status == NEED_RECURSIVE_FWD_CONNECTING))
 	&& (tcp_recursion_running)) {
@@ -255,7 +255,7 @@ __recursive_fwd_write_udp(TASK *t) {
   taskexec_t		res;
 
 #if DEBUG_ENABLED && DEBUG_RECURSIVE
-  Debug("%s: recursive_fwd_write() UDP", desctask(t));
+  Debug(_("%s: recursive_fwd_write() UDP"), desctask(t));
 #endif
 
   if (udp_recursive_master->status == NEED_RECURSIVE_FWD_CONNECT) return TASK_CONTINUE;
@@ -280,7 +280,7 @@ __recursive_fwd_write_udp(TASK *t) {
 #endif
 #endif
 	) {
-      Warn("%s: udp fd %d to %s is not ready to write, will retry", desctask(t), fd,
+      Warn(_("%s: udp fd %d to %s is not ready to write, will retry"), desctask(t), fd,
 	   recursive_fwd_server);
       return TASK_CONTINUE;
     }
@@ -312,7 +312,7 @@ __recursive_fwd_write_tcp(TASK *t) {
   taskexec_t		res;
 
 #if DEBUG_ENABLED && DEBUG_RECURSIVE
-  Debug("%s: recursive_fwd_write() TCP", desctask(t));
+  Debug(_("%s: recursive_fwd_write() TCP"), desctask(t));
 #endif
 
   /* Need to check that the socket has finished connecting */
@@ -348,7 +348,7 @@ __recursive_fwd_write_tcp(TASK *t) {
 #endif
 	  ) {
 #if DEBUG_ENABLED && DEBUG_RECURSIVE
-	Debug("%s: %s fd %d is not ready to write, will retry", desctask(t), recursive_fwd_server, fd);
+	Debug(_("%s: %s fd %d is not ready to write, will retry"), desctask(t), recursive_fwd_server, fd);
 #endif
 	return TASK_CONTINUE;
       }
@@ -379,7 +379,7 @@ __recursive_fwd_write_tcp(TASK *t) {
 #endif
 	) {
 #if DEBUG_ENABLED && DEBUG_RECURSIVE
-      Debug("%s: %s fd %d not ready to write, will retry", desctask(t), recursive_fwd_server, fd);
+      Debug(_("%s: %s fd %d not ready to write, will retry"), desctask(t), recursive_fwd_server, fd);
 #endif
       return TASK_CONTINUE;
     }
@@ -512,7 +512,7 @@ __recursive_fwd_read_udp(TASK *t) {
   int			fd;
 
 #if DEBUG_ENABLED && DEBUG_RECURSIVE
-  Debug("%s: recursive_fwd_read() UDP", desctask(t));
+  Debug(_("%s: recursive_fwd_read() UDP"), desctask(t));
 #endif
 
   res = __recursive_fwd_setup_reply(t, &replypacket);
@@ -535,7 +535,7 @@ __recursive_fwd_read_udp(TASK *t) {
 #endif
 	) {
 #if DEBUG_ENABLED && DEBUG_RECURSIVE
-      Debug("%s: %s fd %d is not ready to read, will retry", desctask(t),
+      Debug(_("%s: %s fd %d is not ready to read, will retry"), desctask(t),
 	    recursive_fwd_server, fd);
 #endif
       return TASK_CONTINUE;
@@ -611,7 +611,7 @@ __recursive_fwd_read_tcp(TASK *t) {
   int			fd;
 
 #if DEBUG_ENABLED && DEBUG_RECURSIVE
-  Debug("%s: recursive_fwd_read() TCP", desctask(t));
+  Debug(_("%s: recursive_fwd_read() TCP"), desctask(t));
 #endif
 
   res = __recursive_fwd_setup_reply1(t, &replypacket);
@@ -635,14 +635,14 @@ __recursive_fwd_read_tcp(TASK *t) {
 #endif
 	    ) {
 #if DEBUG_ENABLED && DEBUG_RECURSIVE
-	  Debug("%s: %s fd %d is not ready to read will retry", desctask(t),
+	  Debug(_("%s: %s fd %d is not ready to read will retry"), desctask(t),
 		recursive_fwd_server, fd);
 #endif
 	  return TASK_CONTINUE;
 	}
 	if (errno == ECONNRESET) {
 #if DEBUG_ENABLED && DEBUG_RECURSIVE
-	  Debug("%s: connection reset by %s fd %d - reconnect and retry", desctask(t),
+	  Debug(_("%s: connection reset by %s fd %d - reconnect and retry"), desctask(t),
 		recursive_fwd_server, fd);
 #endif
 	  if(__recursive_fwd_reconnect_read(t) == TASK_CONTINUE) {
@@ -653,7 +653,7 @@ __recursive_fwd_read_tcp(TASK *t) {
 	    return TASK_CONTINUE;
 	  }
 	}
-	Warnx("%s: tcp receive length failed with %s", desctask(t), strerror(errno));
+	Warnx(_("%s: tcp receive length failed with %s"), desctask(t), strerror(errno));
 	sockclose(recursive_tcp_fd);
 	recursive_tcp_fd = -1;
 	t->fd = -1;
@@ -680,14 +680,14 @@ __recursive_fwd_read_tcp(TASK *t) {
 #endif
 	) {
 #if DEBUG_ENABLED && DEBUG_RECURSIVE
-      Debug("%s: %s fd %d is not ready to read, will retry", desctask(t),
+      Debug(_("%s: %s fd %d is not ready to read, will retry"), desctask(t),
 	    recursive_fwd_server, fd);
 #endif
       return TASK_CONTINUE;
     }
     if (errno == ECONNRESET) {
 #if DEBUG_ENABLED && DEBUG_RECURSIVE
-      Debug("%s: connection reset by %s fd %d - reconnect and retry", desctask(t),
+      Debug(_("%s: connection reset by %s fd %d - reconnect and retry"), desctask(t),
 	    recursive_fwd_server, fd);
 #endif
       if (__recursive_fwd_reconnect_read(t) == TASK_CONTINUE) {
@@ -769,7 +769,7 @@ static taskexec_t
 __recursive_fwd_udp(TASK *t) {
 
 #if DEBUG_ENABLED && DEBUG_RECURSIVE
-  Debug("%s: recursive_fwd() protocol = UDP", desctask(t));
+  Debug(_("%s: recursive_fwd() protocol = UDP"), desctask(t));
 #endif
 
   t->status = NEED_RECURSIVE_FWD_WRITE;
@@ -804,7 +804,7 @@ static taskexec_t
 __recursive_fwd_tcp(TASK *t) {
 
 #if DEBUG_ENABLED && DEBUG_RECURSIVE
-  Debug("%s: recursive_fwd() protocol = TCP", desctask(t));
+  Debug(_("%s: recursive_fwd() protocol = TCP"), desctask(t));
 #endif
 
   t->status = NEED_RECURSIVE_FWD_WRITE;
@@ -862,7 +862,7 @@ __recursive_fwd_connect_udp(TASK *t) {
   socklen_t		rsalen = get_serveraddr(&rsa);
   int			fd;
 #if DEBUG_ENABLED && DEBUG_RECURSIVE
-  Debug("%s: recursive_fwd_connect() UDP", desctask(t));
+  Debug(_("%s: recursive_fwd_connect() UDP"), desctask(t));
 #endif
 
   fd = recursive_udp_fd;
@@ -892,7 +892,7 @@ __recursive_fwd_connect_tcp(TASK *t) {
   socklen_t		rsalen = get_serveraddr(&rsa);
   int			fd;
 #if DEBUG_ENABLED && DEBUG_RECURSIVE
-  Debug("%s: recursive_fwd_connect() TCP", desctask(t));
+  Debug(_("%s: recursive_fwd_connect() TCP"), desctask(t));
 #endif
 
   fd = recursive_tcp_fd;
@@ -902,7 +902,7 @@ __recursive_fwd_connect_tcp(TASK *t) {
   if ((rv = connect(fd, rsa, rsalen)) < 0) {
     if (errno == EINPROGRESS) {
 #if DEBUG_ENABLED && DEBUG_RECURSIVE
-      Debug("%s: connect returns EINPROGRESS", desctask(t));
+      Debug(_("%s: connect returns EINPROGRESS"), desctask(t));
 #endif
       /* Set up timeout so that reconnect is attempted */
       t->timeout = current_time + recursion_connect_timeout;
@@ -933,7 +933,7 @@ __recursive_fwd_connecting_tcp(TASK *t) {
   socklen_t		errorlength = sizeof(errorcode);
 
 #if DEBUG_ENABLED && DEBUG_RECURSIVE
-  Debug("%s: connect completed", desctask(t));
+  Debug(_("%s: connect completed"), desctask(t));
 #endif
   fd = recursive_tcp_fd;
 
@@ -946,7 +946,7 @@ __recursive_fwd_connecting_tcp(TASK *t) {
   }
 
 #if DEBUG_ENABLED && DEBUG_RECURSIVE
-  Debug("%s: connect completion result = %s(%d)", desctask(t), strerror(errorcode), errorcode);
+  Debug(_("%s: connect completion result = %s(%d)"), desctask(t), strerror(errorcode), errorcode);
 #endif
   if (errorcode) {
     Warn("%s: %s %s", desctask(t), _("error connecting to recursive forwarder"),

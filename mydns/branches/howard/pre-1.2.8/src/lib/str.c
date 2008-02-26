@@ -26,21 +26,21 @@
 	Returns a pointer to a static string describing the specified query/response protocol class.
 **************************************************************************************************/
 char *
-mydns_class_str(dns_class_t c)
-{
-	static char buf[4];
+mydns_class_str(dns_class_t c) {
+  static char *buf = NULL;
 
-	switch (c)
-	{
-		case DNS_CLASS_UNKNOWN:		return ("UNKNOWN");
-		case DNS_CLASS_IN:		return ("IN");
-		case DNS_CLASS_CHAOS:		return ("CHAOS");
-		case DNS_CLASS_HESIOD:		return ("HESIOD");
-		case DNS_CLASS_NONE:		return ("NONE");
-		case DNS_CLASS_ANY:		return ("ANY");
-	}
-	snprintf(buf, sizeof(buf), "%03d", c);
-	return (buf);
+  switch (c) {
+  case DNS_CLASS_UNKNOWN:	return ("UNKNOWN");
+  case DNS_CLASS_IN:		return ("IN");
+  case DNS_CLASS_CHAOS:		return ("CHAOS");
+  case DNS_CLASS_HESIOD:	return ("HESIOD");
+  case DNS_CLASS_NONE:		return ("NONE");
+  case DNS_CLASS_ANY:		return ("ANY");
+  }
+  RELEASE(buf);
+  ASPRINTF(&buf, "%03d", c);
+
+  return (buf);
 }
 /*--- mydns_class_str() -------------------------------------------------------------------------*/
 
@@ -50,70 +50,71 @@ mydns_class_str(dns_class_t c)
 	Returns a pointer to a static string describing the specified query/response type.
 **************************************************************************************************/
 char *
-mydns_qtype_str(dns_qtype_t qtype)
-{
-	static char buf[4];
+mydns_qtype_str(dns_qtype_t qtype) {
+  static char *buf = NULL;
 
-	switch (qtype)
-	{
-		case DNS_QTYPE_UNKNOWN:		return ("UNKNOWN");
+  switch (qtype) {
+  case DNS_QTYPE_UNKNOWN:	return ("UNKNOWN");
 
-		case DNS_QTYPE_A:		return ("A");
-		case DNS_QTYPE_NS:		return ("NS");
-		case DNS_QTYPE_MD:		return ("MD");
-		case DNS_QTYPE_MF:		return ("MF");
-		case DNS_QTYPE_CNAME:		return ("CNAME");
-		case DNS_QTYPE_SOA:		return ("SOA");
-		case DNS_QTYPE_MB:		return ("MB");
-		case DNS_QTYPE_MG:		return ("MG");
-		case DNS_QTYPE_MR:		return ("MR");
-		case DNS_QTYPE_NULL:		return ("NULL");
-		case DNS_QTYPE_WKS:		return ("WKS");
-		case DNS_QTYPE_PTR:		return ("PTR");
-		case DNS_QTYPE_HINFO:		return ("HINFO");
-		case DNS_QTYPE_MINFO:		return ("MINFO");
-		case DNS_QTYPE_MX:		return ("MX");
-		case DNS_QTYPE_TXT:		return ("TXT");
-		case DNS_QTYPE_RP:		return ("RP");
-		case DNS_QTYPE_AFSDB:		return ("AFSDB");
-		case DNS_QTYPE_X25:		return ("X25");
-		case DNS_QTYPE_ISDN:		return ("ISDN");
-		case DNS_QTYPE_RT:		return ("RT");
-		case DNS_QTYPE_NSAP:		return ("NSAP");
-		case DNS_QTYPE_NSAP_PTR:	return ("NSAP_PTR");
-		case DNS_QTYPE_SIG:		return ("SIG");
-		case DNS_QTYPE_KEY:		return ("KEY");
-		case DNS_QTYPE_PX:		return ("PX");
-		case DNS_QTYPE_GPOS:		return ("GPOS");
-		case DNS_QTYPE_AAAA:		return ("AAAA");
-		case DNS_QTYPE_LOC:		return ("LOC");
-		case DNS_QTYPE_NXT:		return ("NXT");
-		case DNS_QTYPE_EID:		return ("EID");
-		case DNS_QTYPE_NIMLOC:		return ("NIMLOC");
-		case DNS_QTYPE_SRV:		return ("SRV");
-		case DNS_QTYPE_ATMA:		return ("ATMA");
-		case DNS_QTYPE_NAPTR:		return ("NAPTR");
-		case DNS_QTYPE_KX:		return ("KX");
-		case DNS_QTYPE_CERT:		return ("CERT");
-		case DNS_QTYPE_A6:		return ("A6");
-		case DNS_QTYPE_DNAME:		return ("DNAME");
-		case DNS_QTYPE_SINK:		return ("SINK");
-		case DNS_QTYPE_OPT:		return ("OPT");
-		case DNS_QTYPE_TSIG:		return ("TSIG");
-		case DNS_QTYPE_IXFR:		return ("IXFR");
-		case DNS_QTYPE_AXFR:		return ("AXFR");
-		case DNS_QTYPE_MAILB:		return ("MAILB");
-		case DNS_QTYPE_MAILA:		return ("MAILA");
-		case DNS_QTYPE_ANY:		return ("ANY");
+  case DNS_QTYPE_A:		return ("A");
+  case DNS_QTYPE_NS:		return ("NS");
+  case DNS_QTYPE_MD:		return ("MD");
+  case DNS_QTYPE_MF:		return ("MF");
+  case DNS_QTYPE_CNAME:		return ("CNAME");
+  case DNS_QTYPE_SOA:		return ("SOA");
+  case DNS_QTYPE_MB:		return ("MB");
+  case DNS_QTYPE_MG:		return ("MG");
+  case DNS_QTYPE_MR:		return ("MR");
+  case DNS_QTYPE_NULL:		return ("NULL");
+  case DNS_QTYPE_WKS:		return ("WKS");
+  case DNS_QTYPE_PTR:		return ("PTR");
+  case DNS_QTYPE_HINFO:		return ("HINFO");
+  case DNS_QTYPE_MINFO:		return ("MINFO");
+  case DNS_QTYPE_MX:		return ("MX");
+  case DNS_QTYPE_TXT:		return ("TXT");
+  case DNS_QTYPE_RP:		return ("RP");
+  case DNS_QTYPE_AFSDB:		return ("AFSDB");
+  case DNS_QTYPE_X25:		return ("X25");
+  case DNS_QTYPE_ISDN:		return ("ISDN");
+  case DNS_QTYPE_RT:		return ("RT");
+  case DNS_QTYPE_NSAP:		return ("NSAP");
+  case DNS_QTYPE_NSAP_PTR:	return ("NSAP_PTR");
+  case DNS_QTYPE_SIG:		return ("SIG");
+  case DNS_QTYPE_KEY:		return ("KEY");
+  case DNS_QTYPE_PX:		return ("PX");
+  case DNS_QTYPE_GPOS:		return ("GPOS");
+  case DNS_QTYPE_AAAA:		return ("AAAA");
+  case DNS_QTYPE_LOC:		return ("LOC");
+  case DNS_QTYPE_NXT:		return ("NXT");
+  case DNS_QTYPE_EID:		return ("EID");
+  case DNS_QTYPE_NIMLOC:	return ("NIMLOC");
+  case DNS_QTYPE_SRV:		return ("SRV");
+  case DNS_QTYPE_ATMA:		return ("ATMA");
+  case DNS_QTYPE_NAPTR:		return ("NAPTR");
+  case DNS_QTYPE_KX:		return ("KX");
+  case DNS_QTYPE_CERT:		return ("CERT");
+  case DNS_QTYPE_A6:		return ("A6");
+  case DNS_QTYPE_DNAME:		return ("DNAME");
+  case DNS_QTYPE_SINK:		return ("SINK");
+  case DNS_QTYPE_OPT:		return ("OPT");
+  case DNS_QTYPE_TSIG:		return ("TSIG");
+  case DNS_QTYPE_IXFR:		return ("IXFR");
+  case DNS_QTYPE_AXFR:		return ("AXFR");
+  case DNS_QTYPE_MAILB:		return ("MAILB");
+  case DNS_QTYPE_MAILA:		return ("MAILA");
+  case DNS_QTYPE_ANY:		return ("ANY");
 
 #if ALIAS_ENABLED
-		case DNS_QTYPE_ALIAS:		return ("ALIAS");
+  case DNS_QTYPE_ALIAS:		return ("ALIAS");
 #endif
 
-		case DNS_QTYPE_NONE:		break;
-	}
-	snprintf(buf, sizeof(buf), "%03d", qtype);
-	return (buf);
+  case DNS_QTYPE_NONE:		break;
+  }
+
+  RELEASE(buf);
+  ASPRINTF(&buf, "%03d", qtype);
+
+  return (buf);
 }
 /*--- mydns_qtype_str() -------------------------------------------------------------------------*/
 
@@ -123,22 +124,24 @@ mydns_qtype_str(dns_qtype_t qtype)
 	Returns a pointer to a static string describing the specified query/response opcode.
 **************************************************************************************************/
 char *
-mydns_opcode_str(dns_opcode_t opcode)
-{
-	static char buf[4];
+mydns_opcode_str(dns_opcode_t opcode) {
+  static char *buf = NULL;
 
-	switch (opcode)
-	{
-		case DNS_OPCODE_UNKNOWN:	return ("UNKNOWN");
+  switch (opcode) {
+  case DNS_OPCODE_UNKNOWN:	return ("UNKNOWN");
 
-		case DNS_OPCODE_QUERY:		return ("QUERY");
-		case DNS_OPCODE_IQUERY:		return ("IQUERY");
-		case DNS_OPCODE_STATUS:		return ("STATUS");
-		case DNS_OPCODE_NOTIFY:		return ("NOTIFY");
-		case DNS_OPCODE_UPDATE:		return ("UPDATE");
-	}
-	snprintf(buf, sizeof(buf), "%03d", opcode);
-	return (buf);
+  case DNS_OPCODE_QUERY:	return ("QUERY");
+  case DNS_OPCODE_IQUERY:	return ("IQUERY");
+  case DNS_OPCODE_STATUS:	return ("STATUS");
+  case DNS_OPCODE_NOTIFY:	return ("NOTIFY");
+  case DNS_OPCODE_UPDATE:	return ("UPDATE");
+  
+  }
+
+  RELEASE(buf);
+  ASPRINTF(&buf, "%03d", opcode);
+  
+  return (buf);
 }
 /*--- mydns_opcode_str() ------------------------------------------------------------------------*/
 
@@ -148,34 +151,35 @@ mydns_opcode_str(dns_opcode_t opcode)
 	Returns a pointer to a static string describing the specified return code.
 **************************************************************************************************/
 char *
-mydns_rcode_str(dns_rcode_t rcode)
-{
-	static char buf[4];
+mydns_rcode_str(dns_rcode_t rcode) {
+  static char *buf = NULL;
 
-	switch (rcode)
-	{
-		case DNS_RCODE_UNKNOWN:		return ("UNKNOWN");
+  switch (rcode) {
+  case DNS_RCODE_UNKNOWN:	return ("UNKNOWN");
 
-		case DNS_RCODE_NOERROR:		return ("NOERROR");
-		case DNS_RCODE_FORMERR:		return ("FORMERR");
-		case DNS_RCODE_SERVFAIL:	return ("SERVFAIL");
-		case DNS_RCODE_NXDOMAIN:	return ("NXDOMAIN");
-		case DNS_RCODE_NOTIMP:		return ("NOTIMP");
-		case DNS_RCODE_REFUSED:		return ("REFUSED");
-		case DNS_RCODE_YXDOMAIN:	return ("YXDOMAIN");
-		case DNS_RCODE_YXRRSET:		return ("YXRRSET");
-		case DNS_RCODE_NXRRSET:		return ("NXRRSET");
-		case DNS_RCODE_NOTAUTH:		return ("NOTAUTH");
-		case DNS_RCODE_NOTZONE:		return ("NOTZONE");
-		case DNS_RCODE_BADSIG:		return ("BADSIG");
-		case DNS_RCODE_BADKEY:		return ("BADKEY");
-		case DNS_RCODE_BADTIME:		return ("BADTIME");
-		case DNS_RCODE_BADMODE:		return ("BADMODE");
-		case DNS_RCODE_BADNAME:		return ("BADNAME");
-		case DNS_RCODE_BADALG:		return ("BADALG");
-	}
-	snprintf(buf, sizeof(buf), "%03d", rcode);
-	return (buf);
+  case DNS_RCODE_NOERROR:	return ("NOERROR");
+  case DNS_RCODE_FORMERR:	return ("FORMERR");
+  case DNS_RCODE_SERVFAIL:	return ("SERVFAIL");
+  case DNS_RCODE_NXDOMAIN:	return ("NXDOMAIN");
+  case DNS_RCODE_NOTIMP:	return ("NOTIMP");
+  case DNS_RCODE_REFUSED:	return ("REFUSED");
+  case DNS_RCODE_YXDOMAIN:	return ("YXDOMAIN");
+  case DNS_RCODE_YXRRSET:	return ("YXRRSET");
+  case DNS_RCODE_NXRRSET:	return ("NXRRSET");
+  case DNS_RCODE_NOTAUTH:	return ("NOTAUTH");
+  case DNS_RCODE_NOTZONE:	return ("NOTZONE");
+  case DNS_RCODE_BADSIG:	return ("BADSIG");
+  case DNS_RCODE_BADKEY:	return ("BADKEY");
+  case DNS_RCODE_BADTIME:	return ("BADTIME");
+  case DNS_RCODE_BADMODE:	return ("BADMODE");
+  case DNS_RCODE_BADNAME:	return ("BADNAME");
+  case DNS_RCODE_BADALG:	return ("BADALG");
+  }
+
+  RELEASE(buf);
+  ASPRINTF(&buf, "%03d", rcode);
+
+  return (buf);
 }
 /*--- mydns_rcode_str() -------------------------------------------------------------------------*/
 
@@ -185,16 +189,16 @@ mydns_rcode_str(dns_rcode_t rcode)
 	Returns a pointer to a static string describing the specified data section.
 **************************************************************************************************/
 char *
-mydns_section_str(datasection_t section)
-{
-	switch (section)
-	{
-		case QUESTION:			return ("QUESTION");
-		case ANSWER:			return ("ANSWER");
-		case AUTHORITY:			return ("AUTHORITY");
-		case ADDITIONAL:		return ("ADDITIONAL");
-	}
-	return ("UNKNOWN");
+mydns_section_str(datasection_t section) {
+
+  switch (section) {
+  case QUESTION:		return ("QUESTION");
+  case ANSWER:			return ("ANSWER");
+  case AUTHORITY:		return ("AUTHORITY");
+  case ADDITIONAL:		return ("ADDITIONAL");
+  }
+	
+  return ("UNKNOWN");
 }
 /*--- mydns_section_str() -----------------------------------------------------------------------*/
 
