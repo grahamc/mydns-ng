@@ -115,20 +115,34 @@ strtolower(char *str) {
 char *
 strsecs(time_t seconds) {
   int weeks, days, hours, minutes;
-  static char str[40];
-  char *s;
+  static char *str = NULL;
+  char *weekstr = NULL, *daystr = NULL, *hourstr = NULL, *minutestr = NULL, *secondstr = NULL;
 
   weeks = seconds / 604800; seconds -= (weeks * 604800);
   days = seconds / 86400; seconds -= (days * 86400);
   hours = seconds / 3600; seconds -= (hours * 3600);
   minutes = seconds / 60; seconds -= (minutes * 60);
 
-  s = str;
-  if (weeks) s += snprintf(s, sizeof(str) - strlen(str), "%dw", weeks);
-  if (days) s += snprintf(s, sizeof(str) - strlen(str), "%dd", days);
-  if (hours) s += snprintf(s, sizeof(str) - strlen(str), "%dh", hours);
-  if (minutes) s += snprintf(s, sizeof(str) - strlen(str), "%dm", minutes);
-  if (seconds || s == str) s += snprintf(s, sizeof(str) - strlen(str), "%ds", (int)seconds);
+  if (weeks) { ASPRINTF(&weekstr, "%dw", weeks); }
+  if (days) { ASPRINTF(&daystr, "%dd", days); }
+  if (hours) { ASPRINTF(&hourstr, "%dh", hours); }
+  if (minutes) { ASPRINTF(&minutestr, "%dm", minutes); }
+  if (seconds) { ASPRINTF(&secondstr, "%ds", (int)seconds); }
+
+  RELEASE(str);
+  ASPRINTF(&str,
+	   "%s%s%s%s%s",
+	   (weekstr)?weekstr:"",
+	   (daystr)?daystr:"",
+	   (hourstr)?hourstr:"",
+	   (minutestr)?minutestr:"",
+	   (secondstr)?secondstr:(!(weekstr||daystr||hourstr||minutestr))?"0s":"");
+
+  RELEASE(weekstr);
+  RELEASE(daystr);
+  RELEASE(hourstr);
+  RELEASE(minutestr);
+  RELEASE(secondstr);
   return (str);
 }
 /*--- strsecs() ---------------------------------------------------------------------------------*/
@@ -209,122 +223,5 @@ human_file_size(const char *str) {
   return (numeric);
 }
 /*--- human_file_size() -------------------------------------------------------------------------*/
-
-
-/**************************************************************************************************
-	ESCDATA
-	(for debugging) Outputs a received packet.
-**************************************************************************************************/
-void
-escdata(char *data, int len) {
-  register int n, ct;
-
-  for (ct = 0; ct < len; ct += 8) {
-    for (n = ct; n < ct + 8; n++) {
-      printf("%c", n < len ? (isprint(data[n]) ? data[n] : '.') : ' ');
-      if (n == ct+3)
-	printf(" ");
-    }
-    printf("   ");
-    for (n = ct; n < ct + 8 && n < len; n++)
-      printf("%02x%s", data[n], (n == ct+3) ? "  " : " ");
-    printf(" %d-%d %d-%d\n", ct, ct+3, ct+4, ct+7);
-  }
-}
-/*--- escdata() ---------------------------------------------------------------------------------*/
-
-
-/**************************************************************************************************
-	BYTESTR
-	(for debugging) Return a static string containing `byte' shown as binary.
-**************************************************************************************************/
-char *
-bytestr(unsigned char byte) {
-  register int i, j;
-  int bits = 8;
-  int strwid = 9;
-  static char str[80], *s;
-
-  s = str;
-  j = strwid - (bits + (bits >> 2)- (bits % 4 ? 0 : 1));
-  for (i = 0; i < j; i++)
-    *s++ = ' ';
-  while (--bits >= 0) {
-    *s++ = ((byte >> bits) & 1) + '0';
-    if (!(bits % 4) && bits)
-      *s++ = ' ';
-  }
-  *s = '\0';
-  return (str);
-}
-/*--- bytestr() ---------------------------------------------------------------------------------*/
-
-
-/**************************************************************************************************
-	ESCSTR
-	(for debugging)
-**************************************************************************************************/
-char *
-escstr(char *str, size_t len) {
-  static char buf[BUFSIZ];
-  register char *s, *d;
-
-  for (s = str, d = buf; s < str + len; s++)
-    *(d++) = (isprint(*s)) ? *s : '?';
-  return ((char *)buf);
-}
-/*--- escstr() ----------------------------------------------------------------------------------*/
-
-
-/**************************************************************************************************
-	COMMAFMT
-	Copies the numeric value of N into buffer 'buf' of size 'bufsiz', inserting commas where
-	appropriate.
-**************************************************************************************************/
-static size_t
-commafmt(char *buf, size_t bufsiz, unsigned long N) {
-  unsigned int len = 1, posn = 1;
-  char *ptr = buf + bufsiz - 1;
-
-  if (bufsiz < 2) {
-    *buf = '\0';
-    return 0;
-  }
-  *ptr-- = '\0';
-  --bufsiz;
-  for ( ; len <= bufsiz; ++len, ++posn)	{
-    *ptr-- = (char)((N % 10L) + '0');
-    if (0L == (N /= 10L))
-      break;
-    if (0 == (posn % 3)) {
-      *ptr-- = ',';
-      ++len;
-    }
-    if (len >= bufsiz) {
-      *buf = '\0';
-      return 0;
-    }
-  }
-  strcpy(buf, ++ptr);
-  return (size_t)len;
-}
-/*--- commafmt() --------------------------------------------------------------------------------*/
-
-
-/**************************************************************************************************
-	COMMA1-3
-	Making printf life easy for Don at the expense of repetition and a few hundred bytes of RAM.
-**************************************************************************************************/
-char *comma(unsigned long num)
-{ static char cbuf[81];  commafmt(cbuf, 80, num); return (cbuf); }
-char *comma1(unsigned long num)
-{ static char cbuf[81];  commafmt(cbuf, 80, num); return (cbuf); }
-char *comma2(unsigned long num)
-{ static char cbuf[81];  commafmt(cbuf, 80, num); return (cbuf); }
-char *comma3(unsigned long num)
-{ static char cbuf[81];  commafmt(cbuf, 80, num); return (cbuf); }
-/*--- comma1-3() --------------------------------------------------------------------------------*/
-
-
 
 /* vi:set ts=3: */

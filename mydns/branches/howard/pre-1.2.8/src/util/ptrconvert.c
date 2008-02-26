@@ -182,7 +182,6 @@ load_zone_list(void) {
   SQL_ROW	row;
   char		*query = NULL;
   size_t	querylen;
-  char		*addr = NULL;
 
   /* Construct and execute query */
   querylen = ASPRINTF(&query,
@@ -192,8 +191,6 @@ load_zone_list(void) {
   RELEASE(query);
   if (!res)
     ErrSQL(sql, "Error selecting PTR records");
-
-  addr = ALLOCATE(INET_ADDRSTRLEN, char[]);
 
   /* Add results to list */
   while ((row = sql_getrow(res, NULL))) {
@@ -212,7 +209,6 @@ load_zone_list(void) {
     /* Get IP address etc */
     ip = htonl(ptr->ip);
     memcpy(&quad, &ip, sizeof(quad));
-    inet_ntop(AF_INET, &ip, addr, INET_ADDRSTRLEN);
 
     /* Generate zone name */
     ASPRINTF(&name, "%u.%u.%u.in-addr.arpa.", quad[2], quad[1], quad[0]);
@@ -247,7 +243,6 @@ load_zone_list(void) {
     RELEASE(ptr);
   }
   sql_free(res);
-  RELEASE(addr);
 
   if (!numZones)
     Errx("No zones found in PTR table.");

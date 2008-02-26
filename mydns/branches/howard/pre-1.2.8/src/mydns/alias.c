@@ -130,10 +130,8 @@ alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, char *
       }
 
       /* Append origin if needed */
-      int len = strlen(rr->data);
-      if (len > 0 && rr->data[len - 1] != '.') {
-	strcat(rr->data, ".");
-	strncat(rr->data, soa->origin, sizeof(rr->name) - len - 1);
+      if (MYDNS_RR_DATA_LENGTH(rr) > 0 && LASTCHAR(MYDNS_RR_DATA_VALUE(rr)) != '.') {
+	mydns_rr_append_origin(rr, origin);
       }
 
       /* Check aliases list; if we are looping, stop. Otherwise add this to the list. */

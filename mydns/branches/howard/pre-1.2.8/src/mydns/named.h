@@ -272,7 +272,7 @@ extern char		*task_string_name(TASK *);
 extern TASK 		*task_find_by_id(TASK *, QUEUE *, unsigned long);
 extern taskexec_t	task_new(TASK *, unsigned char *, size_t);
 extern void		task_init_header(TASK *);
-extern char		*clientaddr(TASK *);
+extern const char	*clientaddr(TASK *);
 extern char		*desctask(TASK *);
 extern TASK		*_task_init(tasktype_t, taskpriority_t, taskstat_t, int, int, int, void *, const char *, int);
 #define			task_init(P,S,fd,p,f,a)	_task_init(NORMAL_TASK, (P), (S), (fd), (p), (f), (a), __FILE__, __LINE__)

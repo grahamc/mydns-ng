@@ -38,41 +38,32 @@ int	err_debug = 0;
 /* Should error functions output to a file? */
 FILE	*err_file = NULL;
 
-/* The last error message output, so we don't repeat ourselves */
-static char err_last[ERROR_MAXMSGLEN + 1] = "";
-
-
 /**************************************************************************************************
 	ERROR_INIT
 	Initialize error reporting and output functions.
 **************************************************************************************************/
 void
-error_init(argv0, facility)
-	const char *argv0;	/* argv[0] from calling program */
-	int facility;			/* Logging facility (i.e. LOG_DAEMON, etc) */
-{
-	int option;
+error_init(const char *argv0, int facility) {
+  int option;
 
-	/* Save program name */
-	if (argv0)
-	{
-		char *c;
-		if ((c = strrchr(argv0, '/')))
-			progname = STRDUP(c+1);
-		else
-			progname = STRDUP((char *)argv0);
-	}
+  /* Save program name */
+  if (argv0) {
+    char *c;
+    if ((c = strrchr(argv0, '/')))
+      progname = STRDUP(c+1);
+    else
+      progname = STRDUP((char *)argv0);
+  }
 
-	/* Open syslog */
-	if (!err_file)
-	{
-		option = LOG_CONS | LOG_NDELAY | LOG_PID;
+  /* Open syslog */
+  if (!err_file) {
+    option = LOG_CONS | LOG_NDELAY | LOG_PID;
 #ifdef LOG_PERROR
-		if (isatty(STDERR_FILENO))
-			option |= LOG_PERROR;
+    if (isatty(STDERR_FILENO))
+      option |= LOG_PERROR;
 #endif
-		openlog(progname, option, facility);
-	}
+    openlog(progname, option, facility);
+  }
 }
 /*--- error_init() ------------------------------------------------------------------------------*/
 
@@ -83,62 +74,70 @@ error_init(argv0, facility)
 	Always returns -1.
 **************************************************************************************************/
 static void
+__error_out(int priority, const char *out, int len, char **err_last) {
+  static int  repeat = 0;
+
+  if (err_last) {
+    /* Don't output the same error message again and again */
+    if (*err_last && strcmp(out, *err_last)) {
+      repeat++;
+      return;
+    }
+    if (repeat) {
+      if (err_file)
+	fprintf(err_file, _("%s: last message repeated %d times\n"), progname, repeat + 1);
+      else
+	syslog(priority, _("last message repeated %d times"), repeat + 1);
+    }
+    repeat = 0;
+    RELEASE(*err_last);
+    *err_last = STRDUP(out);
+  }
+  if (err_file) {
+    fwrite(out, len, 1, err_file);
+    fwrite("\n", strlen("\n"), 1, err_file);
+    fflush(err_file);
+  } else {
+    syslog(priority, "%s", out);
+  }
+}
+
+static void
 _error_out(
-	int priority,				/* Priority (i.e. LOG_ERR, LOG_WARNING, LOG_NOTICE, LOG_INFO, LOG_DEBUG) */
-	int errappend,				/* Append strerror(errno)? */
-	int isfatal,				/* Is this error fatal? */
+	int priority,		/* Priority (i.e. LOG_ERR, LOG_WARNING, LOG_NOTICE, LOG_INFO, LOG_DEBUG) */
+	int errappend,		/* Append strerror(errno)? */
+	int isfatal,		/* Is this error fatal? */
 	const char *msg 
-)
-{
-	static char out[ERROR_MAXMSGLEN + 2];
-	static int  repeat = 0;
-	int len;
+) {
+  /* The last error message output, so we don't repeat ourselves */
+  static char *err_last = NULL;
+  char *out = NULL;
+  int len;
 
-	/* Construct 'out' - the output */
+  /* Construct 'out' - the output */
 #if SHOW_PID_IN_ERRORS
-	if (err_file && errappend)
-		len = snprintf(out, sizeof(out) - 2, "%s [%d]: %s: %s", progname, getpid(), msg, strerror(errno));
-	else if (err_file)
-		len = snprintf(out, sizeof(out) - 2, "%s [%d]: %s", progname, getpid(), msg);
+  if (err_file && errappend)
+    len = ASPRINTF(&out, "%s [%d]: %s: %s", progname, getpid(), msg, strerror(errno));
+  else if (err_file)
+    len = ASPRINTF(&out, "%s [%d]: %s", progname, getpid(), msg);
 #else
-	if (err_file && errappend)
-		len = snprintf(out, sizeof(out) - 2, "%s: %s: %s", progname, msg, strerror(errno));
-	else if (err_file)
-		len = snprintf(out, sizeof(out) - 2, "%s: %s", progname, msg);
+  if (err_file && errappend)
+    len = ASPRINTF(&out, "%s: %s: %s", progname, msg, strerror(errno));
+  else if (err_file)
+    len = ASPRINTF(&out, "%s: %s", progname, msg);
 #endif
-	else if (errappend)
-		len = snprintf(out, sizeof(out) - 2, "%s: %s", msg, strerror(errno));
-	else
-		len = snprintf(out, sizeof(out) - 2, "%s", msg);
+  else if (errappend)
+    len = ASPRINTF(&out, "%s: %s", msg, strerror(errno));
+  else
+    len = ASPRINTF(&out, "%s", msg);
 
-	/* Don't output the same error message again and again */
-	if (strcmp(out, err_last))
-	{
-		if (repeat)
-		{
-			if (err_file)
-				fprintf(err_file, _("%s: last message repeated %d times\n"), progname, repeat + 1);
-			else
-				syslog(priority, _("last message repeated %d times"), repeat + 1);
-		}
-		repeat = 0;
-		strncpy(err_last, out, ERROR_MAXMSGLEN);
-		if (err_file)
-		{
-			out[len++] = '\n';
-			out[len] = '\0';
-			fwrite(out, len, 1, err_file);
-			fflush(err_file);
-		}
-		else
-			syslog(priority, "%s", out);
-	}
-	else
-		repeat++;
+  __error_out(priority, out, len, &err_last);
 
-	/* Abort if the error should be fatal */
-	if (isfatal)
-		exit(EXIT_FAILURE);
+  RELEASE(out);
+
+  /* Abort if the error should be fatal */
+  if (isfatal)
+    exit(EXIT_FAILURE);
 }
 /*--- _error_out() ------------------------------------------------------------------------------*/
 
@@ -148,13 +147,14 @@ _error_out(
    This is called by the macro "Assert" if an assertion fails.
 **************************************************************************************************/
 void
-_error_assert_fail(const char *assertion)
-{
-	char msg[BUFSIZ];
+_error_assert_fail(const char *assertion) {
+  char *msg = NULL;
 
-	snprintf(msg, sizeof(msg), "assertion failed: %s", assertion);
+  ASPRINTF(&msg, "assertion failed: %s", assertion);
 
-   _error_out(LOG_ERR, 0, 1, msg);
+  _error_out(LOG_ERR, 0, 1, msg);
+
+  RELEASE(msg);
 }
 /*--- _error_assert_fail() ----------------------------------------------------------------------*/
 
@@ -164,20 +164,20 @@ _error_assert_fail(const char *assertion)
 	DEBUG
 **************************************************************************************************/
 void
-Debug(const char *fmt, ...)
-{
-	char msg[BUFSIZ];
-	va_list ap;
+Debug(const char *fmt, ...) {
+  char *msg = NULL;
+  va_list ap;
 
-	if (!err_debug)
-		return;
+  if (!err_debug) return;
 
-	/* Construct output string */
-	va_start(ap, fmt);
-	vsnprintf(msg, sizeof(msg), fmt, ap);
-	va_end(ap);
+  /* Construct output string */
+  va_start(ap, fmt);
+  VASPRINTF(&msg, fmt, ap);
+  va_end(ap);
 
-	_error_out(LOG_DEBUG, 0, 0, msg);
+  _error_out(LOG_DEBUG, 0, 0, msg);
+
+  RELEASE(msg);
 }
 /*--- Debug() -----------------------------------------------------------------------------------*/
 #endif
@@ -187,20 +187,20 @@ Debug(const char *fmt, ...)
 	VERBOSE
 **************************************************************************************************/
 void
-Verbose(const char *fmt, ...)
-{
-	char msg[BUFSIZ];
-	va_list ap;
+Verbose(const char *fmt, ...) {
+  char *msg = NULL;
+  va_list ap;
 
-	if (!err_verbose)
-		return;
+  if (!err_verbose) return;
 
-	/* Construct output string */
-	va_start(ap, fmt);
-	vsnprintf(msg, sizeof(msg), fmt, ap);
-	va_end(ap);
+  /* Construct output string */
+  va_start(ap, fmt);
+  VASPRINTF(&msg, fmt, ap);
+  va_end(ap);
 
-	_error_out(LOG_WARNING, 0, 0, msg);
+  _error_out(LOG_WARNING, 0, 0, msg);
+
+  RELEASE(msg);
 }
 /*--- Verbose() ---------------------------------------------------------------------------------*/
 
@@ -209,17 +209,18 @@ Verbose(const char *fmt, ...)
 	NOTICE
 **************************************************************************************************/
 void
-Notice(const char *fmt, ...)
-{
-	char msg[BUFSIZ];
-	va_list ap;
+Notice(const char *fmt, ...) {
+  char *msg = NULL;
+  va_list ap;
 
-	/* Construct output string */
-	va_start(ap, fmt);
-	vsnprintf(msg, sizeof(msg), fmt, ap);
-	va_end(ap);
+  /* Construct output string */
+  va_start(ap, fmt);
+  VASPRINTF(&msg, fmt, ap);
+  va_end(ap);
 
-	_error_out(LOG_WARNING, 0, 0, msg);
+  _error_out(LOG_WARNING, 0, 0, msg);
+
+  RELEASE(msg);
 }
 /*--- Notice() ----------------------------------------------------------------------------------*/
 
@@ -228,18 +229,20 @@ Notice(const char *fmt, ...)
 	WARN
 **************************************************************************************************/
 int
-Warn(const char *fmt, ...)
-{
-	char msg[BUFSIZ];
-	va_list ap;
+Warn(const char *fmt, ...) {
+  char *msg = NULL;
+  va_list ap;
 
-	/* Construct output string */
-	va_start(ap, fmt);
-	vsnprintf(msg, sizeof(msg), fmt, ap);
-	va_end(ap);
+  /* Construct output string */
+  va_start(ap, fmt);
+  VASPRINTF(&msg, fmt, ap);
+  va_end(ap);
 
-	_error_out(LOG_WARNING, 1, 0, msg);
-	return (-1);
+  _error_out(LOG_WARNING, 1, 0, msg);
+
+  RELEASE(msg);
+
+  return (-1);
 }
 /*--- Warn() ------------------------------------------------------------------------------------*/
 
@@ -248,18 +251,20 @@ Warn(const char *fmt, ...)
 	WARNX
 **************************************************************************************************/
 int
-Warnx(const char *fmt, ...)
-{
-	char msg[BUFSIZ];
-	va_list ap;
+Warnx(const char *fmt, ...) {
+  char *msg = NULL;
+  va_list ap;
 
-	/* Construct output string */
-	va_start(ap, fmt);
-	vsnprintf(msg, sizeof(msg), fmt, ap);
-	va_end(ap);
+  /* Construct output string */
+  va_start(ap, fmt);
+  VASPRINTF(&msg, fmt, ap);
+  va_end(ap);
 
-	_error_out(LOG_WARNING, 0, 0, msg);
-	return (-1);
+  _error_out(LOG_WARNING, 0, 0, msg);
+
+  RELEASE(msg);
+
+  return (-1);
 }
 /*--- Warnx() -----------------------------------------------------------------------------------*/
 
@@ -268,36 +273,43 @@ Warnx(const char *fmt, ...)
 	ERR
 **************************************************************************************************/
 void
-Err(const char *fmt, ...)
-{
-	char msg[BUFSIZ];
-	va_list ap;
+Err(const char *fmt, ...) {
+  char *msg = NULL;
+  va_list ap;
 
-	/* Construct output string */
-	va_start(ap, fmt);
-	vsnprintf(msg, sizeof(msg), fmt, ap);
-	va_end(ap);
+  /* Construct output string */
+  va_start(ap, fmt);
+  VASPRINTF(&msg, fmt, ap);
+  va_end(ap);
 
-	_error_out(LOG_ERR, 1, 1, msg);
+  _error_out(LOG_ERR, 1, 1, msg);
+
+  RELEASE(msg);
 }
 /*--- Err() -------------------------------------------------------------------------------------*/
 
+void
+Out_Of_Memory() {
+  __error_out(LOG_ERR, _("out of memory"), strlen(_("out of memory")), NULL);
+  abort();
+}
 
 /**************************************************************************************************
 	ERRX
 **************************************************************************************************/
 void
-Errx(const char *fmt, ...)
-{
-	char msg[BUFSIZ];
-	va_list ap;
+Errx(const char *fmt, ...) {
+  char *msg = NULL;
+  va_list ap;
 
-	/* Construct output string */
-	va_start(ap, fmt);
-	vsnprintf(msg, sizeof(msg), fmt, ap);
-	va_end(ap);
+  /* Construct output string */
+  va_start(ap, fmt);
+  VASPRINTF(&msg, fmt, ap);
+  va_end(ap);
 
-	_error_out(LOG_ERR, 0, 1, msg);
+  _error_out(LOG_ERR, 0, 1, msg);
+
+  RELEASE(msg);
 }
 /*--- Errx() ------------------------------------------------------------------------------------*/
 
@@ -313,68 +325,38 @@ WarnSQL(
 #else
 	MYSQL *mysql,
 #endif
-	const char *fmt, ...)
-{
-	char msg[BUFSIZ], out[BUFSIZ * 2];
-	va_list ap;
+	const char *fmt, ...) {
+  char *msg = NULL, *out = NULL;
+  va_list ap;
 
-	/* Construct output string */
-	va_start(ap, fmt);
-	vsnprintf(msg, sizeof(msg), fmt, ap);
-	va_end(ap);
+  /* Construct output string */
+  va_start(ap, fmt);
+  VASPRINTF(&msg, fmt, ap);
+  va_end(ap);
 
 #if USE_PGSQL
-	{
-		char *errmsg = PQerrorMessage(pgsql), *c;
+  {
+    char *errmsg = PQerrorMessage(pgsql), *c;
 
-		for (c = errmsg; *c; c++)
-			if (*c == '\r' || *c == '\n')
-				*c = ' ';
-		strtrim(errmsg);
+    for (c = errmsg; *c; c++)
+      if (*c == '\r' || *c == '\n')
+	*c = ' ';
+    strtrim(errmsg);
 
-		snprintf(out, sizeof(out), "%s: %s (errno=%d)", msg, errmsg, errno);
-	}
+    ASPRINTF(&out, "%s: %s (errno=%d)", msg, errmsg, errno);
+  }
 #else
-	snprintf(out, sizeof(out), "%s: %s (errno=%d)", msg, mysql_error(mysql), errno);
+  ASPRINTF(&out, "%s: %s (errno=%d)", msg, mysql_error(mysql), errno);
 #endif
-	_error_out(LOG_WARNING, 0, 0, out);
+  RELEASE(msg);
 
-	return (-1);
+  _error_out(LOG_WARNING, 0, 0, out);
+
+  RELEASE(out);
+
+  return (-1);
 }
 /*--- WarnSQL() ---------------------------------------------------------------------------------*/
-
-
-/**************************************************************************************************
-	SQL_ERRMSG
-**************************************************************************************************/
-char *
-sql_errmsg(
-#if USE_PGSQL
-	PGconn *pgsql
-#else
-	MYSQL *mysql
-#endif
-)
-{
-	static char msg[BUFSIZ];
-
-#if USE_PGSQL
-	{
-		char *errmsg = PQerrorMessage(pgsql), *c;
-
-		for (c = errmsg; *c; c++)
-			if (*c == '\r' || *c == '\n')
-				*c = ' ';
-		strtrim(errmsg);
-
-		snprintf(msg, sizeof(msg), "%s (errno=%d)", errmsg, errno);
-	}
-#else
-	snprintf(msg, sizeof(msg), "%s (errno=%d)", mysql_error(mysql), errno);
-#endif
-	return (msg);
-}
-/*--- sql_errmsg() ------------------------------------------------------------------------------*/
 
 
 /**************************************************************************************************
@@ -383,36 +365,38 @@ sql_errmsg(
 void
 ErrSQL(
 #if USE_PGSQL
-	PGconn *pgsql,
+       PGconn *pgsql,
 #else
-	MYSQL *mysql,
+       MYSQL *mysql,
 #endif
-	const char *fmt, ...)
-{
-	char msg[BUFSIZ], out[BUFSIZ * 2];
-	va_list ap;
+       const char *fmt, ...) {
+  char *msg = NULL, *out = NULL;
+  va_list ap;
 
-	/* Construct output string */
-	va_start(ap, fmt);
-	vsnprintf(msg, sizeof(msg), fmt, ap);
-	va_end(ap);
+  /* Construct output string */
+  va_start(ap, fmt);
+  VASPRINTF(&msg, fmt, ap);
+  va_end(ap);
 
 #if USE_PGSQL
-	{
-		char *errmsg = PQerrorMessage(pgsql), *c;
+  {
+    char *errmsg = PQerrorMessage(pgsql), *c;
 
-		for (c = errmsg; *c; c++)
-			if (*c == '\r' || *c == '\n')
-				*c = ' ';
-		strtrim(errmsg);
+    for (c = errmsg; *c; c++)
+      if (*c == '\r' || *c == '\n')
+	*c = ' ';
+    strtrim(errmsg);
 
-		snprintf(out, sizeof(out), "%s: %s (errno=%d)", msg, errmsg, errno);
-	}
+    ASPRINTF(&out, "%s: %s (errno=%d)", msg, errmsg, errno);
+  }
 #else
-	snprintf(out, sizeof(out), "%s: %s (errno=%d)", msg, mysql_error(mysql), errno);
+  ASPRINTF(&out, "%s: %s (errno=%d)", msg, mysql_error(mysql), errno);
 #endif
+  RELEASE(msg);
 
-	_error_out(LOG_ERR, 0, 1, out);
+  _error_out(LOG_ERR, 0, 1, out);
+
+  RELEASE(out);
 }
 /*--- ErrSQL() ----------------------------------------------------------------------------------*/
 

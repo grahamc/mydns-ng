@@ -37,11 +37,10 @@ _mydns_asprintf(char **strp, const char *fmt, ...) {
   va_end(ap);
 
 #if DEBUG_ENABLED && DEBUG_MEMMAN
-  Debug("asprintf() %s", (reslength>0)?"suceeded":"failed");
+  Debug("asprintf() %s", (reslength>0)?_("succeeded"):_("failed"));
 #endif
 
-  if (reslength<0)
-    Err("Memory allocation failed");
+  if (reslength<0) Out_Of_Memory();
 
   return (reslength);
 }
@@ -57,11 +56,10 @@ _mydns_vasprintf(char **strp, const char *fmt, va_list ap) {
   reslength = vasprintf(strp, fmt, ap);
 
 #if DEBUG_ENABLED && DEBUG_MEMMAN
-  Debug("asprintf() %s", (reslength>0)?"suceeded":"failed");
+  Debug("asprintf() %s", (reslength>0)?_("suceeded"):_("failed"));
 #endif
 
-  if (reslength<0)
-    Err("Memory allocation failed");
+  if (reslength<0) Out_Of_Memory();
 
   return (reslength);
 }
@@ -80,11 +78,10 @@ _mydns_strdup(const char *s, arena_t arena, char *file, int line) {
 
 #if DEBUG_ENABLED && DEBUG_MEMMAN
   Debug("Allocating string copy of size %d bytes in arena %s %s -> %p",
-	size, __mydns_arenaname(arena), (news)?"succeeded":"failed", news);
+	size, __mydns_arenaname(arena), (news)?_("succeeded"):_("failed"), news);
 #endif
 
-  if (!news)
-    Err("Memory allocation failed");
+  if (!news) Out_Of_Memory();
 
   return (news);
 }
@@ -102,11 +99,10 @@ _mydns_strndup(const char *s, size_t size, arena_t arena, char *file, int line) 
 
 #if DEBUG_ENABLED && DEBUG_MEMMAN
   Debug("Allocating string copy of size %d bytes in arena %s %s -> %p",
-	size, __mydns_arenaname(arena), (news)?"succeeded":"failed", news);
+	size, __mydns_arenaname(arena), (news)?_("succeeded"):_("failed"), news);
 #endif
 
-  if (!news)
-    Err("Memory allocation failed");
+  if (!news) Out_Of_Memory();
 
   return (news);
 }
@@ -125,11 +121,10 @@ _mydns_allocate(size_t size, size_t count, arena_t arena, char *type, char *file
 
 #if DEBUG_ENABLED && DEBUG_MEMMAN
   Debug("Allocating %d unit of %d bytes in arena %s %s -> %p",
-	count, size, __mydns_arenaname(arena), (newobject)?"succeeded":"failed", newobject);
+	count, size, __mydns_arenaname(arena), (newobject)?_("succeeded"):_("failed"), newobject);
 #endif
 
-  if (!newobject)
-    Err("Memory allocation failed");
+  if (!newobject) Out_Of_Memory();
 
   return (newobject);
 }
@@ -148,11 +143,10 @@ _mydns_reallocate(void *oldobject, size_t size, size_t count, arena_t arena, cha
 
 #if DEBUG_ENABLED && DEBUG_MEMMAN
   Debug("Reallocating %p as %d bytes in arena %s %s -> %p",
-	oldobject, size, __mydns_arenaname(arena), (newobject)?"succeeded":"failed", newobject);
+	oldobject, size, __mydns_arenaname(arena), (newobject)?_("succeeded"):_("failed"), newobject);
 #endif
 
-  if (!newobject)
-    Err("Memory allocation failed");
+  if (!newobject) Out_Of_Memory();
 
   return (newobject);
 }

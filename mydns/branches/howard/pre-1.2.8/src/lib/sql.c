@@ -490,9 +490,6 @@ sql_build_query(char **query, const char *fmt, ...) {
   querylen = VASPRINTF(query, fmt, ap);
   va_end(ap);
 
-  if (querylen < 0)
-    Err(_("out of memory"));
-
   return querylen;
 }
 

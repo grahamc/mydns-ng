@@ -335,32 +335,21 @@ task_new(TASK *t, unsigned char *data, size_t len) {
 	CLIENTADDR
 	Given a task, returns the client's IP address in printable format.
 **************************************************************************************************/
-char *
+const char *
 clientaddr(TASK *t) {
-  /* Needs to use dynamic memory and reallocate when required - in task structure? */
-  static char	*buf = NULL;
-  static size_t	buflen = 0;
+  void *addr = NULL;
 
-  if (!buf) {
-    buflen = INET_ADDRSTRLEN;
+  if (t->family == AF_INET) {
+    addr = &t->addr4.sin_addr;
 #if HAVE_IPV6
-    buflen = MAX(buflen, INET6_ADDRSTRLEN);
+  } else if (t->family == AF_INET6) {
+    addr = &t->addr6.sin6_addr;
 #endif
-
-    buf = ALLOCATE(buflen, char[]);
-    buf[0] = '\0';
+  } else {
+    return(_("Address unknown"));
   }
 
-#if HAVE_IPV6
-  if (t->family == AF_INET6)
-    inet_ntop(AF_INET6, &t->addr6.sin6_addr, buf, buflen);
-  else
-#endif
-    if (t->family == AF_INET)
-      inet_ntop(AF_INET, &t->addr4.sin_addr, buf, buflen);
-    else
-      return("Address Unknown");
-  return (buf);
+  return(ipaddr(t->family, addr));
 }
 /*--- clientaddr() ------------------------------------------------------------------------------*/
 

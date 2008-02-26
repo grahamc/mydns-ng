@@ -27,35 +27,38 @@
 	update it.
 **************************************************************************************************/
 char *
-getoptstr(struct option const longopts[])
-{
-	static char optstr[128];
-	char *c;
-	register int n, opts;
+getoptstr(struct option const longopts[]) {
+  static char *optstr = NULL;
+  char *c;
+  register int n, opts;
+  int optsize = 0;
 
-	/* Count number of options */
-	for (opts = 0; longopts[opts].name; opts++)
-		;
+  /* Count number of options */
+  for (opts = 0; longopts[opts].name; opts++) {
+    optsize += 1 + ((longopts[opts].has_arg == required_argument)
+		    ?1
+		    :(longopts[opts].has_arg == optional_argument)
+		    ?2
+		    :0);
+  }
 
-	/* Allocate optstr */
-	memset(optstr, 0, sizeof(optstr));
+  /* Allocate optstr */
+  optstr = REALLOCATE(optstr, optsize + 1, char[]);
+  memset(optstr, 0, optsize + 1);
 
-	/* Build optstr */
-	for (c = optstr, n = 0; n < opts && c - optstr < sizeof(optstr)-1; n++)
-	{
-		if (longopts[n].val)
-		{
-			*c++ = longopts[n].val;
-			if (longopts[n].has_arg == required_argument)
-				*c++ = ':';
-			else if (longopts[n].has_arg == optional_argument)
-			{
-				*c++ = ':';
-				*c++ = ':';
-			}
-		}
-	}
-	return (optstr);
+  /* Build optstr */
+  for (c = optstr, n = 0; n < opts && c - optstr < optsize; n++) {
+    if (longopts[n].val) {
+      *c++ = longopts[n].val;
+      if (longopts[n].has_arg == required_argument)
+	*c++ = ':';
+      else if (longopts[n].has_arg == optional_argument) {
+	*c++ = ':';
+	*c++ = ':';
+      }
+    }
+  }
+  return (optstr);
 }
 /*--- getoptstr() -------------------------------------------------------------------------------*/
 

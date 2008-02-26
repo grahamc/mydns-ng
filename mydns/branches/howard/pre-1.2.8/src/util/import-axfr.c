@@ -274,15 +274,15 @@ process_axfr_answer(char *reply, size_t replylen, char *src) {
 
   case DNS_QTYPE_AAAA:
     {
-      uint8_t addr[16];
+      uint8_t addr[16]; /* This is a cheat.
+			** it should be a 'struct in6_addr'
+			** but we can't be sure it will exist */
 
-      memcpy(&addr, src, sizeof(uint8_t) * 16);
-      data = ALLOCATE(INET6_ADDRSTRLEN, char[]);
-      if (inet_ntop(AF_INET6, &addr, data, sizeof(data)-1))
+      memcpy(&addr, src, sizeof(addr));
+      if ((data = (char*)ipaddr(AF_INET6, &addr)))
 	import_rr(shortname(name, 1), "AAAA", data, strlen(data), 0, ttl);
       else
 	Notice("%s IN AAAA: %s", name, strerror(errno));
-      RELEASE(data);
     }
     break;
 

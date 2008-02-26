@@ -27,15 +27,13 @@
 	Close/shutdown a socket.
 **************************************************************************************************/
 void
-_sockclose(int fd)
-{
-	if (fd >= 0)
-	{
+_sockclose(int fd) {
+  if (fd >= 0) {
 #if HAVE_SHUTDOWN
-		shutdown(fd, 2);
+    shutdown(fd, 2);
 #endif
-		close(fd);
-	}
+    close(fd);
+  }
 }
 /*--- _sockclose() ------------------------------------------------------------------------------*/
 
@@ -46,20 +44,28 @@ _sockclose(int fd)
 	'family' should be AF_INET or (if supported) AF_INET6.
 	'addr' should be a pointer to a 'struct in_addr' or a 'struct in6_addr'.
 **************************************************************************************************/
-char *
-ipaddr(int family, void *addr)
-{
-	static char addrbuf[128];
-
-	addrbuf[0] = '\0';
-
+const char *
+ipaddr(int family, void *addr) {
+  static char *addrbuf = NULL;
+  int addrbufsize = INET_ADDRSTRLEN;
 #if HAVE_IPV6
-	if (family == AF_INET6)
-		inet_ntop(AF_INET6, addr, addrbuf, sizeof(addrbuf) - 1);
-	else
+  addrbufsize = MAX(addrbufsize, INET6_ADDRSTRLEN);
 #endif
-		inet_ntop(AF_INET, addr, addrbuf, sizeof(addrbuf) - 1);
-	return (addrbuf);
+  
+  if (!addrbuf) addrbuf = ALLOCATE(addrbufsize, char[]);
+  memset(addrbuf, 0, addrbufsize);
+
+  if (family == AF_INET) {
+    return(inet_ntop(AF_INET, addr, addrbuf, addrbufsize));
+#if HAVE_IPV6
+  } else if (family == AF_INET6) {
+    return(inet_ntop(AF_INET6, addr, addrbuf, addrbufsize));
+#endif
+  } else {
+    Err(_("Unknown address family"));
+  }
+  /* NOTREACHED */
+  return NULL;
 }
 /*--- ipaddr() ----------------------------------------------------------------------------------*/
 
@@ -70,15 +76,14 @@ ipaddr(int family, void *addr)
 	Returns 1 if string 's' has two or more ':' characters.
 **************************************************************************************************/
 int
-is_ipv6(char *addr)
-{
-	register char *c;												/* Current position in 's' */
-	register int colons = 0;									/* Number of colons (':') found */
+is_ipv6(char *addr) {
+  register char *c;						/* Current position in 's' */
+  register int colons = 0;					/* Number of colons (':') found */
 
-	for (c = addr; *c && (colons < 2); c++)
-		if (*c == ':')
-			colons++;
-	return (colons == 2);
+  for (c = addr; *c && (colons < 2); c++)
+    if (*c == ':')
+      colons++;
+  return (colons == 2);
 }
 /*--- is_ipv6() ---------------------------------------------------------------------------------*/
 #endif

@@ -195,7 +195,7 @@ static int
 check_update(TASK *t, MYDNS_SOA *soa) {
   SQL_RES	*res = NULL;
   SQL_ROW	row;
-  char		*ip = NULL;
+  const char	*ip = NULL;
   char		*query;
   size_t	querylen;
   int		ok = 0;
@@ -250,7 +250,7 @@ check_update(TASK *t, MYDNS_SOA *soa) {
       if (strchr(wild, '/')) {
 	if (t->family == AF_INET)
 	  ok = in_cidr(wild, t->addr4.sin_addr);
-      }	else if (wildcard_match(wild, ip))
+      }	else if (wildcard_match(wild, (char*)ip))
 	ok = 1;
     }
   }
@@ -508,12 +508,12 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
     if (UQRR_DATA_LENGTH(rr) != 16)
       return (TASK_ABANDONED);
     /* Need to allocate a dynamic buffer */
-    *data = ALLOCATE(*datalen = INET6_ADDRSTRLEN, char[]);
-    if (!(inet_ntop(AF_INET6, UQRR_DATA_VALUE(rr), *data, *datalen))) {
-      RELEASE(*data);
+    if (!(*data = (char*)ipaddr(AF_INET6, UQRR_DATA_VALUE(rr)))) {
       *datalen = 0;
       return dnserror(t, DNS_RCODE_FORMERR, ERR_INVALID_ADDRESS);
     }
+    *datalen = strlen(*data);
+    *data = STRDUP(*data);
     break;
 
   case DNS_QTYPE_CNAME:
@@ -1996,8 +1996,6 @@ update_soa_serial(TASK *t, MYDNS_SOA *soa) {
 
 static int
 are_we_master(TASK *t, MYDNS_SOA *soa) {
-  char *buf = NULL;
-
   ARRAY *ips4 = NULL;
 #if HAVE_IPV6
   ARRAY *ips6 = NULL;
@@ -2026,38 +2024,32 @@ are_we_master(TASK *t, MYDNS_SOA *soa) {
   /* name_server2ip frees this up - array_free(nss, 1); */
 
   if(array_numobjects(ips4)) {
-    buf = ALLOCATE(INET_ADDRSTRLEN, char[]);
     for (i = 0; i < array_numobjects(ips4); i++) {
       NOTIFYSLAVE *slave = array_fetch(ips4, i);
       struct sockaddr_in *ip4 = (struct sockaddr_in*)&(slave->slaveaddr.ips4);
-      const char *ip4addr = inet_ntop(AF_INET, &(ip4->sin_addr), &buf[0], INET_ADDRSTRLEN);
+      const char *ip4addr = ipaddr(AF_INET, &(ip4->sin_addr));
       for (j = 0; allLocalAddresses[j]; j++) {
 	if(!strcmp(allLocalAddresses[j], ip4addr)) goto FINISHEDSEARCH;
       }
     }
-    RELEASE(buf);
   }
 
 #if HAVE_IPV6
   if (array_numobjects(ips6)) {
-    buf = ALLOCATE(INET6_ADDRSTRLEN, char[]);
     for (i = 0; i < array_numobjects(ips6); i++) {
       NOTIFYSLAVE *slave = array_fetch(ips6, i);
       struct sockaddr_in6 *ip6 = (struct sockaddr_in6*)&(slave->slaveaddr.ips6);
-      const char *ip6addr = inet_ntop(AF_INET6, &(ip6->sin6_addr), &buf[0], INET6_ADDRSTRLEN);
+      const char *ip6addr = ipaddr(AF_INET6, &(ip6->sin6_addr));
       for (j = 0; allLocalAddresses[j]; j++) {
 	if(!strcmp(allLocalAddresses[j], ip6addr)) goto FINISHEDSEARCH;
       }
     }
-    RELEASE(buf);
   }
 #endif
 
   res = 0;
 
  FINISHEDSEARCH:
-
-  RELEASE(buf);
 
   array_free(ips4, 1);
 #if HAVE_IPV4

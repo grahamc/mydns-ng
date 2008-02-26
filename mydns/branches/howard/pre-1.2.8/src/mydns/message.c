@@ -46,9 +46,6 @@ dns_make_message(TASK * t, uint16_t id, uint8_t opcode, dns_qtype_t qtype,
   else if (t->protocol == SOCK_STREAM) message = ALLOCATE(messagesize = DNS_MAXPACKETLEN_TCP, char[]);
   else Err("unknown protocol %d", t->protocol);
 
-  if (!message)
-    Err("out of memory");
-
   dest = message;
   if (length)
     *length = 0;
