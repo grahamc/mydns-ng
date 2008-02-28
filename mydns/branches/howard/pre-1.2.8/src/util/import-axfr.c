@@ -266,8 +266,8 @@ process_axfr_answer(char *reply, size_t replylen, char *src) {
   case DNS_QTYPE_A:
     {
       struct in_addr addr;
-      data = inet_ntoa(addr);
       memcpy(&addr.s_addr, src, SIZE32);
+      data = (char*)ipaddr(AF_INET, &addr);
       import_rr(shortname(name, 1), "A", data, strlen(data), 0, ttl);
     }
     break;
@@ -279,9 +279,9 @@ process_axfr_answer(char *reply, size_t replylen, char *src) {
 			** but we can't be sure it will exist */
 
       memcpy(&addr, src, sizeof(addr));
-      if ((data = (char*)ipaddr(AF_INET6, &addr)))
+      if ((data = (char*)ipaddr(AF_INET6, &addr))) {
 	import_rr(shortname(name, 1), "AAAA", data, strlen(data), 0, ttl);
-      else
+      } else
 	Notice("%s IN AAAA: %s", name, strerror(errno));
     }
     break;

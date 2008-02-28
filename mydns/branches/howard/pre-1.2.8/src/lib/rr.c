@@ -48,7 +48,7 @@ int mydns_rr_use_serial = 0;
 char *mydns_rr_active_types[] = { "Y", "N", "D" };
 
 /* Make this nonzero to enable debugging within this source file */
-#define	DEBUG_LIB_RR	1
+#define	DEBUG_LIB_RR	0
 
 void *
 __mydns_rr_assert_pointer(void *ptr, char *fieldname, char *filename, int linenumber) {
@@ -77,13 +77,6 @@ mydns_rr_get_active_types(SQL *sqlConn) {
   querylen = sql_build_query(&query, "SELECT DISTINCT(active) FROM %s", mydns_rr_table_name);
 
   if (!(res = sql_query(sqlConn, query, querylen))) return;
-
-#if DEBUG_ENABLED && DEBUG_LIB_RR
-  {
-    int numresults = sql_num_rows(res);
-    Debug(_("RR get active types: %d row%s: %s"), numresults, S(numresults), query);
-  }
-#endif
 
   RELEASE(query);
 
@@ -362,15 +355,9 @@ __mydns_rr_append(char *s1, char *s2) {
 
 char *
 mydns_rr_append_origin(char *str, char *origin) {
-#if DEBUG_ENABLED && DEBUG_LIB_RR
-  Debug(_("mydns_rr_append_origin() called with str=%s, origin=%s"), (str)?str:"<NULL>", origin);
-#endif
   char *res = ((!*str || LASTCHAR(str) != '.')
 	       ?__mydns_rr_append(str, origin)
 	       :str);
-#if DEBUG_ENABLED && DEBUG_LIB_RR
-  Debug(_("mydns_rr_append_origin(): returns %s"), res);
-#endif
   return res;
 }
 

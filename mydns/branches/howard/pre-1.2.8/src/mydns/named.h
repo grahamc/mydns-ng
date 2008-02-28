@@ -266,6 +266,7 @@ extern taskexec_t	remote_status(TASK *t);
 
 /* task.c */
 extern int		task_timedout(TASK *);
+extern char		*task_exec_name(taskexec_t);
 extern char		*task_type_name(int);
 extern char		*task_priority_name(int);
 extern char		*task_string_name(TASK *);

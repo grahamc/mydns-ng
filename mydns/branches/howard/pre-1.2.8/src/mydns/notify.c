@@ -303,10 +303,7 @@ notify_read(TASK *t) {
       port = ntohs(((struct sockaddr_in6*)&from)->sin6_port);
 #endif
     }
-#if DEBUG_ENABLED && DEBUG_NOTIFY
-    Debug(_("%s: recv from slave %s(%d) failed - %s(%d)"), desctask(t),
-	  msg, port, strerror(errno), errno);
-#endif
+
     if (rv < 0) {
       if (
 	  (errno = EINTR)
@@ -320,6 +317,10 @@ notify_read(TASK *t) {
 	  ) {
 	goto CLEANUP;
       }
+#if DEBUG_ENABLED && DEBUG_NOTIFY
+      Debug(_("%s: recv from slave %s(%d) failed - %s(%d)"), desctask(t),
+	    msg, port, strerror(errno), errno);
+#endif
       Warn("%s", _("recvfrom (UDP)"));
       goto CLEANUP;
     }

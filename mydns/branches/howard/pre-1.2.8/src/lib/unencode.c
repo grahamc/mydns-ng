@@ -129,7 +129,8 @@ name_unencode2(char *start, size_t slen, char **current, task_error_t *errcode) 
     CHECK_DEST_SPACE2(2);
     *d++ = '.';
     *d = '\0';
-    return (s+1);
+    *current = s+1;
+    return dest;
   }
 
   while ((len = *s)) {						/* Get length octet */

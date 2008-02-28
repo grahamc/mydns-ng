@@ -176,8 +176,11 @@ __queue_remove(QUEUE **q, TASK *t) {
 void
 _dequeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 #if DEBUG_ENABLED && DEBUG_QUEUE
-  char *taskdesc = desctask(t);
+  char *taskdesc = STRDUP(desctask(t));
+
+  Debug(_("%s: dequeuing (by %s:%u)"), taskdesc, file, line);
 #endif
+
   if (err_verbose)				/* Output task info if being verbose */
     task_output_info(t, NULL);
 
@@ -189,6 +192,7 @@ _dequeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
   task_free(t);
 #if DEBUG_ENABLED && DEBUG_QUEUE
   Debug(_("%s: dequeued (by %s:%u)"), taskdesc, file, line);
+  RELEASE(taskdesc);
 #endif
 }
 /*--- _dequeue() --------------------------------------------------------------------------------*/

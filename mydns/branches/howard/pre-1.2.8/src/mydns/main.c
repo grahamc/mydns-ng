@@ -909,6 +909,47 @@ run_tasks(fd_set *rfd, fd_set*wfd, fd_set *efd) {
 }
 
 static void
+purge_bad_task() {
+  /* Find out which task has an invalid fd and kill it */
+  int i,j;
+  TASK *t, *next_task;
+
+#if DEBUG_ENABLED
+  Debug(_("purge_bad_task() called"));
+#endif
+
+  for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
+    for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
+      QUEUE *TaskQ = TaskArray[i][j];
+      for (t = TaskQ->head; t; t = next_task) {
+	next_task = t->next;
+	if (t->fd >= 0) {
+	  fd_set rfd, wfd, efd;
+	  struct timeval timeout = { 0, 0 };
+	  FD_ZERO(&rfd);
+	  FD_ZERO(&wfd);
+	  FD_ZERO(&efd);
+	  FD_SET(t->fd, &rfd);
+	  FD_SET(t->fd, &wfd);
+	  FD_SET(t->fd, &efd);
+	  if (select(t->fd+1, &rfd, &wfd, &efd, &timeout) < 0) {
+	    if (errno == EBADF) {
+	      if (t->protocol != SOCK_STREAM) 
+		Notice(_("purge_bad_task() found bad task %s => %d"),
+		       desctask(t), t->fd);
+	      dequeue(t);
+	    }
+	  }
+	}
+      }
+    }
+  }
+#if DEBUG_ENABLED
+  Debug(_("purge_bad_task() returned"));
+#endif
+}
+
+static void
 server_loop(int plain_maxfd, INITIALTASK *initial_tasks, int serverfd) {
 
   do_initial_tasks(initial_tasks);
@@ -959,6 +1000,10 @@ server_loop(int plain_maxfd, INITIALTASK *initial_tasks, int serverfd) {
 
     if (rv < 0) {
       if (errno == EINTR) continue;
+      if (errno == EBADF) {
+	purge_bad_task();
+	continue;
+      }
       Err(_("select"));
     }
 
@@ -1103,6 +1148,10 @@ master_loop(INITIALTASK *initial_tasks) {
 
     if (rv < 0) {
       if (errno == EINTR) continue;
+      if (errno == EBADF) {
+	purge_bad_task();
+	continue;
+      }
       Err(_("select"));
     }
 

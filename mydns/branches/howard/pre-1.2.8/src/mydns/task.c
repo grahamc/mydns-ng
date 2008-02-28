@@ -340,6 +340,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
 const char *
 clientaddr(TASK *t) {
   void *addr = NULL;
+  const char *res = NULL;
 
   if (t->family == AF_INET) {
     addr = &t->addr4.sin_addr;
@@ -351,7 +352,8 @@ clientaddr(TASK *t) {
     return(_("Address unknown"));
   }
 
-  return(ipaddr(t->family, addr));
+  res = ipaddr(t->family, addr);
+  return res;
 }
 /*--- clientaddr() ------------------------------------------------------------------------------*/
 
@@ -370,7 +372,7 @@ desctask(TASK *t) {
 	   clientaddr(t), mydns_qtype_str(t->qtype),
 	   t->qname ? (char *)t->qname : _("<NONE>"),
 	   t->internal_id, task_status_name(t), task_priority_name(t->priority),
-	   task_type_name(t->type));
+	   task_type_name(t->type)) < 0;
 
   return (desc);
 }

@@ -132,29 +132,28 @@ static int
 _comms_recv(TASK *t, void *data, size_t size, int flags) {
   int	rv;
 
-  if ((rv = recv(t->fd, data, size, MSG_DONTWAIT|flags)) <= 0) {
-    if (rv < 0) {
-      if (
-	  (errno == EINTR)
+  rv = recv(t->fd, data, size, MSG_DONTWAIT|flags);
+
+  if (rv > 0) return rv;
+  if (rv == 0) {
+    /* Treat as the same as a stall
+       Warn("%s: %s", desctask(t), _("connection closed assume it died")); */
+    return 0;
+  }
+
+  if (
+      (errno == EINTR)
 #ifdef EAGAIN
-	  || (errno == EAGAIN)
+      || (errno == EAGAIN)
 #else
 #ifdef EWOULDBLOCK
-	  || (errno == EWOULDBLOCK)
+      || (errno == EWOULDBLOCK)
 #endif
 #endif
-	  ) {
-	return 0; /* Try again later */
-      }
-      Warn("%s: %s - %s", desctask(t), _("Receive failed"), strerror(errno));
-      return -1;
-    }
-    if (rv == 0) {
-      /* Treat as the same as a stall
-	 Warn("%s: %s", desctask(t), _("connection closed assume it died")); */
-      return 0;
-    }
+      ) {
+    return 0; /* Try again later */
   }
+  Warn("%s: %s (%d) - %s(%d)", desctask(t), _("Receive failed"), rv, strerror(errno), errno);
 
   return rv;
 }
@@ -163,25 +162,28 @@ static int
 _comms_send(TASK *t, void *data, size_t size,  int flags) {
   int rv;
 
-  if ((rv = send(t->fd, data, size, MSG_DONTWAIT|flags)) <= 0) {
-    if (rv < 0) {
-      if (
-	  (errno == EINTR)
+  rv = send(t->fd, data, size, MSG_DONTWAIT|MSG_NOSIGNAL|flags);
+
+  if (rv > 0) return rv;
+
+  if (rv == 0) {
+      Warn("%s: %s", desctask(t), _("connection closed assume it died"));
+      return -2;
+  }
+   
+  if (
+      (errno == EINTR)
 #ifdef EAGAIN
-	  || (errno == EAGAIN)
+      || (errno == EAGAIN)
 #else
 #ifdef EWOULDBLOCK
-	  || (errno == EWOULDBLOCK)
+      || (errno == EWOULDBLOCK)
 #endif
 #endif
-	  ) {
-	return 0; /* Try again later */
-      }
-      Warn("%s: %s - %s", desctask(t), _("Send failed"), strerror(errno));
-    } else if (rv == 0) {
-      Warn("%s: %s", desctask(t), _("connection closed assume it died"));
-    }
+      ) {
+    return 0; /* Try again later */
   }
+  Warn("%s: %s - %s", desctask(t), _("Send failed"), strerror(errno));
 
   return rv;
 }
@@ -360,13 +362,11 @@ scomms_tick(TASK *t, void* data) {
   COMMS		*comms = (COMMS*)data;
   int		lastseen = current_time - comms->connectionalive;
 
-#if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-  int		fd = t->fd;
-#endif
+  t->timeout = current_time + KEEPALIVE;
 
-  if (lastseen <= KEEPALIVE)
-    rv = TASK_CONTINUE;
-  else if (lastseen  <= (5*KEEPALIVE))
+  if (lastseen <= KEEPALIVE) return TASK_CONTINUE;
+
+  if (lastseen  <= (5*KEEPALIVE))
     rv = comms_sendping(t, __comms_allocate(), NULL);
   else
     rv = TASK_FAILED;
@@ -378,12 +378,9 @@ scomms_tick(TASK *t, void* data) {
 	  lastseen);
 #endif
     named_shutdown(0);
-    return TASK_FAILED;
   }
 
-  t->timeout = current_time + KEEPALIVE;
-
-  return TASK_CONTINUE;
+  return rv;
 }
 
 static int
@@ -392,13 +389,11 @@ mcomms_tick(TASK *t, void* data) {
   COMMS		*comms = (COMMS*)data;
   int		lastseen = current_time - comms->connectionalive;
 
-#if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-  int		fd = t->fd;
-#endif
+  t->timeout = current_time + KEEPALIVE;
 
-  if (lastseen <= KEEPALIVE) 
-    rv = TASK_CONTINUE;
-  else if (lastseen <= (5*KEEPALIVE))
+  if (lastseen <= KEEPALIVE) return TASK_CONTINUE;
+
+  if (lastseen <= (5*KEEPALIVE))
     rv = comms_sendping(t, comms, NULL);
   else
     rv = TASK_FAILED;
@@ -410,22 +405,19 @@ mcomms_tick(TASK *t, void* data) {
     Debug(_("%s: Master comms tick - connection to server has not pinged for %d seconds"), desctask(t),
 	  lastseen);
 #endif
-    if (!server) {
-      /* Server has gone but task has not so just let this one go away */
-      return TASK_FAILED;
+    if (server) {
+      if (server->signalled) {
+	server->signalled = SIGKILL;
+      } else {
+	server->signalled = SIGTERM;
+      }
+      kill_server(server, server->signalled);
+      t->timeout = current_time + 5; /* Give the server time to die */
+      rv = TASK_CONTINUE;
     }
-    if (server->signalled) {
-      server->signalled = SIGKILL;
-    } else {
-      server->signalled = SIGTERM;
-    }
-    kill_server(server, server->signalled);
-    t->timeout = current_time + 5; /* Give the server time to die */
-  } else {
-    t->timeout = current_time + KEEPALIVE;
   }
 
-  return TASK_CONTINUE;
+  return rv;
 }
 
 TASK *

@@ -23,6 +23,10 @@
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_RESOLVE	1
 
+/* Pick one or the other not both */
+#define OLD_RESOLVER 0
+#define NEW_RESOLVER 1
+
 #if DEBUG_ENABLED
 /* Strings describing the datasections */
 char *resolve_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
@@ -38,10 +42,10 @@ resolve_soa(TASK *t, datasection_t section, char *fqdn, int level) {
   MYDNS_SOA *soa = find_soa2(t, fqdn, NULL);
 
 #if DEBUG_ENABLED && DEBUG_RESOLVE
-  Debug(_("%s: resolve_soa(%s) -> `%p'"), desctask(t), fqdn, soa);
+  Debug(_("%s: resolve_soa(%s) -> soa %s"), desctask(t), fqdn, (soa)?soa->origin:_("not found"));
 #endif
 
-  /* Resolve with this new CNAME record as the FQDN */
+  /* Resolve with this record as the FQDN */
   if (soa) {
     /* Condition mimics code from resolve BUT check for forwarding recursive first
        then if zone has been marked as recursive
@@ -187,8 +191,8 @@ process_rr(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn,
 	rv = add_ns = 1;
 
   /* If we found some results, go ahead and put nameserver records into AUTHORITY */
-  if (rv)
-    for (r = rr; r; r = r->next)
+  if (rv) {
+    for (r = rr; r; r = r->next) {
       if (r->type == DNS_QTYPE_NS && add_ns) {
 	char *ns = NULL;
 
@@ -218,6 +222,8 @@ process_rr(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn,
 	}
 	rv++;
       }
+    }
+  }
   t->sort_level++;
 
   /* We DID find matches for this label; thus, reply success but with no records in the
@@ -229,7 +235,7 @@ process_rr(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn,
     t->sort_level++;
   }
 
-  return ((rv)?TASK_EXECUTED:TASK_COMPLETED);
+  return ((rv)?TASK_COMPLETED:TASK_EXECUTED);
 }
 /*--- process_rr() ------------------------------------------------------------------------------*/
 
@@ -290,6 +296,11 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
   register MYDNS_RR	*rr = NULL;
   taskexec_t		rv = 0;
 
+#if DEBUG_ENABLED && DEBUG_RESOLVE
+  Debug(_("%s: resolve_label(%s, %s, %s, %d, %d)"), desctask(t),
+	fqdn, soa->origin, label, full_match, level);
+#endif
+
   /* Do any records match this label exactly? */
   /* Only check this if the label is the first in the list */
   if (full_match) {
@@ -303,14 +314,14 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
 
   /* No exact match.  If `label' isn't empty, replace the first part of the label with `*' and
      check for wildcard matches. */
-  if (*label) { /* ASSERT(rv == 0); */
+  if (*label) {
     char *wclabel = NULL, *c;
 
     /* Generate wildcarded label, i.e. `*.example' or maybe just `*'. */
     if (!(c = strchr(label, '.')))
       wclabel = STRDUP("*");
     else
-      ASPRINTF(&wclabel, "*.%s", c);
+      ASPRINTF(&wclabel, "*%s", c);
 
     if ((rr = find_rr(t, soa, DNS_QTYPE_ANY, wclabel)))	{
       rv = process_rr(t, section, qtype, fqdn, soa, wclabel, rr, level);
@@ -330,7 +341,7 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
     return (rv);
   }
 
-  return (TASK_EXECUTED); /* ASSERT(rv == 0); */
+  return (TASK_EXECUTED);
 }
 /*--- resolve_label() ---------------------------------------------------------------------------*/
 
@@ -372,6 +383,10 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
   */
   soa = find_soa2(t, fqdn, &name);
 
+#if DEBUG_ENABLED && DEBUG_RESOLVE
+  Debug(_("%s: resolve(%s) -> soa %s"), desctask(t), fqdn, (soa)?soa->origin:_("not found"));
+#endif
+
   if (!soa || soa->recursive) {
     RELEASE(name);
     if ((section == ANSWER) && !level) {
@@ -390,6 +405,19 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
       return TASK_CONTINUE;
     }
   }
+
+#if OLD_RESOLVER
+  /*
+  ** This is the resolver from the 1.1.0 series of MyDNS.
+  ** I have decided to rewrite as it looks a bit opaque
+  ** and I cannot decide how it handles glue to disconnected
+  ** zones.
+  ** Also the wild card matching code is clever and does not work
+  ** properly so it needs modifying. (Code does not handle embedded '.'
+  ** when the wildcard and the lookup are in the same zone
+  **
+  ** Howard Wilkinson - 28th February 2008
+  */
 
   t->zone = soa->id;
   t->minimum_ttl = soa->minimum;
@@ -429,7 +457,110 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
     rrlist_add(t, AUTHORITY, DNS_RRTYPE_SOA, (void *)soa, soa->origin);
     t->sort_level++;
   }
+#elif NEW_RESOLVER
+  /*
+  ** Written 28th February 2008 to fix wildcard look ups
+  ** and make the hanlding of glue more understandable.
+  */
 
+  /*
+  ** The SOA we have in our hand 'encloses' the label in this server
+  ** it may however be resident in a zone provided by another server
+  **
+  ** Therefore we need to check whether the residual name has any
+  ** NS records which would reference it in the zone we hold.
+  **
+  ** So we need to find matching glue records as the first step.
+  **
+  */
+
+  t->zone = soa->id;
+  t->minimum_ttl = soa->minimum;
+
+  /* We are authoritative; Set `aa' flag */
+  if (section == ANSWER)
+    t->hdr.aa = 1;
+
+  /* If the request is ANY, and `fqdn' exactly matches the origin, include SOA */
+  if ((qtype == DNS_QTYPE_ANY) && (section == ANSWER) && !strcasecmp(fqdn, soa->origin)) {
+    rrlist_add(t, section, DNS_RRTYPE_SOA, (void *)soa, soa->origin);
+    t->sort_level++;
+  }
+
+  /*
+  ** Look for the full label first as an exact match in the current zone.
+  */
+  rv = resolve_label(t, section, qtype, fqdn, soa, name, 1, level);
+
+#if DEBUG_ENABLED && DEBUG_RESOLVE
+  Debug(_("%s: resolve(%s) -> trying `%s', %s"), desctask(t), fqdn, name, task_exec_name(rv));
+#endif
+
+  if (rv == TASK_COMPLETED) { goto MATCHED; }
+
+  /*
+  ** Now we have to filter out records for which we have glue but not zone data
+  ** This means searching for NS records for this label or any enclosing labels
+  **
+  */
+  for (label = name; *label; label++) {
+    char *c;
+    rv = resolve_label(t, section, DNS_QTYPE_NS, fqdn, soa, label, 1, level);
+#if DEBUG_ENABLED && DEBUG_RESOLVE
+    Debug(_("%s: resolve(%s) -> trying for NS `%s', %s"), desctask(t), fqdn, label, task_exec_name(rv));
+#endif
+    if (rv == TASK_COMPLETED) { goto MATCHED; }
+    c = strchr(label, '.');
+    if (c) label = c; else break;
+  }
+
+  /*
+  ** This code runs down the label one word at a time
+  ** It is looking for '*' matches. Currently it fails to find
+  ** a match if the label contains a '.'
+  **
+  ** If we have a label of the form aaa.bbb this should match a '*'
+  ** If we have a label of the form aaa.bbb this should match '*.bbb'
+  ** If we have a label  of the form aaa.bbb this should match '*aa.bbb'
+  */
+  for (label = name; *label; label++) {
+    char *c;
+    rv = resolve_label(t, section, qtype, fqdn, soa, label, 0, level);
+#if DEBUG_ENABLED && DEBUG_RESOLVE
+    Debug(_("%s: resolve(%s) -> trying `%s', %s"), desctask(t), fqdn, label, task_exec_name(rv));
+#endif
+    if (rv == TASK_COMPLETED) { goto MATCHED; }
+    c = strchr(label, '.');
+    if (c) label = c; else break;
+  }
+
+ NOTMATCHED:
+#if DEBUG_ENABLED && DEBUG_RESOLVE
+  Debug(_("%s: resolve(%s) -> failed to match"), desctask(t), fqdn);
+#endif
+  /*
+  ** If we jump here we have a successful match
+  ** If we fall through then we don't
+  */
+ MATCHED:
+
+  RELEASE(name);
+
+  /* If we got this far and there are NO records, set result and send the SOA */
+  if (!level && !t->an.size && !t->ns.size && !t->ar.size) {
+    if (t->name_ok) {
+      t->hdr.rcode = DNS_RCODE_NOERROR;
+      t->reason = ERR_NONE;
+    } else {
+      t->hdr.rcode = DNS_RCODE_NXDOMAIN;
+      t->reason = ERR_NO_MATCHING_RECORDS;
+    }
+    rrlist_add(t, AUTHORITY, DNS_RRTYPE_SOA, (void *)soa, soa->origin);
+    t->sort_level++;
+  }
+#else
+#error Resolver type not defined  choose one of OLD_RESOLVER or NEW_RESOLVER
+#endif
   mydns_soa_free(soa);
   
   return (rv);
