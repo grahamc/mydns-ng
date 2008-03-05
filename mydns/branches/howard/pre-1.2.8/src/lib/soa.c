@@ -153,7 +153,10 @@ mydns_soa_parse(SQL_ROW row) {
   rv->minimum = atou(row[8]);
   rv->ttl = atou(row[9]);
 
-  rv->recursive = ((mydns_soa_use_recursive)?GETBOOL(row[10]):0);
+  { int ridx = MYDNS_SOA_NUMFIELDS;
+    ridx += (mydns_soa_use_active)?1:0;
+    rv->recursive = ((mydns_soa_use_recursive)?GETBOOL(row[ridx]):0);
+  }
 
   /* If 'ns' or 'mbox' don't end in a dot, append the origin */
   len = strlen(rv->ns);
@@ -331,6 +334,11 @@ mydns_soa_load(SQL *sqlConn, MYDNS_SOA **rptr, char *origin) {
     Debug(_("SOA query: id=%s, origin=%s, ns=%s, mbox=%s, serial=%s, refresh=%s, "
 	    "retry=%s, expire=%s, minimum=%s, ttl=%s"),
 	  row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]);
+    { int ridx = MYDNS_SOA_NUMFIELDS;
+      ridx += (mydns_soa_use_active)?1:0;
+      Debug(_("Soa query: recursive = %s"),
+	    (mydns_soa_use_recursive)?row[ridx++]:_("not recursing"));
+    }
 #endif
 
     if (mydns_soa_use_active && row[MYDNS_SOA_NUMFIELDS] && !GETBOOL(row[MYDNS_SOA_NUMFIELDS]))

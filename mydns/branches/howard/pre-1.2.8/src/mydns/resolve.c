@@ -24,8 +24,8 @@
 #define	DEBUG_RESOLVE	1
 
 /* Pick one or the other not both */
-#define OLD_RESOLVER 0
-#define NEW_RESOLVER 1
+#define OLD_RESOLVER 1
+#define NEW_RESOLVER 0
 
 #if DEBUG_ENABLED
 /* Strings describing the datasections */
@@ -406,19 +406,6 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
     }
   }
 
-#if OLD_RESOLVER
-  /*
-  ** This is the resolver from the 1.1.0 series of MyDNS.
-  ** I have decided to rewrite as it looks a bit opaque
-  ** and I cannot decide how it handles glue to disconnected
-  ** zones.
-  ** Also the wild card matching code is clever and does not work
-  ** properly so it needs modifying. (Code does not handle embedded '.'
-  ** when the wildcard and the lookup are in the same zone
-  **
-  ** Howard Wilkinson - 28th February 2008
-  */
-
   t->zone = soa->id;
   t->minimum_ttl = soa->minimum;
 
@@ -432,6 +419,19 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
     t->sort_level++;
   }
 
+#if OLD_RESOLVER
+  /*
+  ** This is the resolver from the 1.1.0 series of MyDNS.
+  ** I have decided to rewrite as it looks a bit opaque
+  ** and I cannot decide how it handles glue to disconnected
+  ** zones.
+  ** Also the wild card matching code is clever and does not work
+  ** properly so it needs modifying. (Code does not handle embedded '.'
+  ** when the wildcard and the lookup are in the same zone
+  **
+  ** Howard Wilkinson - 28th February 2008
+  */
+
   /* Examine each label in the name, one at a time; look for relevant records */
   for (label = name; ; label++)	{
     if (label == name || *label == '.')	{
@@ -442,20 +442,6 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
     }
     if (!*label)
       break;
-  }
-  RELEASE(name);
-
-  /* If we got this far and there are NO records, set result and send the SOA */
-  if (!level && !t->an.size && !t->ns.size && !t->ar.size) {
-    if (t->name_ok) {
-      t->hdr.rcode = DNS_RCODE_NOERROR;
-      t->reason = ERR_NONE;
-    } else {
-      t->hdr.rcode = DNS_RCODE_NXDOMAIN;
-      t->reason = ERR_NO_MATCHING_RECORDS;
-    }
-    rrlist_add(t, AUTHORITY, DNS_RRTYPE_SOA, (void *)soa, soa->origin);
-    t->sort_level++;
   }
 #elif NEW_RESOLVER
   /*
@@ -473,19 +459,6 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
   ** So we need to find matching glue records as the first step.
   **
   */
-
-  t->zone = soa->id;
-  t->minimum_ttl = soa->minimum;
-
-  /* We are authoritative; Set `aa' flag */
-  if (section == ANSWER)
-    t->hdr.aa = 1;
-
-  /* If the request is ANY, and `fqdn' exactly matches the origin, include SOA */
-  if ((qtype == DNS_QTYPE_ANY) && (section == ANSWER) && !strcasecmp(fqdn, soa->origin)) {
-    rrlist_add(t, section, DNS_RRTYPE_SOA, (void *)soa, soa->origin);
-    t->sort_level++;
-  }
 
   /*
   ** Look for the full label first as an exact match in the current zone.
@@ -521,7 +494,6 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
   **
   ** If we have a label of the form aaa.bbb this should match a '*'
   ** If we have a label of the form aaa.bbb this should match '*.bbb'
-  ** If we have a label  of the form aaa.bbb this should match '*aa.bbb'
   */
   for (label = name; *label; label++) {
     char *c;
@@ -544,6 +516,9 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
   */
  MATCHED:
 
+#else
+#error Resolver type not defined  choose one of OLD_RESOLVER or NEW_RESOLVER
+#endif
   RELEASE(name);
 
   /* If we got this far and there are NO records, set result and send the SOA */
@@ -558,9 +533,7 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
     rrlist_add(t, AUTHORITY, DNS_RRTYPE_SOA, (void *)soa, soa->origin);
     t->sort_level++;
   }
-#else
-#error Resolver type not defined  choose one of OLD_RESOLVER or NEW_RESOLVER
-#endif
+
   mydns_soa_free(soa);
   
   return (rv);
