@@ -1092,6 +1092,8 @@ spawn_server(INITIALTASK *initial_tasks) {
   Debug(_("Cleaned up master structures - starting work"));
 #endif
 
+  sql_close(sql); /* Release the database connection held by the master */
+
   db_connect();
 
   server_loop(plain_maxfd, initial_tasks, serverfd);

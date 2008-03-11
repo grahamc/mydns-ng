@@ -77,9 +77,10 @@ sql_open(char *user, char *password, char *host, char *database) {
     RELEASE(out);
   }
 #else
-  sql = NULL;
-  if (!(sql = mysql_init(NULL)))
+  sql = ALLOCATE(sizeof(*sql), MYSQL);
+  if (!mysql_init(sql)) {
     Err(_("Unable to allocate MySQL data structure"));
+  }
 #if MYSQL_VERSION_ID > 32349
   mysql_options(sql, MYSQL_READ_DEFAULT_GROUP, "client");
 #endif
@@ -126,13 +127,16 @@ sql_reopen(void) {
   }
 #else
   if (!mysql_ping(sql)) return;
-  if (!(new_sql = mysql_init(NULL)))
+  new_sql = ALLOCATE(sizeof(*new_sql), MYSQL);
+  if (!mysql_init(new_sql)) {
+    RELEASE(new_sql);
     return;
+  }
 #if MYSQL_VERSION_ID > 32349
   mysql_options(new_sql, MYSQL_READ_DEFAULT_GROUP, "client");
 #endif
 #if MYSQL_VERSION_ID > 50012
-  mysql_options(sql, MYSQL_OPT_RECONNECT, "1");
+  mysql_options(new_sql, MYSQL_OPT_RECONNECT, "1");
 #endif
   if (!(mysql_real_connect(new_sql, _sql_host, _sql_user, _sql_password, _sql_database, port, NULL, 0))) {
     mysql_close(new_sql);
@@ -253,6 +257,7 @@ _sql_close(SQL *sqlConn) {
   PQfinish(sqlConn);
 #else
   mysql_close(sqlConn);
+  RELEASE(sqlConn);
 #endif
 }
 /*--- _sql_close() ------------------------------------------------------------------------------*/
