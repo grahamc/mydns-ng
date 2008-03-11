@@ -298,7 +298,7 @@ axfr(TASK *t) {
   /* Do generic startup stuff; this is a child process */
   signal(SIGALRM, axfr_timeout);
   alarm(AXFR_TIME_LIMIT);
-  sql = NULL;
+  sql_close(sql);
   db_connect();
 
 #if DEBUG_ENABLED && DEBUG_AXFR
