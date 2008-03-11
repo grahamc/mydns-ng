@@ -101,13 +101,12 @@ rdata_enlarge(TASK *t, size_t size) {
 **************************************************************************************************/
 static inline int
 reply_start_rr(TASK *t, RR *r, char *name, dns_qtype_t type, uint32_t ttl, char *desc) {
-  char	*enc;
-  char	*dest;
+  char	*enc = NULL;
+  char	*dest = NULL;
   int	enclen;
 
   /* name_encode returns dnserror() */
   if ((enclen = name_encode2(t, &enc, name, t->replylen + t->rdlen, 1)) < 0) {
-    RELEASE(enc);
     return rr_error(r->id, _("rr %u: %s (%s %s) (name=\"%s\")"), r->id,
 		    _("invalid name in \"name\""), desc, _("record"), name);
   }
@@ -152,7 +151,6 @@ reply_add_generic_rr(TASK *t, RR *r, char *desc) {
     return (-1);
 
   if ((enclen = name_encode2(t, &enc, MYDNS_RR_DATA_VALUE(rr), CUROFFSET(t), 1)) < 0) {
-    RELEASE(enc);
     return rr_error(r->id, _("rr %u: %s (%s) (data=\"%s\")"), r->id,
 		    _("invalid name in \"data\""), desc, (char*)MYDNS_RR_DATA_VALUE(rr));
   }
@@ -305,7 +303,6 @@ reply_add_mx(TASK *t, RR *r) {
     return (-1);
 
   if ((enclen = name_encode2(t, &enc, MYDNS_RR_DATA_VALUE(rr), CUROFFSET(t) + SIZE16, 1)) < 0) {
-    RELEASE(enc);
     return rr_error(r->id, _("rr %u: %s (MX %s) (data=\"%s\")"), r->id,
 		    _("invalid name in \"data\""), _("record"), (char*)MYDNS_RR_DATA_VALUE(rr));
   }
@@ -353,7 +350,6 @@ reply_add_naptr(TASK *t, RR *r) {
 
   /* Encode the name at the offset */
   if ((enclen = name_encode2(t, &enc, MYDNS_RR_NAPTR_REPLACEMENT(rr), CUROFFSET(t) + offset, 1)) < 0) {
-    RELEASE(enc);
     return rr_error(r->id, _("rr %u: %s (NAPTR %s) (%s=\"%s\")"), r->id,
 		    _("invalid name in \"replacement\""), _("record"), _("replacement"),
 		    MYDNS_RR_NAPTR_REPLACEMENT(rr));
@@ -410,14 +406,12 @@ reply_add_rp(TASK *t, RR *r) {
     return (-1);
 
   if ((mboxlen = name_encode2(t, &encmbox, mbox, CUROFFSET(t), 1)) < 0) {
-    RELEASE(encmbox);
     return rr_error(r->id, _("rr %u: %s (RP %s) (mbox=\"%s\")"), r->id,
 		    _("invalid name in \"mbox\""), _("record"), mbox);
   }
 
   if ((txtlen = name_encode2(t, &enctxt, txt, CUROFFSET(t) + mboxlen, 1)) < 0) {
     RELEASE(encmbox);
-    RELEASE(enctxt);
     return rr_error(r->id, _("rr %u: %s (RP %s) (txt=\"%s\")"), r->id,
 		    _("invalid name in \"txt\""), _("record"), txt);
   }
@@ -456,14 +450,12 @@ reply_add_soa(TASK *t, RR *r) {
     return (-1);
 
   if ((nslen = name_encode2(t, &ns, soa->ns, CUROFFSET(t), 1)) < 0) {
-    RELEASE(ns);
     return rr_error(r->id, _("rr %u: %s (SOA %s) (ns=\"%s\")"), r->id,
 		    _("invalid name in \"ns\""), _("record"), soa->ns);
   }
 
   if ((mboxlen = name_encode2(t, &mbox, soa->mbox, CUROFFSET(t) + nslen, 1)) < 0) {
     RELEASE(ns);
-    RELEASE(mbox);
     return rr_error(r->id, _("rr %u: %s (SOA %s) (mbox=\"%s\")"), r->id,
 		    _("invalid name in \"mbox\""), _("record"), soa->mbox);
   }
@@ -510,7 +502,6 @@ reply_add_srv(TASK *t, RR *r) {
   /* Arnt Gulbrandsen advises against using compression in the SRV target, although
      most clients should support it */
   if ((enclen = name_encode2(t, &enc, MYDNS_RR_DATA_VALUE(rr), CUROFFSET(t) + SIZE16 + SIZE16 + SIZE16, 0)) < 0) {
-    RELEASE(enc);
     return rr_error(r->id, _("rr %u: %s (SRV %s) (data=\"%s\")"), r->id,
 		    _("invalid name in \"data\""), _("record"), (char*)MYDNS_RR_DATA_VALUE(rr));
   }

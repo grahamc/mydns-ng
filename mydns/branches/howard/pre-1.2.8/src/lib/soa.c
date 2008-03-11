@@ -126,6 +126,7 @@ mydns_set_soa_where_clause(char *where) {
 /**************************************************************************************************
 	MYDNS_SOA_PARSE
 **************************************************************************************************/
+static
 #if !PROFILING
 inline
 #endif
@@ -344,10 +345,7 @@ mydns_soa_load(SQL *sqlConn, MYDNS_SOA **rptr, char *origin) {
     if (mydns_soa_use_active && row[MYDNS_SOA_NUMFIELDS] && !GETBOOL(row[MYDNS_SOA_NUMFIELDS]))
       continue;
 
-    if (!(new = mydns_soa_parse(row))) {
-      sql_free(res);
-      return (-1);
-    }
+    new = mydns_soa_parse(row);
     if (!first) first = new;
     if (last) last->next = new;
     last = new;

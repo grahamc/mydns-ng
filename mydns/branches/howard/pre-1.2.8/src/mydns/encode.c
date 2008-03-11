@@ -156,7 +156,7 @@ name_encode(TASK *t, char *dest, char *name, unsigned int dest_offset, int compr
 
 int
 name_encode2(TASK *t, char **dest, char *name, unsigned int dest_offset, int compression) {
-  char			*namebuf;
+  char			*namebuf = NULL;
   register char		*c, *d, *this_name, *cp;
   register int		len = 0;
   register unsigned int	offset;
@@ -176,8 +176,10 @@ name_encode2(TASK *t, char **dest, char *name, unsigned int dest_offset, int com
       if (!c[1]) {
 	RELEASE(namebuf);
 	len++;
-	if (len > DNS_MAXNAMELEN)
+	if (len > DNS_MAXNAMELEN) {
+	  RELEASE(*dest);
 	  return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_NAME_TOO_LONG);
+	}
 	*d++ = 0;
 	return (len);
       }
@@ -188,25 +190,28 @@ name_encode2(TASK *t, char **dest, char *name, unsigned int dest_offset, int com
 	RELEASE(namebuf);
 	/* Found marker for this name - output offset pointer and we're done */
 	len += SIZE16;
-	if (len > DNS_MAXNAMELEN)
+	if (len > DNS_MAXNAMELEN) {
+	  RELEASE(*dest);
 	  return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_NAME_TOO_LONG);
+	}
 	offset |= 0xC000;
 	DNS_PUT16(d, offset);
 	return (len);
-      } else	/* No marker for this name; encode current label and store marker */
+      } else {	/* No marker for this name; encode current label and store marker */
 #endif
-	{
 	  register unsigned int nlen;
 
 	  if ((cp = strchr(this_name, '.')))
 	    *cp = '\0';
 	  nlen = strlen(this_name);
 	  if (nlen > DNS_MAXLABELLEN) {
+	    RELEASE(*dest);
 	    RELEASE(namebuf);
 	    return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_LABEL_TOO_LONG);
 	  }
 	  len += nlen + 1;
 	  if (len > DNS_MAXNAMELEN) {
+	    RELEASE(*dest);
 	    RELEASE(namebuf);
 	    return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_NAME_TOO_LONG);
 	  }
@@ -216,6 +221,7 @@ name_encode2(TASK *t, char **dest, char *name, unsigned int dest_offset, int com
 	  if (cp)
 	    *cp = '.';
 	  if (!t->no_markers && (name_remember(t, this_name, dest_offset + (c - namebuf)) < 0)) {
+	    RELEASE(*dest);
 	    RELEASE(namebuf);
 	    return (-1);
 	  }

@@ -334,7 +334,7 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
   }
 
   /* STILL no match - check for NS records for child delegation */
-  if (*label && (rr = find_rr(t, soa, DNS_QTYPE_NS, label))) { /* ASSERT(rv == 0); */
+  if (*label && (rr = find_rr(t, soa, DNS_QTYPE_NS, label))) {
     rv = process_rr(t, section, qtype, fqdn, soa, label, rr, level);
     mydns_rr_free(rr);
     add_authority_ns(t, section, soa, label);
@@ -355,9 +355,9 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
 taskexec_t
 resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level) {
   char			*name = NULL;
-  register MYDNS_SOA	*soa;
+  register MYDNS_SOA	*soa = NULL;
   taskexec_t		rv = TASK_COMPLETED;
-  register char		*label;
+  register char		*label = NULL;
 
 #if DEBUG_ENABLED && DEBUG_RESOLVE
   Debug(_("%s: resolve(%s, %s, \"%s\", %d)"),

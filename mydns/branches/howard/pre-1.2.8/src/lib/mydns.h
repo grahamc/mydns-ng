@@ -532,7 +532,6 @@ extern long		mydns_soa_count(SQL *);
 extern void		mydns_soa_get_active_types(SQL *);
 extern void		mydns_set_soa_table_name(char *);
 extern void		mydns_set_soa_where_clause(char *);
-extern MYDNS_SOA	*mydns_soa_parse(SQL_ROW);
 extern int		mydns_soa_load(SQL *, MYDNS_SOA **, char *);
 extern int		mydns_soa_make(SQL *, MYDNS_SOA **, unsigned char *, unsigned char *);
 extern MYDNS_SOA	*mydns_soa_dup(MYDNS_SOA *, int);

@@ -26,7 +26,7 @@
 static void
 _queue_stats(QUEUE *q) {
 #if DEBUG_ENABLED && DEBUG_QUEUE
-  char		*msg;
+  char		*msg = NULL;
   int		msgsize = 512;
   int		msglen = 0;
   TASK *t;
@@ -65,6 +65,8 @@ _queue_stats(QUEUE *q) {
   }
   if (msglen)
     Debug(_("Queued tasks %s"), msg);
+
+  RELEASE(msg);
 #endif
 }
 

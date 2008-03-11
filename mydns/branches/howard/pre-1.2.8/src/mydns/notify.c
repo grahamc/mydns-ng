@@ -1011,6 +1011,7 @@ notify_all_soas(TASK *t, void *data) {
       if (!soa->recursive) {
 	notify_slaves(t, soa);
       }
+      mydns_soa_free(soa);
     }
   }
 
