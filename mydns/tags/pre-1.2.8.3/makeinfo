@@ -1,0 +1,11 @@
+#!/bin/sh
+
+VERS=`makeinfo --version 2> /dev/null | head -1 | sed -e 's/.* \([^ ]*\) *$/\1/'`
+[ -z $VERS ] && VERS=0.0
+MAJOR=`echo $VERS | cut -d. -f1`
+
+if [ $MAJOR -ge 4 ]; then
+	if test "$1"; then makeinfo $@; fi
+else
+	echo "*** Your \"makeinfo\" is too old ($VERS) - skipping info file"
+fi
