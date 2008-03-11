@@ -1,0 +1,138 @@
+@c ***
+@c ***	UTILITIES
+@c ***
+@node Utilities
+@chapter Utilities
+@cindex utilities
+MyDNS includes several helpful utilities.
+
+All utilities support the @option{--host}, @option{--database},
+@option{--user}, and @option{--password} options.
+
+@menu
+* mydnscheck::  Check data syntax and consistency.
+* mydnsexport:: Output zone data in formats understood by other DNS servers.
+* mydnsimport:: Import zone data from external sources.
+@end menu
+
+
+@c *** (utilities) mydnscheck
+@node mydnscheck
+@section mydnscheck
+@cindex mydnscheck
+
+The @file{mydnscheck} program scans one more more zones and reports on
+syntax and consistency problems in the zone data.  When used without
+any zone arguments, @file{mydnscheck} checks all zones by default.
+
+@file{mydnscheck} outputs lines of tab-delimited data.  This is so that it will
+hopefully be easier for experienced users to write scripts to automate fixups,
+in the event that they have created a new database that has many problems. Each
+line contains seven fields:
+
+@enumerate
+@item
+A brief, human-readable string describing the error found.
+
+@item
+The zone ID, or @samp{-} if no zone ID is applicable.
+
+@item
+The resource record ID, or @samp{-} if no resource record ID is applicable.
+
+@item
+The name, or @samp{-} if no name is applicable.
+
+@item
+The ttl (time-to-live) value, or @samp{-} if no ttl is applicable.
+
+@item
+The resource record type, or @samp{-} if no type is applicable.
+
+@item
+The data value, or @samp{-} if no data value is applicable.
+@end enumerate
+
+The most useful way for an administrator to use @file{mydnscheck} is without
+any arguments (indicating a scan of all zones) and with the database
+consistency check option enabled.  This will perform a thorough analysis of
+your database.  To perform this type of check, you would run:
+
+@example
+# mydnscheck --consistency
+@end example
+
+You can also run @file{mydnscheck} on a single zone only.  This might be
+useful if invoked from a CGI script, to offer customers or clients the ability
+to check their zone:
+
+@example
+$ mydnscheck -uUSER -pPASS example.com
+@end example
+
+For an explanation of all available options, please see the @file{mydnscheck}(8)
+man page.
+
+
+
+@c *** (utilities) mydnsexport
+@node mydnsexport
+@section mydnsexport
+@cindex mydnsexport
+
+The @file{mydnsexport} program outputs zone data in various formats understood
+by DNS servers other than MyDNS.
+
+By default, @file{mydnsexport} exports a single zone specified on the command
+line in BIND format.  The following command would output the @code{example.com}
+zone in BIND zone file format:
+
+@example
+# mydnsexport example.com
+@end example
+
+@file{mydnsexport} can also output @i{tinydns-data} style data files, as used by
+the @code{tinydns} name server, by specifying the @option{-t, --tinydns-data}
+option.  If this output format is specified, and no zone names are provided on
+the command line, @file{mydnsexport} will output all zones.
+
+For an explanation of all available options, please see the
+@file{mydnsexport}(8) man page.
+
+
+@c *** (utilities) mydnsimport
+@node mydnsimport
+@section mydnsimport
+@cindex mydnsimport
+@cindex migrating
+@cindex importing data
+@cindex AXFR
+The @file{mydnsimport} program can be used to import data into your MyDNS
+database from external sources.  This is the simplest way to seed your
+database when migrating from another name server to MyDNS.
+
+The only import option supported at this time is the @option{-a, --axfr}
+option.  Pretty much every name server on the market supports DNS-based
+zone transfers via @code{AXFR}.  Make sure your MyDNS server has
+permission to request a zone transfer for the zone you wish to import,
+then specify the host name and zone name with the @option{--axfr} option.
+
+If you want to test permissions, you can use the @file{dig} command, like:
+
+@example
+# dig @@bind.example.com axfr example.com
+@end example
+
+Let's say you have a BIND server located at @code{bind.example.com} and
+you are going to get rid of it and switch to MyDNS.  Great!  You want to
+import the zones @code{example.com} and @code{example.net}, as well as
+the PTR records from @code{1.168.192.in-addr.arpa}.  You would issue
+the following commands:
+
+@example
+# mydnsimport --axfr=bind.example.com example.com example.net
+# mydnsimport --axfr=bind.example.com 1.168.192.in-addr.arpa
+@end example
+
+For an explanation of all available options, please see the
+@file{mydnsimport(8)} man page.
