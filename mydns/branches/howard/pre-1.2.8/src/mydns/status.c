@@ -40,13 +40,13 @@ status_fake_rr(TASK *t, datasection_t ds, const char *name, const char *fmt, ...
   VASPRINTF(&buf, fmt, ap);
   va_end(ap);
 
-  rr = mydns_rr_build(-1, -1, DNS_QTYPE_TXT, DNS_CLASS_CHAOS, 0, 0, NULL, NULL, 0,
+  rr = mydns_rr_build(0, 0, DNS_QTYPE_TXT, DNS_CLASS_CHAOS, 0, 0, NULL, NULL, 0,
 		      (char*)name, buf, strlen(buf), NULL);
-  RELEASE(buf);
-
   /* Add to list */
   rrlist_add(t, ds, DNS_RRTYPE_RR, (void *)rr, (char*)name);
-  RELEASE(rr);
+  mydns_rr_free(rr);
+  RELEASE(buf);
+
 }
 /*--- status_fake_rr() --------------------------------------------------------------------------*/
 
@@ -60,7 +60,7 @@ status_version_bind(TASK *t) {
   /* Generate fake TXT rr with version number and add to reply list */
   status_fake_rr(t, ANSWER, t->qname, "%s", VERSION);
 
-  return (0);
+  return TASK_COMPLETED;
 }
 /*--- status_version_bind() ---------------------------------------------------------------------*/
 
@@ -107,7 +107,7 @@ status_version_mydns(TASK *t) {
     }
   }
 
-  return (0);
+  return TASK_COMPLETED;
 }
 /*--- status_version_mydns() --------------------------------------------------------------------*/
 

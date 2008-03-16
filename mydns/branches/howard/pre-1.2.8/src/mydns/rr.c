@@ -92,6 +92,7 @@ rrlist_add(
 
   /* Remove erroneous empty labels in 'name' if any exist */
   if (name) {
+    name = STRDUP(name); /* Might be read only */
     for (s = d = name; *s; s++)
       if (s[0] == '.' && s[1] == '.')
 	*d++ = *s++;
@@ -103,8 +104,10 @@ rrlist_add(
 #if DN_COLUMN_NAMES
   if (rrtype == DNS_RRTYPE_RR && ds == ADDITIONAL) {
     MYDNS_RR *r = (MYDNS_RR *)rr;
-    if (!strcmp(MYDNS_RR_NAME(r), "*"))
+    if (!strcmp(MYDNS_RR_NAME(r), "*")) {
+      RELEASE(name);
       return;
+    }
   }
 #endif
 
@@ -151,6 +154,7 @@ rrlist_add(
 #if DEBUG_ENABLED && DEBUG_RR
       Debug(_("%s: Duplicate record, ignored"), desctask(t));
 #endif
+      RELEASE(name);
       return;
     }
     break;
@@ -161,6 +165,7 @@ rrlist_add(
 #if DEBUG_ENABLED && DEBUG_RR
       Debug(_("%s: Duplicate record, ignored"), desctask(t));
 #endif
+      RELEASE(name);
       return;
     }
     break;
@@ -171,6 +176,7 @@ rrlist_add(
 #if DEBUG_ENABLED && DEBUG_RR
       Debug(_("%s: Duplicate record, ignored"), desctask(t));
 #endif
+      RELEASE(name);
       return;
     }
     break;
@@ -223,6 +229,7 @@ rrlist_add(
   new->sort1 = 0;
   new->sort2 = 0;
   strncpy((char*)new->name, name, sizeof(new->name)-1);
+  RELEASE(name);
   new->next = NULL;
   if (!list->head)
     list->head = list->tail = new;

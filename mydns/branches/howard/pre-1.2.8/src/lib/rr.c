@@ -48,7 +48,7 @@ int mydns_rr_use_serial = 0;
 char *mydns_rr_active_types[] = { "Y", "N", "D" };
 
 /* Make this nonzero to enable debugging within this source file */
-#define	DEBUG_LIB_RR	0
+#define	DEBUG_LIB_RR	1
 
 void *
 __mydns_rr_assert_pointer(void *ptr, char *fieldname, char *filename, int linenumber) {
