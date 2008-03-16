@@ -1,0 +1,1678 @@
+# Messages en Français pour Mydns
+# Copyright (C) 2002 Don Moore.
+# Hélios De Creisquer <helios@balios.org>, 2002.
+# This file is distributed under the same license as the PACKAGE package.
+# Davi Arnaut <davi@hotpop.com>, 2002.
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: mydns 0.8.3\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2006-01-18 17:18-0600\n"
+"PO-Revision-Date: 2002-08-26 16:39+0200\n"
+"Last-Translator: Helios de Creisquer <helios@balios.org>\n"
+"Language-Team: Francais\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ISO-8859-1\n"
+"Content-Transfer-Encoding: 8-bit\n"
+
+#: lib/conf.c:269
+#, c-format
+msgid "%s: line %d: option \"%s\" given without a value - ignored"
+msgstr ""
+
+#: src/util/export.c:48 src/util/check.c:56 src/util/import.c:62
+#: src/util/ptrconvert.c:53 src/mydns/main.c:71
+#, c-format
+msgid "Try `%s --help' for more information."
+msgstr "Pour en savoir davantage, faites : « %s --help  »."
+
+#: src/util/export.c:53
+#, fuzzy, c-format
+msgid "Usage: %s [ZONE]..."
+msgstr "Syntaxe : %s ZONE"
+
+#: src/util/export.c:55
+msgid "Output MyDNS zone in formats understood by other DNS servers."
+msgstr ""
+
+#: src/util/export.c:58
+#, fuzzy
+msgid "  -b, --bind              output in BIND format (the default)"
+msgstr "      --version           affiche la version et quitte"
+
+#: src/util/export.c:59
+msgid "  -t, --tinydns-data      output in tinydns-data format"
+msgstr ""
+
+#: src/util/export.c:61 src/util/check.c:72 src/util/import.c:77
+#: src/util/ptrconvert.c:63 src/mydns/main.c:87
+msgid "  -D, --database=DB       database name to use"
+msgstr "  -D, --database=DB       nom de la base de données a utiliser"
+
+#: src/util/export.c:62 src/util/check.c:73 src/util/import.c:78
+#: src/util/ptrconvert.c:64
+#, fuzzy
+msgid "  -h, --host=HOST         connect to SQL server at HOST"
+msgstr "  -h, --host=HOST         utiliser l'hôte HOST comme serveur MySQL"
+
+#: src/util/export.c:63 src/util/check.c:74 src/util/import.c:79
+#: src/util/ptrconvert.c:65
+#, fuzzy
+msgid "  -p, --password=PASS     password for SQL server (or prompt from tty)"
+msgstr "  -p, --password=PASS     mot de passe MySQL (ou demande sur le tty)"
+
+#: src/util/export.c:64 src/util/check.c:75 src/util/import.c:80
+#: src/util/ptrconvert.c:66
+#, fuzzy
+msgid "  -u, --user=USER         username for SQL server if not current user"
+msgstr ""
+"  -u, --user=USER         utilisateur MySQL (utilisateur courant sinon)"
+
+#: src/util/export.c:67 src/util/check.c:78 src/util/import.c:87
+#: src/util/ptrconvert.c:69 src/mydns/main.c:93
+msgid "  -d, --debug             enable debug output"
+msgstr "  -d, --debug             active les sorties de déboguage"
+
+#: src/util/export.c:69 src/util/check.c:80 src/util/import.c:89
+#: src/mydns/main.c:95
+msgid "  -v, --verbose           be more verbose while running"
+msgstr "  -v, --verbose           plus bavard pendant l'exécution"
+
+#: src/util/export.c:70 src/util/check.c:81 src/util/import.c:90
+#: src/util/ptrconvert.c:72 src/mydns/main.c:97
+msgid "      --help              display this help and exit"
+msgstr "      --help              affiche cette aide et quitte"
+
+#: src/util/export.c:71 src/util/check.c:82 src/util/import.c:91
+#: src/util/ptrconvert.c:73 src/mydns/main.c:98
+msgid "      --version           output version information and exit"
+msgstr "      --version           affiche la version et quitte"
+
+#: src/util/export.c:73 src/util/check.c:84 src/util/import.c:96
+#: src/util/ptrconvert.c:75 src/mydns/main.c:102
+#, c-format
+msgid "Report bugs to <%s>.\n"
+msgstr "Reportez les bugs à <%s>.\n"
+
+#: src/util/export.c:140 src/util/check.c:136 src/util/import.c:153
+#: src/util/ptrconvert.c:126 src/mydns/main.c:158
+msgid ""
+"This is free software; see the source for copying conditions.  There is NO"
+msgstr ""
+"Ceci est un logiciel libre ; regardez les sources pour les conditions de "
+"copie."
+
+#: src/util/export.c:141 src/util/check.c:137 src/util/import.c:154
+#: src/util/ptrconvert.c:127 src/mydns/main.c:159
+msgid ""
+"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+msgstr "Il n'y a AUCUNE garantie."
+
+#: src/util/export.c:167 src/util/check.c:168 src/util/import.c:191
+#: src/util/ptrconvert.c:153 src/mydns/main.c:206
+msgid "Enter password"
+msgstr "Entrez le mot de passe"
+
+#: src/util/export.c:404 src/util/check.c:356
+msgid "error loading SOA record for zone"
+msgstr "Erreur de chargement de l'enregistrement SOA pour la zone"
+
+#: src/util/export.c:406 src/util/check.c:358
+msgid "zone not found"
+msgstr "zone introuvable"
+
+#: src/util/util.c:62
+#, fuzzy, c-format
+msgid "connected to %s, database \"%s\""
+msgstr ""
+"Impossible de se connecter au serveur MySQL à %s, base de donnée « %s »"
+
+#: src/util/import-tinydns.c:397 src/util/import-tinydns.c:429
+#: src/util/import-tinydns.c:479 src/util/import-tinydns.c:541
+#: src/util/import-tinydns.c:606 src/util/import-tinydns.c:655
+#: src/util/import-tinydns.c:701 src/util/import-tinydns.c:734
+#: src/util/import-tinydns.c:770
+msgid "fqdn field empty"
+msgstr ""
+
+#: src/util/import-tinydns.c:401 src/util/import-tinydns.c:434
+#: src/util/import-tinydns.c:484 src/util/import-tinydns.c:546
+#: src/util/import-tinydns.c:614 src/util/import-tinydns.c:630
+#: src/util/import-tinydns.c:663 src/util/import-tinydns.c:712
+#: src/util/import-tinydns.c:745 src/util/import-tinydns.c:775
+msgid "fqdn does not match any zones"
+msgstr ""
+
+#: src/util/import-tinydns.c:568
+#, fuzzy
+msgid "no matching zone for PTR record"
+msgstr "pas d'enregistrements trouvés"
+
+#: src/util/import-tinydns.c:611
+#, fuzzy
+msgid "no mail exchanger specified"
+msgstr "hôte non spécifié"
+
+#: src/util/import-tinydns.c:660
+#, fuzzy
+msgid "no text data specified"
+msgstr "hôte non spécifié"
+
+#: src/util/import-tinydns.c:706 src/util/import-tinydns.c:739
+#, fuzzy
+msgid "no PTR data specified"
+msgstr "hôte non spécifié"
+
+#: src/util/import-tinydns.c:777
+msgid "generic record type not supported"
+msgstr ""
+
+#: src/util/import-tinydns.c:838
+#, fuzzy
+msgid "no zone data found"
+msgstr "zone introuvable"
+
+#: src/util/import-tinydns.c:840
+#, fuzzy
+msgid "no zones found"
+msgstr "zone introuvable"
+
+#: src/util/import-tinydns.c:850
+msgid "zones"
+msgstr ""
+
+#: src/util/import-tinydns.c:915
+#, fuzzy
+msgid "unknown line type"
+msgstr "zone inconnue"
+
+#: src/util/import-tinydns.c:921
+msgid "zone imported"
+msgstr ""
+
+#: src/util/check.c:61
+#, c-format
+msgid "Usage: %s [ZONE..]"
+msgstr "Syntaxe : %s ZONE"
+
+#: src/util/check.c:63
+msgid "Check zone(s) or entire database for errors and consistency."
+msgstr ""
+"Contrôle la/les zone(s) ou la base de donnée dans son intégralité pour y \n"
+"rechercher d'éventuelles erreurs"
+
+#: src/util/check.c:66
+msgid "  -c, --consistency       do key consistency checks"
+msgstr ""
+
+#: src/util/check.c:67
+msgid "  -C, --consistency-only  do only the key consistency checks"
+msgstr ""
+
+#: src/util/check.c:69
+msgid "  -x, --extended          extended check for data/name references"
+msgstr ""
+
+#: src/util/check.c:290
+#, c-format
+msgid "FQDN in `%s' is empty"
+msgstr ""
+
+#: src/util/check.c:293
+#, c-format
+msgid "FQDN in `%s' is too long"
+msgstr ""
+
+#: src/util/check.c:307
+#, c-format
+msgid "Last label in `%s' not the root zone"
+msgstr ""
+
+#: src/util/check.c:313
+#, c-format
+msgid "Label in `%s' is too long"
+msgstr "Le titre dans « %s » est trop long"
+
+#: src/util/check.c:315
+#, c-format
+msgid "Blank label in `%s'"
+msgstr "Titre vide dans « %s »"
+
+#: src/util/check.c:319
+#, c-format
+msgid "Label in `%s' begins with a hyphen"
+msgstr "Le titre dans « %s » commence par un trait d'union"
+
+#: src/util/check.c:321
+#, c-format
+msgid "Label in `%s' ends with a hyphen"
+msgstr "Le titre dans « %s » se termine par un trait d'union"
+
+#: src/util/check.c:325
+#, c-format
+msgid "Wildcard character `%c' in `%s' not alone"
+msgstr ""
+
+#: src/util/check.c:327
+#, c-format
+msgid "Label in `%s' contains illegal character `%c'"
+msgstr "Le titre « %s » contient des caractères invalides « %c »"
+
+#: src/util/check.c:332
+#, c-format
+msgid "Wildcard not allowed in `%s'"
+msgstr ""
+
+#: src/util/check.c:368
+msgid "soa.origin is not a FQDN (no trailing dot)"
+msgstr ""
+
+#: src/util/check.c:370
+msgid "soa.refresh is less than 300 seconds"
+msgstr ""
+
+#: src/util/check.c:371
+msgid "soa.retry is less than 300 seconds"
+msgstr ""
+
+#: src/util/check.c:372
+msgid "soa.expire is less than 300 seconds"
+msgstr ""
+
+#: src/util/check.c:373 src/util/check.c:375
+msgid "soa.minimum is less than 300 seconds"
+msgstr ""
+
+#: src/util/check.c:374
+msgid "soa.ttl is less than 300 seconds"
+msgstr ""
+
+#: src/util/check.c:397 src/util/check.c:408 src/mydns/cache.c:69
+#: src/mydns/cache.c:113 src/mydns/cache.c:677 src/mydns/cache.c:774
+#: src/mydns/cache.c:894 src/mydns/cache.c:905 src/mydns/encode.c:44
+#: src/mydns/encode.c:49 src/mydns/encode.c:56 src/mydns/encode.c:61
+#: src/mydns/tcp.c:107 src/mydns/listen.c:115 src/mydns/listen.c:265
+#: src/mydns/listen.c:646 src/mydns/listen.c:652 src/mydns/listen.c:673
+#: src/mydns/listen.c:679 src/mydns/task.c:87 src/mydns/task.c:97
+#: src/mydns/task.c:271 src/mydns/reply.c:108 src/mydns/reply.c:113
+#: src/mydns/reply.c:838 src/mydns/main.c:585 src/mydns/error.c:115
+#: src/mydns/recursive.c:181
+msgid "out of memory"
+msgstr ""
+
+#: src/util/check.c:416
+msgid "non-CNAME record(s) present alongside CNAME"
+msgstr ""
+
+#: src/util/check.c:432
+msgid "data too long in HINFO record"
+msgstr ""
+
+#: src/util/check.c:450
+msgid "'order' field missing from NAPTR record"
+msgstr ""
+
+#: src/util/check.c:453
+msgid "'preference' field missing from NAPTR record"
+msgstr ""
+
+#: src/util/check.c:456
+msgid "'flags' field missing from NAPTR record"
+msgstr ""
+
+#: src/util/check.c:459
+msgid "'service' field missing from NAPTR record"
+msgstr ""
+
+#: src/util/check.c:462
+msgid "'regexp' field missing from NAPTR record"
+msgstr ""
+
+#: src/util/check.c:465
+msgid "'replacement' field missing from NAPTR record"
+msgstr ""
+
+#: src/util/check.c:488
+msgid "TTL below zone minimum"
+msgstr "TTL en dessous du minimum de la zone"
+
+#: src/util/check.c:502
+msgid "IPv4 address in `data' is invalid"
+msgstr "L'adresse IPv4 dans « data » est invalide"
+
+#: src/util/check.c:513
+msgid "IPv6 address in `data' is invalid"
+msgstr "L'adresse IPv6 dans « data » est invalide"
+
+#: src/util/check.c:563
+#, fuzzy
+msgid "Unknown/unsupported resource record type"
+msgstr "type de requête non supporté"
+
+#: src/util/check.c:601
+msgid "resource record"
+msgstr "enregistrement"
+
+#: src/util/check.c:601
+msgid "resource records"
+msgstr "enregistrements"
+
+#: src/util/check.c:631
+#, c-format
+msgid "%s id %s references invalid %s id %s"
+msgstr ""
+
+#: src/util/check.c:714
+#, fuzzy
+msgid "No errors"
+msgstr "Erreur MySQL"
+
+#: src/util/check.c:718 src/util/check.c:721
+msgid "Consistency errors"
+msgstr ""
+
+#: src/util/check.c:721 src/util/check.c:723
+msgid "Syntax errors"
+msgstr ""
+
+#: src/util/import-axfr.c:57
+msgid "host not specified"
+msgstr "hôte non spécifié"
+
+#: src/util/import-axfr.c:68
+msgid "zone too long"
+msgstr "zone trop longue"
+
+#: src/util/import-axfr.c:72
+#, c-format
+msgid "importing `%s' from %s:%u"
+msgstr "importation de « %s » depuis %s : %u"
+
+#: src/util/import-axfr.c:78
+msgid "unknown host"
+msgstr "hôte inconnu"
+
+#: src/util/import-axfr.c:132
+msgid "zone contains invalid label (64 chars max)"
+msgstr "la zone contient un label invalide (64 caractères maximum)"
+
+#: src/util/import-axfr.c:201
+msgid "error reading ns from SOA"
+msgstr "impossible de lire le dans l'enregistrement SOA"
+
+#: src/util/import-axfr.c:203
+msgid "error reading mbox from SOA"
+msgstr "impossible de lire la mbox dans l'enregistrement SOA"
+
+#: src/util/import-axfr.c:257
+msgid "error reading name from answer section"
+msgstr "impossible de lire le nom dans la réponse"
+
+#: src/util/import-axfr.c:266
+msgid "got non-SOA RR before SOA"
+msgstr "enregistrement non-SOA avant le SOA"
+
+#: src/util/import-axfr.c:298 src/util/import-axfr.c:338
+#: src/util/import-axfr.c:345 src/util/import-axfr.c:354
+#: src/util/import-axfr.c:388
+msgid "error reading data"
+msgstr "erreur a la lecture des données"
+
+#: src/util/import-axfr.c:366
+#, fuzzy
+msgid "error reading mbox"
+msgstr "impossible de lire la mbox dans l'enregistrement SOA"
+
+#: src/util/import-axfr.c:370
+#, fuzzy
+msgid "error reading txt"
+msgstr "erreur a la lecture des données"
+
+#: src/util/import-axfr.c:407
+msgid "discarding unsupported RR type"
+msgstr "type d'enregistrement non supporté ignoré"
+
+#: src/util/import-axfr.c:432
+msgid "server responded to our request with error"
+msgstr ""
+
+#: src/util/import-axfr.c:445
+msgid "error reading name from question section"
+msgstr "impossible de lire le nom dans la question"
+
+#: src/util/import-axfr.c:480
+msgid "failed to connect"
+msgstr ""
+
+#: src/util/import-axfr.c:492
+msgid "message too short"
+msgstr "message trop court"
+
+#: src/util/import-axfr.c:496
+msgid "short message from server"
+msgstr "message court depuis le serveur"
+
+#: src/util/import.c:67
+#, fuzzy, c-format
+msgid "Usage: %s [OPTION]... [ZONE]..."
+msgstr "Syntaxe : %s [OPES]..."
+
+#: src/util/import.c:69
+msgid "Import DNS data."
+msgstr ""
+
+#: src/util/import.c:72
+#, fuzzy
+msgid "  -a, --axfr=HOST         import zones from HOST via AXFR"
+msgstr "  -i, --import=HOST/ZONE  importe la zone ZONE depuis le serveur HOST"
+
+#: src/util/import.c:74
+msgid "  -t, --tinydns=FILE      import zones from tinydns-data format FILE"
+msgstr ""
+
+#: src/util/import.c:82
+msgid "  -o, --output            output data instead of inserting records"
+msgstr ""
+
+#: src/util/import.c:83
+msgid "  -r, --replace           if ZONE already exists, replace it"
+msgstr ""
+
+#: src/util/import.c:84
+msgid "      --notrim            do not remove trailing origin from names"
+msgstr ""
+
+#: src/util/import.c:93
+msgid "If no ZONE is specified, all zones found will be imported.  If AXFR"
+msgstr ""
+
+#: src/util/import.c:94
+msgid "is being used as the import method, the zone names must be specified."
+msgstr ""
+
+#: src/util/import.c:252
+msgid "zone already exists"
+msgstr ""
+
+#: src/util/import.c:253
+msgid "use -r (--replace) to overwrite existing zone"
+msgstr ""
+
+#: src/util/import.c:298
+#, fuzzy
+msgid "error getting id for new soa record"
+msgstr "erreur lors du chargement des enregistrements"
+
+#: src/util/import.c:323
+msgid "got rr record without soa"
+msgstr ""
+
+#: src/util/import.c:358
+#, fuzzy
+msgid "no input format specified"
+msgstr "hôte non spécifié"
+
+#: src/util/import.c:371
+msgid "using AXFR method; no zones specified"
+msgstr ""
+
+#: src/util/conf.c:36
+#, c-format
+msgid "Usage: %s logacct /mydns\n"
+msgstr ""
+
+#: src/util/conf.c:37
+#, c-format
+msgid "Create daemontools service directory for MyDNS.\n"
+msgstr ""
+
+#: src/util/ptrconvert.c:58
+#, fuzzy, c-format
+msgid "Usage: %s [OPTIONS]... NS MBOX"
+msgstr "Syntaxe : %s [OPES]..."
+
+#: src/util/ptrconvert.c:60
+msgid "Convert pre-0.9.12 PTR table format to in-addr.arpa zones."
+msgstr ""
+
+#: src/util/ptrconvert.c:71
+#, fuzzy
+msgid "  -v, --verbose           be more verbose while running (on by default)"
+msgstr "  -v, --verbose           plus bavard pendant l'exécution"
+
+#: src/util/ptrconvert.c:423
+#, fuzzy, c-format
+msgid "No table `%s' in database"
+msgstr "erreur lors de la sélection de la base de données"
+
+#: src/util/ptrconvert.c:424
+msgid "Your setup is correct; you don't need to run this program"
+msgstr ""
+
+#: src/util/ptrconvert.c:429
+#, c-format
+msgid "optional \"active\" column found in \"%s\" table"
+msgstr "colonne optionnelle « active » trouvée dans la table « %s »"
+
+#: src/mydns/cache.c:238
+#, fuzzy, c-format
+msgid ""
+"%s cache %.0f%% useful (%u hits, %u misses), %u collisions (%.0f%%), %.0f%% "
+"full (%u records), %u bytes, avg life %u sec"
+msgstr ""
+"cache %.0f%% disponible, %.0f%% remplis (%u rentrants, %u sortants, %u "
+"dépassés, %u effacés)"
+
+#: src/mydns/cache.c:355
+#, c-format
+msgid "tried to free invalid node %p at %u in cache"
+msgstr "tentative de libération d'un noeud invalide : %p a %u dans le cache"
+
+#: src/mydns/cache.c:536
+#, fuzzy, c-format
+msgid "negative cache node %p at hash %u has NULL name"
+msgstr "Le noeud %p du cache dans le hash %u possède un nom NULL"
+
+#: src/mydns/cache.c:566
+#, fuzzy, c-format
+msgid "zone cache node %p at hash %u has NULL name"
+msgstr "Le noeud %p du cache dans le hash %u possède un nom NULL"
+
+#: src/mydns/cache.c:601
+msgid "error loading SOA"
+msgstr "erreur au chargement du SOA"
+
+#: src/mydns/cache.c:634
+#, c-format
+msgid "error finding %s type resource records for name `%s' in zone %u"
+msgstr ""
+"impossible de trouver le type d'enregistrement %s pour le nom « %s »dans la "
+"zone %u"
+
+#: src/mydns/cache.c:757 src/mydns/cache.c:858
+#, fuzzy, c-format
+msgid "reply cache node %p at hash %u has NULL name"
+msgstr "Le noeud %p du cache dans le hash %u possède un nom NULL"
+
+#: src/mydns/cache.c:799
+#, c-format
+msgid "%s: %d octet reply found in cache"
+msgstr ""
+
+#: src/mydns/cache.c:932
+msgid "reply cached"
+msgstr ""
+
+#: src/mydns/tcp.c:47
+msgid "accept (TCPv6)"
+msgstr ""
+
+#: src/mydns/tcp.c:59
+msgid "accept (TCP)"
+msgstr ""
+
+#: src/mydns/tcp.c:93
+msgid "recv (length) (TCP)"
+msgstr ""
+
+#: src/mydns/tcp.c:98
+msgid "TCP message length invalid"
+msgstr "longueur du message TCP invalide"
+
+#: src/mydns/tcp.c:102
+msgid "TCP message too short"
+msgstr "message TCP trop court"
+
+#: src/mydns/tcp.c:104
+msgid "TCP message too long"
+msgstr "message TCP trop long"
+
+#: src/mydns/tcp.c:132
+msgid "recv (TCP)"
+msgstr ""
+
+#: src/mydns/tcp.c:142
+msgid "TCP message data too long"
+msgstr "données du message TCP trop longues"
+
+#: src/mydns/tcp.c:169
+msgid "write (length) (TCP)"
+msgstr ""
+
+#: src/mydns/tcp.c:214
+msgid "write (TCP)"
+msgstr ""
+
+#: src/mydns/udp.c:55
+msgid "recvfrom (UDPv6)"
+msgstr ""
+
+#: src/mydns/udp.c:71
+msgid "recvfrom (UDP)"
+msgstr ""
+
+#: src/mydns/udp.c:77
+#, fuzzy
+msgid "UDP octets in"
+msgstr "octets entrants"
+
+#: src/mydns/udp.c:102
+msgid "sendto (UDP)"
+msgstr ""
+
+#: src/mydns/resolve.c:119
+msgid "CNAME loop detected"
+msgstr "boucle CNAME détectée"
+
+#: src/mydns/axfr.c:68
+msgid "AXFR timed out"
+msgstr "délai d'attente de la demande AXFR dépassé"
+
+#: src/mydns/axfr.c:89
+msgid "select"
+msgstr "sélection"
+
+#: src/mydns/axfr.c:91
+msgid "write timeout"
+msgstr "délai d'attente pour l'écriture dépassé"
+
+#: src/mydns/axfr.c:112
+msgid "client closed connection"
+msgstr "le client a interrompu la connexion"
+
+#: src/mydns/axfr.c:180
+#, fuzzy
+msgid "error loading zone transfer access rules"
+msgstr "erreur lors du chargement des enregistrements"
+
+#: src/mydns/axfr.c:206
+#, fuzzy
+msgid "access denied"
+msgstr "adresse ajoutée"
+
+#: src/mydns/axfr.c:305
+msgid "error loading zone"
+msgstr "erreur au chargement de la zone"
+
+#: src/mydns/axfr.c:317
+msgid "unknown zone"
+msgstr "zone inconnue"
+
+#: src/mydns/listen.c:447 src/mydns/listen.c:455 src/mydns/listen.c:709
+msgid "address"
+msgstr ""
+
+#: src/mydns/listen.c:447
+#, fuzzy
+msgid "invalid IPv4 address format"
+msgstr "longueur de la question invalide"
+
+#: src/mydns/listen.c:455
+#, fuzzy
+msgid "invalid IPv6 address format"
+msgstr "longueur de la question invalide"
+
+#: src/mydns/listen.c:702
+msgid "started"
+msgstr ""
+
+#: src/mydns/listen.c:708
+#, fuzzy
+msgid "listening on"
+msgstr "Ecoute sur %s : %d"
+
+#: src/mydns/listen.c:709
+msgid "addresses"
+msgstr ""
+
+#: src/mydns/listen.c:712
+msgid " (compiled with debug)"
+msgstr ""
+
+#: src/mydns/listen.c:716
+#, c-format
+msgid " (quit after %u requests)"
+msgstr ""
+
+#: src/mydns/task.c:48
+msgid "query so small it has no header"
+msgstr ""
+
+#: src/mydns/task.c:52
+#, fuzzy
+msgid "query too large"
+msgstr "délai d'attente de la requête dépassé"
+
+#: src/mydns/task.c:67
+msgid "response bit set on query"
+msgstr ""
+
+#: src/mydns/task.c:95
+#, fuzzy
+msgid "question has zero length"
+msgstr "longueur de la question invalide"
+
+#: src/mydns/task.c:111
+msgid "failed to initialize reply"
+msgstr ""
+
+#: src/mydns/task.c:115
+msgid "query too short; no qtype"
+msgstr ""
+
+#: src/mydns/task.c:124
+msgid "query too short; no qclass"
+msgstr ""
+
+#: src/mydns/task.c:131
+#, fuzzy
+msgid "query contains no questions"
+msgstr "le message ne contient aucune question"
+
+#: src/mydns/task.c:135
+msgid "query contains more than one question"
+msgstr ""
+
+#: src/mydns/task.c:139
+#, fuzzy
+msgid "query is truncated"
+msgstr "délai d'attente de la requête dépassé"
+
+#: src/mydns/task.c:181
+#, fuzzy
+msgid "error writing startup notification"
+msgstr "erreur lors de l'écriture de la réponse"
+
+#: src/mydns/task.c:195
+#, fuzzy
+msgid "error reading startup notification"
+msgstr "erreur a la lecture des données"
+
+#: src/mydns/task.c:459
+msgid "invalid state for UDP query"
+msgstr "status de la requête UDP invalide"
+
+#: src/mydns/task.c:484 src/mydns/task.c:542
+msgid "unknown/unsupported protocol"
+msgstr "protocole inconnu/non supporté"
+
+#: src/mydns/conf.c:62
+msgid "DATABASE INFORMATION"
+msgstr "Information sur la base de donnée"
+
+#: src/mydns/conf.c:63
+#, fuzzy
+msgid "SQL server hostname"
+msgstr "Nom du serveur MySQL"
+
+#: src/mydns/conf.c:64
+#, fuzzy
+msgid "SQL server username"
+msgstr "Nom de l'utilisateur MySQL"
+
+#: src/mydns/conf.c:65
+#, fuzzy
+msgid "SQL server password"
+msgstr "Mot de passe MySQL"
+
+#: src/mydns/conf.c:66
+msgid "MyDNS database name"
+msgstr "Nom de la base de données MySQL"
+
+#: src/mydns/conf.c:68
+msgid "GENERAL OPTIONS"
+msgstr "Options générales"
+
+#: src/mydns/conf.c:70
+msgid "Run with the permissions of this user"
+msgstr "Fonctionne avec les permissions de cet utilisateur"
+
+#: src/mydns/conf.c:71
+msgid "Run with the permissions of this group"
+msgstr "Fonctionne avec les permissions de ce groupe"
+
+#: src/mydns/conf.c:72
+msgid "Listen on these addresses ('*' for all)"
+msgstr "Ecoute sur ces adresses (« * » pour toutes les écouter)"
+
+#: src/mydns/conf.c:73
+#, fuzzy
+msgid "Do not listen on these addresses"
+msgstr "Ecoute sur ces adresses (« * » pour toutes les écouter)"
+
+#: src/mydns/conf.c:75
+msgid "CACHE OPTIONS"
+msgstr "Options du cache"
+
+#: src/mydns/conf.c:77
+#, fuzzy
+msgid "Maximum number of elements stored in the data/reply cache"
+msgstr "Nombre maximum d'éléments stockés dans le cache"
+
+#: src/mydns/conf.c:78
+#, fuzzy
+msgid "Number of seconds after which cached data/replies expire"
+msgstr ""
+"Nombre de seconde après lequel le délai d'expiration des données est passé"
+
+#: src/mydns/conf.c:80
+#, fuzzy
+msgid "Maximum number of elements stored in the zone cache"
+msgstr "Nombre maximum d'éléments stockés dans le cache"
+
+#: src/mydns/conf.c:81
+#, fuzzy
+msgid "Number of seconds after which cached zones expires"
+msgstr ""
+"Nombre de seconde après lequel le délai d'expiration des données est passé"
+
+#: src/mydns/conf.c:83
+#, fuzzy
+msgid "Maximum number of elements stored in the reply cache"
+msgstr "Nombre maximum d'éléments stockés dans le cache"
+
+#: src/mydns/conf.c:84
+#, fuzzy
+msgid "Number of seconds after which cached replies expire"
+msgstr ""
+"Nombre de seconde après lequel le délai d'expiration des données est passé"
+
+#: src/mydns/conf.c:86
+msgid "ESOTERICA"
+msgstr ""
+
+#: src/mydns/conf.c:87
+#, fuzzy
+msgid "Facility to use for program output (LOG_*/stdout/stderr)"
+msgstr "Facilité à utiliser pour les sorties du programme (LOG_*/stderr)"
+
+#: src/mydns/conf.c:88
+msgid "Path to PID file"
+msgstr "Chemin vers le fichier PID"
+
+#: src/mydns/conf.c:89
+msgid "Number of seconds after which queries time out"
+msgstr "Nombre de secondes après lequel les requêtes expirent"
+
+#: src/mydns/conf.c:90
+msgid "Number of CPUs installed on your system"
+msgstr "Nombre de processeurs installés sur votre système"
+
+#: src/mydns/conf.c:91
+msgid "Location of recursive resolver"
+msgstr ""
+
+#: src/mydns/conf.c:92
+msgid "Should AXFR be enabled?"
+msgstr "Est-ce que l'AXFR doivent-être activé ?"
+
+#: src/mydns/conf.c:93
+msgid "Should TCP be enabled?"
+msgstr "Est-ce que TCP doit-être activé ?"
+
+#: src/mydns/conf.c:94
+#, fuzzy
+msgid "Should DNS UPDATE be enabled?"
+msgstr "Est-ce que TCP doit-être activé ?"
+
+#: src/mydns/conf.c:95
+msgid "Ignore minimum TTL for zone?"
+msgstr ""
+
+#: src/mydns/conf.c:96
+msgid "Name of table containing SOA records"
+msgstr "Nom de la table qui contient les enregistrements SOA"
+
+#: src/mydns/conf.c:97
+msgid "Name of table containing RR data"
+msgstr "Nom de la table qui contient les enregistrements PR"
+
+#: src/mydns/conf.c:100
+msgid "Default nameserver for all zones"
+msgstr ""
+
+#: src/mydns/conf.c:103
+msgid "Extra WHERE clause for SOA queries"
+msgstr ""
+
+#: src/mydns/conf.c:104
+msgid "Extra WHERE clause for RR queries"
+msgstr ""
+
+#: src/mydns/conf.c:128
+msgid "For more information, see mydns.conf(5)."
+msgstr ""
+
+#: src/mydns/conf.c:278
+#, fuzzy
+msgid "Error opening log file"
+msgstr "erreur au chargement de la zone"
+
+#: src/mydns/conf.c:296
+msgid "WARNING: config file is readable by unprivileged user"
+msgstr ""
+"ATTENTION : la configuration est lisible par des utilisateurs non privilégiés"
+
+#: src/mydns/conf.c:329 src/mydns/conf.c:353
+msgid "invalid network address for recursive server"
+msgstr ""
+
+#: src/mydns/conf.c:336 src/mydns/conf.c:359
+#, c-format
+msgid "recursive forwarding service through %s:%u"
+msgstr ""
+
+#: src/mydns/conf.c:339 src/mydns/conf.c:363
+msgid "forwarder"
+msgstr ""
+
+#: src/mydns/conf.c:418
+#, c-format
+msgid "error loading uid for user `%s'"
+msgstr "impossible d'obtenir l'UID pour l'utilisateur `%s'"
+
+#: src/mydns/conf.c:425
+#, c-format
+msgid "error loading gid for group `%s'"
+msgstr "impossible d'obtenir le GID pour l'utilisateur `%s'"
+
+#: src/mydns/conf.c:426
+#, fuzzy, c-format
+msgid "using gid %lu from user `%s'"
+msgstr "utilisation du gid %u pour l'utilisateur `%s'"
+
+#: src/mydns/db.c:165
+#, fuzzy
+msgid "database error"
+msgstr "Nom de la base de données MySQL"
+
+#: src/mydns/db.c:184
+#, c-format
+msgid ""
+"Required column `%s' in table `%s' (database `%s') not found or inaccessible"
+msgstr ""
+"La colonne « %s » de la table « %s » (base de données « %s ») est introuvable"
+
+#: src/mydns/db.c:186 src/mydns/db.c:207
+#, c-format
+msgid "Do you need to create the tables in the `%s' database?"
+msgstr "Avez-vous besoin de créer les tables dans la base de données « %s » ?"
+
+#: src/mydns/db.c:187 src/mydns/db.c:208
+#, c-format
+msgid "You can run `%s --create-tables' to output appropriate SQL commands"
+msgstr ""
+"Vous pouvez lancer « %s --create-tables » pour générer les commandes SQL"
+
+#: src/mydns/db.c:206
+#, c-format
+msgid "Required table `%s' in database `%s' not found or inaccessible"
+msgstr "La table « %s » de la base de données « %s » est introuvable"
+
+#: src/mydns/db.c:235 src/mydns/db.c:250
+#, fuzzy, c-format
+msgid "optional 'active' column found in '%s' table"
+msgstr "colonne optionnelle « active » trouvée dans la table « %s »"
+
+#: src/mydns/db.c:240
+#, fuzzy, c-format
+msgid "optional 'xfer' column found in '%s' table"
+msgstr "colonne optionnelle « active » trouvée dans la table « %s »"
+
+#: src/mydns/db.c:245
+#, fuzzy, c-format
+msgid "optional 'update_acl' column found in '%s' table"
+msgstr "colonne optionnelle « active » trouvée dans la table « %s »"
+
+#: src/mydns/db.c:269
+#, c-format
+msgid "Obsolete table `%s' found in database `%s'"
+msgstr ""
+
+#: src/mydns/db.c:270
+msgid "Please drop this table; it is no longer supported"
+msgstr ""
+
+#: src/mydns/db.c:271
+msgid "Use the \"mydnsptrconvert\" program to convert your current PTR data"
+msgstr ""
+
+#: src/mydns/db.c:272
+#, fuzzy, c-format
+msgid "See %s/ptr.html for more information"
+msgstr "Pour en savoir davantage, faites : « %s --help  »."
+
+#: src/mydns/reply.c:135
+msgid "invalid name in \"name\""
+msgstr ""
+
+#: src/mydns/reply.c:135 src/mydns/reply.c:213 src/mydns/reply.c:258
+#: src/mydns/reply.c:296 src/mydns/reply.c:349 src/mydns/reply.c:399
+#: src/mydns/reply.c:456 src/mydns/reply.c:460 src/mydns/reply.c:497
+#: src/mydns/reply.c:501 src/mydns/reply.c:547
+msgid "record"
+msgstr ""
+
+#: src/mydns/reply.c:180 src/mydns/reply.c:349 src/mydns/reply.c:547
+#, fuzzy
+msgid "invalid name in \"data\""
+msgstr "longueur de la question invalide"
+
+#: src/mydns/reply.c:213 src/mydns/reply.c:258
+#, fuzzy
+msgid "invalid address in \"data\""
+msgstr "longueur de la question invalide"
+
+#: src/mydns/reply.c:296
+#, fuzzy
+msgid "name too long in \"data\""
+msgstr "zone trop longue"
+
+#: src/mydns/reply.c:399
+#, fuzzy
+msgid "invalid name in \"replacement\""
+msgstr "longueur de la question invalide"
+
+#: src/mydns/reply.c:399
+msgid "replacement"
+msgstr ""
+
+#: src/mydns/reply.c:456 src/mydns/reply.c:501
+msgid "invalid name in \"mbox\""
+msgstr ""
+
+#: src/mydns/reply.c:460
+#, fuzzy
+msgid "invalid name in \"txt\""
+msgstr "longueur de la question invalide"
+
+#: src/mydns/reply.c:497
+#, fuzzy
+msgid "invalid name in \"ns\""
+msgstr "zona invlide"
+
+#: src/mydns/reply.c:688
+#, fuzzy
+msgid "unsupported resource record type"
+msgstr "type de requête non supporté"
+
+#: src/mydns/reply.c:716
+#, fuzzy
+msgid "query truncated"
+msgstr "délai d'attente de la requête dépassé"
+
+#: src/mydns/main.c:76
+#, c-format
+msgid "Usage: %s [OPTION]..."
+msgstr "Syntaxe : %s [OPES]..."
+
+#: src/mydns/main.c:78
+msgid "Listen for and respond to Internet domain name queries."
+msgstr "Répond aux requêtes DNS."
+
+#: src/mydns/main.c:81
+msgid ""
+"  -b, --background        run as a daemon (move process into background)"
+msgstr "  -b, --background        tourne en tant que démon (en arrière plan)."
+
+#: src/mydns/main.c:82
+msgid "  -c, --conf=FILE         read config from FILE instead of the default"
+msgstr "  -c, --conf=FILE         lis la configuration dans le fichier FILE"
+
+#: src/mydns/main.c:83
+msgid "      --create-tables     output table creation SQL and exit"
+msgstr "      --create-tables     affiche le SQL pour créer les tables"
+
+#: src/mydns/main.c:84
+msgid "      --dump-config       output configuration and exit"
+msgstr "      --dump-config       affiche la configuration"
+
+#: src/mydns/main.c:85
+msgid "default"
+msgstr "défaut"
+
+#: src/mydns/main.c:88
+#, fuzzy
+msgid "  -h, --host=HOST         connect to database at HOST"
+msgstr "  -h, --host=HOST         utiliser l'hôte HOST comme serveur MySQL"
+
+#: src/mydns/main.c:89
+#, fuzzy
+msgid "  -p, --password=PASS     password for database (or prompt from tty)"
+msgstr "  -p, --password=PASS     mot de passe MySQL (ou demande sur le tty)"
+
+#: src/mydns/main.c:90
+#, fuzzy
+msgid "  -u, --user=USER         username for database if not current user"
+msgstr ""
+"  -u, --user=USER         utilisateur MySQL (utilisateur courant sinon)"
+
+#: src/mydns/main.c:96
+msgid "      --no-data-errors    don't output errors about bad data"
+msgstr ""
+
+#: src/mydns/main.c:100
+#, c-format
+msgid "The %s homepage is at %s\n"
+msgstr "Le site de %s est sur %s\n"
+
+#: src/mydns/main.c:223
+msgid "Extraneous command-line arguments ignored"
+msgstr "Argument(s) supplémentaire(s) ignoré(s)"
+
+#: src/mydns/main.c:341
+msgid "up"
+msgstr "disponible"
+
+#: src/mydns/main.c:342
+msgid "questions"
+msgstr "requêtes"
+
+#: src/mydns/main.c:432
+msgid "SIGHUP received: cache emptied, tables reloaded"
+msgstr ""
+
+#: src/mydns/main.c:471
+msgid "interrupted"
+msgstr "interrompu"
+
+#: src/mydns/main.c:472
+msgid "quit"
+msgstr "quitte"
+
+#: src/mydns/main.c:473
+msgid "terminated"
+msgstr "terminé"
+
+#: src/mydns/main.c:474
+#, c-format
+msgid "exiting due to signal %d"
+msgstr "signal %d reçu : sortie"
+
+#: src/mydns/main.c:743
+msgid "WARNING: running with superuser permissions (cwd=/tmp)"
+msgstr ""
+
+#: src/mydns/main.c:754
+#, fuzzy, c-format
+msgid "error setting group ID to %u"
+msgstr "impossible de changer le gid en %d"
+
+#: src/mydns/main.c:756
+#, fuzzy, c-format
+msgid "error setting user ID to %u"
+msgstr "impossible de changer l'uid en %d"
+
+#: src/mydns/main.c:758
+msgid "refusing to run as superuser"
+msgstr "refus de se lancer en superuser"
+
+#: src/mydns/error.c:45
+msgid "Internal_error"
+msgstr ""
+
+#: src/mydns/error.c:46
+msgid "Zone_not_found"
+msgstr "zone introuvable"
+
+#: src/mydns/error.c:47
+#, fuzzy
+msgid "No_matching_resource_records"
+msgstr "erreur lors du chargement des enregistrements"
+
+#: src/mydns/error.c:48
+msgid "AXFR_disabled"
+msgstr ""
+
+#: src/mydns/error.c:49
+msgid "Name_too_long_in_RR"
+msgstr ""
+
+#: src/mydns/error.c:50
+msgid "Label_too_long_in_RR"
+msgstr ""
+
+#: src/mydns/error.c:51
+msgid "Input_name_buffer_overflow"
+msgstr ""
+
+#: src/mydns/error.c:52
+#, fuzzy
+msgid "Invalid_compression_method"
+msgstr "méthode de compression inconnue/invalide"
+
+#: src/mydns/error.c:53
+msgid "Question_name_too_long"
+msgstr ""
+
+#: src/mydns/error.c:54
+msgid "Question_label_too_long"
+msgstr ""
+
+#: src/mydns/error.c:55
+#, fuzzy
+msgid "Unsupported_class"
+msgstr "type de requête non supporté"
+
+#: src/mydns/error.c:56
+#, fuzzy
+msgid "Invalid_name_format"
+msgstr "format de zone invalide"
+
+#: src/mydns/error.c:57
+msgid "Communications_timeout"
+msgstr ""
+
+#: src/mydns/error.c:58
+msgid "Malformed_glue"
+msgstr ""
+
+#: src/mydns/error.c:59
+msgid "Invalid_address"
+msgstr ""
+
+#: src/mydns/error.c:60
+msgid "Invalid_type"
+msgstr ""
+
+#: src/mydns/error.c:61
+msgid "Invalid_class"
+msgstr ""
+
+#: src/mydns/error.c:62
+msgid "Invalid_TTL"
+msgstr ""
+
+#: src/mydns/error.c:63
+#, fuzzy
+msgid "Invalid_data"
+msgstr "format de zone invalide"
+
+#: src/mydns/error.c:64
+#, fuzzy
+msgid "Database_error"
+msgstr "Nom de la base de données MySQL"
+
+#: src/mydns/error.c:65
+msgid "No_question_in_query"
+msgstr ""
+
+#: src/mydns/error.c:66
+msgid "Multiple_questions_in_query"
+msgstr ""
+
+#: src/mydns/error.c:67
+#, fuzzy
+msgid "Question_truncated"
+msgstr "délai d'attente de la requête dépassé"
+
+#: src/mydns/error.c:69
+#, fuzzy
+msgid "Unsupported_opcode"
+msgstr "type de requête non supporté"
+
+#: src/mydns/error.c:71
+#, fuzzy
+msgid "Unsupported_type"
+msgstr "type de requête non supporté"
+
+#: src/mydns/error.c:72
+msgid "Malformed_request"
+msgstr ""
+
+#: src/mydns/error.c:73
+msgid "AXFR_not_enabled"
+msgstr ""
+
+#: src/mydns/error.c:74
+msgid "TCP_not_enabled"
+msgstr ""
+
+#: src/mydns/error.c:75
+msgid "Response_bit_set_on_query"
+msgstr ""
+
+#: src/mydns/error.c:76
+msgid "Recursive_query_forwarding_error"
+msgstr ""
+
+#: src/mydns/error.c:77
+msgid "UPDATE_denied"
+msgstr ""
+
+#: src/mydns/error.c:78
+msgid "UPDATE_prerequisite_failed"
+msgstr ""
+
+#: src/mydns/error.c:80
+msgid "Unknown"
+msgstr "hôte inconnu"
+
+#: src/mydns/error.c:104
+msgid "no additional information"
+msgstr ""
+
+#: src/mydns/recursive.c:49
+msgid "error creating socket for recursive forwarding"
+msgstr ""
+
+#: src/mydns/recursive.c:55
+#, fuzzy
+msgid "error connecting to recursive forwarder"
+msgstr "Impossible de se connecter au serveur MySQL à %s"
+
+#: src/mydns/recursive.c:124
+#, fuzzy
+msgid "error sending question to recursive forwarder"
+msgstr "erreur lors de l'envoi de la question"
+
+#: src/mydns/recursive.c:126
+msgid "short count sending quersion to recursive forwarder"
+msgstr ""
+
+#: src/mydns/recursive.c:166
+#, fuzzy
+msgid "error reading reply from recursive forwarder"
+msgstr "impossible de lire le nom dans la réponse"
+
+#: src/mydns/recursive.c:171
+msgid "no reply from recursive forwarder"
+msgstr ""
+
+#~ msgid "error loading resource records"
+#~ msgstr "erreur lors du chargement des enregistrements"
+
+#~ msgid "query timeout"
+#~ msgstr "délai d'attente de la requête dépassé"
+
+#~ msgid "error writing reply"
+#~ msgstr "erreur lors de l'écriture de la réponse"
+
+#~ msgid "ready"
+#~ msgstr "prêt"
+
+#~ msgid "error interpreting IP address"
+#~ msgstr "erreur lors de l'interprétation de l'adresse IP"
+
+#, fuzzy
+#~ msgid "UDP message too short"
+#~ msgstr "message TCP trop court"
+
+#, fuzzy
+#~ msgid "UDP message too long"
+#~ msgstr "message TCP trop long"
+
+#~ msgid "cache emptied due to SIGHUP"
+#~ msgstr "SIGHUP reçu : cache vidé"
+
+#, fuzzy
+#~ msgid ""
+#~ "reply cache %.0f%% useful (%u hits, %u misses), %.0f%% full, %u bytes (%u "
+#~ "records), %u removed (%us life)"
+#~ msgstr ""
+#~ "cache %.0f%% disponible, %.0f%% remplis (%u rentrants, %u sortants, %u "
+#~ "dépassés, %u effacés)"
+
+#~ msgid "truncated request"
+#~ msgstr "demande tronquée"
+
+#~ msgid "not a standard query"
+#~ msgstr "demande non-standard"
+
+#~ msgid "error getting name from question"
+#~ msgstr "impossible de recuperer le nom dans la question"
+
+#~ msgid "AXFR refused"
+#~ msgstr "AXFR refusé"
+
+#~ msgid "TCP query refused"
+#~ msgstr "requête TCP refusée"
+
+#~ msgid "message too long"
+#~ msgstr "message trop long"
+
+#~ msgid "no cache"
+#~ msgstr "sans cache"
+
+#~ msgid "unknown logging facility"
+#~ msgstr "« logging facility » inconnue"
+
+#, fuzzy
+#~ msgid "error making SOA"
+#~ msgstr "erreur au chargement du SOA"
+
+#~ msgid "error loading ptr records"
+#~ msgstr "erreur lors du chargement des enregistrements ptr"
+
+#~ msgid "Invalid zone format"
+#~ msgstr "format de zone invalide"
+
+#~ msgid "%s: error finding PTR for `%s' (%u)"
+#~ msgstr "%s : impossible de trouver le PTR pour « %s » (%u)"
+
+#~ msgid "Name of table containing PTR records"
+#~ msgstr "Nom de la table qui contient les enregistrements PTR"
+
+#, fuzzy
+#~ msgid "Maximum number of elements stored in the data cache"
+#~ msgstr "Nombre maximum d'éléments stockés dans le cache"
+
+#~ msgid "Number of seconds after which cached data expires"
+#~ msgstr ""
+#~ "Nombre de seconde après lequel le délai d'expiration des données est passé"
+
+#~ msgid "interface"
+#~ msgstr "interface"
+
+#~ msgid "interfaces"
+#~ msgstr "interfaces"
+
+#~ msgid "listening on %s:%d (interface %s)"
+#~ msgstr "Ecoute sur %s : %d (interface %s)"
+
+#~ msgid "interface is not AF_INET"
+#~ msgstr "l'interface n'est pas AF_INET"
+
+#~ msgid "interface is down"
+#~ msgstr "L'interface est hors service"
+
+#~ msgid "%s: resolving `%s' (A) for ADDITIONAL data"
+#~ msgstr ""
+#~ "%s : résolution de « %s » (A) pour trouver les données « ADDITIONAL »"
+
+#~ msgid "%s: resolving `%s' (CNAME) for ADDITIONAL data"
+#~ msgstr ""
+#~ "%s : résolution de « %s » (CNAME) pour trouver les données « ADDITIONAL »"
+
+#~ msgid "TCP connection accepted"
+#~ msgstr "connexion TCP acceptée"
+
+#~ msgid "sending reply length"
+#~ msgstr "envoi de la longueur de la réponse"
+
+#~ msgid "sending reply"
+#~ msgstr "envoi de la réponse"
+
+#~ msgid "matched"
+#~ msgstr "trouvée"
+
+#~ msgid "no authority"
+#~ msgstr "non autoritatif"
+
+#~ msgid "hash type"
+#~ msgstr "Type de hachage"
+
+#~ msgid "additive"
+#~ msgstr "additionel"
+
+#~ msgid "cache initialized (%u nodes, %u elements max)"
+#~ msgstr "cache initialisé (%u noeuds, %u éléments max)"
+
+#, fuzzy
+#~ msgid "Database username"
+#~ msgstr "Nom de la base de données MySQL"
+
+#, fuzzy
+#~ msgid "Database password"
+#~ msgstr "Entrez le mot de passe"
+
+#~ msgid "TCP client closed connection"
+#~ msgstr "le client TCP a interrompu la connexion"
+
+#, fuzzy
+#~ msgid "error creating bogus zone"
+#~ msgstr "erreur au chargement de la zone"
+
+#~ msgid "%s: zone transfer complete in %.3fs (%u records, %u octets)"
+#~ msgstr ""
+#~ "%s : transfert de la zone complété en %.3fs (%u enregistrements, %u "
+#~ "octets)"
+
+#~ msgid "unable to allocate MySQL data structure"
+#~ msgstr "Impossible d'allouer la structure de données MySQL"
+
+#~ msgid "error issuing query"
+#~ msgstr "erreur lors de l'écriture de la réponse"
+
+#~ msgid "Unable to allocate MySQL data structure"
+#~ msgstr "Impossible d'allouer la structure de données MySQL"
+
+#~ msgid "Error connecting to MySQL server at %s"
+#~ msgstr "Impossible de se connecter au serveur MySQL à %s"
+
+#~ msgid "MySQL error"
+#~ msgstr "Erreur MySQL"
+
+#~ msgid "MySQL said:"
+#~ msgstr "MySQL a dit :"
+
+#~ msgid "Required database `%s' not found or inaccessible"
+#~ msgstr "La base de données « %s » est requise mais introuvable."
+
+#~ msgid "Do you need to create the `%s' database?"
+#~ msgstr "Avez-vous besoin de créer la base de donnée « %s » ?"
+
+#~ msgid "starting zone transfer"
+#~ msgstr "initiation du transfert de zone"
+
+#~ msgid "error getting hostname"
+#~ msgstr "impossible d'obtenir le nom de l'hote"
+
+#~ msgid "ready on port"
+#~ msgstr "prêt a répondre aux requêtes sur le port"
+
+#~ msgid "Usage: %s ZONE"
+#~ msgstr "Syntaxe : %s ZONE"
+
+#~ msgid "Output MyDNS zone in BIND format."
+#~ msgstr "Affiche une zone MyDNS au format BIND."
+
+#~ msgid "  -h, --host=HOST      connect to MySQL server at HOST"
+#~ msgstr "  -h, --host=HOST      utiliser l'hôte HOST comme serveur MySQL"
+
+#~ msgid "  -p, --password=PASS  password for MySQL (or prompt from tty)"
+#~ msgstr ""
+#~ "  -p, --password=PASS  mot de passe pour MySQL (ou demande sur le tty)"
+
+#~ msgid "  -u, --user=USER      username for MySQL if not current user"
+#~ msgstr ""
+#~ "  -u, --user=USER      utilisateur MySQL (utilisateur courant sinon)"
+
+#~ msgid "  -v, --verbose        be more verbose while running"
+#~ msgstr "  -v, --verbose        plus bavard pendant l'exécution"
+
+#~ msgid "      --help           display this help and exit"
+#~ msgstr "      --help           affiche cette aide et quitte"
+
+#~ msgid "      --version        output version information and exit"
+#~ msgstr "      --version        affiche la version et quitte"
+
+#~ msgid "Required argument missing"
+#~ msgstr "Absence d'un argument obligatoire"
+
+#~ msgid "Extraneous command-line argument(s) ignored"
+#~ msgstr "Argument(s) additionel(s) ignoré(s)"
+
+#~ msgid "error detecting %s.active"
+#~ msgstr "erreur pendant la détection de %s.active"
+
+#~ msgid "required argument missing"
+#~ msgstr "absence d'un argument obligatoire"
+
+#~ msgid "zone not specified"
+#~ msgstr "zone non spécifiée"
+
+#~ msgid "%s: connected (port %u)"
+#~ msgstr "%s : connecté (port %u)"
+
+#~ msgid "error importing"
+#~ msgstr "erreur a l'importation"
+
+#~ msgid "error locating SOA"
+#~ msgstr "impossible de trouver l'enregistrement SOA"
+
+#~ msgid "SOA `%s' (%u) ok"
+#~ msgstr "SOA « %s » (%u) ok"
+
+#~ msgid "Zone `%s': %u resource record(s) imported"
+#~ msgstr "Zone « %s » : %u enregistrement(s) importés"
+
+#~ msgid "setting error response"
+#~ msgstr "specification du message d'erreur"
+
+#~ msgid "name greater than maximum name length"
+#~ msgstr "nom plus grand que la taille de nom maximum"
+
+#~ msgid "Usage: %s [HOST:PORT] [INPUTFILE]"
+#~ msgstr "Utilisation : %s [HÔTE:PORT] [FICHIER D'ENTRÉE]"
+
+#~ msgid "DNS server testing/benchmarking utility."
+#~ msgstr "Utilitaire pour tester la performance du serveur DNS"
+
+#~ msgid "  -r, --random   start from a random position in INPUTFILE"
+#~ msgstr ""
+#~ "  -r, --random   commence à partir d'une position aléatoire dans le "
+#~ "fichier INPUTFILE"
+
+#~ msgid "  -n, --num=NUM  ask NUM questions then exit"
+#~ msgstr "  -n, --num=NUM  pose NUM question puis quitte"
+
+#~ msgid "  -q, --quiet    don't report negative responses"
+#~ msgstr "  -q, --quiet    ne pas afficher les refus"
+
+#~ msgid "      --help     display this help and exit"
+#~ msgstr "      --help     affiche ce message d'aide puis quitte"
+
+#~ msgid "      --version  output version information and exit"
+#~ msgstr "      --version  affiche le numéro de version puis quitte"
+
+#~ msgid "containing any number of lines with the format:"
+#~ msgstr "contient tous les numéros de lignes dans le format :"
+
+#~ msgid ""
+#~ "Each query in the file will be submitted to the DNS server at HOST:PORT"
+#~ msgstr ""
+#~ "Chaque requête contenue dans le fichier sera envoyé au serveur DNS sur "
+#~ "HôTE:PORT"
+
+#~ msgid "as quickly as possible."
+#~ msgstr "aussi vite que possible"
+
+#~ msgid "The default DNS server is %s:%u.\n"
+#~ msgstr "Le serveur DNS par défaut est %s : %u.\n"
+
+#~ msgid "timed out\n"
+#~ msgstr "Délai dépassé\n"
+
+#~ msgid "%s:%u: %u questions in %.2f seconds (%.2f/s)"
+#~ msgstr "%s : %u : %u questions en %.2f secondes (%.2f/s)"
+
+#~ msgid "error reading reply"
+#~ msgstr "erreur lors de la lecture de la réponse"
+
+#~ msgid "no reply"
+#~ msgstr "pas de réponse"
+
+#~ msgid "creating listening sockets"
+#~ msgstr "création des sockets d'écoute\n"
