@@ -465,7 +465,7 @@ _task_free(TASK *t, const char *file, int line) {
   Debug(_("%s: Freeing task at %s:%d"), desctask(t), file, line);
 #endif
 
-  if (t->protocol == SOCK_STREAM) {
+  if (t->protocol == SOCK_STREAM && t->fd >= 0) {
     close(t->fd);
   }
 

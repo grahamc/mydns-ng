@@ -475,11 +475,11 @@ close_task_queue(QUEUE *TaskP) {
 
   /* Close any TCP connections and any NOTIFY sockets */
   for (t = TaskP->head; t; t = TaskP->head) {
-    if (t->protocol == SOCK_STREAM && t->fd != -1)
+    if (t->protocol == SOCK_STREAM && t->fd >= 0)
       sockclose(t->fd);
     else if (t->protocol == SOCK_DGRAM
 	     && (t->status & (ReqTask|TickTask|RunTask))
-	     && t->fd != -1)
+	     && t->fd >= 0)
       sockclose(t->fd);
     dequeue(t);
   }
@@ -558,7 +558,7 @@ named_shutdown(int signo) {
 #endif
   cache_empty(ReplyCache);
 
-  /* Close listening FDs - do not sockclose these are shard with other processes */
+  /* Close listening FDs - do not sockclose these are shared with other processes */
   for (n = 0; n < num_tcp4_fd; n++)
     close(tcp4_fd[n]);
 
