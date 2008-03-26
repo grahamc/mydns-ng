@@ -626,7 +626,7 @@ task_output_info(TASK *t, char *update_desc) {
 **************************************************************************************************/
 taskexec_t
 task_timedout(TASK *t) {
-  taskexec_t res = TASK_FAILED;
+  taskexec_t res = TASK_TIMED_OUT;
 
   Status.timedout++;
 
@@ -680,8 +680,7 @@ task_process_query(TASK *t, fd_set *rfd, fd_set*wfd, fd_set *efd) {
 	case SOCK_STREAM:
 	  res = read_tcp_query(t);
 	  if (res == TASK_ABANDONED) {
-	    sockclose(t->fd);
-	    return TASK_FAILED;
+	    return TASK_ABANDONED;
 	  }
 	  if (!((res == TASK_FAILED) || (res == TASK_EXECUTED) || (res == TASK_CONTINUE))) {
 	    Warnx("%s: %d: %s", desctask(t), (int)res, _("unexpected result from read_tcp_query"));
@@ -1084,7 +1083,7 @@ task_process(TASK *t, fd_set *rfd, fd_set *wfd, fd_set *efd) {
   case TASK_EXECUTED:
 
     if (current_time > t->timeout)
-      if ((res = task_timedout(t)) > TASK_TIMED_OUT) break;
+      if ((res = task_timedout(t)) >= TASK_TIMED_OUT) break;
     goto DEQUEUETASK;
       
   default:
@@ -1103,8 +1102,9 @@ task_process(TASK *t, fd_set *rfd, fd_set *wfd, fd_set *efd) {
     Debug(_("%s: dequeuing task because %s"), desctask(t), task_exec_name(res));
 #endif
 
-    if ((res == TASK_ABANDONED) || (res == TASK_TIMED_OUT))
-      sockclose(t->fd);
+    if (res == TASK_ABANDONED)
+      if (t->protocol == SOCK_STREAM)
+	sockclose(t->fd);
 
     dequeue(t);
     break;

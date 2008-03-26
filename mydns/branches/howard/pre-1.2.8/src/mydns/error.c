@@ -92,10 +92,10 @@ err_reason_str(TASK *t, task_error_t reason) {
 **************************************************************************************************/
 taskexec_t
 _formerr_internal(
-	TASK *t,					/* The failed task */
-	dns_rcode_t rcode,	/* The return code to use, such as DNS_RCODE_SERVFAIL, etc. */
-	task_error_t reason,	/* Further explanation of the error */
-	char *xtra,				/* Extra information (displayed if in debug mode) */
+	TASK *t,			/* The failed task */
+	dns_rcode_t rcode,		/* The return code to use, such as DNS_RCODE_SERVFAIL, etc.*/
+	task_error_t reason,		/* Further explanation of the error */
+	char *xtra,			/* Extra information (displayed if in debug mode) */
 	const char *filename,
 	unsigned int lineno
 ) {
@@ -115,14 +115,14 @@ _formerr_internal(
   t->replylen = DNS_HEADERSIZE;
   dest = t->reply = ALLOCATE(t->replylen, char[]);
   t->hdr.qr = 1;
-  DNS_PUT16(dest, t->id);							/* Query ID */
-  DNS_PUT(dest, &t->hdr, SIZE16);						/* Header */
-  DNS_PUT16(dest, 0);								/* QUESTION count */
-  DNS_PUT16(dest, 0);								/* ANSWER count */
-  DNS_PUT16(dest, 0);								/* AUTHORITY count */
-  DNS_PUT16(dest, 0);								/* ADDITIONAL count */
+  DNS_PUT16(dest, t->id);						/* Query ID */
+  DNS_PUT(dest, &t->hdr, SIZE16);					/* Header */
+  DNS_PUT16(dest, 0);							/* QUESTION count */
+  DNS_PUT16(dest, 0);							/* ANSWER count */
+  DNS_PUT16(dest, 0);							/* AUTHORITY count */
+  DNS_PUT16(dest, 0);							/* ADDITIONAL count */
 
-	return (TASK_FAILED);
+  return (TASK_FAILED);
 }
 /*--- _formerr_internal() -----------------------------------------------------------------------*/
 
