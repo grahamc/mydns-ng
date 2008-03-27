@@ -136,7 +136,7 @@ find_rr(
 	dns_qtype_t type,	/* The type of record to look for */
 	char *name		/* The name to look for in `zone' */
 ) {
-  int errflag;
+  int errflag = 0;
   MYDNS_RR *rr;
 
   rr = zone_cache_find(t, soa->id, soa->origin, type, name, strlen(name), &errflag, soa);

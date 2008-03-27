@@ -38,7 +38,7 @@ typedef struct _named_comms {
   void		*data;
 } COMMS;
 
-typedef int (*CommandProcessor)(/* TASK *, void *, char * */);
+typedef int (*CommandProcessor)(/* TASK *, char * */);
 
 typedef struct _command {
   char			*commandname;
@@ -47,8 +47,8 @@ typedef struct _command {
 
 static int messageid = 0;
 
-static int comms_sendping(TASK *, COMMS *, char *);
-static int comms_sendpong(TASK *, COMMS *, char *);
+static int comms_sendping(TASK *, char *);
+static int comms_sendpong(TASK *, char *);
 
 /* Commands from the master to the server */
 static COMMAND servercommands[] = { { "STOP AXFR",	NULL },
@@ -342,7 +342,7 @@ comms_run(TASK *t, void * data) {
 }
 
 static taskexec_t
-comms_sendcommand(TASK *t, void *data, char *commandstring) {
+comms_sendcommand(TASK *t, char *commandstring) {
   COMMS		*comms;
 
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
@@ -357,7 +357,7 @@ comms_sendcommand(TASK *t, void *data, char *commandstring) {
 }
 
 static taskexec_t
-scomms_tick(TASK *t, void* data) {
+scomms_tick(TASK *t, void *data) {
   taskexec_t	rv = TASK_CONTINUE;
   COMMS		*comms = (COMMS*)data;
   int		lastseen = current_time - comms->connectionalive;
@@ -367,7 +367,7 @@ scomms_tick(TASK *t, void* data) {
   if (lastseen <= KEEPALIVE) return TASK_CONTINUE;
 
   if (lastseen  <= (5*KEEPALIVE))
-    rv = comms_sendping(t, __comms_allocate(), NULL);
+    rv = comms_sendping(t, NULL);
   else
     rv = TASK_FAILED;
 
@@ -384,7 +384,7 @@ scomms_tick(TASK *t, void* data) {
 }
 
 static int
-mcomms_tick(TASK *t, void* data) {
+mcomms_tick(TASK *t, void *data) {
   taskexec_t	rv = TASK_CONTINUE;
   COMMS		*comms = (COMMS*)data;
   int		lastseen = current_time - comms->connectionalive;
@@ -394,7 +394,7 @@ mcomms_tick(TASK *t, void* data) {
   if (lastseen <= KEEPALIVE) return TASK_CONTINUE;
 
   if (lastseen <= (5*KEEPALIVE))
-    rv = comms_sendping(t, comms, NULL);
+    rv = comms_sendping(t, NULL);
   else
     rv = TASK_FAILED;
 
@@ -432,19 +432,19 @@ mcomms_start(int fd) {
 
 
 static taskexec_t
-comms_sendping(TASK *t, COMMS *comms, char *args) {
+comms_sendping(TASK *t, char *args) {
   int		rv;
 
-  rv = comms_sendcommand(t, __comms_allocate(), "PING");
+  rv = comms_sendcommand(t, "PING");
 
   return rv;
 }
 
 static taskexec_t
-comms_sendpong(TASK *t, COMMS *comms, char *args) {
+comms_sendpong(TASK *t, char *args) {
   int		rv;
 
-  rv = comms_sendcommand(t, __comms_allocate(), "PONG");
+  rv = comms_sendcommand(t, "PONG");
 
   return rv;
 }

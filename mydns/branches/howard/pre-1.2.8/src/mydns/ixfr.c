@@ -267,6 +267,7 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
       size_t fullsize = zonesize + 2;
 
       if ((deletecount < 0) || (activecount < 0) || (zonesize < 0)) {
+	RELEASE(deltafilter);
 	dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
 	return (TASK_FAILED);
       }

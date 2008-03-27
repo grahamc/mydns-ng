@@ -463,15 +463,15 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
   MYDNS_RR		*rr = NULL;
   CACHE			*C;				/* Which cache to use when inserting */
 
-#if DEBUG_ENABLED && DEBUG_CACHE
-  Debug(_("%s: zone_cache_find(%d, %s, %s, %s, %d, %d, %p)"), desctask(t), zone, origin,
-	mydns_qtype_str(type), name, namelen, *errflag, parent);
-#endif
-
   *errflag = 0;
 
   if (!name)
     return (NULL);
+
+#if DEBUG_ENABLED && DEBUG_CACHE
+  Debug(_("%s: zone_cache_find(%d, %s, %s, %s, %d, %d, %p)"), desctask(t), zone, origin,
+	mydns_qtype_str(type), name, namelen, *errflag, parent);
+#endif
 
   if (ZoneCache) {
     hash = cache_hash(ZoneCache, zone + type, name, namelen);
