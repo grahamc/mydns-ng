@@ -773,7 +773,7 @@ update_zone_has_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 **************************************************************************************************/
 static taskexec_t
 check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
-  char		*data, *edata;
+  char		*data = NULL, *edata = NULL;
   size_t	datalen, edatalen;
   uint32_t	aux = 0;
   int		n, rv;
@@ -791,7 +791,7 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
   Debug(_("%s: DNS UPDATE: check_prerequisite: aux=%u"), desctask(t), aux);
-  Debug(_("%s: DNS UPDATE: check_prerequisite: data=[%s]"), desctask(t), data);
+  Debug(_("%s: DNS UPDATE: check_prerequisite: data=[%s]"), desctask(t), (data)?data:"NULL");
 #endif
 
   RELEASE(data);
