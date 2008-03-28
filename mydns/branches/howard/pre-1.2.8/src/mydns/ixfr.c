@@ -82,8 +82,8 @@ free_iq(IQ *q) {
 static char *
 ixfr_gobble_authority_rr(TASK *t, MYDNS_SOA *soa, char *query, size_t querylen, char *current, IARR *rr){
   char * src = current;
-  int rdlength;
-  task_error_t errcode = 0;
+  int rdlength = 0;
+  task_error_t errcode = TASK_FAILED;
 
   if (!(IARR_NAME(rr) = name_unencode2(query, querylen, &src, &errcode))) {
     formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
@@ -115,11 +115,11 @@ ixfr_gobble_authority_rr(TASK *t, MYDNS_SOA *soa, char *query, size_t querylen, 
 
 taskexec_t
 ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncateonly) {
-  MYDNS_SOA	*soa;
+  MYDNS_SOA	*soa = NULL;
   char		*query = t->query;
   int		querylen = t->len;
   char		*src = query + DNS_HEADERSIZE;
-  IQ		*q;
+  IQ		*q = NULL;
   task_error_t	errcode = 0;
 
 #if DEBUG_ENABLED && DEBUG_IXFR
@@ -243,8 +243,8 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
       /*
        * Work out when the client SOA came into being
        */
-      MYDNS_RR	*ThisRR = NULL, *rr;
-      char	*deltafilter;
+      MYDNS_RR	*ThisRR = NULL, *rr = NULL;
+      char	*deltafilter = NULL;
 
       /* For very large zones we do not want to load all of the records just to give up */
       sql_build_query(&deltafilter, "serial > %u", q->IR.serial);
@@ -353,7 +353,7 @@ ixfr_purge_all_soas(TASK *t, void *data) {
    */
 
   SQL_RES	*res = NULL;
-  SQL_ROW	row;
+  SQL_ROW	row = NULL;
 
   size_t	querylen;
   char		*QUERY0 =	"SELECT DISTINCT zone FROM %s WHERE active='%s'";
@@ -361,7 +361,7 @@ ixfr_purge_all_soas(TASK *t, void *data) {
 				"WHERE id=%u;";
   char		*QUERY2 =	"DELETE FROM %s WHERE zone=%u AND active='%s' "
 				" AND stamp < DATE_SUB(NOW(),INTERVAL %u SECOND);";
-  char		*query;
+  char		*query = NULL;
 
   /*
    * Reset task timeout clock to some suitable value in the future
@@ -379,8 +379,8 @@ ixfr_purge_all_soas(TASK *t, void *data) {
 
   while((row = sql_getrow(res, NULL))) {
     unsigned int	id = atou(row[0]);
-    char		*origin;
-    MYDNS_SOA		*soa;
+    char		*origin = NULL;
+    MYDNS_SOA		*soa = NULL;
     SQL_RES		*sres = NULL;
 
     querylen = sql_build_query(&query, QUERY1,
@@ -423,7 +423,7 @@ ixfr_purge_all_soas(TASK *t, void *data) {
 void
 ixfr_start() {
 
-  TASK *inittask;
+  TASK *inittask = NULL;
 
   if (!ixfr_gc_enabled) return;
 

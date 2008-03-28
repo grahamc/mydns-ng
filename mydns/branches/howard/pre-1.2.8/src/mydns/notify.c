@@ -93,7 +93,7 @@ _notify_progressive(TASK *t, NOTIFYSLAVE *slave) {
 static time_t
 _notify_timeout(TASK *t, NOTIFYSLAVE *slave) {
   static NotifyAlgorithm _notify_algorithm = NULL;
-  time_t timeout;
+  time_t timeout = 0;
 
   if (!_notify_algorithm) {
     if (!strcasecmp(notify_algorithm, "linear")) _notify_algorithm = _notify_linear;
@@ -109,11 +109,11 @@ _notify_timeout(TASK *t, NOTIFYSLAVE *slave) {
 taskexec_t
 notify_write(TASK *t) {
   NOTIFYDATA	*notify = (NOTIFYDATA*)t->extension;
-  int		i;
-  int		slavecount;
+  int		i = 0;
+  int		slavecount = 0;
   time_t	timeout = INT_MAX;
-  char		*out;
-  size_t 	reqlen;
+  char		*out = NULL;
+  size_t 	reqlen = 0;
 
   slavecount = array_numobjects(notify->slaves);
 
@@ -214,8 +214,8 @@ _notify_read(TASK *t, struct sockaddr *from, socklen_t fromlen) {
   const char	*msg = NULL;
 
   NOTIFYDATA	*notify = (NOTIFYDATA*)t->extension;
-  int		i;
-  int		slavecount;
+  int		i = 0;
+  int		slavecount = 0;
 
   if (from->sa_family != t->family) return 1; /* Ignore this ... */
 
@@ -280,15 +280,18 @@ notify_read(TASK *t) {
   do {
     char		in[DNS_MAXPACKETLEN_UDP];
     struct sockaddr	from;
-    socklen_t 		fromlen;
-    TASK		*readT;
+    socklen_t 		fromlen = 0;
+    TASK		*readT = NULL;
     DNS_HEADER		hdr;
-    uint16_t		id;
+    uint16_t		id = 0;
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-    uint16_t		qdcount, ancount, nscount, arcount;
+    uint16_t		qdcount = 0, ancount = 0, nscount = 0, arcount = 0;
 #endif
-    char		*src;
+    char		*src = NULL;
     int			port = 0;
+
+    memset(&from, 0, sizeof(from));
+    memset(&hdr, 0, sizeof(hdr));
 
     src = in;
 
@@ -356,13 +359,13 @@ notify_read(TASK *t) {
       Debug(_("%s: DNS NOTIFY got a non-notify response from %s"), desctask(t), msg);
       if ((hdr.opcode == DNS_OPCODE_QUERY) && !hdr.qr) {
 	char *current = src;
-	char *msg2;
-	task_error_t errcode;
+	char *msg2 = NULL;
+	task_error_t errcode = TASK_FAILED;
 	Debug(_("%s: DNS NOTIFY response is a query"), desctask(t));
 	msg2 = name_unencode2(src, rv - DNS_HEADERSIZE, &current, &errcode);
 	if(msg2) {
-	  dns_qtype_t qtype;
-	  dns_class_t qclass;
+	  dns_qtype_t qtype = 0;
+	  dns_class_t qclass = 0;
 	  if (current + SIZE16 <= &in[rv]) {
 	    DNS_GET16(qtype, current);
 	    if (current+SIZE16 <= &in[rv]) {
@@ -410,7 +413,7 @@ notify_read(TASK *t) {
     }
     {
       fd_set rfds;
-      struct timeval timeout;
+      struct timeval timeout = { 0, 0 };;
       FD_ZERO(&rfds);
       FD_SET(t->fd, &rfds);
       timeout.tv_sec = 0;
@@ -437,10 +440,9 @@ notify_read(TASK *t) {
 }
 
 static TASK *
-notify_running(TASK *t, MYDNS_SOA *soa)
-{
-  TASK *checkt;
-  int j;
+notify_running(TASK *t, MYDNS_SOA *soa) {
+  TASK *checkt = NULL;
+  int j = 0;
   /*
    * Scan running tasks for one that is doing notification on this soa
    */
@@ -469,13 +471,13 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
    */
   ARRAY		*name_servers = array_init(4);
 
-  MYDNS_RR	*rr, *r;
+  MYDNS_RR	*rr = NULL, *r = NULL;
 
   SQL_RES	*res = NULL;
-  SQL_ROW	row;
+  SQL_ROW	row = NULL;
 
-  size_t	querylen;
-  char 		*query;
+  size_t	querylen = 0;
+  char 		*query = NULL;
 
   rr = find_rr(t, soa, DNS_QTYPE_NS, "");
 
@@ -508,7 +510,7 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
 
   if ((row = sql_getrow(res, NULL))) {
     char *also_notify_servers = row[0];
-    char *also_notify_server;
+    char *also_notify_server = NULL;
     int scanned = 0;
 
     if (also_notify_servers) {
@@ -571,20 +573,20 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
     char	*label = NULL;
     int		resolved = 0;
 
-    MYDNS_SOA *nsoa;
-    MYDNS_RR *rr;
+    MYDNS_SOA *nsoa = NULL;
+    MYDNS_RR *rr = NULL;
 
     nsoa = find_soa2(t, name_server, &label);
 
     if (nsoa) {
-      MYDNS_RR *r;
+      MYDNS_RR *r = NULL;
 
       rr = find_rr(t, nsoa, DNS_QTYPE_A, label);
 
       for (r = rr; r; r = r->next) {
-	int j;
-	struct sockaddr_in *ipaddr4;
-	NOTIFYSLAVE *slave;
+	int j = 0;
+	struct sockaddr_in *ipaddr4 = NULL;
+	NOTIFYSLAVE *slave = NULL;
 	resolved++;
 	for (j = 0; j < array_numobjects(ipaddresses); j++) {
 	  char *ipa = (char*)array_fetch(ipaddresses, j);
@@ -612,9 +614,9 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
       rr = find_rr(t, nsoa, DNS_QTYPE_AAAA, label);
 
       for (r = rr; r; r = r->next) {
-	int j;
-	struct sockaddr_in6 *ipaddr6;
-	NOTIFYSLAVE *slave;
+	int j = 0;
+	struct sockaddr_in6 *ipaddr6 = NULL;
+	NOTIFYSLAVE *slave = NULL;
 	resolved++;
 	for (j = 0; j < array_numobjects(ipaddresses); j++) {
 	  char *ipa = (char*)array_fetch(ipaddresses, j);
@@ -725,7 +727,7 @@ notify_allocate_fd(int family, struct sockaddr *sourceaddr)
   int fd = -1;
 
   if ((fd = socket(family, SOCK_DGRAM, IPPROTO_UDP)) >= 0) {
-    int n, opt = 1;
+    int n = 0, opt = 1;
 
     /* Set REUSEADDR in case anything is left lying around. */
     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
@@ -979,10 +981,10 @@ notify_all_soas(TASK *t, void *data) {
   INITDATA	*initdata = (INITDATA*)data;
 
   SQL_RES	*res = NULL;
-  SQL_ROW	row;
+  SQL_ROW	row = NULL;
 
-  size_t	querylen;
-  char		*query;
+  size_t	querylen = 0;
+  char		*query = NULL;
 
   if(initdata->zonecount <= 0) return (TASK_COMPLETED);
 
@@ -1028,13 +1030,11 @@ notify_all_soas(TASK *t, void *data) {
 }
 
 void
-notify_start()
-{
+notify_start() {
+  TASK *inittask = NULL;
+  INITDATA *initdata = NULL;
 
-  TASK *inittask;
-  INITDATA *initdata;
-
-  int zonecount;
+  int zonecount = 0;
 
   if (!dns_notify_enabled) return;
 

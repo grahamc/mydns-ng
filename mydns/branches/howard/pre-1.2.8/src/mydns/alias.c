@@ -32,9 +32,9 @@
 **************************************************************************************************/
 MYDNS_RR *
 find_alias(TASK *t, char *fqdn) {
-  register MYDNS_SOA *soa;
-  register MYDNS_RR *rr;
-  register char *label;
+  register MYDNS_SOA *soa = NULL;
+  register MYDNS_RR *rr = NULL;
+  register char *label = NULL;
   char *name = NULL;
 	
   /* Load the SOA for the alias name. */
@@ -64,7 +64,7 @@ find_alias(TASK *t, char *fqdn) {
       /* No exact match. If the label isn't empty, replace the first part
 	 of the label with `*' and check for wildcard matches. */
       if (*label) {
-	uchar *wclabel = NULL, *c;
+	uchar *wclabel = NULL, *c = NULL;
 
 	/* Generate wildcarded label, i.e. `*.example' or maybe just `*'. */
 	if (!(c = strchr(label, '.')))
@@ -100,8 +100,10 @@ int
 alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, char *label, MYDNS_RR *alias) {
   uint32_t		aliases[MAX_ALIAS_LEVEL];
   char			*name = NULL;
-  register MYDNS_RR	*rr;
-  register int		depth, n;
+  register MYDNS_RR	*rr = NULL;
+  register int		depth = 0, n = 0;
+
+  memset(&aliases[0], 0, sizeof(aliases));
 
   if (LASTCHAR(alias->data) != '.')
     ASPRINTF(&name, "%s.%s", alias->data, soa->origin);

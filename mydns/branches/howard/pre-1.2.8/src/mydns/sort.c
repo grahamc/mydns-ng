@@ -63,8 +63,8 @@ sortcmp(RR *rr1, RR *rr2) {
 **************************************************************************************************/
 static RR *
 rrsort(RR *head, int (*compar)(RR *, RR *)) {
-  RR	*low, *high, *current, *pivot, *temp;
-  int result;
+  RR	*low = NULL, *high = NULL, *current = NULL, *pivot = NULL, *temp = NULL;
+  int	result = 0;
 
   if (!head)
     return (NULL);
@@ -113,7 +113,7 @@ rrsort(RR *head, int (*compar)(RR *, RR *)) {
 **************************************************************************************************/
 static inline void
 sort_rrlist(RRLIST *rrlist, int (*compar)(RR *, RR *)) {
-  register RR *node;
+  register RR *node = NULL;
 
   /* Do the sort */
   rrlist->head = rrsort(rrlist->head, compar);
@@ -132,7 +132,7 @@ sort_rrlist(RRLIST *rrlist, int (*compar)(RR *, RR *)) {
 **************************************************************************************************/
 static inline void
 load_balance(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
-  register RR	*node;						/* Current node */
+  register RR	*node = NULL;						/* Current node */
   register int order = 1;					/* Current order */
 
 #if DEBUG_ENABLED && DEBUG_SORT
@@ -183,7 +183,7 @@ load_balance(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
 **************************************************************************************************/
 static inline void
 _sort_a_recs(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
-  register RR *node;
+  register RR *node = NULL;
   register int nonzero_aux = 0;
   register int count = 0;					/* Number of nodes at this level */
 
@@ -224,7 +224,7 @@ _sort_a_recs(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
 **************************************************************************************************/
 void
 sort_a_recs(TASK *t, RRLIST *rrlist, datasection_t section) {
-  register RR *node;
+  register RR *node = NULL;
 
   /* Sort each sort level */
   for (node = rrlist->head; node; node = node->next)
@@ -243,7 +243,7 @@ sort_a_recs(TASK *t, RRLIST *rrlist, datasection_t section) {
 **************************************************************************************************/
 void
 sort_mx_recs(TASK *t, RRLIST *rrlist, datasection_t section) {
-  register RR *node;
+  register RR *node = NULL;
 
 #if DEBUG_ENABLED && DEBUG_SORT
   Debug(_("%s: Sorting MX records in %s section"), desctask(t), datasection_str[section]);
@@ -269,7 +269,7 @@ sort_mx_recs(TASK *t, RRLIST *rrlist, datasection_t section) {
 static inline int
 sort_srv_priority(TASK *t, RRLIST *rrlist, datasection_t section, uint32_t priority,
 		  int sort_level, int order) {
-  register RR	*node;						/* Current node */
+  register RR	*node = NULL;					/* Current node */
   register int found = 0;					/* Number of records with this priority */
   uint64_t	weights = 0;					/* Sum of weights */
   register uint32_t rweight = 0;				/* Random weight */
@@ -314,8 +314,8 @@ sort_srv_priority(TASK *t, RRLIST *rrlist, datasection_t section, uint32_t prior
 **************************************************************************************************/
 static inline void
 _sort_srv_recs(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
-  register RR	*node;						/* Current node */
-  register int count;						/* Number of SRV nodes on this level */
+  register RR	*node = NULL;						/* Current node */
+  register int count = 0;						/* Number of SRV nodes on this level */
 
 #if DEBUG_ENABLED && DEBUG_SORT
   Debug(_("%s: Sorting SRV records in %s section"), desctask(t), datasection_str[section]);
@@ -362,7 +362,7 @@ _sort_srv_recs(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
 **************************************************************************************************/
 void
 sort_srv_recs(TASK *t, RRLIST *rrlist, datasection_t section) {
-  register RR	*node;						/* Current node */
+  register RR	*node = NULL;						/* Current node */
 
   /* Sort each sort level */
   for (node = rrlist->head; node; ) {

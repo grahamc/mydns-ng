@@ -38,7 +38,7 @@ find_soa(
 ) {
   MYDNS_SOA		*soa = (MYDNS_SOA *)NULL;
   register size_t	fqdnlen = strlen(fqdn);
-  register char		*origin, *end;
+  register char		*origin = NULL, *end = NULL;
   int			errflag = 0;
 
 #if DEBUG_ENABLED && DEBUG_DATA
@@ -84,7 +84,7 @@ find_soa2(
 ) {
   MYDNS_SOA		*soa = (MYDNS_SOA *)NULL;
   register size_t	fqdnlen = strlen(fqdn);
-  register char		*origin, *end;
+  register char		*origin = NULL, *end = NULL;
   int			errflag = 0;
 
 #if DEBUG_ENABLED && DEBUG_DATA
@@ -137,7 +137,7 @@ find_rr(
 	char *name		/* The name to look for in `zone' */
 ) {
   int errflag = 0;
-  MYDNS_RR *rr;
+  MYDNS_RR *rr = NULL;
 
   rr = zone_cache_find(t, soa->id, soa->origin, type, name, strlen(name), &errflag, soa);
 
@@ -149,7 +149,7 @@ find_rr(
   }
 
   if (rr) {
-    register MYDNS_RR *r;
+    register MYDNS_RR *r = NULL;
 
     /* If the data is empty, reply with error */
     for (r = rr; r; r = r->next) {

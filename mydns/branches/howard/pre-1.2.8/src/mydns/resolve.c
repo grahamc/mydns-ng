@@ -100,7 +100,7 @@ resolve_soa(TASK *t, datasection_t section, char *fqdn, int level) {
 static taskexec_t
 cname_recurse(TASK *t, datasection_t section, dns_qtype_t qtype,
 	      char *fqdn, MYDNS_SOA *soa, char *label, MYDNS_RR *cname, int level) {
-  register int n;
+  register int n = 0;
 
   if (level >= MAX_CNAME_LEVEL)
     return (1);
@@ -143,7 +143,7 @@ cname_recurse(TASK *t, datasection_t section, dns_qtype_t qtype,
 static taskexec_t
 process_rr(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn,
 	   MYDNS_SOA *soa, char *label, MYDNS_RR *rr, int level) {
-  register MYDNS_RR *r;
+  register MYDNS_RR *r = NULL;
   register int rv = 0;
   register int add_ns = (section == ANSWER
 			 && !t->ns.size
@@ -477,7 +477,7 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
   **
   */
   for (label = name; *label; label++) {
-    char *c;
+    char *c = NULL;
     rv = resolve_label(t, section, DNS_QTYPE_NS, fqdn, soa, label, 1, level);
 #if DEBUG_ENABLED && DEBUG_RESOLVE
     Debug(_("%s: resolve(%s) -> trying for NS `%s', %s"), desctask(t), fqdn, label, task_exec_name(rv));
@@ -496,7 +496,7 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
   ** If we have a label of the form aaa.bbb this should match '*.bbb'
   */
   for (label = name; *label; label++) {
-    char *c;
+    char *c = NULL;
     rv = resolve_label(t, section, qtype, fqdn, soa, label, 0, level);
 #if DEBUG_ENABLED && DEBUG_RESOLVE
     Debug(_("%s: resolve(%s) -> trying `%s', %s"), desctask(t), fqdn, label, task_exec_name(rv));

@@ -77,7 +77,7 @@ static COMMAND mastercommands[] = { { "STATS",		NULL },
 
 static COMMS *
 __comms_allocate() {
-  COMMS		*comms;
+  COMMS		*comms = NULL;
 
   comms = (COMMS*)ALLOCATE(sizeof(COMMS), COMMS);
 
@@ -90,7 +90,7 @@ __comms_allocate() {
 
 static COMMSMESSAGE *
 __message_allocate(size_t messagelength) {
-  COMMSMESSAGE	*message;
+  COMMSMESSAGE	*message = NULL;
 
   messagelength += sizeof(COMMSMESSAGE) - sizeof(message->messagedata) + 1;
   message = (COMMSMESSAGE*)ALLOCATE(messagelength, COMMSMESSAGE);
@@ -102,7 +102,7 @@ __message_allocate(size_t messagelength) {
 
 static COMMSMESSAGE *
 _message_allocate(char *commandstring) {
-  COMMSMESSAGE	*message;
+  COMMSMESSAGE	*message = NULL;
 
   message = __message_allocate(strlen(commandstring));
 
@@ -130,7 +130,7 @@ __comms_free(TASK *t, void *data) {
 
 static int
 _comms_recv(TASK *t, void *data, size_t size, int flags) {
-  int	rv;
+  int	rv  = 0;
 
   rv = recv(t->fd, data, size, MSG_DONTWAIT|flags);
 
@@ -160,7 +160,7 @@ _comms_recv(TASK *t, void *data, size_t size, int flags) {
 
 static int
 _comms_send(TASK *t, void *data, size_t size,  int flags) {
-  int rv;
+  int rv = 0;
 
   rv = send(t->fd, data, size, MSG_DONTWAIT|MSG_NOSIGNAL|flags);
 
@@ -190,9 +190,9 @@ _comms_send(TASK *t, void *data, size_t size,  int flags) {
 
 static taskexec_t
 comms_recv(TASK *t, COMMS *comms) {
-  int		rv;
-  uint16_t	messagelength;
-  char		*msgbuf;
+  int		rv = 0;
+  uint16_t	messagelength = 0;
+  char		*msgbuf = NULL;
 
   if (comms->message == NULL) {
     /* Read in message and dispatch */
@@ -235,9 +235,9 @@ comms_recv(TASK *t, COMMS *comms) {
 
 static taskexec_t
 comms_send(TASK *t, COMMS *comms) {
-  int		rv;
-  char		*msgbuf;
-  uint16_t	messagelength;
+  int		rv = 0;
+  char		*msgbuf = NULL;
+  uint16_t	messagelength = 0;
   TASK		*newt = NULL;;
 
   if (!comms->message) return (TASK_COMPLETED);
@@ -286,7 +286,7 @@ comms_send(TASK *t, COMMS *comms) {
 static CommandProcessor
 comms_find_command(TASK *t, COMMS *comms, COMMAND *commands, char **args) {
   CommandProcessor	action = NULL;
-  int			i;
+  int			i = 0;
   size_t		commandlength = (ntohs(comms->message->messagelength )
 					 - (sizeof(comms->message->messagelength)
 					    + sizeof(comms->message->messageid)));
@@ -305,7 +305,7 @@ comms_find_command(TASK *t, COMMS *comms, COMMAND *commands, char **args) {
 static TASK *
 comms_start(int fd, FreeExtension comms_freeer, RunExtension comms_runner,
 	    TimeExtension comms_ticker) {
-  TASK		*listener;
+  TASK		*listener = NULL;
   COMMS		*comms = __comms_allocate();
 
   listener = IOtask_init(NORMAL_PRIORITY_TASK, NEED_COMMAND_READ, fd, SOCK_DGRAM, AF_UNIX, NULL);
@@ -317,9 +317,9 @@ comms_start(int fd, FreeExtension comms_freeer, RunExtension comms_runner,
 
 static taskexec_t
 comms_run(TASK *t, void * data) {
-  taskexec_t		rv;
-  COMMS			*comms;
-  CommandProcessor	action;
+  taskexec_t		rv = TASK_FAILED;
+  COMMS			*comms = NULL;
+  CommandProcessor	action = NULL;
   char			*args = NULL;
 
   t->timeout = current_time + KEEPALIVE;
@@ -343,7 +343,7 @@ comms_run(TASK *t, void * data) {
 
 static taskexec_t
 comms_sendcommand(TASK *t, char *commandstring) {
-  COMMS		*comms;
+  COMMS		*comms = NULL;
 
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
   Debug(_("%s: Sending commands %s"), desctask(t), commandstring);

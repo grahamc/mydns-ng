@@ -61,7 +61,7 @@ rrlist_free(RRLIST *list) {
 **************************************************************************************************/
 static int
 rrdup(RRLIST *list, dns_rrtype_t rrtype, uint32_t id) {
-  register RR *r;
+  register RR *r = NULL;
 
   if (list && id)						/* Ignore (fake) RRs with ID 0 */
     for (r = list->head; r; r = r->next)
@@ -86,9 +86,9 @@ rrlist_add(
 	char *name					/* Name to send with reply */
 ) {
   RRLIST *list = NULL;
-  RR *new;
+  RR *new = NULL;
   uint32_t id = 0;
-  register char *s, *d;
+  register char *s = NULL, *d = NULL;
 
   /* Remove erroneous empty labels in 'name' if any exist */
   if (name) {

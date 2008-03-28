@@ -99,7 +99,7 @@ _formerr_internal(
 	const char *filename,
 	unsigned int lineno
 ) {
-  char	*dest;
+  char	*dest = NULL;
 
 #if DEBUG_ENABLED && DEBUG_ERROR
   Debug(_("%s: formerr(): %s %s from %s:%u: %s"),
@@ -162,7 +162,7 @@ _dnserror_internal(
 **************************************************************************************************/
 int
 rr_error_repeat(uint32_t id) {
-  register int n;
+  register int n = 0;
 
   for (n = 0; n < MAX_RR_ERR_MEMORY; n++)
     if (rr_err_memory[n] == id)

@@ -35,7 +35,7 @@ char *reply_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL
 **************************************************************************************************/
 int
 reply_init(TASK *t) {
-  register char *c;						/* Current character in name */
+  register char *c = NULL;						/* Current character in name */
 
   /* Examine question data, save labels found therein. The question data should begin with
      the name we've already parsed into t->qname.  I believe it is safe to assume that no
@@ -56,7 +56,7 @@ reply_init(TASK *t) {
 **************************************************************************************************/
 static void
 reply_add_additional(TASK *t, RRLIST *rrlist, datasection_t section) {
-  register RR *p;
+  register RR *p = NULL;
 
   if (!rrlist)
     return;
@@ -103,7 +103,7 @@ static inline int
 reply_start_rr(TASK *t, RR *r, char *name, dns_qtype_t type, uint32_t ttl, char *desc) {
   char	*enc = NULL;
   char	*dest = NULL;
-  int	enclen;
+  int	enclen = 0;
 
   /* name_encode returns dnserror() */
   if ((enclen = name_encode2(t, &enc, name, t->replylen + t->rdlen, 1)) < 0) {
@@ -143,8 +143,8 @@ reply_start_rr(TASK *t, RR *r, char *name, dns_qtype_t type, uint32_t ttl, char 
 **************************************************************************************************/
 static inline int
 reply_add_generic_rr(TASK *t, RR *r, char *desc) {
-  char		*enc, *dest;
-  int		size, enclen;
+  char		*enc = NULL, *dest = NULL;
+  int		size = 0, enclen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
 
   if (reply_start_rr(t, r, (char*)r->name, rr->type, rr->ttl, desc) < 0)
@@ -178,11 +178,13 @@ reply_add_generic_rr(TASK *t, RR *r, char *desc) {
 **************************************************************************************************/
 static inline int
 reply_add_a(TASK *t, RR *r) {
-  char		*dest;
-  int		size;
+  char		*dest = NULL;
+  int		size = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
   struct in_addr addr;
-  uint32_t	ip;
+  uint32_t	ip = 0;
+
+  memset(&addr, 0, sizeof(addr));
 
   if (inet_pton(AF_INET, MYDNS_RR_DATA_VALUE(rr), (void *)&addr) <= 0) {
     dnserror(t, DNS_RCODE_SERVFAIL, ERR_INVALID_ADDRESS);
@@ -215,10 +217,12 @@ reply_add_a(TASK *t, RR *r) {
 **************************************************************************************************/
 static inline int
 reply_add_aaaa(TASK *t, RR *r) {
-  char		*dest;
-  int		size;
+  char		*dest = NULL;
+  int		size = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
   uint8_t	addr[16];
+
+  memset(&addr, 0, sizeof(addr));
 
   if (inet_pton(AF_INET6, MYDNS_RR_DATA_VALUE(rr), (void *)&addr) <= 0) {
     dnserror(t, DNS_RCODE_SERVFAIL, ERR_INVALID_ADDRESS);
@@ -251,8 +255,8 @@ reply_add_aaaa(TASK *t, RR *r) {
 **************************************************************************************************/
 static inline int
 reply_add_hinfo(TASK *t, RR *r) {
-  char		*dest;
-  size_t	oslen, cpulen;
+  char		*dest = NULL;
+  size_t	oslen = 0, cpulen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
   char		os[DNS_MAXNAMELEN + 1] = "", cpu[DNS_MAXNAMELEN + 1] = "";
 
@@ -295,8 +299,8 @@ reply_add_hinfo(TASK *t, RR *r) {
 **************************************************************************************************/
 static inline int
 reply_add_mx(TASK *t, RR *r) {
-  char		*enc, *dest;
-  int		size, enclen;
+  char		*enc = NULL, *dest = NULL;
+  int		size = 0, enclen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
 
   if (reply_start_rr(t, r, (char*)r->name, DNS_QTYPE_MX, rr->ttl, "MX") < 0)
@@ -332,9 +336,9 @@ reply_add_mx(TASK *t, RR *r) {
 static inline int
 reply_add_naptr(TASK *t, RR *r) {
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
-  size_t	flags_len, service_len, regex_len;
-  char		*enc, *dest;
-  int		size, enclen, offset;
+  size_t	flags_len = 0, service_len = 0, regex_len = 0;
+  char		*enc = NULL, *dest = NULL;
+  int		size = 0, enclen = 0, offset = 0;
 
   flags_len = sizeof(MYDNS_RR_NAPTR_FLAGS(rr));
   service_len = strlen(MYDNS_RR_NAPTR_SERVICE(rr));
@@ -394,9 +398,9 @@ reply_add_naptr(TASK *t, RR *r) {
 **************************************************************************************************/
 static inline int
 reply_add_rp(TASK *t, RR *r) {
-  char		*mbox, *txt, *dest;
-  char		*encmbox, *enctxt;
-  int		size, mboxlen, txtlen;
+  char		*mbox = NULL, *txt = NULL, *dest = NULL;
+  char		*encmbox = NULL, *enctxt = NULL;
+  int		size = 0, mboxlen = 0, txtlen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
 
   mbox = MYDNS_RR_DATA_VALUE(rr);
@@ -442,8 +446,8 @@ reply_add_rp(TASK *t, RR *r) {
 **************************************************************************************************/
 static inline int
 reply_add_soa(TASK *t, RR *r) {
-  char		*dest, *ns, *mbox;
-  int		size, nslen, mboxlen;
+  char		*dest = NULL, *ns = NULL, *mbox = NULL;
+  int		size = 0, nslen = 0, mboxlen = 0;
   MYDNS_SOA	*soa = (MYDNS_SOA *)r->rr;
 
   if (reply_start_rr(t, r, (char*)r->name, DNS_QTYPE_SOA, soa->ttl, "SOA") < 0)
@@ -491,8 +495,8 @@ reply_add_soa(TASK *t, RR *r) {
 **************************************************************************************************/
 static inline int
 reply_add_srv(TASK *t, RR *r) {
-  char		*enc, *dest;
-  int		size, enclen;
+  char		*enc = NULL, *dest = NULL;
+  int		size = 0, enclen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
 
   if (reply_start_rr(t, r, (char*)r->name, DNS_QTYPE_SRV, rr->ttl, "SRV") < 0)
@@ -532,9 +536,9 @@ reply_add_srv(TASK *t, RR *r) {
 **************************************************************************************************/
 static inline int
 reply_add_txt(TASK *t, RR *r) {
-  char		*dest;
-  char		size;
-  size_t	len;
+  char		*dest = NULL;
+  uint8_t	size = 0;
+  size_t	len = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
 
   len = MYDNS_RR_DATA_LENGTH(rr);
@@ -563,7 +567,7 @@ reply_add_txt(TASK *t, RR *r) {
 **************************************************************************************************/
 static int
 reply_process_rrlist(TASK *t, RRLIST *rrlist) {
-  register RR *r;
+  register RR *r = NULL;
 
   if (!rrlist)
     return (0);
@@ -658,8 +662,8 @@ reply_process_rrlist(TASK *t, RRLIST *rrlist) {
 **************************************************************************************************/
 static int
 truncate_rrlist(TASK *t, off_t maxpkt, RRLIST *rrlist, datasection_t ds) {
-  register RR *rr;
-  register int recs;
+  register RR *rr = NULL;
+  register int recs = 0;
 #if DEBUG_ENABLED && DEBUG_REPLY
   int orig_recs = rrlist->size;
 #endif
@@ -745,8 +749,8 @@ build_cache_reply(TASK *t) {
 **************************************************************************************************/
 void
 build_reply(TASK *t, int want_additional) {
-  char	*dest;
-  int	ancount, nscount, arcount;
+  char	*dest = NULL;
+  int	ancount = 0, nscount = 0, arcount = 0;
 
   /* Add data to ADDITIONAL section */
   if (want_additional) {

@@ -34,7 +34,7 @@ static inline void
 status_fake_rr(TASK *t, datasection_t ds, const char *name, const char *fmt, ...) {
   va_list	ap;
   char		*buf = NULL;
-  MYDNS_RR 	*rr;						/* Temporary resource record */
+  MYDNS_RR 	*rr = NULL;						/* Temporary resource record */
 
   va_start(ap, fmt);
   VASPRINTF(&buf, fmt, ap);
@@ -73,7 +73,7 @@ static int
 status_version_mydns(TASK *t) {
   time_t uptime = time(NULL) - Status.start_time;
   unsigned long requests = Status.udp_requests + Status.tcp_requests;
-  int n;
+  int n = 0;
 
   /* Generate fake TXT rr with version number and add to reply list */
   status_fake_rr(t, ANSWER, t->qname, "%s", VERSION);

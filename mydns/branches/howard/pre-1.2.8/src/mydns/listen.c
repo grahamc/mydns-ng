@@ -72,10 +72,15 @@ static int AllInterfaceAddressesCount = 0;
 **************************************************************************************************/
 static void
 addrlist_add(int family, void *address, int port) {
-  ADDRLIST *A;
+  ADDRLIST *A = NULL;
   struct in_addr addr4;
 #if HAVE_IPV6
   struct in6_addr addr6;
+#endif
+
+  memset(&addr4, 0, sizeof(addr4));
+#if HAVE_IPV6
+  memset(&addr6, 0, sizeof(addr6));
 #endif
 
   /* Copy address into struct and make sure it's not the "catch-all" address */
@@ -137,9 +142,9 @@ addrlist_add(int family, void *address, int port) {
 char *
 ip6_extra(const struct in6_addr *a){ 
   static char buf[2048];
-  char *b = buf;
+  char *b = &buf[0];
 
-  *b = '\0';
+  memset(&buf[0], 0, sizeof(buf));
 
   if (IN6_IS_ADDR_UNSPECIFIED(a)) b += snprintf(b, sizeof(buf)-(b-buf), "UNSPECIFIED ");
   if (IN6_IS_ADDR_LOOPBACK(a)) b += snprintf(b, sizeof(buf)-(b-buf), "LOOPBACK ");
@@ -173,8 +178,10 @@ ip6_extra(const struct in6_addr *a){
 #if HAVE_IPV6
 static void
 linux_load_ip6(int port) {
-  FILE *fp;
+  FILE *fp = NULL;
   char line[512];
+
+  memset(&line[0], 0, sizeof(line));
 
   if ((fp = fopen("/proc/net/if_inet6", "r"))) {
     while (fgets(line, sizeof(line), fp)) {
@@ -199,7 +206,7 @@ linux_load_ip6(int port) {
       buf[39] = '\0';
 #if DEBUG_ENABLED && DEBUG_LISTEN
       {
-	uint16_t dn, pl, sv, f;
+	uint16_t dn = 0, pl = 0, sv = 0, f = 0;
 	dn = (uint16_t)strtoul(device_number, NULL, 16);
 	pl = (uint16_t)strtoul(prefix_length, NULL, 16);
 	sv = (uint16_t)strtoul(scope_value, NULL, 16);
@@ -272,9 +279,11 @@ all_interface_addresses() {
 static ADDRLIST *
 addrlist_load(int port) {
   struct ifconf ifc;
-  struct ifreq *ifr;
-  int sockfd, buflen = 8192, n;
-  char *buf;
+  struct ifreq *ifr = NULL;
+  int sockfd = -1, buflen = 8192, n = 0;
+  char *buf = NULL;
+
+  memset(&ifc, 0, sizeof(ifc));
 
   FirstAddr = LastAddr = NULL;
 
@@ -306,6 +315,11 @@ addrlist_load(int port) {
     struct in_addr	addr4;
 #if HAVE_IPV6
     struct in6_addr	addr6;
+#endif
+
+    memset(&addr4, 0, sizeof(addr4));
+#if HAVE_IPV6
+    memset(&addr6, 0, sizeof(addr6));
 #endif
 
     ifr = (struct ifreq *)((char *)ifc.ifc_req + n);
@@ -358,7 +372,7 @@ addrlist_load(int port) {
 **************************************************************************************************/
 void
 addrlist_free(ADDRLIST *Addresses) {
-  ADDRLIST *A, *tmp;
+  ADDRLIST *A = NULL, *tmp = NULL;
 
   for (A = Addresses; A; A = tmp) {
     tmp = A->next;
@@ -374,13 +388,18 @@ addrlist_free(ADDRLIST *Addresses) {
 **************************************************************************************************/
 static ADDRLIST *
 get_opt_addrlist(ADDRLIST *Addresses, const char *opt, int default_port, char *desc) {
-  int family;						/* Protocol family (AF_INET/AF_INET6) */
+  int family = -1;					/* Protocol family (AF_INET/AF_INET6) */
   struct in_addr addr4;					/* IPv4 address buffer */
 #if HAVE_IPV6
   struct in6_addr addr6;				/* IPv6 address buffer */
 #endif
-  register ADDRLIST *A;
-  char *cc, *oc, *a, *c;
+  register ADDRLIST *A = NULL;
+  char *cc = NULL, *oc = NULL, *a = NULL, *c = NULL;
+
+  memset(&addr4, 0, sizeof(addr4));
+#if HAVE_IPV6
+  memset(&addr6, 0, sizeof(addr6));
+#endif
 
   FirstAddr = LastAddr = NULL;
   if (!opt || !opt[0])
@@ -392,7 +411,9 @@ get_opt_addrlist(ADDRLIST *Addresses, const char *opt, int default_port, char *d
 
   for (cc = oc; (a = strsep(&cc, CONF_FS_STR)); ) {	/* Add each address */
     char	addr[256];				/* Address/port part of address */
-    int	port = default_port;				/* Port number */
+    int		port = default_port;			/* Port number */
+
+    memset(&addr[0], 0, sizeof(addr));
 
     strncpy(addr, a, sizeof(addr)-1);
 
@@ -476,7 +497,7 @@ get_opt_addrlist(ADDRLIST *Addresses, const char *opt, int default_port, char *d
 **************************************************************************************************/
 static int
 ipv4_listener(struct sockaddr_in *sa, int protocol) {
-  int fd, opt = 1;
+  int fd = -1, opt = 1;
 
   if ((fd = socket(AF_INET, protocol, (protocol == SOCK_STREAM) ? IPPROTO_TCP : IPPROTO_UDP)) < 0)
     Err(_("socket"));
@@ -516,7 +537,7 @@ ipv4_listener(struct sockaddr_in *sa, int protocol) {
 **************************************************************************************************/
 static int
 ipv6_listener(struct sockaddr_in6 *sa, int protocol) {
-  int fd, opt = 1;
+  int fd = -1, opt = 1;
 
   if ((fd = socket(AF_INET6, protocol, (protocol == SOCK_STREAM) ? IPPROTO_TCP : IPPROTO_UDP)) < 0)
     Err(_("socket"));
@@ -531,10 +552,10 @@ ipv6_listener(struct sockaddr_in6 *sa, int protocol) {
     if (listen(fd, 5) < 0)
       Err(_("listen"));
   } else {
-    int n, size;
+    int n = 0;
 
     for (n = 1; n < 1024; n++) {
-      size = n * 1024;
+      int size = n * 1024;
       if ((setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size))) < 0)
 	break;
     }
@@ -556,10 +577,10 @@ ipv6_listener(struct sockaddr_in6 *sa, int protocol) {
 **************************************************************************************************/
 void
 create_listeners(void) {
-  ADDRLIST	*Addresses;					/* List of available addresses */
-  ADDRLIST	*Listen;					/* Listen on these addresses */
-  ADDRLIST	*NoListen;					/* Don't listen on these addresses */
-  ADDRLIST	*L, *N;						/* Current address */
+  ADDRLIST	*Addresses = NULL;				/* List of available addresses */
+  ADDRLIST	*Listen = NULL;					/* Listen on these addresses */
+  ADDRLIST	*NoListen = NULL;				/* Don't listen on these addresses */
+  ADDRLIST	*L = NULL, *N = NULL;				/* Current address */
   char		*port_opt = conf_get(&Conf, "port", 0);		/* "port" config option */
   int		port = 53;					/* Listen on this port number */
 
@@ -630,6 +651,7 @@ create_listeners(void) {
       struct sockaddr_in sa;
 
       memset(&sa, 0, sizeof(struct sockaddr_in));
+
       sa.sin_family = AF_INET;
       sa.sin_port = htons(L->port);
       memcpy(&sa.sin_addr, &L->addr4, sizeof(struct in_addr));
@@ -653,8 +675,8 @@ create_listeners(void) {
       memcpy(&sa.sin6_addr, &L->addr6, sizeof(struct in6_addr));
 #if 0
       /* These two vars are part of struct sockaddr_in6, but I don't know what they are: */
-      uint32_t sin6_flowinfo;   /* IPv6 flow information */
-      uint32_t sin6_scope_id;   /* IPv6 scope-id */
+      uint32_t sin6_flowinfo = 0;   /* IPv6 flow information */
+      uint32_t sin6_scope_id = 0;   /* IPv6 scope-id */
 #endif
 
       /* Expand FD lists as appropriate and create listening sockets */
@@ -681,8 +703,10 @@ create_listeners(void) {
 static void
 server_greeting(void) {
   char	greeting[512], *g = greeting;				/* Server startup message */
-  int	total;							/* Total listening sockets */
+  int	total = 0;						/* Total listening sockets */
   time_t now = time(NULL);
+
+  memset(&greeting[0], 0, sizeof(greeting));
 
   g += sprintf(g, "%s %s %s %.24s", progname, PACKAGE_VERSION, _("started"), ctime(&now));
 

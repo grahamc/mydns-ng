@@ -38,11 +38,12 @@ taskexec_t
 read_udp_query(int fd, int family) {
   struct sockaddr	addr;
   char			in[DNS_MAXPACKETLEN_UDP];
-  socklen_t 		addrlen;
+  socklen_t 		addrlen = 0;
   int			len = 0;
   TASK			*t = NULL;
-  taskexec_t		rv;
+  taskexec_t		rv = TASK_FAILED;
 
+  memset(&addr, 0, sizeof(addr));
   memset(&in, 0, sizeof(in));
     
   /* Read message */
@@ -93,7 +94,7 @@ read_udp_query(int fd, int family) {
 **************************************************************************************************/
 taskexec_t
 write_udp_reply(TASK *t) {
-  int			rv;
+  int			rv = 0;
   struct sockaddr	*addr = NULL;
   int			addrlen = 0;
 
@@ -174,7 +175,7 @@ udp_read_message(TASK *t, void *data) {
 
 void
 udp_start() {
-  int		n;
+  int		n = 0;
 
   for (n = 0; n < num_udp4_fd; n++) {
     TASK *udptask = IOtask_init(HIGH_PRIORITY_TASK, NEED_TASK_READ,

@@ -131,7 +131,7 @@ task_status_name(TASK *t) {
 
 TASK *
 task_find_by_id(TASK *t, QUEUE *TaskQ, unsigned long id) {
-  TASK * ThisT;
+  TASK	*ThisT = NULL;
 
   for (ThisT = TaskQ->head; ThisT ; ThisT = ThisT->next) {
     if (ThisT->internal_id == id) return ThisT;
@@ -150,8 +150,8 @@ task_find_by_id(TASK *t, QUEUE *TaskQ, unsigned long id) {
 **************************************************************************************************/
 taskexec_t
 task_new(TASK *t, unsigned char *data, size_t len) {
-  unsigned char *qname, *src, *qdtop;
-  task_error_t errcode;
+  unsigned char *qname = NULL, *src = NULL, *qdtop = NULL;
+  task_error_t errcode = TASK_FAILED;
 
 #if DEBUG_ENABLED && DEBUG_TASK
   Debug(_("task_new(%p, %p, %u)"), t, data, len);
@@ -396,9 +396,9 @@ _task_init(
 	   const char		*file,
 	   int			line
 ) {
-  TASK				*new;
+  TASK				*new = NULL;
   QUEUE				**TaskQ = NULL;
-  uint16_t			id;
+  uint16_t			id = 0;
 
   if (!taskvec) {
     taskvec = (uint8_t*)ALLOCATE(TASKVECSZ, uint8_t[]);
@@ -537,9 +537,9 @@ task_remove_extension(TASK *t) {
 **************************************************************************************************/
 void
 task_init_header(TASK *t) {
-	t->hdr.qr = 1;					/* This is the response, not the query */
-	t->hdr.ra = forward_recursive;			/* Are recursive queries available? */
-	t->hdr.rcode = DNS_RCODE_NOERROR;		/* Assume success unless told otherwise */
+  t->hdr.qr = 1;					/* This is the response, not the query */
+  t->hdr.ra = forward_recursive;			/* Are recursive queries available? */
+  t->hdr.rcode = DNS_RCODE_NOERROR;		/* Assume success unless told otherwise */
 }
 /*--- task_init_header() ------------------------------------------------------------------------*/
 
@@ -550,72 +550,72 @@ task_init_header(TASK *t) {
 void
 task_output_info(TASK *t, char *update_desc) {
 #if !DISABLE_DATE_LOGGING
-	struct timeval tv;
-	time_t tt;
-	struct tm *tm;
-	char datebuf[80]; /* This is magic and needs rethinking - string should be ~ 23 characters */
+  struct timeval tv = { 0, 0 };
+  time_t tt = 0;
+  struct tm *tm = NULL;
+  char datebuf[80]; /* This is magic and needs rethinking - string should be ~ 23 characters */
 #endif
 
-	/* If we've already outputted the info for this (i.e. multiple DNS UPDATE requests), ignore */
-	if (t->info_already_out)
-		return;
+  /* If we've already outputted the info for this (i.e. multiple DNS UPDATE requests), ignore */
+  if (t->info_already_out)
+    return;
 
-	/* Don't output anything for TCP sockets in the process of closing */
-	if (t->protocol == SOCK_STREAM && t->fd < 0)
-		return;
+  /* Don't output anything for TCP sockets in the process of closing */
+  if (t->protocol == SOCK_STREAM && t->fd < 0)
+    return;
 
 #if !DISABLE_DATE_LOGGING
-	gettimeofday(&tv, NULL);
-	tt = tv.tv_sec;
-	tm = localtime(&tt);
+  gettimeofday(&tv, NULL);
+  tt = tv.tv_sec;
+  tm = localtime(&tt);
 
-	strftime(datebuf, sizeof(datebuf)-1, "%d-%b-%Y %H:%M:%S", tm);
+  strftime(datebuf, sizeof(datebuf)-1, "%d-%b-%Y %H:%M:%S", tm);
 #endif
 
-	Verbose(
+  Verbose(
 #if !DISABLE_DATE_LOGGING
-		"%s+%06lu "
+	  "%s+%06lu "
 #endif
-		"#%u "
-		"%u "		/* Client-provided ID */
-		"%s "		/* TCP or UDP? */
-		"%s "		/* Client IP */
-		"%s "		/* Class */
-		"%s "		/* Query type (A, MX, etc) */
-		"%s " 		/* Name */
-		"%s "		/* Return code (NOERROR, NXDOMAIN, etc) */
-		"%s "		/* Reason */
-		"%d "		/* Question section */
-		"%d "		/* Answer section */
-		"%d "		/* Authority section */
-		"%d "		/* Additional section */
-		"LOG "
-		"%s "		/* Reply from cache? */
-		"%s "		/* Opcode */
-		"\"%s\""	/* UPDATE description (if any) */
-		,
+	  "#%u "
+	  "%u "		/* Client-provided ID */
+	  "%s "		/* TCP or UDP? */
+	  "%s "		/* Client IP */
+	  "%s "		/* Class */
+	  "%s "		/* Query type (A, MX, etc) */
+	  "%s "		/* Name */
+	  "%s "		/* Return code (NOERROR, NXDOMAIN, etc) */
+	  "%s "		/* Reason */
+	  "%d "		/* Question section */
+	  "%d "		/* Answer section */
+	  "%d "		/* Authority section */
+	  "%d "		/* Additional section */
+	  "LOG "
+	  "%s "		/* Reply from cache? */
+	  "%s "		/* Opcode */
+	  "\"%s\""	/* UPDATE description (if any) */
+	  ,
 #if !DISABLE_DATE_LOGGING
-		datebuf, tv.tv_usec,
+	  datebuf, tv.tv_usec,
 #endif
-		t->internal_id,
-		t->id,
-		(t->protocol == SOCK_STREAM)?"TCP"
-		:(t->protocol == SOCK_DGRAM)?"UDP"
-		:"UNKNOWN",
-		clientaddr(t),
-		mydns_class_str(t->qclass),
-		mydns_qtype_str(t->qtype),
-		t->qname,
-		mydns_rcode_str(t->hdr.rcode),
-		err_reason_str(t, t->reason),
-		t->qdcount,
-		t->an.size,
-		t->ns.size,
-		t->ar.size,
-		(t->reply_from_cache ? "Y" : "N"),
-		mydns_opcode_str(t->hdr.opcode),
-		update_desc ? update_desc : ""
-	);
+	  t->internal_id,
+	  t->id,
+	  (t->protocol == SOCK_STREAM)?"TCP"
+	  :(t->protocol == SOCK_DGRAM)?"UDP"
+	  :"UNKNOWN",
+	  clientaddr(t),
+	  mydns_class_str(t->qclass),
+	  mydns_qtype_str(t->qtype),
+	  t->qname,
+	  mydns_rcode_str(t->hdr.rcode),
+	  err_reason_str(t, t->reason),
+	  t->qdcount,
+	  t->an.size,
+	  t->ns.size,
+	  t->ar.size,
+	  (t->reply_from_cache ? "Y" : "N"),
+	  mydns_opcode_str(t->hdr.opcode),
+	  update_desc ? update_desc : ""
+	  );
 }
 /*--- task_output_info() ------------------------------------------------------------------------*/
 
@@ -1116,8 +1116,8 @@ task_process(TASK *t, fd_set *rfd, fd_set *wfd, fd_set *efd) {
 
 static taskexec_t
 check_all_tasks(TASK *mytask, void *mydata) {
-  TASK *t, *nextt = NULL;
-  int i, j;
+  TASK	*t = NULL, *nextt = NULL;
+  int	i = 0, j = 0;
 
   /* Reset my timeout so I do not get run again and I do not process myself ;-( */
   mytask->timeout = current_time + task_timeout;
@@ -1138,7 +1138,7 @@ check_all_tasks(TASK *mytask, void *mydata) {
 void
 task_start() {
 
-  TASK *inittask;
+  TASK *inittask = NULL;
 
   /*
    * Allocate a housekeeping task that will check all of the queues for stuck tasks.

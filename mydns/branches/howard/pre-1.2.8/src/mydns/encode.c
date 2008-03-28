@@ -60,7 +60,7 @@ name_remember(TASK *t, char *name, unsigned int offset) {
 inline void
 name_forget(TASK *t) {
 #if DYNAMIC_NAMES
-  register int n;
+  register int n = 0;
 
   for (n = 0; n < t->numNames; n++)
     RELEASE(t->Names[n]);
@@ -79,7 +79,7 @@ name_forget(TASK *t) {
 **************************************************************************************************/
 unsigned int
 name_find(TASK *t, char *name) {
-  register unsigned int n;
+  register unsigned int n = 0;
 
   for (n = 0; n < t->numNames; n++)
     if (!strcasecmp(t->Names[n], name)) {
@@ -98,9 +98,11 @@ name_find(TASK *t, char *name) {
 int
 name_encode(TASK *t, char *dest, char *name, unsigned int dest_offset, int compression) {
   char			namebuf[DNS_MAXNAMELEN+1];;
-  register char		*c, *d, *this_name, *cp;
+  register char		*c = NULL, *d = NULL, *this_name = NULL, *cp = NULL;
   register int		len = 0;
-  register unsigned int	offset;
+  register unsigned int	offset = 0;
+
+  memset(&namebuf[0], 0, sizeof(namebuf));
 
   strncpy(namebuf, name, sizeof(namebuf)-1);
 
@@ -132,7 +134,7 @@ name_encode(TASK *t, char *dest, char *name, unsigned int dest_offset, int compr
       } else	/* No marker for this name; encode current label and store marker */
 #endif
 	{
-	  register unsigned int nlen;
+	  register unsigned int nlen = 0;
 
 	  if ((cp = strchr(this_name, '.')))
 	    *cp = '\0';
@@ -157,9 +159,9 @@ name_encode(TASK *t, char *dest, char *name, unsigned int dest_offset, int compr
 int
 name_encode2(TASK *t, char **dest, char *name, unsigned int dest_offset, int compression) {
   char			*namebuf = NULL;
-  register char		*c, *d, *this_name, *cp;
+  register char		*c = NULL, *d = NULL, *this_name = NULL, *cp = NULL;
   register int		len = 0;
-  register unsigned int	offset;
+  register unsigned int	offset = 0;
 
   namebuf = STRDUP(name);
 

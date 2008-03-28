@@ -44,13 +44,12 @@ extern char	*dn_default_ns;						/* Default NS for directNIC */
 	Returns 1 if `number' is a prime number, 0 if not.
 **************************************************************************************************/
 static int
-isprime(unsigned int number)
-{
-	register unsigned int divn = 3;
+isprime(unsigned int number) {
+  register unsigned int divn = 3;
 
-	while (divn * divn < number && number % divn != 0)
-		divn += 2;
-	return (number % divn != 0);
+  while (divn * divn < number && number % divn != 0)
+    divn += 2;
+  return (number % divn != 0);
 }
 /*--- isprime() ---------------------------------------------------------------------------------*/
 #endif
@@ -62,7 +61,7 @@ isprime(unsigned int number)
 **************************************************************************************************/
 static CACHE *
 _cache_init(uint32_t limit, uint32_t expire, const char *desc) {
-  CACHE *C;
+  CACHE *C = NULL;
 
   C = ALLOCATE(sizeof(CACHE), CACHE);
   C->limit = limit;
@@ -77,8 +76,8 @@ _cache_init(uint32_t limit, uint32_t expire, const char *desc) {
 #elif (HASH_TYPE == ROTATING_HASH) || (HASH_TYPE == FNV_HASH)
   /* Make `slots' a power of two */
   {
-    int		bits;
-    uint32_t	slots;
+    int		bits = 0;
+    uint32_t	slots = 0;
 
     C->slots = limit * CACHE_SLOT_MULTIPLIER;
     for (slots = C->slots, bits = 0; slots != 1; ) {
@@ -135,9 +134,9 @@ _cache_init(uint32_t limit, uint32_t expire, const char *desc) {
 **************************************************************************************************/
 void
 cache_init(void) {
-  uint32_t	cache_size, zone_cache_size, reply_cache_size;
-  int		defaulted;
-  int		zone_cache_expire, reply_cache_expire;
+  uint32_t	cache_size = 0, zone_cache_size = 0, reply_cache_size = 0;
+  int		defaulted = 0;
+  int		zone_cache_expire = 0, reply_cache_expire = 0;
 
   /* Get ZoneCache size */
   zone_cache_size = atou(conf_get(&Conf, "zone-cache-size", &defaulted));
@@ -178,8 +177,8 @@ cache_init(void) {
 **************************************************************************************************/
 static void
 cache_size_update(CACHE *C) {
-  register int n;
-  register CNODE *N;
+  register int n = 0;
+  register CNODE *N = NULL;
 
   C->size = 0;
   C->size += sizeof(CACHE);
@@ -210,8 +209,8 @@ cache_size_update(CACHE *C) {
 void
 cache_status(CACHE *C) {
   if (C) {
-    register int ct, collisions;
-    register CNODE *n;
+    register int ct = 0, collisions = 0;
+    register CNODE *n = NULL;
 
     /* Update cache size (bytes) */
     cache_size_update(C);
@@ -294,7 +293,7 @@ mrulist_del(CACHE *ThisCache, CNODE *n) {
 **************************************************************************************************/
 static void
 cache_free_node(CACHE *ThisCache, uint32_t hash, CNODE *n) {
-  register CNODE *prev = NULL, *cur, *next;
+  register CNODE *prev = NULL, *cur = NULL, *next = NULL;
 
   if (!n || hash >= ThisCache->slots)
     return;
@@ -335,8 +334,8 @@ cache_free_node(CACHE *ThisCache, uint32_t hash, CNODE *n) {
 **************************************************************************************************/
 void
 cache_empty(CACHE *ThisCache) {
-  register int ct;
-  register CNODE *n, *tmp;
+  register int		ct = 0;
+  register CNODE	*n = NULL, *tmp = NULL;
 
   if (!ThisCache) return;
   for (ct = 0; ct < ThisCache->slots; ct++)
@@ -355,8 +354,8 @@ cache_empty(CACHE *ThisCache) {
 **************************************************************************************************/
 void
 cache_cleanup(CACHE *ThisCache) {
-  register int	ct;
-  register CNODE	*n, *tmp;
+  register int		ct = 0;
+  register CNODE	*n = NULL, *tmp = NULL;
 
   if (!ThisCache)
     return;
@@ -378,8 +377,8 @@ cache_cleanup(CACHE *ThisCache) {
 **************************************************************************************************/
 void
 cache_purge_zone(CACHE *ThisCache, uint32_t zone) {
-  register int	ct;
-  register CNODE	*n, *tmp;
+  register int		ct = 0;
+  register CNODE	*n = NULL, *tmp = NULL;
 
   if (!ThisCache)
     return;
@@ -400,12 +399,12 @@ cache_purge_zone(CACHE *ThisCache, uint32_t zone) {
 static inline uint32_t
 cache_hash(CACHE *ThisCache, uint32_t initval, void *buf, register size_t buflen) {
 #if (HASH_TYPE == ORIGINAL_HASH)
-  register uint32_t	hash;
-  register unsigned char *p;
+  register uint32_t	hash = 0;
+  register unsigned char *p = NULL;
 
   /* Generate hash value */
   for (hash = initval, p = (unsigned char *)buf; p < (unsigned char *)(buf + buflen); p++) {
-    register int tmp;
+    register int tmp = 0;
     hash = (hash << 4) + (*p);
     if ((tmp = (hash & 0xf0000000))) {
       hash = hash ^ (tmp >> 24);
@@ -414,15 +413,15 @@ cache_hash(CACHE *ThisCache, uint32_t initval, void *buf, register size_t buflen
   }
   return (hash % ThisCache->slots);
 #elif (HASH_TYPE == ADDITIVE_HASH)
-  register uint32_t	hash;
-  register unsigned char *p;
+  register uint32_t	hash = 0;
+  register unsigned char *p = NULL;
 
   for (hash = initval, p = (unsigned char *)buf; p < (unsigned char *)(buf + buflen); p++)
     hash += *p;
   return (hash % ThisCache->slots);
 #elif (HASH_TYPE == ROTATING_HASH)
-  register uint32_t	hash;
-  register unsigned char *p;
+  register uint32_t	hash = 0;
+  register unsigned char *p = NULL;
 
   for (hash = initval, p = (unsigned char *)buf; p < (unsigned char *)(buf + buflen); p++)
     hash = (hash << 4) ^ (hash >> 28) ^ (*p);
@@ -458,10 +457,10 @@ void *
 zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
 		char *name, size_t namelen, int *errflag, MYDNS_SOA *parent) {
   register uint32_t	hash = 0;
-  register CNODE	*n;
+  register CNODE	*n = NULL;
   MYDNS_SOA		*soa = NULL;
   MYDNS_RR		*rr = NULL;
-  CACHE			*C;				/* Which cache to use when inserting */
+  CACHE			*C = NULL;			/* Which cache to use when inserting */
 
   *errflag = 0;
 
@@ -655,9 +654,9 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
 **************************************************************************************************/
 int
 reply_cache_find(TASK *t) {
-  register uint32_t	hash;
-  register CNODE		*n;
-  register void		*p;
+  register uint32_t	hash = 0;
+  register CNODE	*n = NULL;
+  register void		*p = NULL;
 
   if (!ReplyCache || t->qdlen > DNS_MAXPACKETLEN_UDP)
     return (0);
@@ -730,9 +729,9 @@ reply_cache_find(TASK *t) {
 **************************************************************************************************/
 void
 add_reply_to_cache(TASK *t) {
-  register uint32_t	hash;
-  register CNODE	*n;
-  register void		*p;
+  register uint32_t	hash = 0;
+  register CNODE	*n = NULL;
+  register void		*p = NULL;
 
   if (!ReplyCache || t->qdlen > DNS_MAXPACKETLEN_UDP || t->hdr.rcode == DNS_RCODE_SERVFAIL) {
     return;

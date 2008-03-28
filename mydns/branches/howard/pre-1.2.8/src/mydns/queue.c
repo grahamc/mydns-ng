@@ -29,12 +29,12 @@ _queue_stats(QUEUE *q) {
   char		*msg = NULL;
   int		msgsize = 512;
   int		msglen = 0;
-  TASK *t;
+  TASK		*t = NULL;
 
 #if !DISABLE_DATE_LOGGING
-  struct timeval tv;
-  time_t tt;
-  struct tm *tm;
+  struct timeval tv = { 0, 0 };
+  time_t tt = 0;
+  struct tm *tm = NULL;
   char datebuf[80]; /* This is magic and needs rethinking - string should be ~ 23 characters */
 
   gettimeofday(&tv, NULL);
@@ -72,7 +72,7 @@ _queue_stats(QUEUE *q) {
 
 void
 queue_stats() {
-  int i,j;
+  int i = 0, j = 0;
 
   for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
     for (j= HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
@@ -86,9 +86,9 @@ queue_stats() {
 **************************************************************************************************/
 QUEUE *
 queue_init(char *typename, char *priorityname) {
-  QUEUE *q;
-  int queuenamelen = strlen(typename) + strlen(priorityname) + 3;
-  char * queuename;
+  QUEUE		*q = NULL;
+  int		queuenamelen = strlen(typename) + strlen(priorityname) + 3;
+  char		*queuename = NULL;
 
   queuenamelen = ASPRINTF(&queuename, "%s %ss", priorityname, typename);
   q = ALLOCATE(sizeof(QUEUE), QUEUE);

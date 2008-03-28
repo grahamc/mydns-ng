@@ -194,10 +194,10 @@ update_transaction(TASK *t, const char *query) {
 static int
 check_update(TASK *t, MYDNS_SOA *soa) {
   SQL_RES	*res = NULL;
-  SQL_ROW	row;
+  SQL_ROW	row = NULL;
   const char	*ip = NULL;
-  char		*query;
-  size_t	querylen;
+  char		*query = NULL;
+  size_t	querylen = 0;
   int		ok = 0;
 
   ip = clientaddr(t);
@@ -274,10 +274,11 @@ check_update(TASK *t, MYDNS_SOA *soa) {
 **************************************************************************************************/
 static void
 update_rrdump(TASK *t, char *section, int which, UQRR *rr) {
-  char *buf, *b;
-  int n;
-  int bufused = 0;
-  int bufsiz = BUFSIZ;
+  char		*buf = NULL;
+  char		*b = NULL;
+  int		n = 0;
+  int		bufused = 0;
+  int		bufsiz = BUFSIZ;
 
   buf = ALLOCATE(bufsiz, char[]);
   b = buf;
@@ -314,7 +315,7 @@ update_rrdump(TASK *t, char *section, int which, UQRR *rr) {
 **************************************************************************************************/
 static char *
 update_gobble_rr(TASK *t, MYDNS_SOA *soa, char *query, size_t querylen, char *current, UQRR *rr) {
-  char *src = current;
+  char		*src = current;
   task_error_t	errcode = 0;
 #if DEBUG_ENABLED && DEBUG_UPDATE
   Debug(_("%s: update_gobble_rr soa=%p, query=%s, querylen=%d, current=%p, rr=%p"),
@@ -358,7 +359,7 @@ parse_update_query(TASK *t, MYDNS_SOA *soa, UQ *q) {
   char		*query = t->query;				/* Start of query section */
   int		querylen = t->len;				/* Length of 'query' */
   char		*src = query + DNS_HEADERSIZE;			/* Current position in 'query' */
-  int		n;
+  int		n = 0;
   task_error_t	errcode = 0;
 
   /*
@@ -448,7 +449,8 @@ parse_update_query(TASK *t, MYDNS_SOA *soa, UQ *q) {
 **************************************************************************************************/
 static char *
 text_retrieve(unsigned char **srcp, unsigned char *end, size_t *datalen, int one_word_only) {
-  int		n, x;							/* Offset in 'data' */
+  int		n = 0;
+  int		x = 0;							/* Offset in 'data' */
   char 		*data = NULL;
   unsigned char	*src = *srcp;
 
@@ -524,9 +526,13 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
 
   case DNS_QTYPE_HINFO:
     {
-      char *data1, *data2, *c;
-      size_t datalen1, datalen2;
-      int  data1sp, data2sp;
+      char	*data1 = NULL;
+      char	*data2 = NULL;
+      char	*c = NULL;
+      size_t	datalen1= 0;
+      size_t	datalen2 = 0;
+      int	data1sp = 0;
+      int	data2sp = 0;
 
       data1 = text_retrieve(&src, end, &datalen1, 1);
       data2 = text_retrieve(&src, end, &datalen2, 1);
@@ -642,7 +648,7 @@ update_in_zone(TASK *t, char *name, char *origin) {
 
 static void
 update_escape_name(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **xname, char **xhost) {
-  char * tmp;
+  char		*tmp = NULL;
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
   Debug(_("%s: DNS UPDATE: update_escape_name"), desctask(t));
@@ -677,8 +683,8 @@ update_escape_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **xdata) {
 static int
 update_zone_has_name(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
   SQL_RES	*res = NULL;
-  char		*query;
-  size_t	querylen;
+  char		*query = NULL;
+  size_t	querylen = 0;
   char		*xname = NULL, *xhost = NULL;
   int		found = 0;
 
@@ -725,8 +731,8 @@ update_zone_has_name(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 static int
 update_zone_has_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
   SQL_RES	*res = NULL;
-  char		*query;
-  size_t	querylen;
+  char		*query = NULL;
+  size_t	querylen = 0;
   char		*xname = NULL, *xhost = NULL;
   int		found = 0;
 
@@ -774,9 +780,9 @@ update_zone_has_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 static taskexec_t
 check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
   char		*data = NULL, *edata = NULL;
-  size_t	datalen, edatalen;
+  size_t	datalen = 0, edatalen = 0;
   uint32_t	aux = 0;
-  int		n, rv;
+  int		n = 0, rv = 0;
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
   Debug(_("%s: DNS UPDATE: check_prerequisite: rr->name=[%s]"), desctask(t), UQRR_NAME(rr));
@@ -877,9 +883,9 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
       }
     }
   } else if (rr->class == q->class) {
-    int		unique;						/* Is this rrset element unique? */
+    int		unique = 0;						/* Is this rrset element unique? */
     uint32_t	aux = 0;					/* 'aux' value for parsed data */
-    taskexec_t	ures;
+    taskexec_t	ures = TASK_FAILED;
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
     Debug(_("%s: DNS UPDATE: want to add %s/%s to tmprr"), desctask(t),
@@ -1042,16 +1048,16 @@ prescan_update(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
  ************************************************************************************************/
 static taskexec_t
 update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
-  char		*data, *edata;
-  size_t	datalen, edatalen;
-  uint32_t	aux;
+  char		*data = NULL, *edata = NULL;
+  size_t	datalen = 0, edatalen = 0;
+  uint32_t	aux = 0;
   char		*xhost = NULL, *xname = NULL, *xdata = NULL, *xedata = NULL;
-  char		*query;
+  char		*query = NULL;
   size_t	querylen = 0;
 #if USE_PGSQL
   int		duplicate = 0;
 #endif
-  taskexec_t	ures;
+  taskexec_t	ures = TASK_FAILED;
 
   if ((ures = update_get_rr_data(t, soa, q, rr,
 				 &data, &datalen, &edata, &edatalen, &aux)) != TASK_EXECUTED) {
@@ -1237,7 +1243,7 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
   RELEASE(query);
 
   /* Output info to verbose log */
-  { char *tmp;
+  { char	*tmp = NULL;
     ASPRINTF(&tmp, "ADD %s %u IN %s %u %s",
 	     UQRR_NAME(rr), rr->ttl, mydns_qtype_str(rr->type), aux, data);
     task_output_info(t, tmp);
@@ -1259,10 +1265,10 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 static taskexec_t
 update_delete_rrset_all(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
   char		*xname = NULL, *xhost = NULL;
-  char		*query;
-  size_t	querylen;
+  char		*query = NULL;
+  size_t	querylen = 0;
   SQL_RES	*res = NULL;
-  int		res2;
+  int		res2 = 0;
   int		updates = 0;
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
@@ -1274,8 +1280,8 @@ update_delete_rrset_all(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_
   update_escape_name(t, soa, q, rr, &xname, &xhost);
 
   if (mydns_rr_use_active && mydns_rr_use_stamp && mydns_rr_use_serial) {
-    SQL_ROW	row;
-    unsigned long *lengths;
+    SQL_ROW	row = NULL;
+    unsigned long *lengths = NULL;
 
     /*
      * This is complicated as we want to purge records that match current active ones
@@ -1308,7 +1314,7 @@ update_delete_rrset_all(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_
       return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
     }
     while ((row = sql_getrow(res, &lengths))) {
-      char *xdata, *xedatakey = NULL;
+      char *xdata = NULL, *xedatakey = NULL;
       xdata = sql_escstr2(sql, row[2], lengths[2]);
       if (mydns_rr_extended_data && row[5] && lengths[5]) {
 	xedatakey = sql_escstr2(sql, row[5], lengths[5]);
@@ -1386,15 +1392,15 @@ update_delete_rrset_all(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_
 **************************************************************************************************/
 static taskexec_t
 update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
-  char		*data, *edata;
-  size_t	datalen, edatalen;
-  uint32_t	aux;
+  char		*data = NULL, *edata = NULL;
+  size_t	datalen = 0, edatalen = 0;
+  uint32_t	aux = 0;
   char		*xname = NULL, *xhost = NULL, *xdata = NULL, *xedata = NULL;
-  char		*query;
-  size_t	querylen;
+  char		*query = NULL;
+  size_t	querylen = 0;
   SQL_RES	*res = NULL;
   int		updates = 0;
-  taskexec_t	ures;
+  taskexec_t	ures = TASK_FAILED;
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
   Debug(_("%s: UPDATE_DELETE_RR: %s %u %s %s"), desctask(t),
@@ -1461,7 +1467,7 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
       return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
     }
     while ((row = sql_getrow(res, NULL))) {
-      int res2;
+      int res2 = 0;
       querylen = sql_build_query(&query,
 				 "DELETE FROM %s "
 				 "WHERE zone=%u AND (name='%s' OR name='%s') AND type='%s' "
@@ -1538,7 +1544,7 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
   RELEASE(query);
 
   /* Output info to verbose log */
-  { char *tmp;
+  { char	*tmp = NULL;
     ASPRINTF(&tmp, "DELETE %s IN %s %s", UQRR_NAME(rr), mydns_qtype_str(rr->type), data);
     task_output_info(t, tmp);
     RELEASE(tmp);
@@ -1559,8 +1565,8 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
 static taskexec_t
 update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
   char		*xname = NULL, *xhost = NULL;
-  char		*query;
-  size_t	querylen;
+  char		*query = NULL;
+  size_t	querylen = 0;
   SQL_RES	*res = NULL;
   int		updates = 0;
 
@@ -1573,8 +1579,8 @@ update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_seri
   update_escape_name(t, soa, q, rr, &xname, &xhost);
 
   if (mydns_rr_use_active && mydns_rr_use_stamp && mydns_rr_use_serial) {
-    SQL_ROW	row;
-    unsigned long *lengths;
+    SQL_ROW	row = NULL;
+    unsigned long *lengths = NULL;
     /*
      * This is complicated as we want to purge records that match current active ones
      * we are going to make deleted before we mark them deleted.
@@ -1602,8 +1608,8 @@ update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_seri
       return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
     }
     while ((row = sql_getrow(res, &lengths))) {
-      char *xdata, *xedata = NULL;
-      int res2;
+      char *xdata = NULL, *xedata = NULL;
+      int res2 = 0;
       xdata = sql_escstr2(sql, row[2], lengths[2]);
       if (mydns_rr_extended_data && lengths[5])
 	xedata = sql_escstr2(sql, row[5], lengths[5]);
@@ -1761,7 +1767,7 @@ process_update(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 **************************************************************************************************/
 static taskexec_t
 check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
-  int n, i;
+  int	n = 0, i = 0;
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
   Debug(_("%s: DNS UPDATE: Checking prerequisite RRsets for exact match"), desctask(t));
@@ -1773,7 +1779,7 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
     char	*current_name = TMPRR_NAME(tmprr);			/* Current NAME being examined */
     dns_qtype_t	current_type = tmprr->type;			/* Current TYPE being examined */
     MYDNS_RR	*rr_first = NULL;				/* RRs for the current name/type */
-    MYDNS_RR	*rr;						/* Current RR */
+    MYDNS_RR	*rr = NULL;						/* Current RR */
     int		total_prereq_rr = 0, total_db_rr = 0;		/* Total RRs in prereq and database */
 
     if (tmprr->checked) {					/* Ignore if already checked */
@@ -1892,11 +1898,11 @@ increment_soa_serial(TASK *t, MYDNS_SOA *soa) {
   unsigned int new_serial = 0;
   char *datebuffer = NULL;
 
-  struct timeval timenow;
-  struct tm *current_time;
+  struct timeval timenow = { 0, 0 };;
+  struct tm *current_time = NULL;
 
-  time_t now, low, high;
-  unsigned int curyear;
+  time_t now = 0, low = 0, high = 0;
+  unsigned int curyear  = 0;
 
   gettimeofday(&timenow, NULL);
   now = timenow.tv_sec;
@@ -1921,7 +1927,7 @@ increment_soa_serial(TASK *t, MYDNS_SOA *soa) {
     if (current_serial == now) now++;
     current_serial = now;
   } else {
-    unsigned int year;
+    unsigned int year = 0;
     int datelength = ASPRINTF(&datebuffer, "%.12d", current_serial);
     datebuffer[4] = '\0';
     sscanf(datebuffer, "%d", &year);
@@ -1962,8 +1968,8 @@ increment_soa_serial(TASK *t, MYDNS_SOA *soa) {
 static taskexec_t
 update_soa_serial(TASK *t, MYDNS_SOA *soa) {
 
-  char		*query;
-  size_t 	querylen;
+  char		*query = NULL;
+  size_t 	querylen = 0;
 
   SQL_RES 	*res = NULL;
 
@@ -2003,9 +2009,9 @@ are_we_master(TASK *t, MYDNS_SOA *soa) {
 
   extern char **all_interface_addresses();
   char **allLocalAddresses = all_interface_addresses();
-  int i, j, res = 1;
+  int i = 0, j = 0, res = 1;
 
-  int ipcount ;
+  int ipcount = 0;
   ARRAY *nss = array_init(1);
 
   array_append(nss, STRDUP(soa->ns));
@@ -2064,10 +2070,10 @@ are_we_master(TASK *t, MYDNS_SOA *soa) {
 **************************************************************************************************/
 taskexec_t
 dns_update(TASK *t) {
-  MYDNS_SOA	*soa;						/* SOA record for zone */
-  UQ		*q;						/* Update query data */
-  int		n;
-  uint32_t	next_serial;
+  MYDNS_SOA	*soa = NULL;						/* SOA record for zone */
+  UQ		*q = NULL;						/* Update query data */
+  int		n = 0;
+  uint32_t	next_serial = 0;
 
   /* Try to load SOA for zone */
   if (mydns_soa_load(sql, &soa, t->qname) < 0) {

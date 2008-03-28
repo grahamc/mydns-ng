@@ -133,8 +133,8 @@ usage(int status) {
 **************************************************************************************************/
 static void
 cmdline(int argc, char **argv) {
-  char	*optstr;
-  int	want_dump_config = 0, optc, optindex;
+  char	*optstr = NULL;
+  int	want_dump_config = 0, optc = 0, optindex = 0;
   int	do_create_tables = 0;
   struct option const longopts[] = {
     {"background",		no_argument,			NULL,	'b'},
@@ -269,6 +269,8 @@ static void
 __set_sighandler(int sig, sig_handler h, sigset_t *mask) {
   struct sigaction act;
 
+  memset(&act, 0, sizeof(act));
+
   if (mask == NULL) {
     sigemptyset(&act.sa_mask);
   } else {
@@ -300,7 +302,7 @@ __set_sighandler(int sig, sig_handler h, sigset_t *mask) {
 **************************************************************************************************/
 static void
 become_daemon(void) {
-  int pid;
+  int pid = -1;
 
   sql_close(sql);
 
@@ -327,7 +329,7 @@ become_daemon(void) {
 static void
 create_pidfile(void) {
   char *name = conf_get(&Conf, "pidfile", NULL);
-  FILE *fp;
+  FILE *fp = NULL;
 
   if (!(fp = fopen(name, "w")))
     Err("%s", name);
@@ -381,7 +383,7 @@ kill_server(SERVER *server, int sig) {
 **************************************************************************************************/
 void
 master_sigusr1(int dummy) {
-  int n;
+  int n = 0;
   for (n = 0; n < array_numobjects(Servers); n++)
     kill_server((SERVER*)array_fetch(Servers, n), SIGUSR1);
   got_sigusr1 = 0;
@@ -401,7 +403,7 @@ sigusr1(int dummy) {
 **************************************************************************************************/
 void
 master_sigusr2(int dummy) {
-  int n;
+  int n = 0;
   for (n = 0; n < array_numobjects(Servers); n++)
     kill_server((SERVER*)array_fetch(Servers, n), SIGUSR2);
   got_sigusr2 = 0;
@@ -424,15 +426,15 @@ sigusr2(int dummy) {
 **************************************************************************************************/
 void
 master_sighup(int dummy) {
-  int n;
+  int n = 0;
   for (n = 0; n < array_numobjects(Servers); n++)
     kill_server((SERVER*)array_fetch(Servers, n), SIGHUP);
   got_sighup = 0;
 }
 
 void
-sighup(int dummy)
-{
+sighup(int dummy) {
+
   cache_empty(ZoneCache);
 #if USE_NEGATIVE_CACHE
   cache_empty(NegativeCache);
@@ -471,7 +473,7 @@ signal_handler(int signo) {
 static void
 close_task_queue(QUEUE *TaskP) {
 
-  register TASK *t;
+  register TASK *t = NULL;
 
   /* Close any TCP connections and any NOTIFY sockets */
   for (t = TaskP->head; t; t = TaskP->head) {
@@ -487,7 +489,7 @@ close_task_queue(QUEUE *TaskP) {
 
 static void
 free_all_tasks() {
-  int i, j;
+  int i = 0, j = 0;
 
   for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
     for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
@@ -500,13 +502,13 @@ free_all_tasks() {
 
 void
 free_other_tasks(TASK *t, int closeallfds) {
-  int i, j;
+  int i = 0, j = 0;
 
   for (i = NORMAL_TASK; i <+ PERIODIC_TASK; i++) {
     for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
       QUEUE *TaskQ = TaskArray[i][j];
       TASK *curtask = TaskQ->head;
-      TASK *nexttask;
+      TASK *nexttask = NULL;
       while (curtask) {
 	nexttask = curtask->next;
 	if (curtask == t) continue;
@@ -531,7 +533,7 @@ named_cleanup(int signo) {
 
 void
 named_shutdown(int signo) {
-  int n;
+  int n = 0;
 
   switch (signo) {
   case 0:
@@ -577,7 +579,7 @@ named_shutdown(int signo) {
 
 void
 master_shutdown(int signo) {
-  int i, m, n, status, running_procs = 0;
+  int i = 0, m = 0, n = 0, status = 0, running_procs = 0;
 
   named_shutdown(signo);
 
@@ -650,8 +652,8 @@ master_shutdown(int signo) {
 **************************************************************************************************/
 static int
 reap_child() {
-  int status;
-  int pid;
+  int status = 0;
+  int pid = -1;
 
   if ((pid = waitpid(-1, &status, WNOHANG)) < 0) return -1;
 
@@ -680,7 +682,7 @@ reap_child() {
 
 SERVER *
 find_server_for_task(TASK *t) {
-  int n;
+  int n = 0;
 
   for (n = 0; n < array_numobjects(Servers); n++) {
     SERVER *server = (SERVER*)array_fetch(Servers, n);
@@ -692,7 +694,7 @@ find_server_for_task(TASK *t) {
 
 static void
 master_child_cleanup(int signo) {
-  int n, pid;
+  int n = 0, pid = -1;
 
   got_sigchld = 0;
 
@@ -721,7 +723,7 @@ master_child_cleanup(int signo) {
 
 static void
 child_cleanup(int signo) {
-  int pid;
+  int pid = -1;
 
   got_sigchld = 0;
 
@@ -740,6 +742,8 @@ child_cleanup(int signo) {
 static int
 _init_rlimit(int resource, const char *desc, long long set) {
   struct rlimit rl;
+
+  memset(&rl, 0, sizeof(rl));
 
   if (getrlimit(resource, &rl) < 0)
     Err(_("getrlimit"));
@@ -806,19 +810,17 @@ gettick() {
 
 static void
 do_initial_tasks(INITIALTASK *initial_tasks) {
-  int i;
-
+  int i = 0;
   
   for (i = 0; initial_tasks[i].start; i++ ) {
     initial_tasks[i].start();
   }
-
 }
 
 static int
 build_fdset_for_tasks(QUEUE *TaskQ, fd_set *rfd, fd_set *wfd, fd_set *efd, int *want_timeout) {
   int maxfd = 0;
-  TASK *t, *Next_task;
+  TASK *t = NULL, *Next_task = NULL;
 
   for (t = TaskQ->head; t; t = Next_task) {
     int		fd;
@@ -865,7 +867,7 @@ build_fdset_for_tasks(QUEUE *TaskQ, fd_set *rfd, fd_set *wfd, fd_set *efd, int *
 
 static int
 build_fdsets(int maxfd, fd_set *rfd, fd_set *wfd, fd_set *efd, int *want_timeout) {
-  int i, j;
+  int i = 0, j = 0;
 
   for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
     for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
@@ -878,8 +880,8 @@ build_fdsets(int maxfd, fd_set *rfd, fd_set *wfd, fd_set *efd, int *want_timeout
 
 static int
 run_tasks(fd_set *rfd, fd_set*wfd, fd_set *efd) {
-  int i,j, tasks_executed = 0;
-  TASK *t, *next_task;
+  int i = 0, j = 0, tasks_executed = 0;
+  TASK *t = NULL, *next_task = NULL;
 
   /* Process tasks */
   for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
@@ -911,8 +913,8 @@ run_tasks(fd_set *rfd, fd_set*wfd, fd_set *efd) {
 static void
 purge_bad_task() {
   /* Find out which task has an invalid fd and kill it */
-  int i,j;
-  TASK *t, *next_task;
+  int i = 0, j = 0;
+  TASK *t = NULL, *next_task = NULL;
 
 #if DEBUG_ENABLED
   Debug(_("purge_bad_task() called"));
@@ -964,11 +966,11 @@ server_loop(int plain_maxfd, INITIALTASK *initial_tasks, int serverfd) {
 
   /* Main loop: Read connections and process queue */
   for (;;) {
-    int			maxfd;
-    int			rv;
+    int			maxfd = -1;
+    int			rv = 0;
     int			want_timeout = task_timeout;
     fd_set		rfd, wfd, efd;
-    struct timeval	tv;
+    struct timeval	tv = { 0, 0 };
 
     /* Handle signals */
     if (got_sighup) sighup(SIGHUP);
@@ -1027,10 +1029,10 @@ server_loop(int plain_maxfd, INITIALTASK *initial_tasks, int serverfd) {
 
 static SERVER *
 spawn_server(INITIALTASK *initial_tasks) {
-  pid_t	pid;
+  pid_t	pid = -1;
   int	fd[2] = { -1, -1 };
-  int	masterfd, serverfd;
-  int	res, n;
+  int	masterfd = -1, serverfd = -1;
+  int	res = 0, n = 0;
 
 
   res = socketpair(PF_UNIX, SOCK_DGRAM, 0, fd);
@@ -1118,9 +1120,9 @@ master_loop(INITIALTASK *initial_tasks) {
   for (;;) {
     int			rv = 0;
     fd_set		rfd, wfd, efd;
-    int			maxfd = 0;
+    int			maxfd = -1;
     int			want_timeout = task_timeout;
-    struct timeval	tv;
+    struct timeval	tv = { 0, 0 };
 
     if (got_sighup) master_sighup(SIGHUP);
     if (got_sigusr1) master_sigusr1(SIGUSR1);
@@ -1175,8 +1177,10 @@ master_loop(INITIALTASK *initial_tasks) {
 int
 main(int argc, char **argv)
 {
-  int i, j, n;
+  int i = 0, j = 0, n = 0;
   sigset_t mask;
+
+  memset(&mask, 0, sizeof(mask));
 
   setlocale(LC_ALL, "");				/* Internationalization */
   bindtextdomain(PACKAGE, LOCALEDIR);

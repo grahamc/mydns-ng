@@ -213,10 +213,10 @@ db_output_create_tables(void) {
 static int
 db_sql_numrows(const char *fmt, ...) {
   va_list	ap;
-  char		*query;
-  size_t	querylen;
+  char		*query = NULL;
+  size_t	querylen = 0;
   SQL_RES	*res = NULL;
-  int		rv;
+  int		rv = 0;
 
   va_start(ap, fmt);
   querylen = VASPRINTF(&query,fmt, ap);
@@ -265,7 +265,7 @@ db_get_column_width(char *database, char *table, char *name) {
 **************************************************************************************************/
 static void
 db_verify_table(char *database, char *table, char *columns) {
-  char *fields = NULL, *f, *name;
+  char *fields = NULL, *f = NULL, *name = NULL;
 
   /* Check that the table itself exists */
   if (!sql_istable(sql, table)) {

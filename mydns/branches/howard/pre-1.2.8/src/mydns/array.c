@@ -29,7 +29,7 @@
 **************************************************************************************************/
 ARRAY *
 array_init(size_t initial_size) {
-  ARRAY *a;
+  ARRAY *a = NULL;
 
   a = ALLOCATE(sizeof(ARRAY), ARRAY);
 
