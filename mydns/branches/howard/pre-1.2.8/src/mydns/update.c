@@ -1154,12 +1154,12 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
     Debug(_("%s: DNS UPDATE: %s"), desctask(t), query);
 #endif
 #endif
-    if (!(res = sql_query(sql, query, querylen))) {
+    res = sql_query(sql, query, querylen);
+    RELEASE(query);
+    if (!res) {
       WarnSQL(sql, "%s: %s", desctask(t), _("error searching duplicate for DNS UPDATE"));
-      RELEASE(query);
       return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
     }
-    RELEASE(query);
     if (sql_num_rows(res) > 0)
       duplicate = 1;
     sql_free(res);
@@ -1600,8 +1600,9 @@ update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_seri
 			       mydns_rr_table_name,
 			       soa->id, xname, xhost, mydns_qtype_str(rr->type),
 			       mydns_rr_active_types[0]);
+    res = sql_query(sql, query, querylen);
     RELEASE(query);
-    if (!(res = sql_query(sql, query, querylen))) {
+    if (!res) {
       RELEASE(xname);
       RELEASE(xhost);
       WarnSQL(sql, "%s: %s", desctask(t), _("error deleting RRset via DNS UPDATE"));
@@ -1626,6 +1627,7 @@ update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_seri
 				 (xedata)?xedata:"",
 				 (xedata)?"'":"");
       RELEASE(xdata);
+      RELEASE(xedata);
       res2 = sql_nrquery(sql, query, querylen);
       RELEASE(query);
       if (res2 != 0) {
