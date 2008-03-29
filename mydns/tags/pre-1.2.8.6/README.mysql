@@ -1,0 +1,35 @@
+
+SSL ERRORS DURING "make"
+------------------------------------------------------------------------
+If "make" fails with a bunch of SSL-related looking errors, you probably
+have a MySQL client library that requires OpenSSL support.  Rerun
+the "configure" script as "./configure --with-openssl" and try to "make"
+again.
+
+
+
+"ZLIB" LINKER ERRORS DURING "make"
+------------------------------------------------------------------------
+If compilation fails with an error like "libtool: link: cannot find the
+library `/usr/lib/mysql/libz.la'", this is a bug in MySQL.
+
+If you are running MySQL 4.1, version 4.1.16 (and possibly later) is
+known to have this bug.  I haven't tried version 4.1.15.  Version 4.1.14
+is known to work fine.  Downgrading to 4.1.14 will work.
+
+If you are running MySQL 5.x, I can't help you much since I don't run
+those versions myself and haven't heard any other reports of the error.
+http://dev.mysql.com/doc/refman/5.0/en/news-5-0-17.html says:
+
+    "The original Linux RPM packages (5.0.17-0) had an issue
+     with a zlib dependency that would result in an error
+     during an install or upgrade.  They were replaced by new
+     binaries, 5.0.17-1".
+
+I do not know if that means the bug is limited to 5.0.17, or all
+prior versions, or what.  Please email bboy@bboy.net if you can give me
+a definitive answer to put in here.
+
+
+
+- 18-Jan-2006  Don Moore  <bboy@bboy.net>
