@@ -235,6 +235,13 @@ Number of seconds between each GC scan. - default 86400 seconds = 1 day.
 .IP "\fBixfr-gc-delay\fP" = \fIseconds\fP (`\fI600\fP')"
 Number of seconds before first GC scan. - default 600 seconds = 10 minutes.
 
+.IP "\fBextended-data-support\fP = \fIboolean\fP (`\fIno\fP')"
+Switch on extended data support, this allow resource records to grow very
+big as needed for large TXT records.
+
+.IP "\fBdbengine\fP = \fIstring\fP (`\fIMyISAM\fP')"
+Select DBengine to use when running under MySQL. Has been tested with MyISAM, InnoDB, NDBCLUSTER.
+
 .IP "\fBsoa-where\fP = \fIstring\fP
 An extra WHERE clause to append to queries selecting records from the `soa' table.
 

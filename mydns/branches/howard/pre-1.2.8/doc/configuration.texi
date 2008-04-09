@@ -155,6 +155,8 @@ reply cache is not used. (@xref{Caching}.)
 @cindex ixfr-gc-enabled
 @cindex ixfr-gc-interval
 @cindex ixfr-gc-delay
+@cindex extended-data-support
+@cindex dbengine
 @cindex soa-where
 @cindex rr-where
 
@@ -261,6 +263,12 @@ deleted and will remove them from the DB.
 
 @item ixfr-gc-delay
 @i{(integer}) Number of seconds before first GC scan. - default 600 seconds = 10 minutes.
+
+@item extended-data-support
+@i{(boolean)} Switch on support for extended data, this allows large rr data entries needed by large TXT records and other data types.
+
+@item dbengine
+@i{(string)} Select default DB engine used when creating MySQL databases. Tested with MyISAM, InnoDB, NDBCLUSTER - default MyISAM.
 
 @item soa-where
 @i{(string)}  An additional SQL @samp{WHERE} clause to use when retrieving
