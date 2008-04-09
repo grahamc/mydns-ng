@@ -18059,6 +18059,7 @@ echo "${ECHO_T}no" >&6; }
 		fi
 
 
+					else
 						LDFLAGS="$LDFLAGS -static"
 					fi
 				fi
@@ -18239,6 +18240,7 @@ echo "${ECHO_T}no" >&6; }
 		fi
 
 
+				else
 					LDFLAGS="$LDFLAGS -static"
 				fi
 

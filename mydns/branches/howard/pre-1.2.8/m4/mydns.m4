@@ -363,6 +363,7 @@ AC_DEFUN([AC_ENABLE_DEBUG],
 						AC_C_CFLAGS(-fomit-frame-pointer)
 						AC_C_CFLAGS(-finline-functions)
 						AC_C_CFLAGS(-ffast-math)
+					else
 						LDFLAGS="$LDFLAGS -static"
 					fi
 				fi
@@ -372,6 +373,7 @@ AC_DEFUN([AC_ENABLE_DEBUG],
 					AC_C_CFLAGS(-fomit-frame-pointer)
 					AC_C_CFLAGS(-finline-functions)
 					AC_C_CFLAGS(-ffast-math)
+				else
 					LDFLAGS="$LDFLAGS -static"
 				fi
 			]

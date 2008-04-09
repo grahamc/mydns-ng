@@ -121,7 +121,6 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
   char		*src = query + DNS_HEADERSIZE;
   IQ		*q = NULL;
   task_error_t	errcode = 0;
-  int		nochange = 1;
 
 #if DEBUG_ENABLED && DEBUG_IXFR
   Debug("%s: ixfr(%s, %s, \"%s\", %d)", desctask(t),
@@ -236,10 +235,14 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
    *
    */
 
-  /* Do we have incremental information in the database */
-  if (!truncateonly && mydns_rr_use_active && mydns_rr_use_stamp && mydns_rr_use_serial) {
-    /* We can do incrementals */
-    if (soa->serial != q->IR.serial) {
+  if (soa->serial == q->IR.serial) {
+    /* Tell the client to do no zone transfer */
+    rrlist_add(t, ANSWER, DNS_RRTYPE_SOA, (void *)soa, soa->origin);
+    t->sort_level++;
+  } else {
+    /* Do we have incremental information in the database */
+    if (!truncateonly && mydns_rr_use_active && mydns_rr_use_stamp && mydns_rr_use_serial) {
+      /* We can do incrementals */
       /* Need to send an IXFR if available */
       /*
        * Work out when the client SOA came into being
@@ -326,19 +329,12 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
 	}
 	goto FINISHEDIXFR;
       }
-      nochange = 0;
     }
   }
 
-  /* Tell the client to do a full zone transfer */
+  /* Tell the client to do a full zone transfer or not at all */
   rrlist_add(t, ANSWER, DNS_RRTYPE_SOA, (void *)soa, soa->origin);
   t->sort_level++;
-
-  if (nochange) {
-    /* Tell the client to do no zone transfer */
-    rrlist_add(t, ANSWER, DNS_RRTYPE_SOA, (void *)soa, soa->origin);
-    t->sort_level++;
-  }
 
  FINISHEDIXFR:
   mydns_soa_free(soa);
