@@ -121,6 +121,7 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
   char		*src = query + DNS_HEADERSIZE;
   IQ		*q = NULL;
   task_error_t	errcode = 0;
+  int		nochange = 1;
 
 #if DEBUG_ENABLED && DEBUG_IXFR
   Debug("%s: ixfr(%s, %s, \"%s\", %d)", desctask(t),
@@ -200,7 +201,7 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
 #endif
 
   /*
-   * As per RFC 1995 we have 3 options for a response.
+   * As per RFC 1995 we have 3 options for a response if a delat exists.
    *
    * We can send a full zone transfer if it will fit in a UDP packet and is smaller
    * than sending deltas
@@ -325,12 +326,15 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
 	}
 	goto FINISHEDIXFR;
       }
+      nochange = 0;
     }
   }
 
-  /* Tell the client to do a full zone transfer */
-  rrlist_add(t, ANSWER, DNS_RRTYPE_SOA, (void *)soa, soa->origin);
-  t->sort_level++;
+  if (nochange) {
+    /* Tell the client to do a full zone transfer */
+    rrlist_add(t, ANSWER, DNS_RRTYPE_SOA, (void *)soa, soa->origin);
+    t->sort_level++;
+  }
 
  FINISHEDIXFR:
   mydns_soa_free(soa);

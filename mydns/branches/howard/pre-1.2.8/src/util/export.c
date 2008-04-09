@@ -388,7 +388,7 @@ tinydns_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
 	  databuflen += 3; /* Original Length + 3 more characters */
 	  /* Grow by a lump usually */
 	  newdatabuf = REALLOCATE(databuf, ((databuflen/512)+1)*512, char[]);
-	  if (newdatabuf != databuf) d = &newdatabuf[strlen(newdatabuf)];
+	  if (newdatabuf != databuf) d = &newdatabuf[d - databuf];
 	  databuf = newdatabuf;
 	  d += sprintf(d, "\\%03o", *c);
 	} else
