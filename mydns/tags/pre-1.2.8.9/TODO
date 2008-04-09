@@ -1,0 +1,42 @@
+##
+##  $Id: TODO,v 1.67 2005/04/28 18:02:43 bboy Exp $
+##
+
+SHORT TERM:
+
+*	Add full checks for SRV, PTR, RP, and NAPTR to 'mydnscheck'.
+
+*  Reply cache should obey shortest TTL in the cached RRSET.
+
+
+
+LONG TERM:
+
+*	Move SRV/RP/NAPTR extra data OUT of the mydns_rr structure -- leave the
+	data in the "data" column and let it be parsed as needed.  The parsed
+	data really gobbles up space in the MYDNS_RR structure.
+
+*	Full IPv6 support (added to server, need support in utils).
+
+*	Update manual:
+	- How delegation works.
+
+*	LOC (RFC 1876?) support.
+
+*	Make sure we're NEVER using inet_ntoa, inet_addr, etc.
+
+*	Fix in_cidr to work with IPv6 addresses.
+
+*	Test AXFR from an IPv6 master via `mydns-import'.
+
+*	Investigate linker problem with `-ffast-math' on FreeBSD/alpha:
+
+		/usr/lib/crtfastmath.o: In function `set_fast_math':
+		/usr/lib/crtfastmath.o(.text+0x1c): undefined reference to
+			`__ieee_set_fp_control'
+
+*	No calls to gethostbyname() anywhere -- add `--enable-static-build'
+	back to the `./configure' line in pkg/mydns-mysql.spec.in.
+
+
+## vi:set ts=3:
