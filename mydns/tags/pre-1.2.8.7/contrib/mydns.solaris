@@ -1,0 +1,49 @@
+#!/bin/sh
+
+#
+# Startup for mydns
+#
+# "Fernando Durango" <fernando@secret.org>
+#
+PIDFILE="/var/run/mydns.pid"
+
+# look for our pidfile
+if [ -f $PIDFILE ] ; then
+    PID=`cat $PIDFILE`
+    if [ "x$PID" != "x" ] && kill -0 $PID 2>/dev/null ; then
+        STATUS="mydns (pid $PID) running."
+        RUNNING=1
+    else
+        STATUS="mydns (pid $PID?) not running."
+        RUNNING=0
+    fi
+else
+    STATUS="mydns (no pid file) not running."
+    RUNNING=0
+fi
+
+case "$1" in
+'start')
+        if [ $RUNNING -eq 1 ]; then
+            echo "mydns (pid $PID) already running."
+            exit
+        fi
+        if [ -x /usr/local/sbin/mydns ] ; then
+            echo "mydns starting."
+	    /usr/local/sbin/mydns --background
+	fi
+        ;;
+'stop')
+        if [ $RUNNING -eq 0 ]; then
+                echo "mydns (no pid file) not running."
+        fi
+        if [ $RUNNING -eq 1 ]; then
+		echo "killing mydns (pid $PID)."
+                /usr/bin/kill -9 ${PID} 1>/dev/null 2>&1
+        fi
+        ;;
+*)
+        echo "Usage: $0 { start | stop }"
+        ;;
+esac
+exit 0
