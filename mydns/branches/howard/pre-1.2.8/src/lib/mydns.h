@@ -53,6 +53,8 @@ extern uint32_t	ixfr_gc_delay;			/* Delay before running first IXFR GC */
 extern int	ignore_minimum;			/* Ignore minimum TTL? */
 extern char	hostname[256];			/* This machine's hostname */
 
+extern char	*mydns_dbengine;		/* The db engine to use when creating tables - MySQL only */
+
 extern uint32_t answer_then_quit;		/* Answer this many queries then quit */
 extern int	show_data_errors;		/* Output data errors? */
 

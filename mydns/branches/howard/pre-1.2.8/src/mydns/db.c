@@ -23,7 +23,6 @@
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_DB	1
 
-
 /**************************************************************************************************
 	DB_CONNECT
 	Connect to the database.
@@ -128,7 +127,7 @@ db_output_create_tables(void) {
     printf("   also_notify CHAR(255) DEFAULT NULL,\n");
   }
   printf("  UNIQUE KEY (origin)\n");
-  printf(") Engine=InnoDB;\n");
+  printf(") Engine=%s;\n", mydns_dbengine);
   printf("\n");
 #endif
 
@@ -197,7 +196,7 @@ db_output_create_tables(void) {
   if (mydns_rr_extended_data) printf(",edatakey");
   if (mydns_rr_use_active) printf(",active");
   printf(")\n");
-  printf(") Engine=InnoDB;\n\n");
+  printf(") Engine=%s;\n\n", mydns_dbengine);
 #endif
 
   exit(EXIT_SUCCESS);

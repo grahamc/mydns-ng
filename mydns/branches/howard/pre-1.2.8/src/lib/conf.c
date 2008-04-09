@@ -55,6 +55,8 @@ char		*recursion_algorithm = "linear";
 char		*recursive_fwd_server = NULL;		/* Name of server for recursive forwarding */
 int		recursive_family = AF_INET;		/* Protocol family for recursion */
 
+char		*mydns_dbengine = "MyISAM";
+
 #if HAVE_IPV6
 struct sockaddr_in6	recursive_sa6;			/* Recursive server (IPv6) */
 #endif
@@ -124,6 +126,7 @@ static CONF defConfig[] = {
 {	"ixfr-gc-interval",	"86400",			N_("How often to run GC for IXFR")},
 {	"ixfr-gc-delay",	"600",				N_("Delay until first IXFR GC runs")},
 {	"extended-data-support","no",				N_("Support extended data fields for large TXT records")},
+{	"dbengine",		"MyISAM",			N_("Support different database engines")},
 
 #ifdef DN_COLUMN_NAMES
 {	"default-ns",		"ns0.example.com.",		N_("Default nameserver for all zones")},
@@ -461,6 +464,8 @@ load_config(void) {
   ixfr_gc_delay = atou(conf_get(&Conf, "ixfr-gc-delay", NULL));
 
   mydns_rr_extended_data = GETBOOL(conf_get(&Conf, "extended-data-support", NULL));
+
+  mydns_dbengine = conf_get(&Conf, "dbengine", NULL);
 
   ignore_minimum = GETBOOL(conf_get(&Conf, "ignore-minimum", NULL));
 
