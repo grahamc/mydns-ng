@@ -123,6 +123,7 @@ static CONF defConfig[] = {
 {	"ixfr-gc-enabled",	"no",				N_("Enable IXFR GC functionality")},
 {	"ixfr-gc-interval",	"86400",			N_("How often to run GC for IXFR")},
 {	"ixfr-gc-delay",	"600",				N_("Delay until first IXFR GC runs")},
+{	"extended-data-support","no",				N_("Support extended data fields for large TXT records")},
 
 #ifdef DN_COLUMN_NAMES
 {	"default-ns",		"ns0.example.com.",		N_("Default nameserver for all zones")},
@@ -458,6 +459,8 @@ load_config(void) {
   ixfr_gc_enabled = GETBOOL(conf_get(&Conf, "ixfr-gc-enabled", NULL));
   ixfr_gc_interval = atou(conf_get(&Conf, "ixfr-gc-interval", NULL));
   ixfr_gc_delay = atou(conf_get(&Conf, "ixfr-gc-delay", NULL));
+
+  mydns_rr_extended_data = GETBOOL(conf_get(&Conf, "extended-data-support", NULL));
 
   ignore_minimum = GETBOOL(conf_get(&Conf, "ignore-minimum", NULL));
 

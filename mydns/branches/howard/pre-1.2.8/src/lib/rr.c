@@ -40,7 +40,7 @@ char *mydns_rr_where_clause = NULL;
 size_t mydns_rr_data_length = DNS_DATALEN;
 
 /* Optional columns */
-int mydns_rr_extended_data = 1;
+int mydns_rr_extended_data = 0;
 int mydns_rr_use_active = 0;
 int mydns_rr_use_stamp = 0;
 int mydns_rr_use_serial = 0;
