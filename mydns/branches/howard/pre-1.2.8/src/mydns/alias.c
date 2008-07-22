@@ -64,7 +64,8 @@ find_alias(TASK *t, char *fqdn) {
       /* No exact match. If the label isn't empty, replace the first part
 	 of the label with `*' and check for wildcard matches. */
       if (*label) {
-	uchar *wclabel = NULL, *c = NULL;
+	char *wclabel = NULL;
+	char *c = NULL;
 
 	/* Generate wildcarded label, i.e. `*.example' or maybe just `*'. */
 	if (!(c = strchr(label, '.')))
@@ -85,8 +86,9 @@ find_alias(TASK *t, char *fqdn) {
       if (!*label)
 	break;
     }
-    RELEASE(name);
-    return (NULL);
+  }
+  RELEASE(name);
+  return (NULL);
 }
 /*--- find_alias() ------------------------------------------------------------------------------*/
 
@@ -105,10 +107,11 @@ alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, char *
 
   memset(&aliases[0], 0, sizeof(aliases));
 
-  if (LASTCHAR(alias->data) != '.')
-    ASPRINTF(&name, "%s.%s", alias->data, soa->origin);
+  if ((MYDNS_RR_DATA_LENGTH(alias) > 0)
+      && (LASTCHAR((char*)MYDNS_RR_DATA_VALUE(alias)) != '.'))
+    ASPRINTF(&name, "%s.%s", (char*)MYDNS_RR_DATA_VALUE(alias), soa->origin);
   else
-    name = STRDUP(alias->data);
+    name = STRDUP((char*)MYDNS_RR_DATA_VALUE(alias));
 
   for (depth = 0; depth < MAX_ALIAS_LEVEL; depth++) {
 #if DEBUG_ENABLED && DEBUG_ALIAS
@@ -123,7 +126,7 @@ alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, char *
 	** duplicates and we might have several records aliased to one
 	*/
 	rr->id = alias->id;
-	strcpy(rr->name, alias->name);
+	strcpy(MYDNS_RR_NAME(rr), MYDNS_RR_NAME(alias));
 	rrlist_add(t, section, DNS_RRTYPE_RR, (void *)rr, fqdn);
 	t->sort_level++;
 	mydns_rr_free(rr);
@@ -132,8 +135,10 @@ alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, char *
       }
 
       /* Append origin if needed */
-      if (MYDNS_RR_DATA_LENGTH(rr) > 0 && LASTCHAR(MYDNS_RR_DATA_VALUE(rr)) != '.') {
-	mydns_rr_append_origin(rr, origin);
+      if ((MYDNS_RR_DATA_LENGTH(rr) > 0)
+	  && (LASTCHAR((char*)MYDNS_RR_DATA_VALUE(rr)) != '.')) {
+	RELEASE(name);
+	name = mydns_rr_append_origin((char*)MYDNS_RR_DATA_VALUE(rr), soa->origin);
       }
 
       /* Check aliases list; if we are looping, stop. Otherwise add this to the list. */
@@ -148,7 +153,7 @@ alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, char *
       aliases[depth] = rr->id;
 
       /* Continue search with new alias. */
-      strncpy(name, rr->data, sizeof(name)-1);
+      strncpy(name, (char*)MYDNS_RR_DATA_VALUE(rr), sizeof(name)-1);
       mydns_rr_free(rr);
     } else {
       Verbose("%s: %s: %s -> %s", desctask(t), _("ALIAS chain is broken"), fqdn, name);
@@ -157,7 +162,7 @@ alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, char *
     }
   }
   Verbose(_("%s: %s: %s -> %s (depth %d)"), desctask(t), _("max ALIAS depth exceeded"),
-	  fqdn, alias->data, depth);
+	  fqdn, (char*)MYDNS_RR_DATA_VALUE(alias), depth);
   RELEASE(name);
   return (0);
 }
