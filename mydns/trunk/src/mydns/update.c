@@ -841,9 +841,11 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
     *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
     return (TASK_FAILED);
 
+#if ALIAS_ENABLED
   case DNS_QTYPE_ALIAS:
     *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
     return (TASK_FAILED);
+#endif
 
   }
 

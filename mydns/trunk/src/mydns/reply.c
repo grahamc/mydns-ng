@@ -927,10 +927,12 @@ reply_process_rrlist(TASK *t, RRLIST *rrlist) {
 		_("unsupported resource record type"));
 	  break;
 
+#if ALIAS_ENABLED
 	case DNS_QTYPE_ALIAS:
 	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
 		_("unexpected resource record type - logic problem"));
 	  break;
+#endif
 
 	}
       }
