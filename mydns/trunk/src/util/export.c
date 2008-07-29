@@ -22,14 +22,14 @@
 
 #include "util.h"
 
-char *zone = NULL;							/* Zone name to dump */
+char *zone = NULL;						/* Zone name to dump */
 unsigned int zones_out = 0;					/* Number of zones output */
 enum _output_format {						/* Output format types */
 	OUTPUT_BIND,
 	OUTPUT_TINYDNS
 } output_format = OUTPUT_BIND;
 
-char  thishostname[256];                                            /* Hostname of local machine */
+char  *thishostname;	                                        /* Hostname of local machine */
 char *command_line = NULL;					/* Full command line */
 
 #define DNSBUFLEN	DNS_MAXNAMELEN+1
@@ -110,7 +110,8 @@ cmdline(int argc, char **argv) {
     }
   }
 
-  gethostname(thishostname, sizeof(thishostname)-1);
+  thishostname = ALLOCATE(HOST_NAME_MAX +1, char[]);
+  gethostname(thishostname, HOST_NAME_MAX);
 
   err_file = stdout;
   error_init(argv[0], LOG_USER);				/* Init output routines */
@@ -387,7 +388,7 @@ tinydns_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
 	  databuflen += 3; /* Original Length + 3 more characters */
 	  /* Grow by a lump usually */
 	  newdatabuf = REALLOCATE(databuf, ((databuflen/512)+1)*512, char[]);
-	  if (newdatabuf != databuf) d = &newdatabuf[strlen(newdatabuf)];
+	  if (newdatabuf != databuf) d = &newdatabuf[d - databuf];
 	  databuf = newdatabuf;
 	  d += sprintf(d, "\\%03o", *c);
 	} else

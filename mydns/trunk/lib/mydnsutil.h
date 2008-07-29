@@ -450,45 +450,45 @@ extern void	_mydns_release(void *, size_t, arena_t, char *, int);
 **  error.c
 **  Error reporting functions.
 */
-extern char *progname;						/* The name of this program */
-extern int	err_verbose;					/* Should ERR_VERBOSE output anything? */
+extern char		*progname;			/* The name of this program */
+extern int		err_verbose;			/* Should ERR_VERBOSE output anything? */
 #if DEBUG_ENABLED
-extern int	err_debug;					/* Should ERR_DEBUG output anything? */
+extern int		err_debug;			/* Should ERR_DEBUG output anything? */
 #endif
-extern FILE	*err_file;					/* Output to this file */
+extern FILE		*err_file;			/* Output to this file */
 
 
-extern void error_init(const char *argv0, int facility);
+extern void		error_init(const char *argv0, int facility);
 #if DEBUG_ENABLED
-extern void Debug(const char *, ...) __printflike(1,2);
+extern void		Debug(const char *, ...) __printflike(1,2);
 #endif
-extern void Verbose(const char *, ...) __printflike(1,2);
-extern void Notice(const char *, ...) __printflike(1,2);
-extern int	Warn(const char *, ...) __printflike(1,2);
-extern int	Warnx(const char *, ...) __printflike(1,2);
-extern void Err(const char *, ...) __printflike(1,2);
-extern void Errx(const char *, ...) __printflike(1,2);
+extern void		Verbose(const char *, ...) __printflike(1,2);
+extern void		Notice(const char *, ...) __printflike(1,2);
+extern int		Warn(const char *, ...) __printflike(1,2);
+extern int		Warnx(const char *, ...) __printflike(1,2);
+extern void		Err(const char *, ...) __printflike(1,2);
+extern void		Errx(const char *, ...) __printflike(1,2);
+extern void		Out_Of_Memory();
 
 #if USE_PGSQL
-extern int	WarnSQL(PGconn *, const char *, ...) __printflike(2,3);
-extern void ErrSQL(PGconn *, const char *, ...) __printflike(2,3);
-extern char *sql_errmsg(PGconn *);
+extern int		WarnSQL(PGconn *, const char *, ...) __printflike(2,3);
+extern void		ErrSQL(PGconn *, const char *, ...) __printflike(2,3);
 #else
-extern int	WarnSQL(MYSQL *, const char *, ...) __printflike(2,3);
-extern void ErrSQL(MYSQL *, const char *, ...) __printflike(2,3);
-extern char *sql_errmsg(MYSQL *);
+extern int		WarnSQL(MYSQL *, const char *, ...) __printflike(2,3);
+extern void		ErrSQL(MYSQL *, const char *, ...) __printflike(2,3);
 #endif
 
 #if !HAVE_DECL_STRSEP
-extern char *strsep(char **stringp, const char *delim);
+extern char		*strsep(char **stringp, const char *delim);
 #endif
 
 #if !HAVE_INET_PTON
-extern int inet_pton(int, const char *, void *);
+extern int		inet_pton(int, const char *, void *);
 #endif
 
 #if !HAVE_INET_NTOP
-extern const char *inet_ntop(int, const void *, char *, unsigned int);
+extern const char	extern char *sql_errmsg(MYSQL *);
+*inet_ntop(int, const void *, char *, unsigned int);
 #endif
 
 
@@ -499,7 +499,7 @@ extern char		*getoptstr(struct option const longopts[]);
 /* ip.c */
 extern void		_sockclose(int);
 #define			sockclose(fd)	_sockclose((fd)), (fd) = -1
-extern char		*ipaddr(int, void *);
+extern const char	*ipaddr(int, void *);
 #if HAVE_IPV6
 extern int		is_ipv6(char *);
 #endif
@@ -514,17 +514,11 @@ extern char		*strtoupper(char *), *strtolower(char *);
 extern char		*strsecs(time_t);
 extern char		*strdcat(char **, const char *);
 extern int		sdprintf(char **, const char *, ...) __printflike(2,3);
-extern size_t	human_file_size(const char *);
-extern void		escdata(char *, int);
-extern char		*bytestr(unsigned char);
-extern char		*escstr(char *, size_t);
-extern char		*comma(unsigned long);
-extern char		*comma1(unsigned long);
-extern char		*comma2(unsigned long);
-extern char		*comma3(unsigned long);
+extern size_t		human_file_size(const char *);
 
 /* strsep_quotes.c */
 extern char		*strsep_quotes(char **, char *, size_t);
+extern int		strsep_quotes2(char **, char **);
 
 /* wildcard.c */
 extern int		wildcard_valid(char *p);

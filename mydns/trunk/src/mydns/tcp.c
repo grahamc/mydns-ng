@@ -35,14 +35,19 @@ extern int	num_tcp6_fd;			/* Number of listening FD's (IPv6) */
 **************************************************************************************************/
 int
 accept_tcp_query(int fd, int family) {
-  struct sockaddr_in addr4;
+  struct sockaddr_in	addr4;
 #if HAVE_IPV6
-  struct sockaddr_in6 addr6;
+  struct sockaddr_in6	addr6;
 #endif
   struct sockaddr	*addr = NULL;
   socklen_t		addrlen = 0;
-  int			rmt_fd;
+  int			rmt_fd  = -1;
   TASK			*t = NULL;
+
+  memset(&addr4, 0, sizeof(addr4));
+#if HAVE_IPV6
+  memset(&addr6, 0, sizeof(addr6));
+#endif
 
   if (family == AF_INET) {
     addrlen = sizeof(struct sockaddr_in);
@@ -89,8 +94,8 @@ accept_tcp_query(int fd, int family) {
 **************************************************************************************************/
 static taskexec_t
 read_tcp_length(TASK *t) {
-  int	rv;
-  char	len[2];
+  int	rv = 0;
+  char	len[2] = { 0, 0 };
 
   if ((rv = recv(t->fd, len, 2, 0)) != 2) {
     if (rv < 0) {
@@ -118,11 +123,11 @@ read_tcp_length(TASK *t) {
   }
 
   if ((t->len = ((len[0] << 8) | (len[1]))) < DNS_HEADERSIZE) {
-    Warnx("%s: %s (%d octet%s)", clientaddr(t), _("TCP message too short"), t->len, S(t->len));
+    Warnx(_("%s: %s (%d octet%s)"), clientaddr(t), _("TCP message too short"), t->len, S(t->len));
     return (TASK_ABANDONED);
   }
   if (t->len > DNS_MAXPACKETLEN_TCP) {
-    Warnx("%s: %s (%d octet%s)", clientaddr(t), _("TCP message too long"), t->len, S(t->len));
+    Warnx(_("%s: %s (%d octet%s)"), clientaddr(t), _("TCP message too long"), t->len, S(t->len));
     return (TASK_ABANDONED);
   }
 
@@ -141,9 +146,9 @@ read_tcp_length(TASK *t) {
 **************************************************************************************************/
 int
 read_tcp_query(TASK *t) {
-  unsigned char	*end;
-  int		rv;
-  taskexec_t	res;
+  unsigned char	*end = NULL;
+  int		rv = 0;
+  taskexec_t	res = TASK_FAILED;
 
   /* Read packet length if we haven't already */
   if (!t->len) {
@@ -181,7 +186,7 @@ read_tcp_query(TASK *t) {
   }
 
 #if DEBUG_ENABLED && DEBUG_TCP
-  Debug("%s: 2+%d TCP octets in", clientaddr(t), rv);
+  Debug(_("%s: 2+%d TCP octets in"), clientaddr(t), rv);
 #endif
 
   t->offset += rv;
@@ -205,8 +210,9 @@ read_tcp_query(TASK *t) {
 static taskexec_t
 write_tcp_length(TASK *t)
 {
-  char	len[2], *l;
-  int	rv;
+  char	len[2] = { 0, 0 };
+  char	*l = NULL;
+  int	rv = 0;
 
   l = len;
   DNS_PUT16(l, t->replylen);
@@ -247,15 +253,20 @@ write_tcp_length(TASK *t)
 taskexec_t
 write_tcp_reply(TASK *t)
 {
-  int 			rv, rmt_fd;
-  taskexec_t		res;
+  int 			rv = 0, rmt_fd = -1;
+  taskexec_t		res = TASK_FAILED;
   struct sockaddr_in	addr4;
 #if HAVE_IPV6
   struct sockaddr_in6	addr6;
 #endif
   struct sockaddr	*addr = NULL, *addrsave = NULL;
   int			addrlen = 0;
-  TASK			*newt;
+  TASK			*newt = NULL;
+
+  memset(&addr4, 0, sizeof(addr4));
+#if HAVE_IPV6
+  memset(&addr6, 0, sizeof(addr6));
+#endif
 
   /* Write TCP length if we haven't already */
   if (!t->len_written) {
@@ -327,7 +338,7 @@ tcp_tick(TASK *t, void *data) {
 
 static taskexec_t
 tcp_read_message(TASK *t, void *data) {
-  int		newfd;
+  int		newfd = -1;
 
   while ((newfd = accept_tcp_query(t->fd, t->family)) >= 0) continue;
 
@@ -338,7 +349,7 @@ tcp_read_message(TASK *t, void *data) {
 
 void
 tcp_start() {
-  int		n;
+  int		n = 0;
 
   for (n = 0; n < num_tcp4_fd; n++) {
     TASK *tcptask = IOtask_init(HIGH_PRIORITY_TASK, NEED_TASK_READ,

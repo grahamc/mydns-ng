@@ -18,9 +18,9 @@
 ##	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ##
 
-AC_INIT(mydns, [1.2.7], [support@cohtech.com])		## Package name, version, bugreport address
+AC_INIT(mydns, [pre-1.2.8], [support@cohtech.com])		## Package name, version, bugreport address
 AC_PREREQ([2.59])
-AC_COPYRIGHT([Portions of this script are Copyright 2002-2005 Don Moore])
+AC_COPYRIGHT([Portions of this script are Copyright 2002-2005 Don Moore  2007-2008 Howard Wilkinson])
 AM_INIT_AUTOMAKE([1.9.5 dist-bzip2])
 AM_CONFIG_HEADER(config.h)
 
@@ -68,8 +68,8 @@ AC_CHECK_DECLS([strcasecmp, strcoll, strerror, strncasecmp, strsep])
 ## Package-specific variables
 ##
 PACKAGE_HOMEPAGE="http://mydns.bboy.net"
-PACKAGE_COPYRIGHT="Copyright (C) 2002-2005 Don Moore"
-PACKAGE_AUTHOR="Don Moore <bboy@bboy.net>"
+PACKAGE_COPYRIGHT="Copyright (C) 2002-2005 Don Moore  2007-2008 Howard Wilkinson"
+PACKAGE_AUTHOR="Don Moore <bboy@bboy.net>  Howard Wilkinson <howard@cohtech.com>"
 
 
 ##

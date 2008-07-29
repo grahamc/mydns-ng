@@ -57,7 +57,7 @@ sql_open(char *user, char *password, char *host, char *database) {
 #if USE_PGSQL
   sql = PQsetdbLogin(host, portp, NULL, NULL, database, user, password);
   if (PQstatus(sql) == CONNECTION_BAD) {
-    char *errmsg = PQerrorMessage(sql), *c, out[512];
+    char *errmsg = PQerrorMessage(sql), *c, *out = NULL;
 
     /* Save the first error message so that the user gets the error message they "expect" */
     for (c = errmsg; *c; c++)
@@ -65,7 +65,7 @@ sql_open(char *user, char *password, char *host, char *database) {
 	*c = ' ';
     strtrim(errmsg);
 
-    snprintf(out, sizeof(out), "%s %s: %s (errno=%d)",
+    ASPRINTF(&out, "%s %s: %s (errno=%d)",
 	     _("Error connecting to PostgreSQL server at"), host, errmsg, errno);
 
     if (sql)
@@ -74,11 +74,13 @@ sql_open(char *user, char *password, char *host, char *database) {
     sql = PQsetdbLogin(NULL, NULL, NULL, NULL, database, user, password);
     if (PQstatus(sql) == CONNECTION_BAD)
       Errx("%s", out);
+    RELEASE(out);
   }
 #else
-  sql = NULL;
-  if (!(sql = mysql_init(NULL)))
+  sql = ALLOCATE(sizeof(*sql), MYSQL);
+  if (!mysql_init(sql)) {
     Err(_("Unable to allocate MySQL data structure"));
+  }
 #if MYSQL_VERSION_ID > 32349
   mysql_options(sql, MYSQL_READ_DEFAULT_GROUP, "client");
 #endif
@@ -125,13 +127,16 @@ sql_reopen(void) {
   }
 #else
   if (!mysql_ping(sql)) return;
-  if (!(new_sql = mysql_init(NULL)))
+  new_sql = ALLOCATE(sizeof(*new_sql), MYSQL);
+  if (!mysql_init(new_sql)) {
+    RELEASE(new_sql);
     return;
+  }
 #if MYSQL_VERSION_ID > 32349
   mysql_options(new_sql, MYSQL_READ_DEFAULT_GROUP, "client");
 #endif
 #if MYSQL_VERSION_ID > 50012
-  mysql_options(sql, MYSQL_OPT_RECONNECT, "1");
+  mysql_options(new_sql, MYSQL_OPT_RECONNECT, "1");
 #endif
   if (!(mysql_real_connect(new_sql, _sql_host, _sql_user, _sql_password, _sql_database, port, NULL, 0))) {
     mysql_close(new_sql);
@@ -252,6 +257,7 @@ _sql_close(SQL *sqlConn) {
   PQfinish(sqlConn);
 #else
   mysql_close(sqlConn);
+  RELEASE(sqlConn);
 #endif
 }
 /*--- _sql_close() ------------------------------------------------------------------------------*/
@@ -342,15 +348,19 @@ sql_query(SQL *sqlConn, const char *query, size_t querylen) {
 **************************************************************************************************/
 SQL_RES *
 sql_queryf(SQL *sqlConn, const char *fmt, ...) {
-  va_list ap;
-  char buf[DNS_QUERYBUFSIZ];
-  size_t buflen;
+  va_list	ap;
+  char		*buf = NULL;
+  size_t	buflen;
+  SQL_RES	*res;
 
   va_start(ap, fmt);
-  buflen = vsnprintf(buf, sizeof(buf), fmt, ap);
+  buflen = VASPRINTF(&buf, fmt, ap);
   va_end(ap);
 
-  return sql_query(sqlConn, buf, buflen);
+  res = sql_query(sqlConn, buf, buflen);
+  RELEASE(buf);
+
+  return (res);
 }
 /*--- sql_queryf() ------------------------------------------------------------------------------*/
 
@@ -362,17 +372,20 @@ sql_queryf(SQL *sqlConn, const char *fmt, ...) {
 **************************************************************************************************/
 long
 sql_count(SQL *sqlConn, const char *fmt, ...) {
-  va_list ap;
-  char buf[DNS_QUERYBUFSIZ];
-  size_t buflen;
-  SQL_RES *res = NULL;
-  long rv = 0;
+  va_list	ap;
+  char		*buf = NULL;
+  size_t	buflen;
+  SQL_RES	*res = NULL;
+  long		rv = 0;
 
   va_start(ap, fmt);
-  buflen = vsnprintf(buf, sizeof(buf), fmt, ap);
+  buflen = VASPRINTF(&buf, fmt, ap);
   va_end(ap);
 
-  if (!(res = sql_query(sqlConn, buf, buflen)))
+  res = sql_query(sqlConn, buf, buflen);
+  RELEASE(buf);
+
+  if (!res)
     return (-1);
   if (sql_num_rows(res)) {
 #if USE_PGSQL
@@ -481,9 +494,6 @@ sql_build_query(char **query, const char *fmt, ...) {
   va_start(ap, fmt);
   querylen = VASPRINTF(query, fmt, ap);
   va_end(ap);
-
-  if (querylen < 0)
-    Err(_("out of memory"));
 
   return querylen;
 }

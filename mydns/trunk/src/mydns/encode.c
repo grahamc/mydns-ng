@@ -24,7 +24,7 @@
 #define	DEBUG_ENCODE	1
 
 /* Set this to nonzero to disable encoding */
-#define	NO_ENCODING		0
+#define	NO_ENCODING	0
 
 
 /**************************************************************************************************
@@ -60,7 +60,7 @@ name_remember(TASK *t, char *name, unsigned int offset) {
 inline void
 name_forget(TASK *t) {
 #if DYNAMIC_NAMES
-  register int n;
+  register int n = 0;
 
   for (n = 0; n < t->numNames; n++)
     RELEASE(t->Names[n]);
@@ -79,7 +79,7 @@ name_forget(TASK *t) {
 **************************************************************************************************/
 unsigned int
 name_find(TASK *t, char *name) {
-  register unsigned int n;
+  register unsigned int n = 0;
 
   for (n = 0; n < t->numNames; n++)
     if (!strcasecmp(t->Names[n], name)) {
@@ -97,10 +97,12 @@ name_find(TASK *t, char *name) {
 **************************************************************************************************/
 int
 name_encode(TASK *t, char *dest, char *name, unsigned int dest_offset, int compression) {
-  char			namebuf[DNS_MAXNAMELEN+1];
-  register char		*c, *d, *this_name, *cp;
+  char			namebuf[DNS_MAXNAMELEN+1];;
+  register char		*c = NULL, *d = NULL, *this_name = NULL, *cp = NULL;
   register int		len = 0;
-  register unsigned int	offset;
+  register unsigned int	offset = 0;
+
+  memset(&namebuf[0], 0, sizeof(namebuf));
 
   strncpy(namebuf, name, sizeof(namebuf)-1);
 
@@ -132,7 +134,7 @@ name_encode(TASK *t, char *dest, char *name, unsigned int dest_offset, int compr
       } else	/* No marker for this name; encode current label and store marker */
 #endif
 	{
-	  register unsigned int nlen;
+	  register unsigned int nlen = 0;
 
 	  if ((cp = strchr(this_name, '.')))
 	    *cp = '\0';
@@ -151,6 +153,84 @@ name_encode(TASK *t, char *dest, char *name, unsigned int dest_offset, int compr
 	    return (-1);
 	}
     }
+  return (len);
+}
+
+int
+name_encode2(TASK *t, char **dest, char *name, unsigned int dest_offset, int compression) {
+  char			*namebuf = NULL;
+  register char		*c = NULL, *d = NULL, *this_name = NULL, *cp = NULL;
+  register int		len = 0;
+  register unsigned int	offset = 0;
+
+  namebuf = STRDUP(name);
+
+  /* Label must end in the root zone (with a dot) */
+  if (LASTCHAR(namebuf) != '.')
+    return dnserror(t, DNS_RCODE_SERVFAIL, ERR_NAME_FORMAT);
+
+  *dest = ALLOCATE(strlen(namebuf) + 1, char[]); /* If not compressing this should be equal
+						    If compressing then it should be bigger */
+
+  /* Examine name one label at a time */
+  for (c = namebuf, d = *dest; *c; c++) {
+    if (c == namebuf || *c == '.') {
+      if (!c[1]) {
+	RELEASE(namebuf);
+	len++;
+	if (len > DNS_MAXNAMELEN) {
+	  RELEASE(*dest);
+	  return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_NAME_TOO_LONG);
+	}
+	*d++ = 0;
+	return (len);
+      }
+      this_name = (c == namebuf) ? c : (++c);
+
+#if !NO_ENCODING
+      if (compression && !t->no_markers && (offset = name_find(t, this_name))) {
+	RELEASE(namebuf);
+	/* Found marker for this name - output offset pointer and we're done */
+	len += SIZE16;
+	if (len > DNS_MAXNAMELEN) {
+	  RELEASE(*dest);
+	  return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_NAME_TOO_LONG);
+	}
+	offset |= 0xC000;
+	DNS_PUT16(d, offset);
+	return (len);
+      } else {	/* No marker for this name; encode current label and store marker */
+#endif
+	  register unsigned int nlen;
+
+	  if ((cp = strchr(this_name, '.')))
+	    *cp = '\0';
+	  nlen = strlen(this_name);
+	  if (nlen > DNS_MAXLABELLEN) {
+	    RELEASE(*dest);
+	    RELEASE(namebuf);
+	    return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_LABEL_TOO_LONG);
+	  }
+	  len += nlen + 1;
+	  if (len > DNS_MAXNAMELEN) {
+	    RELEASE(*dest);
+	    RELEASE(namebuf);
+	    return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_NAME_TOO_LONG);
+	  }
+	  *d++ = (unsigned char)nlen;
+	  memcpy(d, this_name, nlen);
+	  d += nlen;
+	  if (cp)
+	    *cp = '.';
+	  if (!t->no_markers && (name_remember(t, this_name, dest_offset + (c - namebuf)) < 0)) {
+	    RELEASE(*dest);
+	    RELEASE(namebuf);
+	    return (-1);
+	  }
+	}
+    }
+  }
+  RELEASE(namebuf);
   return (len);
 }
 /*--- name_encode() -----------------------------------------------------------------------------*/

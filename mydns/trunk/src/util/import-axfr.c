@@ -24,7 +24,7 @@
 #include <netdb.h>
 
 static char *thishostname, *zone;			/* Hostname of remote host and zone */
-static char origin[DNS_MAXNAMELEN+1];			/* The origin name reported by the peer */
+static char *origin = NULL;				/* The origin name reported by the peer */
 static uint32_t got_soa = 0;				/* Have we read the initial SOA record? */
 
 extern int opt_notrim;					/* Don't remove trailing origin */
@@ -198,7 +198,8 @@ process_axfr_soa(char *name, char *reply, size_t replylen, char *src, uint32_t t
   DNS_GET32(minimum, src);
   if (ttl < minimum)
     ttl = minimum;
-  strncpy(origin, name, sizeof(origin)-1);
+  if (origin) RELEASE(origin);
+  origin = STRDUP(name);
   got_soa = import_soa(origin, ns, mbox, serial, refresh, retry, expire, minimum, ttl);
   RELEASE(ns);
   RELEASE(mbox);
@@ -265,23 +266,23 @@ process_axfr_answer(char *reply, size_t replylen, char *src) {
   case DNS_QTYPE_A:
     {
       struct in_addr addr;
-      data = inet_ntoa(addr);
       memcpy(&addr.s_addr, src, SIZE32);
+      data = (char*)ipaddr(AF_INET, &addr);
       import_rr(shortname(name, 1), "A", data, strlen(data), 0, ttl);
     }
     break;
 
   case DNS_QTYPE_AAAA:
     {
-      uint8_t addr[16];
+      uint8_t addr[16]; /* This is a cheat.
+			** it should be a 'struct in6_addr'
+			** but we can't be sure it will exist */
 
-      memcpy(&addr, src, sizeof(uint8_t) * 16);
-      data = ALLOCATE(INET6_ADDRSTRLEN, char[]);
-      if (inet_ntop(AF_INET6, &addr, data, sizeof(data)-1))
+      memcpy(&addr, src, sizeof(addr));
+      if ((data = (char*)ipaddr(AF_INET6, &addr))) {
 	import_rr(shortname(name, 1), "AAAA", data, strlen(data), 0, ttl);
-      else
+      } else
 	Notice("%s IN AAAA: %s", name, strerror(errno));
-      RELEASE(data);
     }
     break;
 

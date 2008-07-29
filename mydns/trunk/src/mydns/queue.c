@@ -26,14 +26,16 @@
 static void
 _queue_stats(QUEUE *q) {
 #if DEBUG_ENABLED && DEBUG_QUEUE
-  char msg[512];
-  TASK *t;
+  char		*msg = NULL;
+  int		msgsize = 512;
+  int		msglen = 0;
+  TASK		*t = NULL;
 
 #if !DISABLE_DATE_LOGGING
-  struct timeval tv;
-  time_t tt;
-  struct tm *tm;
-  char datebuf[80];
+  struct timeval tv = { 0, 0 };
+  time_t tt = 0;
+  struct tm *tm = NULL;
+  char datebuf[80]; /* This is magic and needs rethinking - string should be ~ 23 characters */
 
   gettimeofday(&tv, NULL);
   tt = tv.tv_sec;
@@ -42,29 +44,35 @@ _queue_stats(QUEUE *q) {
   strftime(datebuf, sizeof(datebuf)-1, "%d-%b-%Y %H:%M:%S", tm);
 #endif
 
-  Debug(
+  Debug(_(
 #if !DISABLE_DATE_LOGGING
 	  "%s+%06lu "
 #endif
-	  "%s size=%d, max size=%d",
+	  "%s size=%d, max size=%d"),
 #if !DISABLE_DATE_LOGGING
 	  datebuf, tv.tv_usec,
 #endif
 	  q->queuename, q->size, q->max_size);
 	  
+  msg = ALLOCATE(msgsize, char[]);
+
   msg[0] = '\0';
   for (t = q->head; t; t = t->next) {
-    int msglen = strlen(msg);
-    snprintf(&msg[msglen], sizeof(msg) - msglen, " %u", t->internal_id);
+    int idsize;
+    idsize = snprintf(&msg[msglen], msgsize - msglen, " %u", t->internal_id);
+    msglen += idsize;
+    if ((msglen + 2*idsize) >= msgsize) msg = REALLOCATE(msg, msgsize *= 2, char[]);
   }
-  if (strlen(msg))
-    Debug("Queued tasks %s", msg);
+  if (msglen)
+    Debug(_("Queued tasks %s"), msg);
+
+  RELEASE(msg);
 #endif
 }
 
 void
 queue_stats() {
-  int i,j;
+  int i = 0, j = 0;
 
   for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
     for (j= HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
@@ -78,9 +86,9 @@ queue_stats() {
 **************************************************************************************************/
 QUEUE *
 queue_init(char *typename, char *priorityname) {
-  QUEUE *q;
-  int queuenamelen = strlen(typename) + strlen(priorityname) + 3;
-  char * queuename;
+  QUEUE		*q = NULL;
+  int		queuenamelen = strlen(typename) + strlen(priorityname) + 3;
+  char		*queuename = NULL;
 
   queuenamelen = ASPRINTF(&queuename, "%s %ss", priorityname, typename);
   q = ALLOCATE(sizeof(QUEUE), QUEUE);
@@ -129,7 +137,7 @@ _enqueue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
     Status.udp_requests++;
 
 #if DEBUG_ENABLED && DEBUG_QUEUE
-  Debug("%s: enqueued (by %s:%u)", desctask(t), file, line);
+  Debug(_("%s: enqueued (by %s:%u)"), desctask(t), file, line);
 #endif
 
   return (0);
@@ -170,8 +178,11 @@ __queue_remove(QUEUE **q, TASK *t) {
 void
 _dequeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 #if DEBUG_ENABLED && DEBUG_QUEUE
-  char *taskdesc = desctask(t);
+  char *taskdesc = STRDUP(desctask(t));
+
+  Debug(_("%s: dequeuing (by %s:%u)"), taskdesc, file, line);
 #endif
+
   if (err_verbose)				/* Output task info if being verbose */
     task_output_info(t, NULL);
 
@@ -182,7 +193,8 @@ _dequeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 
   task_free(t);
 #if DEBUG_ENABLED && DEBUG_QUEUE
-  Debug("%s: dequeued (by %s:%u)", taskdesc, file, line);
+  Debug(_("%s: dequeued (by %s:%u)"), taskdesc, file, line);
+  RELEASE(taskdesc);
 #endif
 }
 /*--- _dequeue() --------------------------------------------------------------------------------*/
@@ -191,7 +203,7 @@ void
 _requeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 #if DEBUG_ENABLED && DEBUG_QUEUE
   char *taskdesc = desctask(t);
-  Debug("%s: requeuing (by %s:%u) called", taskdesc, file, line);
+  Debug(_("%s: requeuing (by %s:%u) called"), taskdesc, file, line);
 #endif
 
   __queue_remove(t->TaskQ, t);

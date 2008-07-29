@@ -55,6 +55,10 @@ char		*recursion_algorithm = "linear";
 char		*recursive_fwd_server = NULL;		/* Name of server for recursive forwarding */
 int		recursive_family = AF_INET;		/* Protocol family for recursion */
 
+int		wildcard_recursion = 0;			/* Search ancestor zones for wildcard matches - count give levels -1 means infinite */
+
+char		*mydns_dbengine = "MyISAM";
+
 #if HAVE_IPV6
 struct sockaddr_in6	recursive_sa6;			/* Recursive server (IPv6) */
 #endif
@@ -123,6 +127,9 @@ static CONF defConfig[] = {
 {	"ixfr-gc-enabled",	"no",				N_("Enable IXFR GC functionality")},
 {	"ixfr-gc-interval",	"86400",			N_("How often to run GC for IXFR")},
 {	"ixfr-gc-delay",	"600",				N_("Delay until first IXFR GC runs")},
+{	"extended-data-support","no",				N_("Support extended data fields for large TXT records")},
+{	"dbengine",		"MyISAM",			N_("Support different database engines")},
+{	"wildcard-recursion",	"0",				N_("Wildcard ancestor search levels")},
 
 #ifdef DN_COLUMN_NAMES
 {	"default-ns",		"ns0.example.com.",		N_("Default nameserver for all zones")},
@@ -255,9 +262,9 @@ dump_config(void) {
 **************************************************************************************************/
 void
 conf_set_logging(void) {
-  char logtype[80];
+  char *logtype;
 
-  strncpy(logtype, conf_get(&Conf, "log", NULL), sizeof(logtype)-1);
+  logtype = STRDUP(conf_get(&Conf, "log", NULL));
   strtolower(logtype);
 
   if (!err_file)
@@ -282,6 +289,7 @@ conf_set_logging(void) {
     err_file = fp;
     closelog();
   }
+  RELEASE(logtype);
 }
 /*--- conf_set_logging() ------------------------------------------------------------------------*/
 
@@ -435,23 +443,34 @@ load_config(void) {
   task_timeout = atou(conf_get(&Conf, "timeout", NULL));
 
   axfr_enabled = GETBOOL(conf_get(&Conf, "allow-axfr", NULL));
+  Verbose(_("AXFR is %senabled"), (axfr_enabled)?"":_("not "));
 
   tcp_enabled = GETBOOL(conf_get(&Conf, "allow-tcp", NULL));
+  Verbose(_("TCP ports are %senabled"), (tcp_enabled)?"":_("not "));
 
   dns_update_enabled = GETBOOL(conf_get(&Conf, "allow-update", NULL));
+  Verbose(_("DNS UPDATE is %senabled"), (dns_update_enabled)?"":_("not "));
 
   mydns_soa_use_active = GETBOOL(conf_get(&Conf, "use-soa-active", NULL));
   mydns_rr_use_active = GETBOOL(conf_get(&Conf, "use-rr-active", NULL));
 
   dns_notify_enabled = dns_update_enabled && GETBOOL(conf_get(&Conf, "notify-enabled", NULL));
+  Verbose(_("DNS NOTIFY is %senabled"), (dns_notify_enabled)?"":_("not "));
   notify_timeout = atou(conf_get(&Conf, "notify-timeout", NULL));
   notify_retries = atou(conf_get(&Conf, "notify-retries", NULL));
   notify_algorithm = conf_get(&Conf, "notify-algorithm", NULL);
 
   dns_ixfr_enabled = GETBOOL(conf_get(&Conf, "ixfr-enabled", NULL));
+  Verbose(_("DNS IXFR is %senabled"), (dns_ixfr_enabled)?"":_("not "));
   ixfr_gc_enabled = GETBOOL(conf_get(&Conf, "ixfr-gc-enabled", NULL));
   ixfr_gc_interval = atou(conf_get(&Conf, "ixfr-gc-interval", NULL));
   ixfr_gc_delay = atou(conf_get(&Conf, "ixfr-gc-delay", NULL));
+
+  mydns_rr_extended_data = GETBOOL(conf_get(&Conf, "extended-data-support", NULL));
+
+  mydns_dbengine = conf_get(&Conf, "dbengine", NULL);
+
+  wildcard_recursion = atoi(conf_get(&Conf, "wildcard-recursion", NULL));
 
   ignore_minimum = GETBOOL(conf_get(&Conf, "ignore-minimum", NULL));
 

@@ -22,30 +22,29 @@
 #define _MYDNS_HEADER_H
 
 /* DNS_HEADER: The DNS message header structure */
-typedef struct
-{
+typedef struct {
 #if BYTE_ORDER != BIG_ENDIAN
-	unsigned	rd :1;				/* Recursion Desired */
-	unsigned	tc :1;				/* Truncation */
-	unsigned	aa :1;				/* Authoritative Answer */
-	unsigned	opcode :4;			/* Type of query */
-	unsigned	qr :1;				/* Query/Response flag */
-	unsigned	rcode :4;			/* Response code */
-	unsigned	cd: 1;				/* Checking Disabled */
-	unsigned	ad: 1;				/* Authentic Data */
-	unsigned	z :1;					/* Unused */
-	unsigned	ra :1;				/* Recursion Available */
+  unsigned	rd :1;				/* Recursion Desired */
+  unsigned	tc :1;				/* Truncation */
+  unsigned	aa :1;				/* Authoritative Answer */
+  unsigned	opcode :4;			/* Type of query */
+  unsigned	qr :1;				/* Query/Response flag */
+  unsigned	rcode :4;			/* Response code */
+  unsigned	cd: 1;				/* Checking Disabled */
+  unsigned	ad: 1;				/* Authentic Data */
+  unsigned	z :1;				/* Unused */
+  unsigned	ra :1;				/* Recursion Available */
 #else
-	unsigned	qr: 1;				/* Query/Response flag */
-	unsigned	opcode: 4;			/* Type of query */
-	unsigned	aa: 1;				/* Authoritative Answer */
-	unsigned	tc: 1;				/* Truncation */
-	unsigned	rd: 1;				/* Recursion Desired */
-	unsigned	ra: 1;				/* Recursion Available */
-	unsigned	z :1;					/* Unused */
-	unsigned	ad: 1;				/* Authentic Data */
-	unsigned	cd: 1;				/* Checking Disabled */
-	unsigned	rcode :4;			/* Response code */
+  unsigned	qr: 1;				/* Query/Response flag */
+  unsigned	opcode: 4;			/* Type of query */
+  unsigned	aa: 1;				/* Authoritative Answer */
+  unsigned	tc: 1;				/* Truncation */
+  unsigned	rd: 1;				/* Recursion Desired */
+  unsigned	ra: 1;				/* Recursion Available */
+  unsigned	z :1;				/* Unused */
+  unsigned	ad: 1;				/* Authentic Data */
+  unsigned	cd: 1;				/* Checking Disabled */
+  unsigned	rcode :4;			/* Response code */
 #endif
 } DNS_HEADER;
 

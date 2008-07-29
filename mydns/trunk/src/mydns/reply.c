@@ -35,7 +35,7 @@ char *reply_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL
 **************************************************************************************************/
 int
 reply_init(TASK *t) {
-  register char *c;						/* Current character in name */
+  register char *c = NULL;						/* Current character in name */
 
   /* Examine question data, save labels found therein. The question data should begin with
      the name we've already parsed into t->qname.  I believe it is safe to assume that no
@@ -56,7 +56,7 @@ reply_init(TASK *t) {
 **************************************************************************************************/
 static void
 reply_add_additional(TASK *t, RRLIST *rrlist, datasection_t section) {
-  register RR *p;
+  register RR *p = NULL;
 
   if (!rrlist)
     return;
@@ -101,23 +101,27 @@ rdata_enlarge(TASK *t, size_t size) {
 **************************************************************************************************/
 static inline int
 reply_start_rr(TASK *t, RR *r, char *name, dns_qtype_t type, uint32_t ttl, char *desc) {
-  char	enc[DNS_MAXNAMELEN+1];
-  char	*dest;
-  int	enclen;
+  char	*enc = NULL;
+  char	*dest = NULL;
+  int	enclen = 0;
 
   /* name_encode returns dnserror() */
-  if ((enclen = name_encode(t, enc, name, t->replylen + t->rdlen, 1)) < 0)
-    return rr_error(r->id, "rr %u: %s (%s %s) (name=\"%s\")", r->id,
+  if ((enclen = name_encode2(t, &enc, name, t->replylen + t->rdlen, 1)) < 0) {
+    return rr_error(r->id, _("rr %u: %s (%s %s) (name=\"%s\")"), r->id,
 		    _("invalid name in \"name\""), desc, _("record"), name);
+  }
 
   r->length = enclen + SIZE16 + SIZE16 + SIZE32;
 
-  if (!(dest = rdata_enlarge(t, r->length)))
+  if (!(dest = rdata_enlarge(t, r->length))) {
+    RELEASE(enc);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_INTERNAL);
+  }
 
   r->offset = dest - t->rdata + DNS_HEADERSIZE + t->qdlen;
 
   DNS_PUT(dest, enc, enclen);
+  RELEASE(enc);
   DNS_PUT16(dest, type);
 #if STATUS_ENABLED
   if (r->rrtype == DNS_RRTYPE_RR && r->rr)
@@ -139,25 +143,29 @@ reply_start_rr(TASK *t, RR *r, char *name, dns_qtype_t type, uint32_t ttl, char 
 **************************************************************************************************/
 static inline int
 reply_add_generic_rr(TASK *t, RR *r, char *desc) {
-  char		enc[DNS_MAXNAMELEN+1], *dest;
-  int		size, enclen;
+  char		*enc = NULL, *dest = NULL;
+  int		size = 0, enclen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
 
   if (reply_start_rr(t, r, (char*)r->name, rr->type, rr->ttl, desc) < 0)
     return (-1);
 
-  if ((enclen = name_encode(t, enc, MYDNS_RR_DATA_VALUE(rr), CUROFFSET(t), 1)) < 0)
-    return rr_error(r->id, "rr %u: %s (%s) (data=\"%s\")", r->id,
+  if ((enclen = name_encode2(t, &enc, MYDNS_RR_DATA_VALUE(rr), CUROFFSET(t), 1)) < 0) {
+    return rr_error(r->id, _("rr %u: %s (%s) (data=\"%s\")"), r->id,
 		    _("invalid name in \"data\""), desc, (char*)MYDNS_RR_DATA_VALUE(rr));
+  }
 
   size = enclen;
   r->length += SIZE16 + size;
 
-  if (!(dest = rdata_enlarge(t, SIZE16 + size)))
+  if (!(dest = rdata_enlarge(t, SIZE16 + size))) {
+    RELEASE(enc);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_INTERNAL);
+  }
 
   DNS_PUT16(dest, size);
   DNS_PUT(dest, enc, enclen);
+  RELEASE(enc);
   return (0);
 }
 /*--- reply_add_generic_rr() --------------------------------------------------------------------*/
@@ -170,15 +178,17 @@ reply_add_generic_rr(TASK *t, RR *r, char *desc) {
 **************************************************************************************************/
 static inline int
 reply_add_a(TASK *t, RR *r) {
-  char		*dest;
-  int		size;
+  char		*dest = NULL;
+  int		size = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
   struct in_addr addr;
-  uint32_t	ip;
+  uint32_t	ip = 0;
+
+  memset(&addr, 0, sizeof(addr));
 
   if (inet_pton(AF_INET, MYDNS_RR_DATA_VALUE(rr), (void *)&addr) <= 0) {
     dnserror(t, DNS_RCODE_SERVFAIL, ERR_INVALID_ADDRESS);
-    return rr_error(r->id, "rr %u: %s (A %s) (address=\"%s\")", r->id,
+    return rr_error(r->id, _("rr %u: %s (A %s) (address=\"%s\")"), r->id,
 		    _("invalid address in \"data\""), _("record"), (char*)MYDNS_RR_DATA_VALUE(rr));
   }
   ip = ntohl(addr.s_addr);
@@ -207,14 +217,16 @@ reply_add_a(TASK *t, RR *r) {
 **************************************************************************************************/
 static inline int
 reply_add_aaaa(TASK *t, RR *r) {
-  char		*dest;
-  int		size;
+  char		*dest = NULL;
+  int		size = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
   uint8_t	addr[16];
 
+  memset(&addr, 0, sizeof(addr));
+
   if (inet_pton(AF_INET6, MYDNS_RR_DATA_VALUE(rr), (void *)&addr) <= 0) {
     dnserror(t, DNS_RCODE_SERVFAIL, ERR_INVALID_ADDRESS);
-    return rr_error(r->id, "rr %u: %s (AAAA %s) (address=\"%s\")", r->id,
+    return rr_error(r->id, _("rr %u: %s (AAAA %s) (address=\"%s\")"), r->id,
 		    _("invalid address in \"data\""), _("record"), (char*)MYDNS_RR_DATA_VALUE(rr));
   }
 
@@ -243,14 +255,14 @@ reply_add_aaaa(TASK *t, RR *r) {
 **************************************************************************************************/
 static inline int
 reply_add_hinfo(TASK *t, RR *r) {
-  char		*dest;
-  size_t	oslen, cpulen;
+  char		*dest = NULL;
+  size_t	oslen = 0, cpulen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
   char		os[DNS_MAXNAMELEN + 1] = "", cpu[DNS_MAXNAMELEN + 1] = "";
 
   if (hinfo_parse(MYDNS_RR_DATA_VALUE(rr), cpu, os, DNS_MAXNAMELEN) < 0) {
     dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_NAME_TOO_LONG);
-    return rr_error(r->id, "rr %u: %s (HINFO %s) (data=\"%s\")", r->id,
+    return rr_error(r->id, _("rr %u: %s (HINFO %s) (data=\"%s\")"), r->id,
 		    _("name too long in \"data\""), _("record"), (char*)MYDNS_RR_DATA_VALUE(rr));
   }
 
@@ -287,26 +299,30 @@ reply_add_hinfo(TASK *t, RR *r) {
 **************************************************************************************************/
 static inline int
 reply_add_mx(TASK *t, RR *r) {
-  char		enc[DNS_MAXNAMELEN+1], *dest;
-  int		size, enclen;
+  char		*enc = NULL, *dest = NULL;
+  int		size = 0, enclen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
 
   if (reply_start_rr(t, r, (char*)r->name, DNS_QTYPE_MX, rr->ttl, "MX") < 0)
     return (-1);
 
-  if ((enclen = name_encode(t, enc, MYDNS_RR_DATA_VALUE(rr), CUROFFSET(t) + SIZE16, 1)) < 0)
-    return rr_error(r->id, "rr %u: %s (MX %s) (data=\"%s\")", r->id,
+  if ((enclen = name_encode2(t, &enc, MYDNS_RR_DATA_VALUE(rr), CUROFFSET(t) + SIZE16, 1)) < 0) {
+    return rr_error(r->id, _("rr %u: %s (MX %s) (data=\"%s\")"), r->id,
 		    _("invalid name in \"data\""), _("record"), (char*)MYDNS_RR_DATA_VALUE(rr));
+  }
 
   size = SIZE16 + enclen;
   r->length += SIZE16 + size;
 
-  if (!(dest = rdata_enlarge(t, SIZE16 + size)))
+  if (!(dest = rdata_enlarge(t, SIZE16 + size))) {
+    RELEASE(enc);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_INTERNAL);
+  }
 
   DNS_PUT16(dest, size);
   DNS_PUT16(dest, (uint16_t)rr->aux);
   DNS_PUT(dest, enc, enclen);
+  RELEASE(enc);
   return (0);
 }
 /*--- reply_add_mx() ----------------------------------------------------------------------------*/
@@ -320,9 +336,9 @@ reply_add_mx(TASK *t, RR *r) {
 static inline int
 reply_add_naptr(TASK *t, RR *r) {
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
-  size_t	flags_len, service_len, regex_len;
-  char		enc[DNS_MAXNAMELEN+1], *dest;
-  int		size, enclen, offset;
+  size_t	flags_len = 0, service_len = 0, regex_len = 0;
+  char		*enc = NULL, *dest = NULL;
+  int		size = 0, enclen = 0, offset = 0;
 
   flags_len = sizeof(MYDNS_RR_NAPTR_FLAGS(rr));
   service_len = strlen(MYDNS_RR_NAPTR_SERVICE(rr));
@@ -337,16 +353,19 @@ reply_add_naptr(TASK *t, RR *r) {
   offset = SIZE16 + SIZE16 + 1 + flags_len + 1 + service_len + 1 + regex_len;
 
   /* Encode the name at the offset */
-  if ((enclen = name_encode(t, enc, MYDNS_RR_NAPTR_REPLACEMENT(rr), CUROFFSET(t) + offset, 1)) < 0)
-    return rr_error(r->id, "rr %u: %s (NAPTR %s) (%s=\"%s\")", r->id,
+  if ((enclen = name_encode2(t, &enc, MYDNS_RR_NAPTR_REPLACEMENT(rr), CUROFFSET(t) + offset, 1)) < 0) {
+    return rr_error(r->id, _("rr %u: %s (NAPTR %s) (%s=\"%s\")"), r->id,
 		    _("invalid name in \"replacement\""), _("record"), _("replacement"),
 		    MYDNS_RR_NAPTR_REPLACEMENT(rr));
+  }
 
   size = offset + enclen;
   r->length += SIZE16 + size;
 
-  if (!(dest = rdata_enlarge(t, SIZE16 + size)))
+  if (!(dest = rdata_enlarge(t, SIZE16 + size))) {
+    RELEASE(enc);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_INTERNAL);
+  }
 
   DNS_PUT16(dest, size);
   DNS_PUT16(dest, (uint16_t)MYDNS_RR_NAPTR_ORDER(rr));
@@ -365,6 +384,7 @@ reply_add_naptr(TASK *t, RR *r) {
   dest += regex_len;
 
   DNS_PUT(dest, enc, enclen);
+  RELEASE(enc);
 
   return (0);
 }
@@ -378,9 +398,9 @@ reply_add_naptr(TASK *t, RR *r) {
 **************************************************************************************************/
 static inline int
 reply_add_rp(TASK *t, RR *r) {
-  char		*mbox, *txt, *dest;
-  char		encmbox[DNS_MAXNAMELEN+1], enctxt[DNS_MAXNAMELEN+1];
-  int		size, mboxlen, txtlen;
+  char		*mbox = NULL, *txt = NULL, *dest = NULL;
+  char		*encmbox = NULL, *enctxt = NULL;
+  int		size = 0, mboxlen = 0, txtlen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
 
   mbox = MYDNS_RR_DATA_VALUE(rr);
@@ -389,23 +409,31 @@ reply_add_rp(TASK *t, RR *r) {
   if (reply_start_rr(t, r, (char*)r->name, DNS_QTYPE_RP, rr->ttl, "RP") < 0)
     return (-1);
 
-  if ((mboxlen = name_encode(t, encmbox, mbox, CUROFFSET(t), 1)) < 0)
-    return rr_error(r->id, "rr %u: %s (RP %s) (mbox=\"%s\")", r->id,
+  if ((mboxlen = name_encode2(t, &encmbox, mbox, CUROFFSET(t), 1)) < 0) {
+    return rr_error(r->id, _("rr %u: %s (RP %s) (mbox=\"%s\")"), r->id,
 		    _("invalid name in \"mbox\""), _("record"), mbox);
+  }
 
-  if ((txtlen = name_encode(t, enctxt, txt, CUROFFSET(t) + mboxlen, 1)) < 0)
-    return rr_error(r->id, "rr %u: %s (RP %s) (txt=\"%s\")", r->id,
+  if ((txtlen = name_encode2(t, &enctxt, txt, CUROFFSET(t) + mboxlen, 1)) < 0) {
+    RELEASE(encmbox);
+    return rr_error(r->id, _("rr %u: %s (RP %s) (txt=\"%s\")"), r->id,
 		    _("invalid name in \"txt\""), _("record"), txt);
+  }
 
   size = mboxlen + txtlen;
   r->length += SIZE16 + size;
 
-  if (!(dest = rdata_enlarge(t, SIZE16 + size)))
+  if (!(dest = rdata_enlarge(t, SIZE16 + size))) {
+    RELEASE(encmbox);
+    RELEASE(enctxt);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_INTERNAL);
+  }
 
   DNS_PUT16(dest, size);
   DNS_PUT(dest, encmbox, mboxlen);
   DNS_PUT(dest, enctxt, txtlen);
+  RELEASE(encmbox);
+  RELEASE(enctxt);
   return (0);
 }
 /*--- reply_add_rp() ----------------------------------------------------------------------------*/
@@ -418,30 +446,38 @@ reply_add_rp(TASK *t, RR *r) {
 **************************************************************************************************/
 static inline int
 reply_add_soa(TASK *t, RR *r) {
-  char		*dest, ns[DNS_MAXNAMELEN+1], mbox[DNS_MAXNAMELEN+1];
-  int		size, nslen, mboxlen;
+  char		*dest = NULL, *ns = NULL, *mbox = NULL;
+  int		size = 0, nslen = 0, mboxlen = 0;
   MYDNS_SOA	*soa = (MYDNS_SOA *)r->rr;
 
   if (reply_start_rr(t, r, (char*)r->name, DNS_QTYPE_SOA, soa->ttl, "SOA") < 0)
     return (-1);
 
-  if ((nslen = name_encode(t, ns, soa->ns, CUROFFSET(t), 1)) < 0)
-    return rr_error(r->id, "rr %u: %s (SOA %s) (ns=\"%s\")", r->id,
+  if ((nslen = name_encode2(t, &ns, soa->ns, CUROFFSET(t), 1)) < 0) {
+    return rr_error(r->id, _("rr %u: %s (SOA %s) (ns=\"%s\")"), r->id,
 		    _("invalid name in \"ns\""), _("record"), soa->ns);
+  }
 
-  if ((mboxlen = name_encode(t, mbox, soa->mbox, CUROFFSET(t) + nslen, 1)) < 0)
-    return rr_error(r->id, "rr %u: %s (SOA %s) (mbox=\"%s\")", r->id,
+  if ((mboxlen = name_encode2(t, &mbox, soa->mbox, CUROFFSET(t) + nslen, 1)) < 0) {
+    RELEASE(ns);
+    return rr_error(r->id, _("rr %u: %s (SOA %s) (mbox=\"%s\")"), r->id,
 		    _("invalid name in \"mbox\""), _("record"), soa->mbox);
+  }
 
   size = nslen + mboxlen + (SIZE32 * 5);
   r->length += SIZE16 + size;
 
-  if (!(dest = rdata_enlarge(t, SIZE16 + size)))
+  if (!(dest = rdata_enlarge(t, SIZE16 + size))) {
+    RELEASE(ns);
+    RELEASE(mbox);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_INTERNAL);
+  }
 
   DNS_PUT16(dest, size);
   DNS_PUT(dest, ns, nslen);
   DNS_PUT(dest, mbox, mboxlen);
+  RELEASE(ns);
+  RELEASE(mbox);
   DNS_PUT32(dest, soa->serial);
   DNS_PUT32(dest, soa->refresh);
   DNS_PUT32(dest, soa->retry);
@@ -459,8 +495,8 @@ reply_add_soa(TASK *t, RR *r) {
 **************************************************************************************************/
 static inline int
 reply_add_srv(TASK *t, RR *r) {
-  char		enc[DNS_MAXNAMELEN+1], *dest;
-  int		size, enclen;
+  char		*enc = NULL, *dest = NULL;
+  int		size = 0, enclen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
 
   if (reply_start_rr(t, r, (char*)r->name, DNS_QTYPE_SRV, rr->ttl, "SRV") < 0)
@@ -469,21 +505,25 @@ reply_add_srv(TASK *t, RR *r) {
   /* RFC 2782 says that we can't use name compression on this field... */
   /* Arnt Gulbrandsen advises against using compression in the SRV target, although
      most clients should support it */
-  if ((enclen = name_encode(t, enc, MYDNS_RR_DATA_VALUE(rr), CUROFFSET(t) + SIZE16 + SIZE16 + SIZE16, 0)) < 0)
-    return rr_error(r->id, "rr %u: %s (SRV %s) (data=\"%s\")", r->id,
+  if ((enclen = name_encode2(t, &enc, MYDNS_RR_DATA_VALUE(rr), CUROFFSET(t) + SIZE16 + SIZE16 + SIZE16, 0)) < 0) {
+    return rr_error(r->id, _("rr %u: %s (SRV %s) (data=\"%s\")"), r->id,
 		    _("invalid name in \"data\""), _("record"), (char*)MYDNS_RR_DATA_VALUE(rr));
+  }
 
   size = SIZE16 + SIZE16 + SIZE16 + enclen;
   r->length += SIZE16 + size;
 
-  if (!(dest = rdata_enlarge(t, SIZE16 + size)))
+  if (!(dest = rdata_enlarge(t, SIZE16 + size))) {
+    RELEASE(enc);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_INTERNAL);
+  }
 
   DNS_PUT16(dest, size);
   DNS_PUT16(dest, (uint16_t)rr->aux);
   DNS_PUT16(dest, (uint16_t)MYDNS_RR_SRV_WEIGHT(rr));
   DNS_PUT16(dest, (uint16_t)MYDNS_RR_SRV_PORT(rr));
   DNS_PUT(dest, enc, enclen);
+  RELEASE(enc);
   return (0);
 }
 /*--- reply_add_srv() ---------------------------------------------------------------------------*/
@@ -496,9 +536,9 @@ reply_add_srv(TASK *t, RR *r) {
 **************************************************************************************************/
 static inline int
 reply_add_txt(TASK *t, RR *r) {
-  char		*dest;
-  char		size;
-  size_t	len;
+  char		*dest = NULL;
+  uint8_t	size = 0;
+  size_t	len = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
 
   len = MYDNS_RR_DATA_LENGTH(rr);
@@ -527,7 +567,7 @@ reply_add_txt(TASK *t, RR *r) {
 **************************************************************************************************/
 static int
 reply_process_rrlist(TASK *t, RRLIST *rrlist) {
-  register RR *r;
+  register RR *r = NULL;
 
   if (!rrlist)
     return (0);
@@ -547,33 +587,18 @@ reply_process_rrlist(TASK *t, RRLIST *rrlist) {
 	  break;
 
 	switch (rr->type) {
+	case DNS_QTYPE_UNKNOWN:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unexpected resource record type - logic problem"));
+	  break;
+
+	case DNS_QTYPE_NONE:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unexpected resource record type - logic problem"));
+	  break;
+
 	case DNS_QTYPE_A:
 	  if (reply_add_a(t, r) < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_AAAA:
-	  if (reply_add_aaaa(t, r) < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_CNAME:
-	  if (reply_add_generic_rr(t, r, "CNAME") < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_HINFO:
-	  if (reply_add_hinfo(t, r) < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_MX:
-	  if (reply_add_mx(t, r) < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_NAPTR:
-	  if (reply_add_naptr(t, r) < 0)
 	    return (-1);
 	  break;
 
@@ -582,18 +607,68 @@ reply_process_rrlist(TASK *t, RRLIST *rrlist) {
 	    return (-1);
 	  break;
 
+	case DNS_QTYPE_MD:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_MF:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_CNAME:
+	  if (reply_add_generic_rr(t, r, "CNAME") < 0)
+	    return (-1);
+	  break;
+
+	case DNS_QTYPE_SOA:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unexpected resource record type - logic problem"));
+	  break;
+
+	case DNS_QTYPE_MB:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_MG:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_MR:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_NULL:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_WKS:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
 	case DNS_QTYPE_PTR:
 	  if (reply_add_generic_rr(t, r, "PTR") < 0)
 	    return (-1);
 	  break;
 
-	case DNS_QTYPE_RP:
-	  if (reply_add_rp(t, r) < 0)
+	case DNS_QTYPE_HINFO:
+	  if (reply_add_hinfo(t, r) < 0)
 	    return (-1);
 	  break;
 
-	case DNS_QTYPE_SRV:
-	  if (reply_add_srv(t, r) < 0)
+	case DNS_QTYPE_MINFO:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_MX:
+	  if (reply_add_mx(t, r) < 0)
 	    return (-1);
 	  break;
 
@@ -602,9 +677,261 @@ reply_process_rrlist(TASK *t, RRLIST *rrlist) {
 	    return (-1);
 	  break;
 
-	default:
+	case DNS_QTYPE_RP:
+	  if (reply_add_rp(t, r) < 0)
+	    return (-1);
+	  break;
+
+	case DNS_QTYPE_AFSDB:
 	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
 		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_X25:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_ISDN:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_RT:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_NSAP:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_NSAP_PTR:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_SIG:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_KEY:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_PX:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_GPOS:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_AAAA:
+	  if (reply_add_aaaa(t, r) < 0)
+	    return (-1);
+	  break;
+
+	case DNS_QTYPE_LOC:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_NXT:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_EID:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_NIMLOC:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_SRV:
+	  if (reply_add_srv(t, r) < 0)
+	    return (-1);
+	  break;
+
+	case DNS_QTYPE_ATMA:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_NAPTR:
+	  if (reply_add_naptr(t, r) < 0)
+	    return (-1);
+	  break;
+
+	case DNS_QTYPE_KX:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_CERT:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_A6:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_DNAME:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_SINK:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_OPT:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_APL:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_DS:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_SSHFP:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_IPSECKEY:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_RRSIG:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_NSEC:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_DNSKEY:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_DHCID:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_NSEC3:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_NSEC3PARAM:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_HIP:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_SPF:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_UINFO:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_UID:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_GID:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_UNSPEC:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_TKEY:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_TSIG:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_IXFR:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unexpect resource record type - logic problem"));
+	  break;
+
+	case DNS_QTYPE_AXFR:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unexpected resource record type - logic problem"));
+	  break;
+
+	case DNS_QTYPE_MAILB:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_MAILA:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_ANY:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unexpected resource record type - logic problem"));
+	  break;
+
+	case DNS_QTYPE_TA:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_DLV:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_ALIAS:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unexpected resource record type - logic problem"));
+	  break;
+
 	}
       }
       break;
@@ -622,8 +949,8 @@ reply_process_rrlist(TASK *t, RRLIST *rrlist) {
 **************************************************************************************************/
 static int
 truncate_rrlist(TASK *t, off_t maxpkt, RRLIST *rrlist, datasection_t ds) {
-  register RR *rr;
-  register int recs;
+  register RR *rr = NULL;
+  register int recs = 0;
 #if DEBUG_ENABLED && DEBUG_REPLY
   int orig_recs = rrlist->size;
 #endif
@@ -643,7 +970,7 @@ truncate_rrlist(TASK *t, off_t maxpkt, RRLIST *rrlist, datasection_t ds) {
       t->rdlen += rr->length;
   }
 #if DEBUG_ENABLED && DEBUG_REPLY
-  Debug("%s section truncated from %d records to %d records",
+  Debug(_("%s section truncated from %d records to %d records"),
 	reply_datasection_str[ds], orig_recs, recs);
 #endif
   return (recs);
@@ -664,7 +991,7 @@ reply_check_truncation(TASK *t, int *ancount, int *nscount, int *arcount) {
     return;
 
 #if DEBUG_ENABLED && DEBUG_REPLY
-  Debug("reply_check_truncation() needs to truncate reply (%d) to fit packet max (%d)",
+  Debug(_("reply_check_truncation() needs to truncate reply (%d) to fit packet max (%d)"),
 	t->rdlen, maxrd);
 #endif
 
@@ -709,8 +1036,8 @@ build_cache_reply(TASK *t) {
 **************************************************************************************************/
 void
 build_reply(TASK *t, int want_additional) {
-  char	*dest;
-  int	ancount, nscount, arcount;
+  char	*dest = NULL;
+  int	ancount = 0, nscount = 0, arcount = 0;
 
   /* Add data to ADDITIONAL section */
   if (want_additional) {
@@ -762,21 +1089,21 @@ build_reply(TASK *t, int want_additional) {
   DNS_PUT(dest, t->rdata, t->rdlen);				/* Resource record data */
 
 #if DEBUG_ENABLED && DEBUG_REPLY
-  Debug("%s: reply:     id = %u", desctask(t),
+  Debug(_("%s: reply:     id = %u"), desctask(t),
 	t->id);
-  Debug("%s: reply:     qr = %u (message is a %s)", desctask(t),
+  Debug(_("%s: reply:     qr = %u (message is a %s)"), desctask(t),
 	t->hdr.qr, t->hdr.qr ? "response" : "query");
-  Debug("%s: reply: opcode = %u (%s)", desctask(t),
+  Debug(_("%s: reply: opcode = %u (%s)"), desctask(t),
 	t->hdr.opcode, mydns_opcode_str(t->hdr.opcode));
-  Debug("%s: reply:     aa = %u (answer %s)", desctask(t),
+  Debug(_("%s: reply:     aa = %u (answer %s)"), desctask(t),
 	t->hdr.aa, t->hdr.aa ? "is authoritative" : "not authoritative");
-  Debug("%s: reply:     tc = %u (message %s)", desctask(t),
+  Debug(_("%s: reply:     tc = %u (message %s)"), desctask(t),
 	t->hdr.tc, t->hdr.tc ? "truncated" : "not truncated");
-  Debug("%s: reply:     rd = %u (%s)", desctask(t),
+  Debug(_("%s: reply:     rd = %u (%s)"), desctask(t),
 	t->hdr.rd, t->hdr.rd ? "recursion desired" : "no recursion");
-  Debug("%s: reply:     ra = %u (recursion %s)", desctask(t),
+  Debug(_("%s: reply:     ra = %u (recursion %s)"), desctask(t),
 	t->hdr.ra, t->hdr.ra ? "available" : "unavailable");
-  Debug("%s: reply:  rcode = %u (%s)", desctask(t),
+  Debug(_("%s: reply:  rcode = %u (%s)"), desctask(t),
 	t->hdr.rcode, mydns_rcode_str(t->hdr.rcode));
   /* escdata(t->reply, t->replylen); */
 #endif

@@ -155,8 +155,11 @@ reply cache is not used. (@xref{Caching}.)
 @cindex ixfr-gc-enabled
 @cindex ixfr-gc-interval
 @cindex ixfr-gc-delay
+@cindex extended-data-support
+@cindex dbengine
 @cindex soa-where
 @cindex rr-where
+@cindex wildcard-recursion
 
 @table @var
 @item log
@@ -262,6 +265,12 @@ deleted and will remove them from the DB.
 @item ixfr-gc-delay
 @i{(integer}) Number of seconds before first GC scan. - default 600 seconds = 10 minutes.
 
+@item extended-data-support
+@i{(boolean)} Switch on support for extended data, this allows large rr data entries needed by large TXT records and other data types.
+
+@item dbengine
+@i{(string)} Select default DB engine used when creating MySQL databases. Tested with MyISAM, InnoDB, NDBCLUSTER - default MyISAM.
+
 @item soa-where
 @i{(string)}  An additional SQL @samp{WHERE} clause to use when retrieving
 records from the @code{soa} table (@pxref{soa table}).
@@ -269,5 +278,9 @@ records from the @code{soa} table (@pxref{soa table}).
 @item rr-where
 @i{(string)}  An additional SQL @samp{WHERE} clause to use when retrieving
 records from the @code{rr} table (@pxref{rr table}).
+
+@item wildcard-recursion
+@i{(integer)} number of ancestor zones to scan for a matching wildcard. default 0.
+Use -1 for infinite.
 
 @end table

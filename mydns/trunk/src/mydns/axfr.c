@@ -38,16 +38,18 @@ static size_t total_records, total_octets;
 static void
 axfr_error(TASK *t, const char *fmt, ...) {
   va_list	ap; 
-  char		msg[BUFSIZ];
+  char		*msg = NULL;
 
-  va_start(ap, fmt);
-  vsnprintf(msg, sizeof(msg), fmt, ap);
-  va_end(ap);
-
-  if (t)
+  if (t) {
     task_output_info(t, NULL);
-  else
+  } else {
+    va_start(ap, fmt);
+    VASPRINTF(&msg, fmt, ap);
+    va_end(ap);
+
     Warnx("%s", msg);
+    RELEASE(msg);
+  }
 
   sockclose(t->fd);
 
@@ -63,7 +65,7 @@ axfr_error(TASK *t, const char *fmt, ...) {
 **************************************************************************************************/
 static void
 axfr_timeout(int dummy) {
-	axfr_error(NULL, _("AXFR timed out"));
+  axfr_error(NULL, _("AXFR timed out"));
 }
 /*--- axfr_timeout() ----------------------------------------------------------------------------*/
 
@@ -75,8 +77,8 @@ axfr_timeout(int dummy) {
 static void
 axfr_write_wait(TASK *t) {
   fd_set		wfd;
-  struct timeval 	tv;
-  int			rv;
+  struct timeval 	tv = { 0, 0 };;
+  int			rv = 0;
 
   FD_ZERO(&wfd);
   FD_SET(t->fd, &wfd);
@@ -96,13 +98,13 @@ axfr_write_wait(TASK *t) {
 **************************************************************************************************/
 static void
 axfr_write(TASK *t, char *buf, size_t size) {
-  int		rv;
+  int		rv = 0;
   size_t	offset = 0;
 
   do {
     axfr_write_wait(t);
     if ((rv = write(t->fd, buf+offset, size-offset)) < 0)
-      axfr_error(t, "write: %s", strerror(errno));
+      axfr_error(t, _("write: %s"), strerror(errno));
     if (!rv)
       axfr_error(t, _("client closed connection"));
     offset += rv;
@@ -117,7 +119,7 @@ axfr_write(TASK *t, char *buf, size_t size) {
 **************************************************************************************************/
 static void
 axfr_reply(TASK *t) {
-  char len[2], *l = len;
+  char len[2] = { 0, 0 }, *l = len;
 
   build_reply(t, 0);
   DNS_PUT16(l, t->replylen);
@@ -155,11 +157,13 @@ axfr_reply(TASK *t) {
 static void
 check_xfer(TASK *t, MYDNS_SOA *soa) {
   SQL_RES	*res = NULL;
-  SQL_ROW	row;
+  SQL_ROW	row = NULL;
   char		ip[256];
-  char		*query;
-  size_t	querylen;
+  char		*query = NULL;
+  size_t	querylen = 0;
   int		ok = 0;
+
+  memset(&ip, 0, sizeof(ip));
 
   if (!mydns_soa_use_xfer)
     return;
@@ -179,7 +183,7 @@ check_xfer(TASK *t, MYDNS_SOA *soa) {
   }
 
   if ((row = sql_getrow(res, NULL))) {
-    char *wild, *r;
+    char *wild = NULL, *r = NULL;
 
     for (r = row[0]; !ok && (wild = strsep(&r, ",")); )	{
       if (strchr(wild, '/')) {
@@ -220,11 +224,11 @@ axfr_zone(TASK *t, MYDNS_SOA *soa) {
   **  and transmit each resource record.
   */
   if (soa->id) {
-    MYDNS_RR *ThisRR = NULL, *rr;
+    MYDNS_RR *ThisRR = NULL, *rr = NULL;
 
     if (mydns_rr_load_active(sql, &ThisRR, soa->id, DNS_QTYPE_ANY, NULL, soa->origin) == 0) {
       for (rr = ThisRR; rr; rr = rr->next) {
-	int len;
+	int len = 0;
 
 	/* If 'name' doesn't end with a dot, append the origin */
 	if (!*MYDNS_RR_NAME(rr) || LASTCHAR(MYDNS_RR_NAME(rr)) != '.') {
@@ -289,19 +293,19 @@ axfr_get_soa(TASK *t) {
 void
 axfr(TASK *t) {
 #if DEBUG_ENABLED && DEBUG_AXFR
-  struct timeval start, finish;				/* Time AXFR began and ended */
+  struct timeval start = { 0, 0}, finish = { 0, 0 };	/* Time AXFR began and ended */
 #endif
-  MYDNS_SOA *soa;					/* SOA record for zone (may be bogus!) */
+  MYDNS_SOA *soa = NULL;				/* SOA record for zone (may be bogus!) */
 
   /* Do generic startup stuff; this is a child process */
   signal(SIGALRM, axfr_timeout);
   alarm(AXFR_TIME_LIMIT);
-  sql = NULL;
+  sql_close(sql);
   db_connect();
 
 #if DEBUG_ENABLED && DEBUG_AXFR
   gettimeofday(&start, NULL);
-  Debug("%s: Starting AXFR for task ID %u", desctask(t), t->internal_id);
+  Debug(_("%s: Starting AXFR for task ID %u"), desctask(t), t->internal_id);
 #endif
   total_records = total_octets = 0;
   t->no_markers = 1;
@@ -317,7 +321,7 @@ axfr(TASK *t) {
 #if DEBUG_ENABLED && DEBUG_AXFR
   /* Report result */
   gettimeofday(&finish, NULL);
-  Debug("AXFR: %u records, %u octets, %.3fs", 
+  Debug(_("AXFR: %u records, %u octets, %.3fs"), 
 	total_records, total_octets,
 	((finish.tv_sec + finish.tv_usec / 1000000.0) - (start.tv_sec + start.tv_usec / 1000000.0)));
 #endif
@@ -333,22 +337,24 @@ axfr(TASK *t) {
 
 void
 axfr_fork(TASK *t) {
-  int pfd[2];							/* Parent/child pipe descriptors */
-  pid_t pid, parent;
+  int pfd[2] = { -1, -1 };				/* Parent/child pipe descriptors */
+  pid_t pid = -1, parent = -1;
 
   if (pipe(pfd))
-    Err("pipe");
+    Err(_("pipe"));
   parent = getpid();
   if ((pid = fork()) < 0) {
     close(pfd[0]);
     close(pfd[1]);
-    Warn("%s: fork", clientaddr(t));
+    Warn(_("%s: fork"), clientaddr(t));
     return;
   }
 
   if (!pid) {
     /* Child: reset all signal handlers to default before we dive off elsewhere */
     struct sigaction act;
+
+    memset(&act, 0, sizeof(act));
 
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
@@ -384,14 +390,14 @@ axfr_fork(TASK *t) {
 
     for (errct = 0; errct < 5; errct++) {
       if (read(pfd[0], &buf, 4) != 2)
-	Warn("%s (%d of 5)", _("error reading startup notification"), errct+1);
+	Warn(_("%s (%d of 5)"), _("error reading startup notification"), errct+1);
       else
 	break;
     }
     close(pfd[0]);
 
 #if DEBUG_ENABLED && DEBUG_AXFR
-    Debug("AXFR: process started on pid %d for TCP fd %d, task ID %u", pid, t->fd, t->internal_id);
+    Debug(_("AXFR: process started on pid %d for TCP fd %d, task ID %u"), pid, t->fd, t->internal_id);
 #endif
   }
   /* NOTREACHED*/

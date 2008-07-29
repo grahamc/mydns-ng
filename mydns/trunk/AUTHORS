@@ -8,6 +8,12 @@ Authors of MyDNS:
      child delegation code, mydns-conf utility, and lots of
      advocacy!
 
+  Howard Wilkinson <howard@cohtech.com>
+     Started 1.2.x line of development.
+     New scheduler.
+     Additions to the core of update code, notify code, ixfr code.
+     Some bug fixes.
+     Add wildcard recursion facility.
 
 Code contributions (in alphabetical order):
 

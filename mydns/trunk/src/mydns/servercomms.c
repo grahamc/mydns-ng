@@ -38,7 +38,7 @@ typedef struct _named_comms {
   void		*data;
 } COMMS;
 
-typedef int (*CommandProcessor)(/* TASK *, void *, char * */);
+typedef int (*CommandProcessor)(/* TASK *, char * */);
 
 typedef struct _command {
   char			*commandname;
@@ -47,8 +47,8 @@ typedef struct _command {
 
 static int messageid = 0;
 
-static int comms_sendping(TASK *, COMMS *, char *);
-static int comms_sendpong(TASK *, COMMS *, char *);
+static int comms_sendping(TASK *, char *);
+static int comms_sendpong(TASK *, char *);
 
 /* Commands from the master to the server */
 static COMMAND servercommands[] = { { "STOP AXFR",	NULL },
@@ -77,7 +77,7 @@ static COMMAND mastercommands[] = { { "STATS",		NULL },
 
 static COMMS *
 __comms_allocate() {
-  COMMS		*comms;
+  COMMS		*comms = NULL;
 
   comms = (COMMS*)ALLOCATE(sizeof(COMMS), COMMS);
 
@@ -90,7 +90,7 @@ __comms_allocate() {
 
 static COMMSMESSAGE *
 __message_allocate(size_t messagelength) {
-  COMMSMESSAGE	*message;
+  COMMSMESSAGE	*message = NULL;
 
   messagelength += sizeof(COMMSMESSAGE) - sizeof(message->messagedata) + 1;
   message = (COMMSMESSAGE*)ALLOCATE(messagelength, COMMSMESSAGE);
@@ -102,7 +102,7 @@ __message_allocate(size_t messagelength) {
 
 static COMMSMESSAGE *
 _message_allocate(char *commandstring) {
-  COMMSMESSAGE	*message;
+  COMMSMESSAGE	*message = NULL;
 
   message = __message_allocate(strlen(commandstring));
 
@@ -130,67 +130,69 @@ __comms_free(TASK *t, void *data) {
 
 static int
 _comms_recv(TASK *t, void *data, size_t size, int flags) {
-  int	rv;
+  int	rv  = 0;
 
-  if ((rv = recv(t->fd, data, size, MSG_DONTWAIT|flags)) <= 0) {
-    if (rv < 0) {
-      if (
-	  (errno == EINTR)
+  rv = recv(t->fd, data, size, MSG_DONTWAIT|flags);
+
+  if (rv > 0) return rv;
+  if (rv == 0) {
+    /* Treat as the same as a stall
+       Warn("%s: %s", desctask(t), _("connection closed assume it died")); */
+    return 0;
+  }
+
+  if (
+      (errno == EINTR)
 #ifdef EAGAIN
-	  || (errno == EAGAIN)
+      || (errno == EAGAIN)
 #else
 #ifdef EWOULDBLOCK
-	  || (errno == EWOULDBLOCK)
+      || (errno == EWOULDBLOCK)
 #endif
 #endif
-	  ) {
-	return 0; /* Try again later */
-      }
-      Warn("%s: %s - %s", desctask(t), _("Receive failed"), strerror(errno));
-      return -1;
-    }
-    if (rv == 0) {
-      /* Treat as the same as a stall
-	 Warn("%s: %s", desctask(t), _("connection closed assume it died")); */
-      return 0;
-    }
+      ) {
+    return 0; /* Try again later */
   }
+  Warn("%s: %s (%d) - %s(%d)", desctask(t), _("Receive failed"), rv, strerror(errno), errno);
 
   return rv;
 }
 
 static int
 _comms_send(TASK *t, void *data, size_t size,  int flags) {
-  int rv;
+  int rv = 0;
 
-  if ((rv = send(t->fd, data, size, MSG_DONTWAIT|flags)) <= 0) {
-    if (rv < 0) {
-      if (
-	  (errno == EINTR)
+  rv = send(t->fd, data, size, MSG_DONTWAIT|MSG_NOSIGNAL|flags);
+
+  if (rv > 0) return rv;
+
+  if (rv == 0) {
+      Warn("%s: %s", desctask(t), _("connection closed assume it died"));
+      return -2;
+  }
+   
+  if (
+      (errno == EINTR)
 #ifdef EAGAIN
-	  || (errno == EAGAIN)
+      || (errno == EAGAIN)
 #else
 #ifdef EWOULDBLOCK
-	  || (errno == EWOULDBLOCK)
+      || (errno == EWOULDBLOCK)
 #endif
 #endif
-	  ) {
-	return 0; /* Try again later */
-      }
-      Warn("%s: %s - %s", desctask(t), _("Send failed"), strerror(errno));
-    } else if (rv == 0) {
-      Warn("%s: %s", desctask(t), _("connection closed assume it died"));
-    }
+      ) {
+    return 0; /* Try again later */
   }
+  Warn("%s: %s - %s", desctask(t), _("Send failed"), strerror(errno));
 
   return rv;
 }
 
 static taskexec_t
 comms_recv(TASK *t, COMMS *comms) {
-  int		rv;
-  uint16_t	messagelength;
-  char		*msgbuf;
+  int		rv = 0;
+  uint16_t	messagelength = 0;
+  char		*msgbuf = NULL;
 
   if (comms->message == NULL) {
     /* Read in message and dispatch */
@@ -233,9 +235,9 @@ comms_recv(TASK *t, COMMS *comms) {
 
 static taskexec_t
 comms_send(TASK *t, COMMS *comms) {
-  int		rv;
-  char		*msgbuf;
-  uint16_t	messagelength;
+  int		rv = 0;
+  char		*msgbuf = NULL;
+  uint16_t	messagelength = 0;
   TASK		*newt = NULL;;
 
   if (!comms->message) return (TASK_COMPLETED);
@@ -284,7 +286,7 @@ comms_send(TASK *t, COMMS *comms) {
 static CommandProcessor
 comms_find_command(TASK *t, COMMS *comms, COMMAND *commands, char **args) {
   CommandProcessor	action = NULL;
-  int			i;
+  int			i = 0;
   size_t		commandlength = (ntohs(comms->message->messagelength )
 					 - (sizeof(comms->message->messagelength)
 					    + sizeof(comms->message->messageid)));
@@ -303,7 +305,7 @@ comms_find_command(TASK *t, COMMS *comms, COMMAND *commands, char **args) {
 static TASK *
 comms_start(int fd, FreeExtension comms_freeer, RunExtension comms_runner,
 	    TimeExtension comms_ticker) {
-  TASK		*listener;
+  TASK		*listener = NULL;
   COMMS		*comms = __comms_allocate();
 
   listener = IOtask_init(NORMAL_PRIORITY_TASK, NEED_COMMAND_READ, fd, SOCK_DGRAM, AF_UNIX, NULL);
@@ -315,9 +317,9 @@ comms_start(int fd, FreeExtension comms_freeer, RunExtension comms_runner,
 
 static taskexec_t
 comms_run(TASK *t, void * data) {
-  taskexec_t		rv;
-  COMMS			*comms;
-  CommandProcessor	action;
+  taskexec_t		rv = TASK_FAILED;
+  COMMS			*comms = NULL;
+  CommandProcessor	action = NULL;
   char			*args = NULL;
 
   t->timeout = current_time + KEEPALIVE;
@@ -340,11 +342,11 @@ comms_run(TASK *t, void * data) {
 }
 
 static taskexec_t
-comms_sendcommand(TASK *t, void *data, char *commandstring) {
-  COMMS		*comms;
+comms_sendcommand(TASK *t, char *commandstring) {
+  COMMS		*comms = NULL;
 
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-  Debug("%s: Sending commands %s", desctask(t), commandstring);
+  Debug(_("%s: Sending commands %s"), desctask(t), commandstring);
 #endif
 
   comms = __comms_allocate();
@@ -355,51 +357,44 @@ comms_sendcommand(TASK *t, void *data, char *commandstring) {
 }
 
 static taskexec_t
-scomms_tick(TASK *t, void* data) {
+scomms_tick(TASK *t, void *data) {
   taskexec_t	rv = TASK_CONTINUE;
   COMMS		*comms = (COMMS*)data;
   int		lastseen = current_time - comms->connectionalive;
 
-#if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-  int		fd = t->fd;
-#endif
+  t->timeout = current_time + KEEPALIVE;
 
-  if (lastseen <= KEEPALIVE)
-    rv = TASK_CONTINUE;
-  else if (lastseen  <= (5*KEEPALIVE))
-    rv = comms_sendping(t, __comms_allocate(), NULL);
+  if (lastseen <= KEEPALIVE) return TASK_CONTINUE;
+
+  if (lastseen  <= (5*KEEPALIVE))
+    rv = comms_sendping(t, NULL);
   else
     rv = TASK_FAILED;
 
   if (rv == TASK_FAILED) {
     /* Nothing from the master for 5 cycles assume one of us has gone AWOL */
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-    Debug("%s: Server comms tick - master has not pinged for %d seconds", desctask(t),
+    Debug(_("%s: Server comms tick - master has not pinged for %d seconds"), desctask(t),
 	  lastseen);
 #endif
     named_shutdown(0);
-    return TASK_FAILED;
   }
 
-  t->timeout = current_time + KEEPALIVE;
-
-  return TASK_CONTINUE;
+  return rv;
 }
 
 static int
-mcomms_tick(TASK *t, void* data) {
+mcomms_tick(TASK *t, void *data) {
   taskexec_t	rv = TASK_CONTINUE;
   COMMS		*comms = (COMMS*)data;
   int		lastseen = current_time - comms->connectionalive;
 
-#if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-  int		fd = t->fd;
-#endif
+  t->timeout = current_time + KEEPALIVE;
 
-  if (lastseen <= KEEPALIVE) 
-    rv = TASK_CONTINUE;
-  else if (lastseen <= (5*KEEPALIVE))
-    rv = comms_sendping(t, comms, NULL);
+  if (lastseen <= KEEPALIVE) return TASK_CONTINUE;
+
+  if (lastseen <= (5*KEEPALIVE))
+    rv = comms_sendping(t, NULL);
   else
     rv = TASK_FAILED;
 
@@ -407,25 +402,22 @@ mcomms_tick(TASK *t, void* data) {
     /* Shutdown and restart server at other end of connection */
     SERVER *server = find_server_for_task(t);
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-    Debug("%s: Master comms tick - connection to server has not pinged for %d seconds", desctask(t),
+    Debug(_("%s: Master comms tick - connection to server has not pinged for %d seconds"), desctask(t),
 	  lastseen);
 #endif
-    if (!server) {
-      /* Server has gone but task has not so just let this one go away */
-      return TASK_FAILED;
+    if (server) {
+      if (server->signalled) {
+	server->signalled = SIGKILL;
+      } else {
+	server->signalled = SIGTERM;
+      }
+      kill_server(server, server->signalled);
+      t->timeout = current_time + 5; /* Give the server time to die */
+      rv = TASK_CONTINUE;
     }
-    if (server->signalled) {
-      server->signalled = SIGKILL;
-    } else {
-      server->signalled = SIGTERM;
-    }
-    kill_server(server, server->signalled);
-    t->timeout = current_time + 5; /* Give the server time to die */
-  } else {
-    t->timeout = current_time + KEEPALIVE;
   }
 
-  return TASK_CONTINUE;
+  return rv;
 }
 
 TASK *
@@ -440,19 +432,19 @@ mcomms_start(int fd) {
 
 
 static taskexec_t
-comms_sendping(TASK *t, COMMS *comms, char *args) {
+comms_sendping(TASK *t, char *args) {
   int		rv;
 
-  rv = comms_sendcommand(t, __comms_allocate(), "PING");
+  rv = comms_sendcommand(t, "PING");
 
   return rv;
 }
 
 static taskexec_t
-comms_sendpong(TASK *t, COMMS *comms, char *args) {
+comms_sendpong(TASK *t, char *args) {
   int		rv;
 
-  rv = comms_sendcommand(t, __comms_allocate(), "PONG");
+  rv = comms_sendcommand(t, "PONG");
 
   return rv;
 }

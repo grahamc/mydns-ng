@@ -38,6 +38,7 @@ db_check_optional(void) {
   int		old_rr_use_active = mydns_rr_use_active;
   int		old_rr_use_stamp = mydns_rr_use_stamp;
   int		old_rr_use_serial = mydns_rr_use_serial;
+  int		old_rr_extended_data = mydns_rr_extended_data;
 
   /* Check for soa.active */
   mydns_set_soa_use_active(sql);
@@ -61,11 +62,6 @@ db_check_optional(void) {
   if (mydns_soa_use_recursive != old_soa_use_recursive)
     Verbose(_("optional 'recursive' column found in '%s' table"), mydns_soa_table_name);
 
-  /* Check for rr.edata */
-  mydns_set_rr_extended_data(sql);
-  if (mydns_rr_extended_data)
-    Verbose(_("optional 'edata' column found in '%s' table"), mydns_rr_table_name);
-
   /* Check for rr.active */
   mydns_set_rr_use_active(sql);
   if (mydns_rr_use_active != old_rr_use_active)
@@ -82,6 +78,11 @@ db_check_optional(void) {
   mydns_set_rr_use_serial(sql);
   if (mydns_rr_use_serial != old_rr_use_serial)
     Verbose(_("optional 'serial' column found in '%s' table"), mydns_rr_table_name);
+
+  /* Check for rr.edata */
+  mydns_set_rr_extended_data(sql);
+  if (mydns_rr_extended_data != old_rr_extended_data)
+    Verbose(_("optional 'edata' column found in '%s' table"), mydns_rr_table_name);
 }
 /*--- db_check_optional() -----------------------------------------------------------------------*/
 

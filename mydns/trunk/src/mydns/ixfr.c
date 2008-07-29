@@ -26,12 +26,12 @@
 #define DEBUG_IXFR_SQL 1
 
 typedef struct _ixfr_authority_rr {
-  char			name[DNS_MAXNAMELEN];
+  char			*name;
   dns_qtype_t		type;
   dns_class_t		class;
   uint32_t		ttl;
-  char			mname[DNS_MAXNAMELEN];
-  char			rname[DNS_MAXNAMELEN];
+  char			*mname;
+  char			*rname;
   uint32_t		serial;
   uint32_t		refresh;
   uint32_t		retry;
@@ -39,22 +39,54 @@ typedef struct _ixfr_authority_rr {
   uint32_t		minimum;
 } IARR;
 
+#define IARR_NAME(__rrp)		((__rrp)->name)
+#define IARR_MNAME(__rrp)		((__rrp)->mname)
+#define IARR_RNAME(__rrp)		((__rrp)->rname)
+
 typedef struct _ixfr_query {
   /* Zone section */
-  char			name[DNS_MAXNAMELEN];		/* The zone name */
+  char			*name;				/* The zone name */
   dns_qtype_t		type;				/* Must be DNS_QTYPE_SOA */
   dns_class_t		class;				/* The zone's class */
 
   IARR			IR;
 } IQ;
 
+#define IQ_NAME(__iqp)			((__iqp)->name)
+
+static IQ *
+allocate_iq() {
+  IQ *q = ALLOCATE(sizeof(IQ), IQ);
+
+  memset(q, 0, sizeof(IQ));
+
+  return q;
+}
+
+static void
+free_iarr_data(IARR *rr) {
+  RELEASE(IARR_NAME(rr));
+  RELEASE(IARR_MNAME(rr));
+  RELEASE(IARR_RNAME(rr));
+}
+
+static void
+free_iq(IQ *q) {
+  free_iarr_data(&q->IR);
+
+  RELEASE(IQ_NAME(q));
+
+  RELEASE(q);
+}
+
 static char *
 ixfr_gobble_authority_rr(TASK *t, MYDNS_SOA *soa, char *query, size_t querylen, char *current, IARR *rr){
   char * src = current;
-  int rdlength;
+  int rdlength = 0;
+  task_error_t errcode = TASK_FAILED;
 
-  if (!(src = name_unencode(query, querylen, src, rr->name, sizeof(rr->name)))) {
-    formerr(t, DNS_RCODE_FORMERR, (task_error_t)rr->name[0], NULL);
+  if (!(IARR_NAME(rr) = name_unencode2(query, querylen, &src, &errcode))) {
+    formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
     return NULL;
   }
   DNS_GET16(rr->type, src);
@@ -62,13 +94,13 @@ ixfr_gobble_authority_rr(TASK *t, MYDNS_SOA *soa, char *query, size_t querylen, 
   DNS_GET32(rr->ttl, src);
 
   DNS_GET16(rdlength, src);
-  if (!(src = name_unencode(query, querylen, src, rr->mname, sizeof(rr->mname)))) {
-    formerr(t, DNS_RCODE_FORMERR, (task_error_t)rr->mname[0], NULL);
+  if (!(IARR_MNAME(rr) = name_unencode2(query, querylen, &src, &errcode))) {
+    formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
     return NULL;
   }
 
-  if (!(src = name_unencode(query, querylen, src, rr->rname, sizeof(rr->rname)))) {
-    formerr(t, DNS_RCODE_FORMERR, (task_error_t)rr->rname[0], NULL);
+  if (!(IARR_RNAME(rr) = name_unencode2(query, querylen, &src, &errcode))) {
+    formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
     return NULL;
   }
 
@@ -83,11 +115,12 @@ ixfr_gobble_authority_rr(TASK *t, MYDNS_SOA *soa, char *query, size_t querylen, 
 
 taskexec_t
 ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncateonly) {
-  MYDNS_SOA	*soa;
+  MYDNS_SOA	*soa = NULL;
   char		*query = t->query;
   int		querylen = t->len;
   char		*src = query + DNS_HEADERSIZE;
-  IQ		*q;
+  IQ		*q = NULL;
+  task_error_t	errcode = 0;
 
 #if DEBUG_ENABLED && DEBUG_IXFR
   Debug("%s: ixfr(%s, %s, \"%s\", %d)", desctask(t),
@@ -115,11 +148,11 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
   }
 
 #if DEBUG_ENABLED && DEBUG_IXFR
-  Debug("%s: DNS IXFR: SOA id %u", desctask(t), soa->id);
-  Debug("%s: DNS IXFR: QDCOUNT=%d (Query)", desctask(t), t->qdcount);
-  Debug("%s: DNS IXFR: ANCOUNT=%d (Answer)", desctask(t), t->ancount);
-  Debug("%s: DNS IXFR: AUCOUNT=%d (Authority)", desctask(t), t->nscount);
-  Debug("%s: DNS IXFR: ADCOUNT=%d (Additional data)", desctask(t), t->arcount);
+  Debug(_("%s: DNS IXFR: SOA id %u"), desctask(t), soa->id);
+  Debug(_("%s: DNS IXFR: QDCOUNT=%d (Query)"), desctask(t), t->qdcount);
+  Debug(_("%s: DNS IXFR: ANCOUNT=%d (Answer)"), desctask(t), t->ancount);
+  Debug(_("%s: DNS IXFR: AUCOUNT=%d (Authority)"), desctask(t), t->nscount);
+  Debug(_("%s: DNS IXFR: ADCOUNT=%d (Additional data)"), desctask(t), t->arcount);
 #endif
   if (!t->nscount)
     return formerr(t, DNS_RCODE_FORMERR, ERR_NO_AUTHORITY,
@@ -141,30 +174,33 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
     return formerr(t, DNS_RCODE_FORMERR, ERR_MALFORMED_REQUEST,
 		   _("ixfr query has answer or additional data"));
 
-  q = ALLOCATE(sizeof(IQ), IQ);
+  q = allocate_iq();
 
-  if (!(src = name_unencode(query, querylen, src, q->name, sizeof(q->name))))
-    return formerr(t, DNS_RCODE_FORMERR, (task_error_t)q->name[0], NULL);
+  if (!(IQ_NAME(q) = name_unencode2(query, querylen, &src, &errcode))) {
+    free_iq(q);
+    return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
+  }
 
   DNS_GET16(q->type, src);
   DNS_GET16(q->class, src);
 
   if (!(src = ixfr_gobble_authority_rr(t, soa, query, querylen, src, &q->IR))) {
+    free_iq(q);
     return (TASK_FAILED);
   }
 
   /* Get the serial number from the RR record in the authority section */
 #if DEBUG_ENABLED && DEBUG_IXFR
-  Debug("%s: DNS IXFR Question[zone %s qclass %s qtype %s]"
-	" Authority[zone %s qclass %s qtype %s ttl %u "
-	"mname %s rname %s serial %u refresh %u retry %u expire %u minimum %u]",
+  Debug(_("%s: DNS IXFR Question[zone %s qclass %s qtype %s]"
+	  " Authority[zone %s qclass %s qtype %s ttl %u "
+	  "mname %s rname %s serial %u refresh %u retry %u expire %u minimum %u]"),
 	desctask(t), q->name, mydns_class_str(q->class), mydns_qtype_str(q->type),
 	q->IR.name, mydns_class_str(q->IR.class), mydns_qtype_str(q->IR.type), q->IR.ttl,
 	q->IR.mname, q->IR.rname, q->IR.serial, q->IR.refresh, q->IR.retry, q->IR.expire, q->IR.minimum);
 #endif
 
   /*
-   * As per RFC 1995 we have 3 options for a response.
+   * As per RFC 1995 we have 3 options for a response if a delat exists.
    *
    * We can send a full zone transfer if it will fit in a UDP packet and is smaller
    * than sending deltas
@@ -199,16 +235,20 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
    *
    */
 
-  /* Do we have incremental information in the database */
-  if (!truncateonly && mydns_rr_use_active && mydns_rr_use_stamp && mydns_rr_use_serial) {
-    /* We can do incrementals */
-    if (soa->serial != q->IR.serial) {
+  if (soa->serial == q->IR.serial) {
+    /* Tell the client to do no zone transfer */
+    rrlist_add(t, ANSWER, DNS_RRTYPE_SOA, (void *)soa, soa->origin);
+    t->sort_level++;
+  } else {
+    /* Do we have incremental information in the database */
+    if (!truncateonly && mydns_rr_use_active && mydns_rr_use_stamp && mydns_rr_use_serial) {
+      /* We can do incrementals */
       /* Need to send an IXFR if available */
       /*
        * Work out when the client SOA came into being
        */
-      MYDNS_RR	*ThisRR = NULL, *rr;
-      char	*deltafilter;
+      MYDNS_RR	*ThisRR = NULL, *rr = NULL;
+      char	*deltafilter = NULL;
 
       /* For very large zones we do not want to load all of the records just to give up */
       sql_build_query(&deltafilter, "serial > %u", q->IR.serial);
@@ -231,6 +271,7 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
       size_t fullsize = zonesize + 2;
 
       if ((deletecount < 0) || (activecount < 0) || (zonesize < 0)) {
+	RELEASE(deltafilter);
 	dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
 	return (TASK_FAILED);
       }
@@ -291,12 +332,14 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
     }
   }
 
-  /* Tell the client to do a full zone transfer */
+  /* Tell the client to do a full zone transfer or not at all */
   rrlist_add(t, ANSWER, DNS_RRTYPE_SOA, (void *)soa, soa->origin);
   t->sort_level++;
 
  FINISHEDIXFR:
   mydns_soa_free(soa);
+
+  free_iq(q);
 
   t->hdr.aa = 1;
 
@@ -314,7 +357,7 @@ ixfr_purge_all_soas(TASK *t, void *data) {
    */
 
   SQL_RES	*res = NULL;
-  SQL_ROW	row;
+  SQL_ROW	row = NULL;
 
   size_t	querylen;
   char		*QUERY0 =	"SELECT DISTINCT zone FROM %s WHERE active='%s'";
@@ -322,7 +365,7 @@ ixfr_purge_all_soas(TASK *t, void *data) {
 				"WHERE id=%u;";
   char		*QUERY2 =	"DELETE FROM %s WHERE zone=%u AND active='%s' "
 				" AND stamp < DATE_SUB(NOW(),INTERVAL %u SECOND);";
-  char		*query;
+  char		*query = NULL;
 
   /*
    * Reset task timeout clock to some suitable value in the future
@@ -340,8 +383,8 @@ ixfr_purge_all_soas(TASK *t, void *data) {
 
   while((row = sql_getrow(res, NULL))) {
     unsigned int	id = atou(row[0]);
-    char		*origin;
-    MYDNS_SOA		*soa;
+    char		*origin = NULL;
+    MYDNS_SOA		*soa = NULL;
     SQL_RES		*sres = NULL;
 
     querylen = sql_build_query(&query, QUERY1,
@@ -354,7 +397,7 @@ ixfr_purge_all_soas(TASK *t, void *data) {
     RELEASE(query);
 
     if (!(row = sql_getrow(res, NULL))) {
-      Warnx("%s: no soa found for soa id %u", desctask(t),
+      Warnx(_("%s: no soa found for soa id %u"), desctask(t),
 	    id);
       continue;
     }
@@ -384,7 +427,7 @@ ixfr_purge_all_soas(TASK *t, void *data) {
 void
 ixfr_start() {
 
-  TASK *inittask;
+  TASK *inittask = NULL;
 
   if (!ixfr_gc_enabled) return;
 

@@ -20,7 +20,7 @@
 
 #include "mydns.h"
 
-char mydns_soa_table_name[PATH_MAX] = MYDNS_SOA_TABLE;
+char *mydns_soa_table_name = NULL;
 char *mydns_soa_where_clause = NULL;
 
 char *mydns_soa_active_types[] = { "Y", "N" };
@@ -44,8 +44,7 @@ mydns_soa_get_active_types(SQL *sqlConn) {
   char		*YES = "Y";
   char		*NO = "N";
 
-  querylen = sql_build_query(&query, "SELECT DISTINCT(active) FROM %s LIMIT 1",
-			     mydns_soa_table_name);
+  querylen = sql_build_query(&query, "SELECT DISTINCT(active) FROM %s LIMIT 1", mydns_soa_table_name);
 
   if (!(res = sql_query(sqlConn, query, querylen))) {
     RELEASE(query);
@@ -55,7 +54,7 @@ mydns_soa_get_active_types(SQL *sqlConn) {
 #if DEBUG_ENABLED && DEBUG_LIB_SOA
   {
     int numresults = sql_num_rows(res);
-    Debug("SOA get active types: %d row%s: %s", numresults, S(numresults), query);
+    Debug(_("SOA get active types: %d row%s: %s"), numresults, S(numresults), query);
   }
 #endif
 
@@ -93,7 +92,7 @@ mydns_soa_get_active_types(SQL *sqlConn) {
 **************************************************************************************************/
 long
 mydns_soa_count(SQL *sqlConn) {
-	return sql_count(sqlConn, "SELECT COUNT(*) FROM %s", mydns_soa_table_name);
+  return sql_count(sqlConn, "SELECT COUNT(*) FROM %s", mydns_soa_table_name);
 }
 /*--- mydns_soa_count() -------------------------------------------------------------------------*/
 
@@ -103,10 +102,11 @@ mydns_soa_count(SQL *sqlConn) {
 **************************************************************************************************/
 void
 mydns_set_soa_table_name(char *name) {
+  RELEASE(mydns_soa_table_name);
   if (!name)
-    strncpy(mydns_soa_table_name, MYDNS_SOA_TABLE, sizeof(mydns_soa_table_name)-1);
+    mydns_soa_table_name = STRDUP(MYDNS_SOA_TABLE);
   else
-    strncpy(mydns_soa_table_name, name, sizeof(mydns_soa_table_name)-1);
+    mydns_soa_table_name = STRDUP(name);
 }
 /*--- mydns_set_soa_table_name() ----------------------------------------------------------------*/
 
@@ -126,6 +126,7 @@ mydns_set_soa_where_clause(char *where) {
 /**************************************************************************************************
 	MYDNS_SOA_PARSE
 **************************************************************************************************/
+static
 #if !PROFILING
 inline
 #endif
@@ -153,7 +154,10 @@ mydns_soa_parse(SQL_ROW row) {
   rv->minimum = atou(row[8]);
   rv->ttl = atou(row[9]);
 
-  rv->recursive = ((mydns_soa_use_recursive)?GETBOOL(row[10]):0);
+  { int ridx = MYDNS_SOA_NUMFIELDS;
+    ridx += (mydns_soa_use_active)?1:0;
+    rv->recursive = ((mydns_soa_use_recursive)?GETBOOL(row[ridx]):0);
+  }
 
   /* If 'ns' or 'mbox' don't end in a dot, append the origin */
   len = strlen(rv->ns);
@@ -270,7 +274,7 @@ mydns_soa_load(SQL *sqlConn, MYDNS_SOA **rptr, char *origin) {
 #endif
 
 #if DEBUG_ENABLED && DEBUG_LIB_SOA
-  Debug("mydns_soa_load(%s)", origin);
+  Debug(_("mydns_soa_load(%s)"), origin);
 #endif
 
   if (rptr) *rptr = NULL;
@@ -315,7 +319,7 @@ mydns_soa_load(SQL *sqlConn, MYDNS_SOA **rptr, char *origin) {
   {
     int numresults = sql_num_rows(res);
 
-    Debug("SOA query: %d row%s: %s", numresults, S(numresults), query);
+    Debug(_("SOA query: %d row%s: %s"), numresults, S(numresults), query);
   }
 #endif
 
@@ -326,19 +330,22 @@ mydns_soa_load(SQL *sqlConn, MYDNS_SOA **rptr, char *origin) {
     MYDNS_SOA *new;
 
 #if DEBUG_ENABLED && DEBUG_LIB_SOA
-    Debug("SOA query: use_soa_active=%d soa_active=%s,%d", mydns_soa_use_active,
+    Debug(_("SOA query: use_soa_active=%d soa_active=%s,%d"), mydns_soa_use_active,
 	  row[MYDNS_SOA_NUMFIELDS], GETBOOL(row[MYDNS_SOA_NUMFIELDS]));
-    Debug("SOA query: id=%s, origin=%s, ns=%s, mbox=%s, serial=%s, refresh=%s, retry=%s, expire=%s, minimum=%s, ttl=%s",
+    Debug(_("SOA query: id=%s, origin=%s, ns=%s, mbox=%s, serial=%s, refresh=%s, "
+	    "retry=%s, expire=%s, minimum=%s, ttl=%s"),
 	  row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]);
+    { int ridx = MYDNS_SOA_NUMFIELDS;
+      ridx += (mydns_soa_use_active)?1:0;
+      Debug(_("Soa query: recursive = %s"),
+	    (mydns_soa_use_recursive)?row[ridx++]:_("not recursing"));
+    }
 #endif
 
     if (mydns_soa_use_active && row[MYDNS_SOA_NUMFIELDS] && !GETBOOL(row[MYDNS_SOA_NUMFIELDS]))
       continue;
 
-    if (!(new = mydns_soa_parse(row))) {
-      sql_free(res);
-      return (-1);
-    }
+    new = mydns_soa_parse(row);
     if (!first) first = new;
     if (last) last->next = new;
     last = new;

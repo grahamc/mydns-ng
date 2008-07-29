@@ -61,7 +61,7 @@ rrlist_free(RRLIST *list) {
 **************************************************************************************************/
 static int
 rrdup(RRLIST *list, dns_rrtype_t rrtype, uint32_t id) {
-  register RR *r;
+  register RR *r = NULL;
 
   if (list && id)						/* Ignore (fake) RRs with ID 0 */
     for (r = list->head; r; r = r->next)
@@ -86,12 +86,13 @@ rrlist_add(
 	char *name					/* Name to send with reply */
 ) {
   RRLIST *list = NULL;
-  RR *new;
+  RR *new = NULL;
   uint32_t id = 0;
-  register char *s, *d;
+  register char *s = NULL, *d = NULL;
 
   /* Remove erroneous empty labels in 'name' if any exist */
   if (name) {
+    name = STRDUP(name); /* Might be read only */
     for (s = d = name; *s; s++)
       if (s[0] == '.' && s[1] == '.')
 	*d++ = *s++;
@@ -103,8 +104,10 @@ rrlist_add(
 #if DN_COLUMN_NAMES
   if (rrtype == DNS_RRTYPE_RR && ds == ADDITIONAL) {
     MYDNS_RR *r = (MYDNS_RR *)rr;
-    if (!strcmp(MYDNS_RR_NAME(r), "*"))
+    if (!strcmp(MYDNS_RR_NAME(r), "*")) {
+      RELEASE(name);
       return;
+    }
   }
 #endif
 
@@ -114,7 +117,7 @@ rrlist_add(
     case DNS_RRTYPE_SOA:
       {
 	MYDNS_SOA *soa = (MYDNS_SOA *)rr;
-	Debug("%s: RRLIST_ADD: %s (id=%u) (%s) (`%s')", desctask(t),
+	Debug(_("%s: RRLIST_ADD: %s (id=%u) (%s) (`%s')"), desctask(t),
 	      datasection_str[ds], soa->id, soa->origin, name);
       }
       break;
@@ -122,7 +125,7 @@ rrlist_add(
     case DNS_RRTYPE_RR:
       {
 	MYDNS_RR *r = (MYDNS_RR *)rr;
-	Debug("%s: RRLIST_ADD: %s (id=%u) (name='%s',qtype='%s',data='%s') (`%s')", desctask(t),
+	Debug(_("%s: RRLIST_ADD: %s (id=%u) (name='%s',qtype='%s',data='%s') (`%s')"), desctask(t),
 	      datasection_str[ds], r->id,
 	      (char *)(strlen(MYDNS_RR_NAME(r)) ? MYDNS_RR_NAME(r) : (char *)""),
 	      mydns_qtype_str(r->type), (char*)MYDNS_RR_DATA_VALUE(r), name);
@@ -149,8 +152,9 @@ rrlist_add(
     if (t->qtype == DNS_QTYPE_IXFR) break;
     if (rrdup(&t->an, rrtype, id)) {
 #if DEBUG_ENABLED && DEBUG_RR
-      Debug("%s: Duplicate record, ignored", desctask(t));
+      Debug(_("%s: Duplicate record, ignored"), desctask(t));
 #endif
+      RELEASE(name);
       return;
     }
     break;
@@ -159,8 +163,9 @@ rrlist_add(
     list = &t->ns;
     if (rrdup(&t->ns, rrtype, id) || rrdup(&t->an, rrtype, id)) {
 #if DEBUG_ENABLED && DEBUG_RR
-      Debug("%s: Duplicate record, ignored", desctask(t));
+      Debug(_("%s: Duplicate record, ignored"), desctask(t));
 #endif
+      RELEASE(name);
       return;
     }
     break;
@@ -169,8 +174,9 @@ rrlist_add(
     list = &t->ar;
     if (rrdup(&t->ar, rrtype, id) || rrdup(&t->an, rrtype, id)) {
 #if DEBUG_ENABLED && DEBUG_RR
-      Debug("%s: Duplicate record, ignored", desctask(t));
+      Debug(_("%s: Duplicate record, ignored"), desctask(t));
 #endif
+      RELEASE(name);
       return;
     }
     break;
@@ -223,6 +229,7 @@ rrlist_add(
   new->sort1 = 0;
   new->sort2 = 0;
   strncpy((char*)new->name, name, sizeof(new->name)-1);
+  RELEASE(name);
   new->next = NULL;
   if (!list->head)
     list->head = list->tail = new;

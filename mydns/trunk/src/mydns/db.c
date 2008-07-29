@@ -23,7 +23,6 @@
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_DB	1
 
-
 /**************************************************************************************************
 	DB_CONNECT
 	Connect to the database.
@@ -50,10 +49,10 @@ db_output_create_tables(void) {
 
   /* Header */
   printf("--\n");
-  printf("--  Table layouts for "PACKAGE_STRING" ("PACKAGE_DATE")\n");
-  printf("--  "PACKAGE_COPYRIGHT"\n");
+  printf(_("--  Table layouts for "PACKAGE_STRING" ("PACKAGE_DATE")\n"));
+  printf(_("--  "PACKAGE_COPYRIGHT"\n"));
   printf("--\n");
-  printf("--  You might create these tables with a command like:\n");
+  printf(_("--  You might create these tables with a command like:\n"));
   printf("--\n");
 
 #if USE_PGSQL
@@ -65,7 +64,7 @@ db_output_create_tables(void) {
   printf("--\n\n");
 
   /* Zone/SOA table */
-  printf("--\n--  Table structure for table '%s' (zones of authority)\n--\n", mydns_soa_table_name);
+  printf(_("--\n--  Table structure for table '%s' (zones of authority)\n--\n"), mydns_soa_table_name);
 
 #if USE_PGSQL
   printf("CREATE TABLE %s (\n", mydns_soa_table_name);
@@ -128,12 +127,12 @@ db_output_create_tables(void) {
     printf("   also_notify CHAR(255) DEFAULT NULL,\n");
   }
   printf("  UNIQUE KEY (origin)\n");
-  printf(") Engine=InnoDB;\n");
+  printf(") Engine=%s;\n", mydns_dbengine);
   printf("\n");
 #endif
 
   /* Resource record table */
-  printf("--\n--  Table structure for table '%s' (resource records)\n--\n", mydns_rr_table_name);
+  printf(_("--\n--  Table structure for table '%s' (resource records)\n--\n"), mydns_rr_table_name);
 
 #if USE_PGSQL
   printf("CREATE TABLE %s (\n", mydns_rr_table_name);
@@ -197,7 +196,7 @@ db_output_create_tables(void) {
   if (mydns_rr_extended_data) printf(",edatakey");
   if (mydns_rr_use_active) printf(",active");
   printf(")\n");
-  printf(") Engine=InnoDB;\n\n");
+  printf(") Engine=%s;\n\n", mydns_dbengine);
 #endif
 
   exit(EXIT_SUCCESS);
@@ -213,10 +212,10 @@ db_output_create_tables(void) {
 static int
 db_sql_numrows(const char *fmt, ...) {
   va_list	ap;
-  char		*query;
-  size_t	querylen;
+  char		*query = NULL;
+  size_t	querylen = 0;
   SQL_RES	*res = NULL;
-  int		rv;
+  int		rv = 0;
 
   va_start(ap, fmt);
   querylen = VASPRINTF(&query,fmt, ap);
@@ -265,7 +264,7 @@ db_get_column_width(char *database, char *table, char *name) {
 **************************************************************************************************/
 static void
 db_verify_table(char *database, char *table, char *columns) {
-  char fields[80], *f = fields, *name;
+  char *fields = NULL, *f = NULL, *name = NULL;
 
   /* Check that the table itself exists */
   if (!sql_istable(sql, table)) {
@@ -276,9 +275,11 @@ db_verify_table(char *database, char *table, char *columns) {
   }
 
   /* Check each field in field list */
-  strncpy(fields, columns, sizeof(fields)-1);
+  fields = STRDUP(columns);
+  f = fields;
   while ((name = strsep(&f, ",")))
     db_check_column(database, table, name);
+  RELEASE(fields);
 }
 /*--- db_verify_table() -------------------------------------------------------------------------*/
 

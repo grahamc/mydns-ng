@@ -34,20 +34,18 @@ char *
 dns_make_message(TASK * t, uint16_t id, uint8_t opcode, dns_qtype_t qtype,
 		 char *name, int rd, size_t *length) {
   char		*message = NULL;				/* Message buffer */
-  char		*dest;						/* Current destination in 'message' */
+  char		*dest = NULL;					/* Current destination in 'message' */
   DNS_HEADER	header;						/* DNS header */
-  char		*mark;						/* Location of last label separator */
+  char		*mark = NULL;					/* Location of last label separator */
   register int	labels = 0;					/* Number of labels found */
-  register char *c;
+  register char *c = NULL;
   int		messagesize = 0;
 
+  memset(&header, 0, sizeof(header));
 
   if (t->protocol == SOCK_DGRAM) message = ALLOCATE(messagesize = DNS_MAXPACKETLEN_UDP, char[]);
   else if (t->protocol == SOCK_STREAM) message = ALLOCATE(messagesize = DNS_MAXPACKETLEN_TCP, char[]);
-  else Err("unknown protocol %d", t->protocol);
-
-  if (!message)
-    Err("out of memory");
+  else Err(_("unknown protocol %d"), t->protocol);
 
   dest = message;
   if (length)

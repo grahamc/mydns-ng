@@ -33,52 +33,49 @@
 /**************************************************************************************************
 	PASSINPUT
 	Prompts user to input password.
+	Truncates all characters beyond PASS_MAX
 **************************************************************************************************/
 char *
-passinput(const char *prompt)
-{
-	static char buf[PASS_MAX + 1];
-	char			*ptr;
-	sigset_t		sig, sigsave;
-	struct termios term, termsave;
-	FILE			*fp;
-	int			c;
+passinput(const char *prompt) {
+  static char		buf[PASS_MAX + 1];
+  char			*ptr;
+  sigset_t		sig, sigsave;
+  struct termios	term, termsave;
+  FILE			*fp;
+  int			c;
 
-	buf[0] = '\0';
+  buf[0] = '\0';
 
-	if (!isatty(STDIN_FILENO))
-		return (buf);
+  if (!isatty(STDIN_FILENO)) return (buf);
 
-	if (!(fp = fopen(ctermid(NULL), "r+")))
-		return (buf);
-	setbuf(fp, NULL);
+  if (!(fp = fopen(ctermid(NULL), "r+"))) return (buf);
+  setbuf(fp, NULL);
 
-	sigemptyset(&sig);
-	sigaddset(&sig, SIGINT);
-	sigaddset(&sig, SIGTSTP);
-	sigprocmask(SIG_BLOCK, &sig, &sigsave);
+  sigemptyset(&sig);
+  sigaddset(&sig, SIGINT);
+  sigaddset(&sig, SIGTSTP);
+  sigprocmask(SIG_BLOCK, &sig, &sigsave);
 
-	tcgetattr(fileno(fp), &termsave);
-	term = termsave;
-	term.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL);
-	tcsetattr(fileno(fp), TCSAFLUSH, &term);
+  tcgetattr(fileno(fp), &termsave);
+  term = termsave;
+  term.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL);
+  tcsetattr(fileno(fp), TCSAFLUSH, &term);
 
-	fputs(prompt, stdout);
-	fputs(": ", stdout);
+  fputs(prompt, stdout);
+  fputs(": ", stdout);
 
-	ptr = buf;
-	while ((c = getc(fp)) != EOF && c != '\n')
-	{
-		if (ptr < &buf[PASS_MAX])
-			*ptr++ = c;
-	}
-	*ptr = 0;
-	putc('\n', fp);
+  ptr = buf;
+  while ((c = getc(fp)) != EOF && c != '\n') {
+    if (ptr < &buf[PASS_MAX])
+      *ptr++ = c;
+  }
+  *ptr = 0;
+  putc('\n', fp);
 
-	tcsetattr(fileno(fp), TCSAFLUSH, &termsave);
-	sigprocmask(SIG_SETMASK, &sigsave, NULL);
-	fclose(fp);
-	return (buf);
+  tcsetattr(fileno(fp), TCSAFLUSH, &termsave);
+  sigprocmask(SIG_SETMASK, &sigsave, NULL);
+  fclose(fp);
+  return (buf);
 }
 /*--- passinput() -------------------------------------------------------------------------------*/
 

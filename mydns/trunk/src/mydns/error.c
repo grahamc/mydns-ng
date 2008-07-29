@@ -36,7 +36,7 @@ uint32_t	rr_err_memory[MAX_RR_ERR_MEMORY];
 **************************************************************************************************/
 char *
 err_reason_str(TASK *t, task_error_t reason) {
-  static char buf[128];
+  static char *buf = NULL;
 
   switch (reason) {
   case ERR_NONE:			return ("-");
@@ -66,8 +66,8 @@ err_reason_str(TASK *t, task_error_t reason) {
   case ERR_MULTI_AUTHORITY:		return ((char *)_("Multiple_authority_records_in_ixfr_query"));
   case ERR_QUESTION_TRUNCATED: 		return ((char *)_("Question_truncated"));
   case ERR_UNSUPPORTED_OPCODE:
-    snprintf(buf,
-	     sizeof(buf),
+    if (buf) RELEASE(buf);
+    ASPRINTF(&buf,
 	     "%s_%s",
 	     _("Unsupported_opcode"),
 	     mydns_opcode_str(t->hdr.opcode));
@@ -92,17 +92,17 @@ err_reason_str(TASK *t, task_error_t reason) {
 **************************************************************************************************/
 taskexec_t
 _formerr_internal(
-	TASK *t,					/* The failed task */
-	dns_rcode_t rcode,	/* The return code to use, such as DNS_RCODE_SERVFAIL, etc. */
-	task_error_t reason,	/* Further explanation of the error */
-	char *xtra,				/* Extra information (displayed if in debug mode) */
+	TASK *t,			/* The failed task */
+	dns_rcode_t rcode,		/* The return code to use, such as DNS_RCODE_SERVFAIL, etc.*/
+	task_error_t reason,		/* Further explanation of the error */
+	char *xtra,			/* Extra information (displayed if in debug mode) */
 	const char *filename,
 	unsigned int lineno
 ) {
-  char	*dest;
+  char	*dest = NULL;
 
 #if DEBUG_ENABLED && DEBUG_ERROR
-  Debug("%s: formerr(): %s %s from %s:%u: %s",
+  Debug(_("%s: formerr(): %s %s from %s:%u: %s"),
 	desctask(t), mydns_rcode_str(rcode), err_reason_str(t, reason), filename, lineno,
 	xtra ?: _("no additional information"));
 #endif
@@ -115,14 +115,14 @@ _formerr_internal(
   t->replylen = DNS_HEADERSIZE;
   dest = t->reply = ALLOCATE(t->replylen, char[]);
   t->hdr.qr = 1;
-  DNS_PUT16(dest, t->id);							/* Query ID */
-  DNS_PUT(dest, &t->hdr, SIZE16);						/* Header */
-  DNS_PUT16(dest, 0);								/* QUESTION count */
-  DNS_PUT16(dest, 0);								/* ANSWER count */
-  DNS_PUT16(dest, 0);								/* AUTHORITY count */
-  DNS_PUT16(dest, 0);								/* ADDITIONAL count */
+  DNS_PUT16(dest, t->id);						/* Query ID */
+  DNS_PUT(dest, &t->hdr, SIZE16);					/* Header */
+  DNS_PUT16(dest, 0);							/* QUESTION count */
+  DNS_PUT16(dest, 0);							/* ANSWER count */
+  DNS_PUT16(dest, 0);							/* AUTHORITY count */
+  DNS_PUT16(dest, 0);							/* ADDITIONAL count */
 
-	return (TASK_FAILED);
+  return (TASK_FAILED);
 }
 /*--- _formerr_internal() -----------------------------------------------------------------------*/
 
@@ -142,7 +142,7 @@ _dnserror_internal(
 ) {
   if (t->hdr.rcode == DNS_RCODE_NOERROR) {
 #if DEBUG_ENABLED && DEBUG_ERROR
-    Debug("%s: dnserror(): %s %s from %s:%u",
+    Debug(_("%s: dnserror(): %s %s from %s:%u"),
 	  desctask(t), mydns_rcode_str(rcode), err_reason_str(t, reason), filename, lineno);
 #endif
     t->hdr.rcode = rcode;
@@ -162,7 +162,7 @@ _dnserror_internal(
 **************************************************************************************************/
 int
 rr_error_repeat(uint32_t id) {
-  register int n;
+  register int n = 0;
 
   for (n = 0; n < MAX_RR_ERR_MEMORY; n++)
     if (rr_err_memory[n] == id)
@@ -184,15 +184,16 @@ rr_error_repeat(uint32_t id) {
 int
 rr_error(uint32_t id, const char *fmt, ...) {
   if (show_data_errors && !rr_error_repeat(id)) {
-    char msg[BUFSIZ];
+    char *msg = NULL;
     va_list ap;
 
     /* Construct output string */
     va_start(ap, fmt);
-    vsnprintf(msg, sizeof(msg), fmt, ap);
+    VASPRINTF(&msg, fmt, ap);
     va_end(ap);
 
     Warnx("%s", msg);
+    RELEASE(msg);
   }
   return -1;
 }

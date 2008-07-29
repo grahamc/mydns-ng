@@ -122,7 +122,6 @@ extern time_t	current_time;			/* Current time */
 
 #if ALIAS_ENABLED
 /* alias.c */
-extern MYDNS_RR	*find_alias(TASK *, char *);
 extern int	 alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, char *label, MYDNS_RR *alias);
 #endif
 
@@ -148,7 +147,8 @@ extern void		check_config_file_perms(void);
 
 /* data.c */
 extern MYDNS_SOA	*find_soa(TASK *, char *, char *);
-extern MYDNS_RR	*find_rr(TASK *, MYDNS_SOA *, dns_qtype_t, char *);
+extern MYDNS_SOA	*find_soa2(TASK *, char *, char **);
+extern MYDNS_RR		*find_rr(TASK *, MYDNS_SOA *, dns_qtype_t, char *);
 
 
 /* encode.c */
@@ -157,6 +157,7 @@ extern void		name_forget(TASK *);
 extern unsigned int	name_find(TASK *, char *);
 extern char		*name_unencode(char *, size_t, char *, char *, size_t);
 extern int		name_encode(TASK *, char *, char *, unsigned int, int);
+extern int		name_encode2(TASK *, char **, char *, unsigned int, int);
 
 
 /* error.c */
@@ -264,13 +265,14 @@ extern taskexec_t	remote_status(TASK *t);
 
 /* task.c */
 extern int		task_timedout(TASK *);
+extern char		*task_exec_name(taskexec_t);
 extern char		*task_type_name(int);
 extern char		*task_priority_name(int);
 extern char		*task_string_name(TASK *);
 extern TASK 		*task_find_by_id(TASK *, QUEUE *, unsigned long);
 extern taskexec_t	task_new(TASK *, unsigned char *, size_t);
 extern void		task_init_header(TASK *);
-extern char		*clientaddr(TASK *);
+extern const char	*clientaddr(TASK *);
 extern char		*desctask(TASK *);
 extern TASK		*_task_init(tasktype_t, taskpriority_t, taskstat_t, int, int, int, void *, const char *, int);
 #define			task_init(P,S,fd,p,f,a)	_task_init(NORMAL_TASK, (P), (S), (fd), (p), (f), (a), __FILE__, __LINE__)

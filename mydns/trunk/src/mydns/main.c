@@ -133,8 +133,8 @@ usage(int status) {
 **************************************************************************************************/
 static void
 cmdline(int argc, char **argv) {
-  char	*optstr;
-  int	want_dump_config = 0, optc, optindex;
+  char	*optstr = NULL;
+  int	want_dump_config = 0, optc = 0, optindex = 0;
   int	do_create_tables = 0;
   struct option const longopts[] = {
     {"background",		no_argument,			NULL,	'b'},
@@ -164,6 +164,7 @@ cmdline(int argc, char **argv) {
   error_init(argv[0], LOG_DAEMON);			/* Init output/logging routines */
 
   optstr = getoptstr(longopts);
+
   while ((optc = getopt_long(argc, argv, optstr, longopts, &optindex)) != -1) {
     switch (optc) {
     case 0:
@@ -268,6 +269,8 @@ static void
 __set_sighandler(int sig, sig_handler h, sigset_t *mask) {
   struct sigaction act;
 
+  memset(&act, 0, sizeof(act));
+
   if (mask == NULL) {
     sigemptyset(&act.sa_mask);
   } else {
@@ -299,12 +302,12 @@ __set_sighandler(int sig, sig_handler h, sigset_t *mask) {
 **************************************************************************************************/
 static void
 become_daemon(void) {
-  int pid;
+  int pid = -1;
 
   sql_close(sql);
 
   if ((pid = fork()) < 0)
-    Err("fork");
+    Err(_("fork"));
   if (pid)
     _exit(EXIT_SUCCESS);
 
@@ -326,7 +329,7 @@ become_daemon(void) {
 static void
 create_pidfile(void) {
   char *name = conf_get(&Conf, "pidfile", NULL);
-  FILE *fp;
+  FILE *fp = NULL;
 
   if (!(fp = fopen(name, "w")))
     Err("%s", name);
@@ -380,7 +383,7 @@ kill_server(SERVER *server, int sig) {
 **************************************************************************************************/
 void
 master_sigusr1(int dummy) {
-  int n;
+  int n = 0;
   for (n = 0; n < array_numobjects(Servers); n++)
     kill_server((SERVER*)array_fetch(Servers, n), SIGUSR1);
   got_sigusr1 = 0;
@@ -400,7 +403,7 @@ sigusr1(int dummy) {
 **************************************************************************************************/
 void
 master_sigusr2(int dummy) {
-  int n;
+  int n = 0;
   for (n = 0; n < array_numobjects(Servers); n++)
     kill_server((SERVER*)array_fetch(Servers, n), SIGUSR2);
   got_sigusr2 = 0;
@@ -423,15 +426,15 @@ sigusr2(int dummy) {
 **************************************************************************************************/
 void
 master_sighup(int dummy) {
-  int n;
+  int n = 0;
   for (n = 0; n < array_numobjects(Servers); n++)
     kill_server((SERVER*)array_fetch(Servers, n), SIGHUP);
   got_sighup = 0;
 }
 
 void
-sighup(int dummy)
-{
+sighup(int dummy) {
+
   cache_empty(ZoneCache);
 #if USE_NEGATIVE_CACHE
   cache_empty(NegativeCache);
@@ -470,15 +473,15 @@ signal_handler(int signo) {
 static void
 close_task_queue(QUEUE *TaskP) {
 
-  register TASK *t;
+  register TASK *t = NULL;
 
   /* Close any TCP connections and any NOTIFY sockets */
   for (t = TaskP->head; t; t = TaskP->head) {
-    if (t->protocol == SOCK_STREAM && t->fd != -1)
+    if (t->protocol == SOCK_STREAM && t->fd >= 0)
       sockclose(t->fd);
     else if (t->protocol == SOCK_DGRAM
 	     && (t->status & (ReqTask|TickTask|RunTask))
-	     && t->fd != -1)
+	     && t->fd >= 0)
       sockclose(t->fd);
     dequeue(t);
   }
@@ -486,7 +489,7 @@ close_task_queue(QUEUE *TaskP) {
 
 static void
 free_all_tasks() {
-  int i, j;
+  int i = 0, j = 0;
 
   for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
     for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
@@ -499,13 +502,13 @@ free_all_tasks() {
 
 void
 free_other_tasks(TASK *t, int closeallfds) {
-  int i, j;
+  int i = 0, j = 0;
 
   for (i = NORMAL_TASK; i <+ PERIODIC_TASK; i++) {
     for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
       QUEUE *TaskQ = TaskArray[i][j];
       TASK *curtask = TaskQ->head;
-      TASK *nexttask;
+      TASK *nexttask = NULL;
       while (curtask) {
 	nexttask = curtask->next;
 	if (curtask == t) continue;
@@ -530,7 +533,7 @@ named_cleanup(int signo) {
 
 void
 named_shutdown(int signo) {
-  int n;
+  int n = 0;
 
   switch (signo) {
   case 0:
@@ -557,7 +560,7 @@ named_shutdown(int signo) {
 #endif
   cache_empty(ReplyCache);
 
-  /* Close listening FDs - do not sockclose these are shard with other processes */
+  /* Close listening FDs - do not sockclose these are shared with other processes */
   for (n = 0; n < num_tcp4_fd; n++)
     close(tcp4_fd[n]);
 
@@ -576,7 +579,7 @@ named_shutdown(int signo) {
 
 void
 master_shutdown(int signo) {
-  int i, m, n, status, running_procs = 0;
+  int i = 0, m = 0, n = 0, status = 0, running_procs = 0;
 
   named_shutdown(signo);
 
@@ -593,7 +596,7 @@ master_shutdown(int signo) {
     n = waitpid(-1, &status, WNOHANG);
     if (n < 0) {
       if (errno == ECHILD) break;
-      Notice("waitpid returned error %s(%d)", strerror(errno), errno);
+      Notice(_("waitpid returned error %s(%d)"), strerror(errno), errno);
     }
     if (n <= 0) {
       i += 1;
@@ -611,12 +614,12 @@ master_shutdown(int signo) {
     }
   }
   if (running_procs) {
-    Notice("%d Clones did not die", running_procs);
+    Notice(_("%d Clones did not die"), running_procs);
   }
   for (n = 0; n < array_numobjects(Servers); n++) {
       SERVER	*server = (SERVER*)array_fetch(Servers, n);
     if (server->pid != -1) {
-      Notice("Did not see clone %d - pid %d die", n, server->pid);
+      Notice(_("Did not see clone %d - pid %d die"), n, server->pid);
     }
   }
    
@@ -649,8 +652,8 @@ master_shutdown(int signo) {
 **************************************************************************************************/
 static int
 reap_child() {
-  int status;
-  int pid;
+  int status = 0;
+  int pid = -1;
 
   if ((pid = waitpid(-1, &status, WNOHANG)) < 0) return -1;
 
@@ -661,16 +664,16 @@ reap_child() {
   } else {
 #ifdef WCOREDUMP
     if (WIFSIGNALED(status))
-      Warnx("pid %d exited due to signal %d%s", pid, WTERMSIG(status),
-	    WCOREDUMP(status) ? " (core dumped)" : "");
+      Warnx(_("pid %d exited due to signal %d%s"), pid, WTERMSIG(status),
+	    WCOREDUMP(status) ? _(" (core dumped)") : "");
     else
-      Warnx("pid %d exited with status %d%s", pid, WEXITSTATUS(status),
-	    WCOREDUMP(status) ? " (core dumped)" : "");
+      Warnx(_("pid %d exited with status %d%s"), pid, WEXITSTATUS(status),
+	    WCOREDUMP(status) ? _(" (core dumped)") : "");
 #else
     if (WIFSIGNALED(status))
-      Warnx("pid %d exited due to signal %d", pid, WTERMSIG(status));
+      Warnx(_("pid %d exited due to signal %d"), pid, WTERMSIG(status));
     else
-      Warnx("pid %d exited with status %d", pid, WEXITSTATUS(status));
+      Warnx(_("pid %d exited with status %d"), pid, WEXITSTATUS(status));
 #endif
   }
 
@@ -679,7 +682,7 @@ reap_child() {
 
 SERVER *
 find_server_for_task(TASK *t) {
-  int n;
+  int n = 0;
 
   for (n = 0; n < array_numobjects(Servers); n++) {
     SERVER *server = (SERVER*)array_fetch(Servers, n);
@@ -691,7 +694,7 @@ find_server_for_task(TASK *t) {
 
 static void
 master_child_cleanup(int signo) {
-  int n, pid;
+  int n = 0, pid = -1;
 
   got_sigchld = 0;
 
@@ -700,7 +703,7 @@ master_child_cleanup(int signo) {
     for (n = 0; n < array_numobjects(Servers); n++) {
       SERVER	*server = (SERVER*)array_fetch(Servers, n);
       if (pid == server->pid) {
-	Notice("Server pid %d died", pid);
+	Notice(_("Server pid %d died"), pid);
 	if (shutting_down) server->pid = -1;
 	else {
 	  if (server->listener) dequeue(server->listener);
@@ -720,7 +723,7 @@ master_child_cleanup(int signo) {
 
 static void
 child_cleanup(int signo) {
-  int pid;
+  int pid = -1;
 
   got_sigchld = 0;
 
@@ -737,20 +740,21 @@ child_cleanup(int signo) {
 	init_rlimits().
 **************************************************************************************************/
 static int
-_init_rlimit(int resource, const char *desc, long long set)
-{
-	struct rlimit rl;
+_init_rlimit(int resource, const char *desc, long long set) {
+  struct rlimit rl;
 
-	if (getrlimit(resource, &rl) < 0)
-		Err("getrlimit");
-	if (set == -1)
-		rl.rlim_cur = rl.rlim_max;
-	else if (set > 0 && rl.rlim_cur < set)
-		rl.rlim_cur = set;
-	setrlimit(resource, &rl);
-	if (getrlimit(resource, &rl) < 0)
-		Err("getrlimit");
-	return rl.rlim_cur;
+  memset(&rl, 0, sizeof(rl));
+
+  if (getrlimit(resource, &rl) < 0)
+    Err(_("getrlimit"));
+  if (set == -1)
+    rl.rlim_cur = rl.rlim_max;
+  else if (set > 0 && rl.rlim_cur < set)
+    rl.rlim_cur = set;
+  setrlimit(resource, &rl);
+  if (getrlimit(resource, &rl) < 0)
+    Err(_("getrlimit"));
+  return rl.rlim_cur;
 }
 /*--- _init_rlimit() ----------------------------------------------------------------------------*/
 
@@ -806,19 +810,17 @@ gettick() {
 
 static void
 do_initial_tasks(INITIALTASK *initial_tasks) {
-  int i;
-
+  int i = 0;
   
   for (i = 0; initial_tasks[i].start; i++ ) {
     initial_tasks[i].start();
   }
-
 }
 
 static int
 build_fdset_for_tasks(QUEUE *TaskQ, fd_set *rfd, fd_set *wfd, fd_set *efd, int *want_timeout) {
   int maxfd = 0;
-  TASK *t, *Next_task;
+  TASK *t = NULL, *Next_task = NULL;
 
   for (t = TaskQ->head; t; t = Next_task) {
     int		fd;
@@ -865,7 +867,7 @@ build_fdset_for_tasks(QUEUE *TaskQ, fd_set *rfd, fd_set *wfd, fd_set *efd, int *
 
 static int
 build_fdsets(int maxfd, fd_set *rfd, fd_set *wfd, fd_set *efd, int *want_timeout) {
-  int i, j;
+  int i = 0, j = 0;
 
   for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
     for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
@@ -878,8 +880,8 @@ build_fdsets(int maxfd, fd_set *rfd, fd_set *wfd, fd_set *efd, int *want_timeout
 
 static int
 run_tasks(fd_set *rfd, fd_set*wfd, fd_set *efd) {
-  int i,j, tasks_executed = 0;
-  TASK *t, *next_task;
+  int i = 0, j = 0, tasks_executed = 0;
+  TASK *t = NULL, *next_task = NULL;
 
   /* Process tasks */
   for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
@@ -909,6 +911,47 @@ run_tasks(fd_set *rfd, fd_set*wfd, fd_set *efd) {
 }
 
 static void
+purge_bad_task() {
+  /* Find out which task has an invalid fd and kill it */
+  int i = 0, j = 0;
+  TASK *t = NULL, *next_task = NULL;
+
+#if DEBUG_ENABLED
+  Debug(_("purge_bad_task() called"));
+#endif
+
+  for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
+    for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
+      QUEUE *TaskQ = TaskArray[i][j];
+      for (t = TaskQ->head; t; t = next_task) {
+	next_task = t->next;
+	if (t->fd >= 0) {
+	  fd_set rfd, wfd, efd;
+	  struct timeval timeout = { 0, 0 };
+	  FD_ZERO(&rfd);
+	  FD_ZERO(&wfd);
+	  FD_ZERO(&efd);
+	  FD_SET(t->fd, &rfd);
+	  FD_SET(t->fd, &wfd);
+	  FD_SET(t->fd, &efd);
+	  if (select(t->fd+1, &rfd, &wfd, &efd, &timeout) < 0) {
+	    if (errno == EBADF) {
+	      if (t->protocol != SOCK_STREAM) 
+		Notice(_("purge_bad_task() found bad task %s => %d"),
+		       desctask(t), t->fd);
+	      dequeue(t);
+	    }
+	  }
+	}
+      }
+    }
+  }
+#if DEBUG_ENABLED
+  Debug(_("purge_bad_task() returned"));
+#endif
+}
+
+static void
 server_loop(int plain_maxfd, INITIALTASK *initial_tasks, int serverfd) {
 
   do_initial_tasks(initial_tasks);
@@ -923,11 +966,11 @@ server_loop(int plain_maxfd, INITIALTASK *initial_tasks, int serverfd) {
 
   /* Main loop: Read connections and process queue */
   for (;;) {
-    int			maxfd;
-    int			rv;
+    int			maxfd = -1;
+    int			rv = 0;
     int			want_timeout = task_timeout;
     fd_set		rfd, wfd, efd;
-    struct timeval	tv;
+    struct timeval	tv = { 0, 0 };
 
     /* Handle signals */
     if (got_sighup) sighup(SIGHUP);
@@ -959,7 +1002,11 @@ server_loop(int plain_maxfd, INITIALTASK *initial_tasks, int serverfd) {
 
     if (rv < 0) {
       if (errno == EINTR) continue;
-      Err("select");
+      if (errno == EBADF) {
+	purge_bad_task();
+	continue;
+      }
+      Err(_("select"));
     }
 
     gettick();
@@ -982,16 +1029,16 @@ server_loop(int plain_maxfd, INITIALTASK *initial_tasks, int serverfd) {
 
 static SERVER *
 spawn_server(INITIALTASK *initial_tasks) {
-  pid_t	pid;
+  pid_t	pid = -1;
   int	fd[2] = { -1, -1 };
-  int	masterfd, serverfd;
-  int	res, n;
+  int	masterfd = -1, serverfd = -1;
+  int	res = 0, n = 0;
 
 
   res = socketpair(PF_UNIX, SOCK_DGRAM, 0, fd);
 
   if (res < 0)
-    Err("socketpair");
+    Err(_("socketpair"));
 
   for (n = 1; n < 1024; n++) {
     int opt = n *1024;
@@ -1009,7 +1056,7 @@ spawn_server(INITIALTASK *initial_tasks) {
   fcntl(serverfd, F_SETFL, fcntl(serverfd, F_GETFL, 0) | O_NONBLOCK);
 
   if ((pid = fork()) < 0)
-    Err("fork");
+    Err(_("fork"));
 
   if (pid > 0) { /* Parent === MASTER */
     SERVER *server = (SERVER*)ALLOCATE(sizeof(SERVER), SERVER);
@@ -1029,7 +1076,7 @@ spawn_server(INITIALTASK *initial_tasks) {
     SERVER *server = array_remove(Servers);
     if (server) {
 #if DEBUG_ENABLED
-      Debug("closing fd %d", server->serverfd);
+      Debug(_("closing fd %d"), server->serverfd);
 #endif
       close(server->serverfd);
       RELEASE(server);
@@ -1044,8 +1091,10 @@ spawn_server(INITIALTASK *initial_tasks) {
   /* Delete pre-existing tasks as they belong to master */
   free_all_tasks();
 #if DEBUG_ENABLED
-  Debug("Cleaned up master structures - starting work");
+  Debug(_("Cleaned up master structures - starting work"));
 #endif
+
+  sql_close(sql); /* Release the database connection held by the master */
 
   db_connect();
 
@@ -1071,9 +1120,9 @@ master_loop(INITIALTASK *initial_tasks) {
   for (;;) {
     int			rv = 0;
     fd_set		rfd, wfd, efd;
-    int			maxfd = 0;
+    int			maxfd = -1;
     int			want_timeout = task_timeout;
-    struct timeval	tv;
+    struct timeval	tv = { 0, 0 };
 
     if (got_sighup) master_sighup(SIGHUP);
     if (got_sigusr1) master_sigusr1(SIGUSR1);
@@ -1103,7 +1152,11 @@ master_loop(INITIALTASK *initial_tasks) {
 
     if (rv < 0) {
       if (errno == EINTR) continue;
-      Err("select");
+      if (errno == EBADF) {
+	purge_bad_task();
+	continue;
+      }
+      Err(_("select"));
     }
 
     gettick();
@@ -1124,8 +1177,10 @@ master_loop(INITIALTASK *initial_tasks) {
 int
 main(int argc, char **argv)
 {
-  int i, j, n;
+  int i = 0, j = 0, n = 0;
   sigset_t mask;
+
+  memset(&mask, 0, sizeof(mask));
 
   setlocale(LC_ALL, "");				/* Internationalization */
   bindtextdomain(PACKAGE, LOCALEDIR);
