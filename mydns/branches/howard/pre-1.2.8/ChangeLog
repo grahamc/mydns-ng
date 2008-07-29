@@ -1,3 +1,12 @@
+29-Jul-2008	Howard Wilkinson	<howard@cohtech.com>	[1.2.8]
+	*	mainly memory management fixes
+	*	Addition of wildcard matching in the parent (ancestor zones)
+		sponsored by Alexander Biehl of Hexonet <abiehl@hexonet.net>
+		Uses 'wildcard-recursion' config variable.
+	*	Added definitions for the other RR types and introduced
+		specific selectors for each such record in anticipation of
+		1.2.9 changes.
+	
 22-Feb-2008	Howard Wilkinson	<howard@cohtech.com>	[1.2.7]
 	*	Modified Memory management so that initial hooks are in place for
 		arena based memory management.

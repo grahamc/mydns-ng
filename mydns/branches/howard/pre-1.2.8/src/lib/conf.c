@@ -55,6 +55,8 @@ char		*recursion_algorithm = "linear";
 char		*recursive_fwd_server = NULL;		/* Name of server for recursive forwarding */
 int		recursive_family = AF_INET;		/* Protocol family for recursion */
 
+int		wildcard_recursion = 0;			/* Search ancestor zones for wildcard matches - count give levels -1 means infinite */
+
 char		*mydns_dbengine = "MyISAM";
 
 #if HAVE_IPV6
@@ -127,6 +129,7 @@ static CONF defConfig[] = {
 {	"ixfr-gc-delay",	"600",				N_("Delay until first IXFR GC runs")},
 {	"extended-data-support","no",				N_("Support extended data fields for large TXT records")},
 {	"dbengine",		"MyISAM",			N_("Support different database engines")},
+{	"wildcard-recursion",	"0",				N_("Wildcard ancestor search levels")},
 
 #ifdef DN_COLUMN_NAMES
 {	"default-ns",		"ns0.example.com.",		N_("Default nameserver for all zones")},
@@ -466,6 +469,8 @@ load_config(void) {
   mydns_rr_extended_data = GETBOOL(conf_get(&Conf, "extended-data-support", NULL));
 
   mydns_dbengine = conf_get(&Conf, "dbengine", NULL);
+
+  wildcard_recursion = atoi(conf_get(&Conf, "wildcard-recursion", NULL));
 
   ignore_minimum = GETBOOL(conf_get(&Conf, "ignore-minimum", NULL));
 

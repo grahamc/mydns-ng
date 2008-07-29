@@ -499,6 +499,14 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
 
   switch (rr->type) {
 
+  case DNS_QTYPE_UNKNOWN:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_NONE:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
   case DNS_QTYPE_A:
     if (UQRR_DATA_LENGTH(rr) != 4)
       return (TASK_ABANDONED);
@@ -506,17 +514,19 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
 			UQRR_DATA_VALUE(rr)[2], UQRR_DATA_VALUE(rr)[3]);
     break;
 
-  case DNS_QTYPE_AAAA:
-    if (UQRR_DATA_LENGTH(rr) != 16)
-      return (TASK_ABANDONED);
-    /* Need to allocate a dynamic buffer */
-    if (!(*data = (char*)ipaddr(AF_INET6, UQRR_DATA_VALUE(rr)))) {
-      *datalen = 0;
-      return dnserror(t, DNS_RCODE_FORMERR, ERR_INVALID_ADDRESS);
-    }
+  case DNS_QTYPE_NS:
+    if (!(*data = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
+      return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
     *datalen = strlen(*data);
-    *data = STRDUP(*data);
     break;
+
+  case DNS_QTYPE_MD:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_MF:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
 
   case DNS_QTYPE_CNAME:
     if (!(*data = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
@@ -524,41 +534,68 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
     *datalen = strlen(*data);
     break;
 
-  case DNS_QTYPE_HINFO:
-    {
-      char	*data1 = NULL;
-      char	*data2 = NULL;
-      char	*c = NULL;
-      size_t	datalen1= 0;
-      size_t	datalen2 = 0;
-      int	data1sp = 0;
-      int	data2sp = 0;
+  case DNS_QTYPE_SOA:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
 
-      data1 = text_retrieve(&src, end, &datalen1, 1);
-      data2 = text_retrieve(&src, end, &datalen2, 1);
+  case DNS_QTYPE_MB:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
 
-      /* See if either value contains spaces, so we can enclose it with quotes */
-      for (c = data1, data1sp = 0; *c && !data1sp; c++)
-	if (isspace(*c)) data1sp = 1;
-      for (c = data2, data2sp = 0; *c && !data2sp; c++)
-	if (isspace(*c)) data2sp = 1;
+  case DNS_QTYPE_MG:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
 
-      *datalen = ASPRINTF(data, "%s%s%s %s%s%s",
-			  data1sp ? "\"" : "", data1, data1sp ? "\"" : "",
-			  data2sp ? "\"" : "", data2, data2sp ? "\"" : "");
-      RELEASE(data1);
-      RELEASE(data2);
-    }
-    break;
+  case DNS_QTYPE_MR:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
 
-  case DNS_QTYPE_MX:
-    DNS_GET16(*aux, src);
+  case DNS_QTYPE_NULL:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_WKS:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_PTR:
     if (!(*data = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
       return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
     *datalen = strlen(*data);
     break;
 
-  case DNS_QTYPE_NS:
+  case DNS_QTYPE_HINFO: {
+    char	*data1 = NULL;
+    char	*data2 = NULL;
+    char	*c = NULL;
+    size_t	datalen1= 0;
+    size_t	datalen2 = 0;
+    int	data1sp = 0;
+    int	data2sp = 0;
+
+    data1 = text_retrieve(&src, end, &datalen1, 1);
+    data2 = text_retrieve(&src, end, &datalen2, 1);
+
+    /* See if either value contains spaces, so we can enclose it with quotes */
+    for (c = data1, data1sp = 0; *c && !data1sp; c++)
+      if (isspace(*c)) data1sp = 1;
+    for (c = data2, data2sp = 0; *c && !data2sp; c++)
+      if (isspace(*c)) data2sp = 1;
+
+    *datalen = ASPRINTF(data, "%s%s%s %s%s%s",
+			data1sp ? "\"" : "", data1, data1sp ? "\"" : "",
+			data2sp ? "\"" : "", data2, data2sp ? "\"" : "");
+    RELEASE(data1);
+    RELEASE(data2);
+  }
+    break;
+
+  case DNS_QTYPE_MINFO:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_MX:
+    DNS_GET16(*aux, src);
     if (!(*data = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
       return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
     *datalen = strlen(*data);
@@ -572,49 +609,242 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
     }
     break;
 
-  case DNS_QTYPE_PTR:
-    if (!(*data = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
+  case DNS_QTYPE_RP: {
+    char *data1, *data2;
+
+    if (!(data1 = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
       return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
-    *datalen = strlen(*data);
-    break;
-
-  case DNS_QTYPE_RP:
-    {
-      char *data1, *data2;
-
-      if (!(data1 = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
-	return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
-      if (!(data2 = name_unencode2(t->query, t->len, (char**)&src, &errcode))) {
-	RELEASE(data1);
-	return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
-      }
-
-      *datalen = ASPRINTF(data, "%s %s", data1, data2);
+    if (!(data2 = name_unencode2(t->query, t->len, (char**)&src, &errcode))) {
       RELEASE(data1);
-      RELEASE(data2);
+      return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
     }
+
+    *datalen = ASPRINTF(data, "%s %s", data1, data2);
+    RELEASE(data1);
+    RELEASE(data2);
+  }
     break;
 
-  case DNS_QTYPE_SRV:
-    {
-      uint16_t weight, port;
-      char *data1;
-
-      DNS_GET16(*aux, src);
-      DNS_GET16(weight, src);
-      DNS_GET16(port, src);
-
-      if (!(data1 = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
-	return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
-
-      *datalen = ASPRINTF(data, "%u %u %s", weight, port, data1);
-      RELEASE(data1);
-    }
-    break;
-
-  default:
+  case DNS_QTYPE_AFSDB:
     *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
     return (TASK_FAILED);
+
+  case DNS_QTYPE_X25:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_ISDN:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_RT:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_NSAP:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_NSAP_PTR:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_SIG:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_KEY:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_PX:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_GPOS:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_AAAA:
+    if (UQRR_DATA_LENGTH(rr) != 16)
+      return (TASK_ABANDONED);
+    /* Need to allocate a dynamic buffer */
+    if (!(*data = (char*)ipaddr(AF_INET6, UQRR_DATA_VALUE(rr)))) {
+      *datalen = 0;
+      return dnserror(t, DNS_RCODE_FORMERR, ERR_INVALID_ADDRESS);
+    }
+    *datalen = strlen(*data);
+    *data = STRDUP(*data);
+    break;
+
+  case DNS_QTYPE_LOC:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_NXT:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_EID:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_NIMLOC:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_SRV: {
+    uint16_t weight, port;
+    char *data1;
+
+    DNS_GET16(*aux, src);
+    DNS_GET16(weight, src);
+    DNS_GET16(port, src);
+
+    if (!(data1 = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
+      return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
+
+    *datalen = ASPRINTF(data, "%u %u %s", weight, port, data1);
+    RELEASE(data1);
+  }
+    break;
+
+  case DNS_QTYPE_ATMA:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_NAPTR:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_KX:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_CERT:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_A6:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_DNAME:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_SINK:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_OPT:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_APL:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_DS:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_SSHFP:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_IPSECKEY:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_RRSIG:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_NSEC:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_DNSKEY:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_DHCID:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_NSEC3:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_NSEC3PARAM:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_HIP:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_SPF:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_UINFO:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_UID:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_GID:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_UNSPEC:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_TKEY:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_TSIG:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_IXFR:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_AXFR:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_MAILB:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_MAILA:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_ANY:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_TA:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_DLV:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
+  case DNS_QTYPE_ALIAS:
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    return (TASK_FAILED);
+
   }
 
   if (mydns_rr_extended_data && *datalen > mydns_rr_data_length) {

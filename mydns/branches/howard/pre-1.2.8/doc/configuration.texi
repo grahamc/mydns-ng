@@ -159,6 +159,7 @@ reply cache is not used. (@xref{Caching}.)
 @cindex dbengine
 @cindex soa-where
 @cindex rr-where
+@cindex wildcard-recursion
 
 @table @var
 @item log
@@ -277,5 +278,9 @@ records from the @code{soa} table (@pxref{soa table}).
 @item rr-where
 @i{(string)}  An additional SQL @samp{WHERE} clause to use when retrieving
 records from the @code{rr} table (@pxref{rr table}).
+
+@item wildcard-recursion
+@i{(integer)} number of ancestor zones to scan for a matching wildcard. default 0.
+Use -1 for infinite.
 
 @end table

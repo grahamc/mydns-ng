@@ -122,7 +122,6 @@ extern time_t	current_time;			/* Current time */
 
 #if ALIAS_ENABLED
 /* alias.c */
-extern MYDNS_RR	*find_alias(TASK *, char *);
 extern int	 alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, char *label, MYDNS_RR *alias);
 #endif
 

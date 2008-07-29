@@ -242,13 +242,19 @@ big as needed for large TXT records.
 .IP "\fBdbengine\fP = \fIstring\fP (`\fIMyISAM\fP')"
 Select DBengine to use when running under MySQL. Has been tested with MyISAM, InnoDB, NDBCLUSTER.
 
-.IP "\fBsoa-where\fP = \fIstring\fP
+.IP "\fBsoa-where\fP = \fIstring\fP"
 An extra WHERE clause to append to queries selecting records from the `soa' table.
 
-.IP "\fBrr-where\fP = \fIstring\fP
+.IP "\fBrr-where\fP = \fIstring\fP"
 An extra WHERE clause to append to queries selecting records from the `rr' table.
 
-
+.IP "\fBwildcard-recursion\fP = \fInumber of ancestor levels\fP"
+Allow the server to look in ancestor zones for wildcard matches.
+This specifies how many levels to scan up before giving up. Use '0' (the default)
+to switch this off, a positive number to specify how many levels and '-1' for infinite.
+[Caveat: Using this feature in the current release 1.2.8 will affect performance if
+you have deeply nested zones and search many levels. You have been warned, if
+you need to do this then increase the number of 'servers']
 
 .\"--------------------------------------------------------------------------
 .\"  SECURITY

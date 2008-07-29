@@ -116,7 +116,7 @@ cmdline(int argc, char **argv) {
     {"host",			required_argument,	NULL,	'h'},
     {"password",		optional_argument,	NULL,	'p'},
     {"user",			required_argument,	NULL,	'u'},
-    
+
     {"debug",			no_argument,		NULL,	'd'},
     {"verbose",			no_argument,		NULL,	'v'},
     {"help",			no_argument,		NULL,	0},
@@ -277,7 +277,7 @@ shortname(char *name_to_shorten, int empty_name_is_ok) {
 	Verifies that "name" is a valid name.
 **********************************************************************************************/
 static void
-check_name(const char *name_in, const char *col, int is_rr) {
+check_name(const char *name_in, const char *col, int is_rr, int allow_underscore) {
   char		*buf, *b, *label;
   char		*fqdn;
   int		fqdnlen;
@@ -328,6 +328,8 @@ check_name(const char *name_in, const char *col, int is_rr) {
 	  if (!isalnum((int)(*cp)) && *cp != '-') {
 	    if (is_rr && *cp == '*')
 	      rrproblem(_("Wildcard character `%c' in `%s' not alone"), *cp, col);
+	    else if (*cp == '_' && allow_underscore)
+	      ;
 	    else
 	      rrproblem(_("Label in `%s' contains illegal character `%c'"), col, *cp);
 	  }
@@ -366,8 +368,8 @@ check_soa(const char *zone) {
   /* SOA validation */
   name = REALLOCATE(name, strlen(soa->origin) + 1, char[]);
   strcpy(name, soa->origin);
-  check_name(soa->ns, "soa.ns", 0);
-  check_name(soa->mbox, "soa.mbox", 0);
+  check_name(soa->ns, "soa.ns", 0, 0);
+  check_name(soa->mbox, "soa.mbox", 0, 0);
 
   if (LASTCHAR(name) != '.')
     rrproblem(_("soa.origin is not a FQDN (no trailing dot)"));
@@ -394,7 +396,7 @@ check_rr_cname(void) {
   int found = 0;
 
   EXPAND_DATA(data);
-  check_name(data, "rr.data", 1);
+  check_name(data, "rr.data", 1, 0);
 
   /* A CNAME record can't have any other type of RR data for the same name */
   xname = sql_escstr(sql, (char *)name);
@@ -469,7 +471,7 @@ check_rr_naptr(void) {
 
   /* For now, don't check 'replacement'.. the example in the RFC even contains illegal chars */
   /* EXPAND_DATA(tmp); */
-  /* check_name(tmp, "replacement", 1); */
+  /* check_name(tmp, "replacement", 1, 0); */
   RELEASE(data_copy);
 }
 /*--- check_rr_naptr() --------------------------------------------------------------------------*/
@@ -491,7 +493,14 @@ check_rr(void) {
   strncpy(name, MYDNS_RR_NAME(rr), namelen);
   strncpy(data, MYDNS_RR_DATA_VALUE(rr), MYDNS_RR_DATA_LENGTH(rr));
   EXPAND_DATA(name);
-  check_name(name, "rr.name", 1);
+  switch (rr->type) {
+  case DNS_QTYPE_TXT:
+  case DNS_QTYPE_SRV:
+    check_name(name, "rr.name", 1, 1);
+    break;
+  default:
+    check_name(name, "rr.name", 1, 0);
+  }
 
   if (!ignore_minimum && (rr->ttl < soa->minimum))
     rrproblem(_("TTL below zone minimum"));
@@ -531,7 +540,7 @@ check_rr(void) {
 
   case DNS_QTYPE_MX:							/* Data: Name */
     EXPAND_DATA(data);
-    check_name(data, "rr.data", 1);
+    check_name(data, "rr.data", 1, 0);
     break;
 
   case DNS_QTYPE_NAPTR:							/* Data: Multiple fields */
@@ -540,7 +549,7 @@ check_rr(void) {
 
   case DNS_QTYPE_NS:							/* Data: Name */
     EXPAND_DATA(data);
-    check_name(data, "rr.data", 1);
+    check_name(data, "rr.data", 1, 0);
     break;
 
   case DNS_QTYPE_PTR:							/* Data: PTR */
@@ -554,8 +563,8 @@ check_rr(void) {
       txt = ALLOCATE(strlen(MYDNS_RR_RP_TXT(rr)) + 1, char[]);
       strcpy(txt, MYDNS_RR_RP_TXT(rr));
       EXPAND_DATA(txt);
-      check_name(data, "rr.data (mbox)", 1);
-      check_name(txt, "rr.data (txt)", 1);
+      check_name(data, "rr.data (mbox)", 1,0 );
+      check_name(txt, "rr.data (txt)", 1, 0);
       RELEASE(txt);
     }
     break;
@@ -728,7 +737,7 @@ main(int argc, char **argv) {
     }
     else while (optind < argc) {				/* Check zones provided as args */
       char *zone;
-      int zonelen = strlen(argv[optind]);
+      int zonelen = strlen(argv[optind]) + 1;
       if (*argv[optind] && LASTCHAR(argv[optind]) != '.') zonelen += 1;
       zone = ALLOCATE(zonelen, char[]);
       strcpy(zone, argv[optind++]);

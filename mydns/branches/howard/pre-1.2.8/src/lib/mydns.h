@@ -53,6 +53,8 @@ extern uint32_t	ixfr_gc_delay;			/* Delay before running first IXFR GC */
 extern int	ignore_minimum;			/* Ignore minimum TTL? */
 extern char	hostname[256];			/* This machine's hostname */
 
+extern int	wildcard_recursion;		/* Number of levels of ancestor to search for wildcards */
+
 extern char	*mydns_dbengine;		/* The db engine to use when creating tables - MySQL only */
 
 extern uint32_t answer_then_quit;		/* Answer this many queries then quit */
@@ -273,6 +275,26 @@ typedef enum							/* Query types */
 	DNS_QTYPE_DNAME			= 39,			/* Non-terminal DNAME (for IPv6) */
 	DNS_QTYPE_SINK			= 40,			/* Kitchen sink (experimentatl) */
 	DNS_QTYPE_OPT			= 41,			/* EDNS0 option (meta-RR) */
+	DNS_QTYPE_APL			= 42,
+	DNS_QTYPE_DS			= 43,
+	DNS_QTYPE_SSHFP			= 44,
+	DNS_QTYPE_IPSECKEY		= 45,
+	DNS_QTYPE_RRSIG			= 46,
+	DNS_QTYPE_NSEC			= 47,
+	DNS_QTYPE_DNSKEY		= 48,
+	DNS_QTYPE_DHCID			= 49,
+	DNS_QTYPE_NSEC3			= 50,
+	DNS_QTYPE_NSEC3PARAM		= 51,
+
+	DNS_QTYPE_HIP			= 55,
+
+	DNS_QTYPE_SPF			= 99,
+	DNS_QTYPE_UINFO			= 100,
+	DNS_QTYPE_UID			= 101,
+	DNS_QTYPE_GID			= 102,
+	DNS_QTYPE_UNSPEC		= 103,
+
+	DNS_QTYPE_TKEY			= 249,
 	DNS_QTYPE_TSIG			= 250,			/* Transaction signature */
 	DNS_QTYPE_IXFR			= 251,			/* Incremental zone transfer */
 	DNS_QTYPE_AXFR			= 252,			/* Zone transfer */
@@ -280,8 +302,11 @@ typedef enum							/* Query types */
 	DNS_QTYPE_MAILA			= 254,			/* Transfer mail agent records */
 	DNS_QTYPE_ANY			= 255,			/* Any */
 
+	DNS_QTYPE_TA			= 32768,
+	DNS_QTYPE_DLV			= 32769,
+
 #if ALIAS_ENABLED
-	DNS_QTYPE_ALIAS			= 500,			/* Extension - David Phillips, alias patch */
+	DNS_QTYPE_ALIAS			= 65280,		/* Extension - David Phillips, alias patch */
 #endif
 } dns_qtype_t;
 
@@ -293,6 +318,7 @@ typedef enum							/* DNS opcode types */
 	DNS_OPCODE_QUERY		= 0,			/* Query (RFC 1035) */
 	DNS_OPCODE_IQUERY		= 1,			/* Inverse query (RFC 1035) */
 	DNS_OPCODE_STATUS		= 2,			/* Status request (RFC 1035) */
+
 	DNS_OPCODE_NOTIFY		= 4,			/* Notify request (RFC 1996) */
 	DNS_OPCODE_UPDATE		= 5,			/* Update request (RFC 2136) */
 } dns_opcode_t;
@@ -322,12 +348,15 @@ typedef enum
 		TKEY (RFC 2930) RRs */ 
 	/* RFC 2671 says that rcode 16 is BADVERS ("Bad OPT version").  This conlicts with
 		RFC 2845.  RFC 2845 seems like best current practice. */
+
+	DNS_RCODE_BADVERS		= 16,		/* Bad OPT Version */
 	DNS_RCODE_BADSIG		= 16,		/* TSIG signature failure (RFC 2845) */
 	DNS_RCODE_BADKEY		= 17,		/* Key not recognized (RFC 2845) */
 	DNS_RCODE_BADTIME		= 18,		/* Signature out of time window (RFC 2845) */
 	DNS_RCODE_BADMODE		= 19,		/* Bad TKEY mode (RFC 2930) */
 	DNS_RCODE_BADNAME		= 20,		/* Duplicate key name (RFC 2930) */
 	DNS_RCODE_BADALG		= 21,		/* Algorithm not supported (RFC 2930) */
+	DNS_RCODE_BADTRUNC		= 22,		/* Bad Truncation */
 
 } dns_rcode_t;
 

@@ -587,33 +587,18 @@ reply_process_rrlist(TASK *t, RRLIST *rrlist) {
 	  break;
 
 	switch (rr->type) {
+	case DNS_QTYPE_UNKNOWN:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unexpected resource record type - logic problem"));
+	  break;
+
+	case DNS_QTYPE_NONE:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unexpected resource record type - logic problem"));
+	  break;
+
 	case DNS_QTYPE_A:
 	  if (reply_add_a(t, r) < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_AAAA:
-	  if (reply_add_aaaa(t, r) < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_CNAME:
-	  if (reply_add_generic_rr(t, r, "CNAME") < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_HINFO:
-	  if (reply_add_hinfo(t, r) < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_MX:
-	  if (reply_add_mx(t, r) < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_NAPTR:
-	  if (reply_add_naptr(t, r) < 0)
 	    return (-1);
 	  break;
 
@@ -622,18 +607,68 @@ reply_process_rrlist(TASK *t, RRLIST *rrlist) {
 	    return (-1);
 	  break;
 
+	case DNS_QTYPE_MD:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_MF:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_CNAME:
+	  if (reply_add_generic_rr(t, r, "CNAME") < 0)
+	    return (-1);
+	  break;
+
+	case DNS_QTYPE_SOA:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unexpected resource record type - logic problem"));
+	  break;
+
+	case DNS_QTYPE_MB:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_MG:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_MR:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_NULL:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_WKS:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
 	case DNS_QTYPE_PTR:
 	  if (reply_add_generic_rr(t, r, "PTR") < 0)
 	    return (-1);
 	  break;
 
-	case DNS_QTYPE_RP:
-	  if (reply_add_rp(t, r) < 0)
+	case DNS_QTYPE_HINFO:
+	  if (reply_add_hinfo(t, r) < 0)
 	    return (-1);
 	  break;
 
-	case DNS_QTYPE_SRV:
-	  if (reply_add_srv(t, r) < 0)
+	case DNS_QTYPE_MINFO:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_MX:
+	  if (reply_add_mx(t, r) < 0)
 	    return (-1);
 	  break;
 
@@ -642,9 +677,261 @@ reply_process_rrlist(TASK *t, RRLIST *rrlist) {
 	    return (-1);
 	  break;
 
-	default:
+	case DNS_QTYPE_RP:
+	  if (reply_add_rp(t, r) < 0)
+	    return (-1);
+	  break;
+
+	case DNS_QTYPE_AFSDB:
 	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
 		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_X25:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_ISDN:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_RT:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_NSAP:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_NSAP_PTR:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_SIG:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_KEY:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_PX:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_GPOS:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_AAAA:
+	  if (reply_add_aaaa(t, r) < 0)
+	    return (-1);
+	  break;
+
+	case DNS_QTYPE_LOC:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_NXT:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_EID:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_NIMLOC:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_SRV:
+	  if (reply_add_srv(t, r) < 0)
+	    return (-1);
+	  break;
+
+	case DNS_QTYPE_ATMA:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_NAPTR:
+	  if (reply_add_naptr(t, r) < 0)
+	    return (-1);
+	  break;
+
+	case DNS_QTYPE_KX:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_CERT:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_A6:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_DNAME:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_SINK:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_OPT:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_APL:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_DS:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_SSHFP:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_IPSECKEY:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_RRSIG:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_NSEC:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_DNSKEY:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_DHCID:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_NSEC3:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_NSEC3PARAM:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_HIP:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_SPF:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_UINFO:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_UID:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_GID:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_UNSPEC:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_TKEY:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_TSIG:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_IXFR:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unexpect resource record type - logic problem"));
+	  break;
+
+	case DNS_QTYPE_AXFR:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unexpected resource record type - logic problem"));
+	  break;
+
+	case DNS_QTYPE_MAILB:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_MAILA:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_ANY:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unexpected resource record type - logic problem"));
+	  break;
+
+	case DNS_QTYPE_TA:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_DLV:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unsupported resource record type"));
+	  break;
+
+	case DNS_QTYPE_ALIAS:
+	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
+		_("unexpected resource record type - logic problem"));
+	  break;
+
 	}
       }
       break;

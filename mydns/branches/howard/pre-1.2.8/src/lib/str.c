@@ -97,12 +97,35 @@ mydns_qtype_str(dns_qtype_t qtype) {
   case DNS_QTYPE_DNAME:		return ("DNAME");
   case DNS_QTYPE_SINK:		return ("SINK");
   case DNS_QTYPE_OPT:		return ("OPT");
+  case DNS_QTYPE_APL:		return ("APL");
+  case DNS_QTYPE_DS:		return ("DS");
+  case DNS_QTYPE_SSHFP:		return ("SSHFP");
+  case DNS_QTYPE_IPSECKEY:	return ("IPSECKEY");
+  case DNS_QTYPE_RRSIG:		return ("RRSIG");
+  case DNS_QTYPE_NSEC:		return ("NSEC");
+  case DNS_QTYPE_DNSKEY:	return ("DNSKEY");
+  case DNS_QTYPE_DHCID:		return ("DHCID");
+  case DNS_QTYPE_NSEC3:		return ("NSEC");
+  case DNS_QTYPE_NSEC3PARAM:	return ("NSEC3PARAM");
+
+  case DNS_QTYPE_HIP:		return ("HIP");
+
+  case DNS_QTYPE_SPF:		return ("SPF");
+  case DNS_QTYPE_UINFO:		return ("UINFO");
+  case DNS_QTYPE_UID:		return ("UID");
+  case DNS_QTYPE_GID:		return ("GID");
+  case DNS_QTYPE_UNSPEC:	return ("UNSPEC");
+
+  case DNS_QTYPE_TKEY:		return ("TKEY");
   case DNS_QTYPE_TSIG:		return ("TSIG");
   case DNS_QTYPE_IXFR:		return ("IXFR");
   case DNS_QTYPE_AXFR:		return ("AXFR");
   case DNS_QTYPE_MAILB:		return ("MAILB");
   case DNS_QTYPE_MAILA:		return ("MAILA");
   case DNS_QTYPE_ANY:		return ("ANY");
+
+  case DNS_QTYPE_TA:		return ("TA");
+  case DNS_QTYPE_DLV:		return ("DLV");
 
 #if ALIAS_ENABLED
   case DNS_QTYPE_ALIAS:		return ("ALIAS");
@@ -168,12 +191,14 @@ mydns_rcode_str(dns_rcode_t rcode) {
   case DNS_RCODE_NXRRSET:	return ("NXRRSET");
   case DNS_RCODE_NOTAUTH:	return ("NOTAUTH");
   case DNS_RCODE_NOTZONE:	return ("NOTZONE");
+
   case DNS_RCODE_BADSIG:	return ("BADSIG");
   case DNS_RCODE_BADKEY:	return ("BADKEY");
   case DNS_RCODE_BADTIME:	return ("BADTIME");
   case DNS_RCODE_BADMODE:	return ("BADMODE");
   case DNS_RCODE_BADNAME:	return ("BADNAME");
   case DNS_RCODE_BADALG:	return ("BADALG");
+  case DNS_RCODE_BADTRUNC:	return ("BADTRUNC");
   }
 
   RELEASE(buf);
