@@ -1,0 +1,59 @@
+Quickstart instructions for MyDNS (PostgreSQL installation):
+
+...............................................................................
+
+1.	Configure and install MyDNS.
+
+	$ ./configure
+	$ make
+	# make install
+
+...............................................................................
+
+2.	Create a database called `mydns' on your PostgreSQL server.
+
+	# su - postgres
+	$ createdb mydns
+
+...............................................................................
+
+3. Create the tables in the `mydns' database.
+
+	$ /usr/local/sbin/mydns --create-tables | psql mydns
+
+...............................................................................
+
+4.	Create a user the mydns(8) server can use to access the `mydns' database.
+
+	$ psql mydns
+	mydns=# CREATE USER "<user>" PASSWORD '<password>';
+	mydns=# GRANT SELECT ON soa,soa_id_seq TO "<user>";
+	mydns=# GRANT SELECT ON rr,rr_id_seq TO "<user>";
+
+...............................................................................
+
+5. Create your configuration file.
+
+	# make conf
+
+...............................................................................
+
+6.	Edit the configuration file.  Change the `db-user' and `db-pass'
+	values to reflect the user name and password you created in step 3.
+
+...............................................................................
+
+7.	Start `mydns'.  You may want to add something like this to your startup
+	scripts.
+
+	# mydns --background
+
+...............................................................................
+
+
+If you currently have a name server running BIND or something else, you can use
+the `mydnsimport' program to import the data from that server into your new
+MyDNS database.  See the user's manual for details.
+
+
+## vi:set ts=3:
