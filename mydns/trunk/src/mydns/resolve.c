@@ -183,7 +183,7 @@ process_rr(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn,
   t->sort_level++;
 
   /* If we found no matching RR's but there are NS records, and the name isn't empty
-     or '*' (which I think is probably wrong, but...) treat as delegation -- set 'rv'
+     or '*' treat as delegation -- set 'rv'
      to make the caller return, then set 'add_ns' to fill the AUTHORITY */
   if (!rv && *label && *label != '*')
     for (r = rr; !rv && r; r = r->next)
@@ -321,87 +321,95 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
    * or we get a match.
    */
   if (*label) {
-    char *zlabel = label;
     MYDNS_SOA *zsoa = soa;
     int recurs = wildcard_recursion;
+    do {
+      char *zlabel = label;
 
 #if DEBUG_ENABLED && DEBUG_RESOLVE
       Debug(_("%s: resolve(%s) -> trying zone look up on %s - %d"), desctask(t), label, zlabel, recurs);
 #endif
-    do {
+      /* Strip one label element and replace with a '*' then test and repeat until we run out of labels */
+      while (*zlabel) {
+	char *wclabel = NULL, *c = NULL;
 
-      char *wclabel = NULL, *c = NULL;
-
-      /* Generate wildcarded label, i.e. `*.example' or maybe just `*'. */
-      if (!(c = strchr(label, '.')))
-	wclabel = STRDUP("*");
-      else
-	ASPRINTF(&wclabel, "*%s", c);
+	/* Generate wildcarded label, i.e. `*.example' or maybe just `*'. */
+	if (!(c = strchr(zlabel, '.')))
+	  wclabel = STRDUP("*");
+	else
+	  ASPRINTF(&wclabel, "*%s", c);
 
 #if DEBUG_ENABLED && DEBUG_RESOLVE
-	  Debug(_("%s: resolve(%s) trying wildcard `%s'"), desctask(t), label, wclabel);
+	Debug(_("%s: resolve(%s) trying wildcard `%s'"), desctask(t), label, wclabel);
 #endif
-      if ((rr = find_rr(t, zsoa, DNS_QTYPE_ANY, wclabel)))	{
-	rv = process_rr(t, section, qtype, fqdn, zsoa, wclabel, rr, level);
-	mydns_rr_free(rr);
-	add_authority_ns(t, section, zsoa, wclabel);
+	rr = find_rr(t, zsoa, qtype, wclabel);
+#if DEBUG_ENABLED && DEBUG_RESOLVE
+	Debug(_("%s: resolve(%s) tried wildcard `%s' got rr = %p"), desctask(t), label, wclabel, rr);
+#endif
+	if (rr) {
+	  rv = process_rr(t, section, qtype, fqdn, zsoa, wclabel, rr, level);
+	  mydns_rr_free(rr);
+	  add_authority_ns(t, section, zsoa, wclabel);
+	  RELEASE(wclabel);
+	  return (rv);
+	}
 	RELEASE(wclabel);
-	return (rv);
+	if (c) { zlabel = &c[1]; } else { break; }
       }
-      RELEASE(wclabel);
 
 #if DEBUG_ENABLED && DEBUG_RESOLVE
-      Debug(_("%s: resolve(%s) -> shall we try recursive look up on %s - %d"), desctask(t), label, zlabel, recurs);
+      Debug(_("%s: resolve(%s) -> shall we try recursive look up - %d"), desctask(t), label, recurs);
 #endif
-      if (recurs) {
+      if (recurs--) {
 #if DEBUG_ENABLED && DEBUG_RESOLVE
-	Debug(_("%s: resolve(%s) -> trying recursive look up on %s"), desctask(t), label, zlabel);
+	Debug(_("%s: resolve(%s) -> trying recursive look up"), desctask(t), label);
 #endif
-	while (*zlabel) {
-	  char *zc;
-	  if ((zc = strchr(zlabel, '.'))) {
-	    zlabel = &zc[1];
-	  } else if((zc = strchr(zsoa->origin, '.'))) {
-	    zlabel = &zc[1];
-	  } else {
-	    goto NOWILDCARDMATCH;
-	  }
-	  if (*zlabel) {
-	    MYDNS_SOA *xsoa;
-#if DEBUG_ENABLED && DEBUG_RESOLVE
-	    Debug(_("%s: resolve(%s) -> trying recursive look up in %s"), desctask(t), label, zlabel);
-#endif
-	    xsoa = find_soa2(t, zlabel, NULL);
-#if DEBUG_ENABLED && DEBUG_RESOLVE
-	    Debug(_("%s: resolve(%s) -> got %s for recursive look up in %s"), desctask(t),
-		  label, ((xsoa)?xsoa->origin:"<no match>"), zlabel);
-#endif
-	    if (xsoa) {
-	      if (xsoa != zsoa) {
-		/* Got a ancestor need to check that it is a parent for the last zone we checked */
-#if DEBUG_ENABLED && DEBUG_RESOLVE
-		Debug(_("%s: resolve(%s) -> %s is an ancestor of %s"), desctask(t), label,
-		      xsoa->origin, zsoa->origin);
-#endif
-		MYDNS_RR *xrr = find_rr(t, xsoa, DNS_QTYPE_NS, zsoa->origin);
-#if DEBUG_ENABLED && DEBUG_RESOLVE
-		Debug(_("%s: resolve(%s) -> %s is%s a parent of %s"), desctask(t), label,
-		      ((xrr) ? "" : " not"),
-		      xsoa->origin, zsoa->origin);
-#endif
-		if (xrr) { zsoa = xsoa; break; }
-	      } else {
-		/* Trying a shorter label */
-		continue;
-	      }
-	    }
-	  }
+	/* Find the parent zone that has the current zone delegated and try in there */
+	char *zc;
+	if((zc = strchr(zsoa->origin, '.'))) {
+	  zc = &zc[1];
+	} else {
 	  goto NOWILDCARDMATCH;
 	}
+	if (*zc) {
+	  MYDNS_SOA *xsoa;
+#if DEBUG_ENABLED && DEBUG_RESOLVE
+	  Debug(_("%s: resolve(%s) -> trying recursive look up in %s"), desctask(t), label, zc);
+#endif
+	  xsoa = find_soa2(t, zc, NULL);
+#if DEBUG_ENABLED && DEBUG_RESOLVE
+	  Debug(_("%s: resolve(%s) -> got %s for recursive look up in %s"), desctask(t),
+		label, ((xsoa)?xsoa->origin:"<no match>"), zc);
+#endif
+	  if (xsoa) {
+	    /* Got a ancestor need to check that it is a parent for the last zone we checked */
+#if DEBUG_ENABLED && DEBUG_RESOLVE
+	    Debug(_("%s: resolve(%s) -> %s is an ancestor of %s"), desctask(t), label,
+		  xsoa->origin, zsoa->origin);
+#endif
+	    MYDNS_RR *xrr = find_rr(t, xsoa, DNS_QTYPE_NS, zsoa->origin);
+#if DEBUG_ENABLED && DEBUG_RESOLVE
+	    Debug(_("%s: resolve(%s) -> %s is%s a parent of %s"), desctask(t), label,
+		  ((xrr) ? "" : " not"),
+		  xsoa->origin, zsoa->origin);
+#endif
+	    if (xrr) {
+	      mydns_rr_free(xrr);
+	      if (zsoa != soa) {
+		mydns_soa_free(zsoa);
+	      }
+	      zsoa = xsoa;
+	    } else {
+	      goto NOWILDCARDMATCH;
+	    }
+	  }
+	} else {
+	  goto NOWILDCARDMATCH;
+	}
+      } else {
+	goto NOWILDCARDMATCH;
       }
-
-    } while (recurs-- != 0);
-
+    } while (1);
   }
 
  NOWILDCARDMATCH:

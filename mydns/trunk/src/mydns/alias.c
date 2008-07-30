@@ -64,83 +64,92 @@ find_alias(TASK *t, char *fqdn) {
       /* No exact match. If the label isn't empty, replace the first part
 	 of the label with `*' and check for wildcard matches. */
       if (*label) {
-	char *zlabel = label;
 	MYDNS_SOA *zsoa = soa;
-
 	int recurs = wildcard_recursion;
-
-#if DEBUG_ENABLED && DEBUG_ALIAS
-	Debug(_("%s: alias(%s) -> trying zone look up on %s - %d"), desctask(t), label, zlabel, recurs);
-#endif
 	do {
-	  char *wclabel = NULL, *c = NULL;
-
-	  /* Generate wildcarded label, i.e. `*.example' or maybe just `*'. */
-	  if (!(c = strchr(label, '.')))
-	    wclabel = STRDUP("*");
-	  else
-	    ASPRINTF(&wclabel, "*.%s", c);
+	  char *zlabel = label;
 
 #if DEBUG_ENABLED && DEBUG_ALIAS
-	  Debug(_("%s: alias(%s) trying wildcard `%s'"), desctask(t), label, wclabel);
+	  Debug(_("%s: alias(%s) -> trying zone look up on %s - %d"), desctask(t), label, zlabel, recurs);
 #endif
-	  if ((rr = find_rr(t, zsoa, DNS_QTYPE_A, wclabel))) {
-	    RELEASE(name);
+	  /* Strip one label element and replace with a '*' then test and repeat until we run out of labels */
+	  while (*zlabel) {
+	    char *wclabel = NULL, *c = NULL;
+
+	    /* Generate wildcarded label, i.e. `*.example' or maybe just `*'. */
+	    if (!(c = strchr(label, '.')))
+	      wclabel = STRDUP("*");
+	    else
+	      ASPRINTF(&wclabel, "*.%s", c);
+
+#if DEBUG_ENABLED && DEBUG_ALIAS
+	    Debug(_("%s: alias(%s) trying wildcard `%s'"), desctask(t), label, wclabel);
+#endif
+	    rr = find_rr(t, zsoa, DNS_QTYPE_A, wclabel);
+#if DEBUG_ENABLED && DEBUG_RESOLVE
+	    Debug(_("%s: resolve(%s) tried wildcard `%s' got rr = %p"), desctask(t), label, wclabel, rr);
+#endif
+	    if(rr) {
+	      RELEASE(name);
+	      RELEASE(wclabel);
+	      return (rr);
+	    }
 	    RELEASE(wclabel);
-	    return (rr);
+	    if (c) { zlabel = &c[1]; } else { break; }
 	  }
-	  RELEASE(wclabel);
 
 #if DEBUG_ENABLED && DEBUG_ALIAS
-	  Debug(_("%s: alias(%s) -> shall we try recursive look up on %s - %d"), desctask(t), label, zlabel, recurs);
+	  Debug(_("%s: alias(%s) -> shall we try recursive look up on - %d"), desctask(t), label, recurs);
 #endif
-	  if (recurs) {
+	  if (recurs--) {
 #if DEBUG_ENABLED && DEBUG_ALIAS
-	    Debug(_("%s: alias(%s) -> trying recursive look up on %s"), desctask(t), label, zlabel);
+	    Debug(_("%s: alias(%s) -> trying recursive look up"), desctask(t), label);
 #endif
-	    while (*zlabel) {
-	      char *zc;
-	      if ((zc = strchr(zlabel, '.'))) {
-		zlabel = &zc[1];
-	      } else if((zc = strchr(zsoa->origin, '.'))) {
-		zlabel = &zc[1];
-	      } else {
-		goto NOWILDCARDMATCH;
-	      }
-	      if (*zlabel) {
-		MYDNS_SOA *xsoa;
-#if DEBUG_ENABLED && DEBUG_ALIAS
-		Debug(_("%s: alias(%s) -> trying recursive look up in %s"), desctask(t), label, zlabel);
-#endif
-		xsoa = find_soa2(t, zlabel, NULL);
-#if DEBUG_ENABLED && DEBUG_ALIAS
-		Debug(_("%s: resolve(%s) -> got %s for recursive look up in %s"), desctask(t),
-		      label, ((xsoa)?xsoa->origin:"<no match>"), zlabel);
-#endif
-		if (xsoa) {
-		  if (xsoa != zsoa) {
-		    /* Got a ancestor need to check that it is a parent for the last zone we checked */
-#if DEBUG_ENABLED && DEBUG_ALIAS
-		    Debug(_("%s: alias(%s) -> %s is an ancestor of %s"), desctask(t), label,
-			  xsoa->origin, zsoa->origin);
-#endif
-		    MYDNS_RR *xrr = find_rr(t, xsoa, DNS_QTYPE_NS, zsoa->origin);
-#if DEBUG_ENABLED && DEBUG_ALIAS
-		    Debug(_("%s: alias(%s) -> %s is%s a parent of %s"), desctask(t), label,
-			  ((xrr) ? "" : " not"),
-			  xsoa->origin, zsoa->origin);
-#endif
-		    if (xrr) { zsoa = xsoa; break; }
-		  } else {
-		    /* Trying a shorter label */
-		    continue;
-		  }
-		}
-	      }
+	    char *zc;
+	    if((zc = strchr(zsoa->origin, '.'))) {
+	      zc = &zc[1];
+	    } else {
 	      goto NOWILDCARDMATCH;
 	    }
+	    if (*zc) {
+	      MYDNS_SOA *xsoa;
+#if DEBUG_ENABLED && DEBUG_ALIAS
+	      Debug(_("%s: alias(%s) -> trying recursive look up in %s"), desctask(t), label, zc);
+#endif
+	      xsoa = find_soa2(t, zc, NULL);
+#if DEBUG_ENABLED && DEBUG_ALIAS
+	      Debug(_("%s: resolve(%s) -> got %s for recursive look up in %s"), desctask(t),
+		    label, ((xsoa)?xsoa->origin:"<no match>"), zc);
+#endif
+	      if (xsoa) {
+		/* Got a ancestor need to check that it is a parent for the last zone we checked */
+#if DEBUG_ENABLED && DEBUG_ALIAS
+		Debug(_("%s: alias(%s) -> %s is an ancestor of %s"), desctask(t), label,
+		      xsoa->origin, zsoa->origin);
+#endif
+		MYDNS_RR *xrr = find_rr(t, xsoa, DNS_QTYPE_NS, zsoa->origin);
+#if DEBUG_ENABLED && DEBUG_ALIAS
+		Debug(_("%s: alias(%s) -> %s is%s a parent of %s"), desctask(t), label,
+		      ((xrr) ? "" : " not"),
+		      xsoa->origin, zsoa->origin);
+#endif
+		if (xrr) {
+		  mydns_rr_free(xrr);
+		  if (zsoa != soa) {
+		    mydns_soa_free(zsoa);
+		  }
+		  zsoa = xsoa;
+		} else {
+		  goto NOWILDCARDMATCH;
+		}
+	      }
+	    } else {
+	      goto NOWILDCARDMATCH;
+	    }
+	  } else {
+	    goto NOWILDCARDMATCH;
 	  }
-	} while (recurs-- != 0);
+	} while (1);
 
       NOWILDCARDMATCH:
 	if (!*label)
@@ -152,7 +161,6 @@ find_alias(TASK *t, char *fqdn) {
   return (NULL);
 }
 /*--- find_alias() ------------------------------------------------------------------------------*/
-
 
 /**************************************************************************************************
 	ALIAS_RECURSE
