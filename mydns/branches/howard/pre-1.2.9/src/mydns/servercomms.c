@@ -162,7 +162,28 @@ static int
 _comms_send(TASK *t, void *data, size_t size,  int flags) {
   int rv = 0;
 
+#if !defined(MSG_NOSIGNAL)
+#define __FAKE_MSG_NOSIGNAL__
+#define MSG_NOSIGNAL 0
+#if defined(SO_NOSIGPIPE)
+#define __USE_SO_NOSIGPIPE__
+  {
+    int on = 1;
+    setsockopt(t->fd, SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof(on));
+#endif
+#endif
+
   rv = send(t->fd, data, size, MSG_DONTWAIT|MSG_NOSIGNAL|flags);
+
+#if defined(__FAKE_MSG_NOSIGNAL__)
+#undef __FAKE_MSG_NOSIGNAL__
+#if defined(__USE_SO_NOSIGPIPE__)
+#undef __USE_SO_NOSIGPIPE__
+    on = 0;
+    setsockopt(t->fd, SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof(on));
+  }
+#endif
+#endif
 
   if (rv > 0) return rv;
 

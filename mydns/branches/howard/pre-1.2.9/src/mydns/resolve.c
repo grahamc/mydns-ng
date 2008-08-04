@@ -23,10 +23,6 @@
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_RESOLVE	1
 
-/* Pick one or the other not both */
-#define OLD_RESOLVER 1
-#define NEW_RESOLVER 0
-
 #if DEBUG_ENABLED
 /* Strings describing the datasections */
 char *resolve_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
@@ -235,7 +231,7 @@ process_rr(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn,
     t->sort_level++;
   }
 
-  return ((rv)?TASK_COMPLETED:TASK_EXECUTED);
+  return ((rv) ? TASK_COMPLETED : TASK_EXECUTED);
 }
 /*--- process_rr() ------------------------------------------------------------------------------*/
 
@@ -292,24 +288,28 @@ add_authority_ns(TASK *t, datasection_t section, MYDNS_SOA *soa, char *match_lab
 **************************************************************************************************/
 static taskexec_t
 resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
-	      char *fqdn, MYDNS_SOA *soa, char *label, int full_match, int level) {
+	      char *fqdn, MYDNS_SOA *soa, char *label, int level) {
   register MYDNS_RR	*rr = NULL;
   taskexec_t		rv = 0;
+  int			recurs = wildcard_recursion;
 
 #if DEBUG_ENABLED && DEBUG_RESOLVE
-  Debug(_("%s: resolve_label(%s, %s, %s, %d, %d)"), desctask(t),
-	fqdn, soa->origin, label, full_match, level);
+  Debug(_("%s: resolve_label(%s, %s, %s, %s, %d)"), desctask(t),
+	fqdn, soa->origin, label, mydns_qtype_str(qtype), level);
 #endif
 
   /* Do any records match this label exactly? */
-  /* Only check this if the label is the first in the list */
-  if (full_match) {
-    if ((rr = find_rr(t, soa, DNS_QTYPE_ANY, label))) {
-      rv = process_rr(t, section, qtype, fqdn, soa, label, rr, level);
-      mydns_rr_free(rr);
-      add_authority_ns(t, section, soa, label);
-      return (rv);
-    }
+  rr = find_rr(t, soa, DNS_QTYPE_ANY, label);
+
+  if (rr) {
+    rv = process_rr(t, section, qtype, fqdn, soa, label, rr, level);
+    mydns_rr_free(rr);
+    add_authority_ns(t, section, soa, label);
+#if DEBUG_ENABLED && DEBUG_RESOLVE
+    Debug(_("%s: resolve_label(%s) returning results %s"), desctask(t),
+	  fqdn, task_exec_name(rv));
+#endif
+    return (rv);
   }
 
   /*
@@ -322,12 +322,11 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
    */
   if (*label) {
     MYDNS_SOA *zsoa = soa;
-    int recurs = wildcard_recursion;
     do {
       char *zlabel = label;
 
 #if DEBUG_ENABLED && DEBUG_RESOLVE
-      Debug(_("%s: resolve(%s) -> trying zone look up on %s - %d"), desctask(t), label, zlabel, recurs);
+      Debug(_("%s: resolve_label(%s) -> trying zone look up on %s - %d"), desctask(t), label, zlabel, recurs);
 #endif
       /* Strip one label element and replace with a '*' then test and repeat until we run out of labels */
       while (*zlabel) {
@@ -340,9 +339,9 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
 	  ASPRINTF(&wclabel, "*%s", c);
 
 #if DEBUG_ENABLED && DEBUG_RESOLVE
-	Debug(_("%s: resolve(%s) trying wildcard `%s'"), desctask(t), label, wclabel);
+	Debug(_("%s: resolve_label(%s) trying wildcard `%s'"), desctask(t), label, wclabel);
 #endif
-	rr = find_rr(t, zsoa, qtype, wclabel);
+	rr = find_rr(t, zsoa, DNS_QTYPE_ANY, wclabel);
 #if DEBUG_ENABLED && DEBUG_RESOLVE
 	Debug(_("%s: resolve(%s) tried wildcard `%s' got rr = %p"), desctask(t), label, wclabel, rr);
 #endif
@@ -350,6 +349,10 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
 	  rv = process_rr(t, section, qtype, fqdn, zsoa, wclabel, rr, level);
 	  mydns_rr_free(rr);
 	  add_authority_ns(t, section, zsoa, wclabel);
+#if DEBUG_ENABLED && DEBUG_RESOLVE
+	  Debug(_("%s: resolve_label(%s) returning results %s having matched %s"), desctask(t),
+		fqdn, task_exec_name(rv), wclabel);
+#endif
 	  RELEASE(wclabel);
 	  return (rv);
 	}
@@ -358,11 +361,11 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
       }
 
 #if DEBUG_ENABLED && DEBUG_RESOLVE
-      Debug(_("%s: resolve(%s) -> shall we try recursive look up - %d"), desctask(t), label, recurs);
+      Debug(_("%s: resolve_label(%s) -> shall we try recursive look up - %d"), desctask(t), label, recurs);
 #endif
       if (recurs--) {
 #if DEBUG_ENABLED && DEBUG_RESOLVE
-	Debug(_("%s: resolve(%s) -> trying recursive look up"), desctask(t), label);
+	Debug(_("%s: resolve_label(%s) -> trying recursive look up"), desctask(t), label);
 #endif
 	/* Find the parent zone that has the current zone delegated and try in there */
 	char *zc;
@@ -374,22 +377,22 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
 	if (*zc) {
 	  MYDNS_SOA *xsoa;
 #if DEBUG_ENABLED && DEBUG_RESOLVE
-	  Debug(_("%s: resolve(%s) -> trying recursive look up in %s"), desctask(t), label, zc);
+	  Debug(_("%s: resolve_label(%s) -> trying recursive look up in %s"), desctask(t), label, zc);
 #endif
 	  xsoa = find_soa2(t, zc, NULL);
 #if DEBUG_ENABLED && DEBUG_RESOLVE
-	  Debug(_("%s: resolve(%s) -> got %s for recursive look up in %s"), desctask(t),
+	  Debug(_("%s: resolve_label(%s) -> got %s for recursive look up in %s"), desctask(t),
 		label, ((xsoa)?xsoa->origin:"<no match>"), zc);
 #endif
 	  if (xsoa) {
 	    /* Got a ancestor need to check that it is a parent for the last zone we checked */
 #if DEBUG_ENABLED && DEBUG_RESOLVE
-	    Debug(_("%s: resolve(%s) -> %s is an ancestor of %s"), desctask(t), label,
+	    Debug(_("%s: resolve_label(%s) -> %s is an ancestor of %s"), desctask(t), label,
 		  xsoa->origin, zsoa->origin);
 #endif
 	    MYDNS_RR *xrr = find_rr(t, xsoa, DNS_QTYPE_NS, zsoa->origin);
 #if DEBUG_ENABLED && DEBUG_RESOLVE
-	    Debug(_("%s: resolve(%s) -> %s is%s a parent of %s"), desctask(t), label,
+	    Debug(_("%s: resolve_label(%s) -> %s is%s a parent of %s"), desctask(t), label,
 		  ((xrr) ? "" : " not"),
 		  xsoa->origin, zsoa->origin);
 #endif
@@ -418,6 +421,10 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
     rv = process_rr(t, section, qtype, fqdn, soa, label, rr, level);
     mydns_rr_free(rr);
     add_authority_ns(t, section, soa, label);
+#if DEBUG_ENABLED && DEBUG_RESOLVE
+	  Debug(_("%s: resolve_label(%s) returning results %s"), desctask(t),
+		fqdn, task_exec_name(rv));
+#endif
     return (rv);
   }
 
@@ -499,34 +506,10 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
     t->sort_level++;
   }
 
-#if OLD_RESOLVER
-  /*
-  ** This is the resolver from the 1.1.0 series of MyDNS.
-  ** I have decided to rewrite as it looks a bit opaque
-  ** and I cannot decide how it handles glue to disconnected
-  ** zones.
-  ** Also the wild card matching code is clever and does not work
-  ** properly so it needs modifying. (Code does not handle embedded '.'
-  ** when the wildcard and the lookup are in the same zone
-  **
-  ** Howard Wilkinson - 28th February 2008
-  */
-
-  /* Examine each label in the name, one at a time; look for relevant records */
-  for (label = name; ; label++)	{
-    if (label == name || *label == '.')	{
-      if (label[0] == '.' && label[1]) label++;		/* Advance past leading dot */
-      /* Resolve the label; if we find records, we're done. */
-      if ((rv = resolve_label(t, section, qtype, fqdn, soa, label, label == name, level)) != 0)
-	break;
-    }
-    if (!*label)
-      break;
-  }
-#elif NEW_RESOLVER
+  /******* NEW_RESOLVER ***************/
   /*
   ** Written 28th February 2008 to fix wildcard look ups
-  ** and make the hanlding of glue more understandable.
+  ** and make the handling of glue more understandable.
   */
 
   /*
@@ -543,62 +526,12 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
   /*
   ** Look for the full label first as an exact match in the current zone.
   */
-  rv = resolve_label(t, section, qtype, fqdn, soa, name, 1, level);
+  rv = resolve_label(t, section, qtype, fqdn, soa, name, level);
 
 #if DEBUG_ENABLED && DEBUG_RESOLVE
   Debug(_("%s: resolve(%s) -> trying `%s', %s"), desctask(t), fqdn, name, task_exec_name(rv));
 #endif
 
-  if (rv == TASK_COMPLETED) { goto MATCHED; }
-
-  /*
-  ** Now we have to filter out records for which we have glue but not zone data
-  ** This means searching for NS records for this label or any enclosing labels
-  **
-  */
-  for (label = name; *label; label++) {
-    char *c = NULL;
-    rv = resolve_label(t, section, DNS_QTYPE_NS, fqdn, soa, label, 1, level);
-#if DEBUG_ENABLED && DEBUG_RESOLVE
-    Debug(_("%s: resolve(%s) -> trying for NS `%s', %s"), desctask(t), fqdn, label, task_exec_name(rv));
-#endif
-    if (rv == TASK_COMPLETED) { goto MATCHED; }
-    c = strchr(label, '.');
-    if (c) label = c; else break;
-  }
-
-  /*
-  ** This code runs down the label one word at a time
-  ** It is looking for '*' matches. Currently it fails to find
-  ** a match if the label contains a '.'
-  **
-  ** If we have a label of the form aaa.bbb this should match a '*'
-  ** If we have a label of the form aaa.bbb this should match '*.bbb'
-  */
-  for (label = name; *label; label++) {
-    char *c = NULL;
-    rv = resolve_label(t, section, qtype, fqdn, soa, label, 0, level);
-#if DEBUG_ENABLED && DEBUG_RESOLVE
-    Debug(_("%s: resolve(%s) -> trying `%s', %s"), desctask(t), fqdn, label, task_exec_name(rv));
-#endif
-    if (rv == TASK_COMPLETED) { goto MATCHED; }
-    c = strchr(label, '.');
-    if (c) label = c; else break;
-  }
-
- NOTMATCHED:
-#if DEBUG_ENABLED && DEBUG_RESOLVE
-  Debug(_("%s: resolve(%s) -> failed to match"), desctask(t), fqdn);
-#endif
-  /*
-  ** If we jump here we have a successful match
-  ** If we fall through then we don't
-  */
- MATCHED:
-
-#else
-#error Resolver type not defined  choose one of OLD_RESOLVER or NEW_RESOLVER
-#endif
   RELEASE(name);
 
   /* If we got this far and there are NO records, set result and send the SOA */
