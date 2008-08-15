@@ -702,29 +702,38 @@ create_listeners(void) {
 **************************************************************************************************/
 static void
 server_greeting(void) {
-  char	greeting[512], *g = greeting;				/* Server startup message */
-  int	total = 0;						/* Total listening sockets */
+  char	*g = NULL;				/* Server startup message */
+  char	*answer = NULL;
+  int	total = 0;				/* Total listening sockets */
   time_t now = time(NULL);
-
-  memset(&greeting[0], 0, sizeof(greeting));
-
-  g += sprintf(g, "%s %s %s %.24s", progname, PACKAGE_VERSION, _("started"), ctime(&now));
 
   total = num_udp4_fd;
 #if HAVE_IPV6
   total += num_udp6_fd;
 #endif
-  g += sprintf(g, " (%s %d %s)", _("listening on"),
-	       total, total == 1 ? _("address") : _("addresses"));
-
-#if DEBUG_ENABLED
-  g += sprintf(g, "%s", _(" (compiled with debug)"));
-#endif
 
   if (answer_then_quit)
-    g += sprintf(g, _(" (quit after %u requests)"), answer_then_quit);
+    asprintf(&answer, _(" (quit after %u requests)"), answer_then_quit);
 
-  Notice("%s", greeting);
+  ASPRINTF(&g,
+	   "%s %s %s %.24s (%s %d %s)%s%s",
+	   progname,
+	   PACKAGE_VERSION,
+	   _("started"),
+	   ctime(&now),
+	   _("listening on"),
+	   total,
+	   total == 1 ? _("address") : _("addresses"),
+#if DEBUG_ENABLED
+	   _(" (compiled with debug)"),
+#else
+	   "",
+#endif
+	   answer ? answer : "");
+
+  Notice("%s", g);
+  RELEASE(answer);
+  RELEASE(g);
 }
 /*--- server_greeting() -------------------------------------------------------------------------*/
 

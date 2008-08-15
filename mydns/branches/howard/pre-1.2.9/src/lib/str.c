@@ -49,9 +49,173 @@ mydns_class_str(dns_class_t c) {
 	MYDNS_QTYPE_STR
 	Returns a pointer to a static string describing the specified query/response type.
 **************************************************************************************************/
+static dns_qtype_t validQtypes[] = { DNS_QTYPE_A,
+				     DNS_QTYPE_NS,
+				     DNS_QTYPE_CNAME,
+				     DNS_QTYPE_SOA,
+				     DNS_QTYPE_PTR,
+				     DNS_QTYPE_HINFO,
+				     DNS_QTYPE_MX,
+				     DNS_QTYPE_TXT,
+				     DNS_QTYPE_RP,
+				     DNS_QTYPE_AAAA,
+				     DNS_QTYPE_SRV,
+				     DNS_QTYPE_NAPTR,
+#if ALIAS_ENABLED
+				     DNS_QTYPE_ALIAS
+#endif
+};
+
+typedef struct { char *qtype_name; dns_qtype_t qtype_id; } qtype_mapping;
+
+static qtype_mapping map[] = { { "A",		DNS_QTYPE_A },
+			       { "A6",		DNS_QTYPE_A6 },
+			       { "AAAA",	DNS_QTYPE_AAAA },
+			       { "AFSDB",	DNS_QTYPE_AFSDB },
+#if ALIAS_ENABLED
+			       { "ALIAS",	DNS_QTYPE_ALIAS },
+#endif
+			       { "ANY",		DNS_QTYPE_ANY },
+			       { "APL",		DNS_QTYPE_APL },
+			       { "ATMA",	DNS_QTYPE_ATMA },
+			       { "AXFR",	DNS_QTYPE_AXFR },
+
+			       { "CERT",	DNS_QTYPE_CERT },
+			       { "CNAME",	DNS_QTYPE_CNAME },
+
+			       { "DHCID",	DNS_QTYPE_DHCID },
+			       { "DLV",		DNS_QTYPE_DLV },
+			       { "DNAME",	DNS_QTYPE_DNAME },
+			       { "DNSKEY",	DNS_QTYPE_DNSKEY },
+			       { "DS",		DNS_QTYPE_DS },
+
+			       { "EID",		DNS_QTYPE_EID },
+
+			       { "GID",		DNS_QTYPE_GID },
+			       { "GPOS",	DNS_QTYPE_GPOS },
+
+			       { "HINFO",	DNS_QTYPE_HINFO },
+			       { "HIP",		DNS_QTYPE_HIP },
+
+			       { "IPSECKEY",	DNS_QTYPE_IPSECKEY },
+			       { "ISDN",	DNS_QTYPE_ISDN },
+			       { "IXFR",	DNS_QTYPE_IXFR },
+
+			       { "KEY",		DNS_QTYPE_KEY },
+			       { "KX",		DNS_QTYPE_KX },
+
+			       { "LOC",		DNS_QTYPE_LOC },
+
+			       { "MAILA",	DNS_QTYPE_MAILA },
+			       { "MAILB",	DNS_QTYPE_MAILB },
+			       { "MB",		DNS_QTYPE_MB },
+			       { "MD",		DNS_QTYPE_MD },
+			       { "MF",		DNS_QTYPE_MF },
+			       { "MG",		DNS_QTYPE_MG },
+			       { "MINFO",	DNS_QTYPE_MINFO },
+			       { "MR",		DNS_QTYPE_MR },
+			       { "MX",		DNS_QTYPE_MX },
+
+			       { "NAPTR",	DNS_QTYPE_NAPTR },
+			       { "NIMLOC",	DNS_QTYPE_NIMLOC },
+			       { "NONE",	DNS_QTYPE_NONE },
+			       { "NS",		DNS_QTYPE_NS },
+			       { "NSAP",	DNS_QTYPE_NSAP },
+			       { "NSAP_PTR",	DNS_QTYPE_NSAP_PTR },
+			       { "NSEC",	DNS_QTYPE_NSEC },
+			       { "NSEC3",	DNS_QTYPE_NSEC3 },
+			       { "NSEC3PARAM",	DNS_QTYPE_NSEC3PARAM },
+			       { "NULL",	DNS_QTYPE_NULL },
+			       { "NXT",		DNS_QTYPE_NXT },
+
+			       { "OPT",		DNS_QTYPE_OPT },
+
+			       { "PTR",		DNS_QTYPE_PTR },
+			       { "PX",		DNS_QTYPE_PX },
+
+			       { "RP",		DNS_QTYPE_RP },
+			       { "RRSIG",	DNS_QTYPE_RRSIG },
+			       { "RT",		DNS_QTYPE_RT },
+
+			       { "SIG",		DNS_QTYPE_SIG },
+			       { "SINK",	DNS_QTYPE_SINK },
+			       { "SOA",		DNS_QTYPE_SOA },
+			       { "SPF",		DNS_QTYPE_SPF },
+			       { "SRV",		DNS_QTYPE_SRV },
+			       { "SSHFP",	DNS_QTYPE_SSHFP },
+
+			       { "TA",		DNS_QTYPE_TA },
+			       { "TKEY",	DNS_QTYPE_TKEY },
+			       { "TSIG",	DNS_QTYPE_TSIG },
+			       { "TXT",		DNS_QTYPE_TXT },
+
+			       { "UID",		DNS_QTYPE_UID },
+			       { "UINFO",	DNS_QTYPE_UINFO },
+			       { "UNSPEC",	DNS_QTYPE_UNSPEC },
+
+			       { "WKS",		DNS_QTYPE_WKS },
+
+			       { "X25",		DNS_QTYPE_X25 },
+
+			       { NULL,		DNS_QTYPE_UNKNOWN }
+};
+
+static qtype_mapping **qtype2str = NULL;
+static int maxQtype = DNS_QTYPE_UNKNOWN;
+static int numKnownQtypes = 0;
+
+static void
+mydns_qtype_init() {
+  int i;
+  for ( i = 0; i < sizeof(validQtypes)/sizeof(dns_qtype_t); i++) {
+    maxQtype = (maxQtype < validQtypes[i]) ? validQtypes[i] : maxQtype;
+  }
+
+  qtype2str = ALLOCATE_N(maxQtype + 1, sizeof(qtype_mapping), qtype_mapping*);
+  for (i = 0; i < maxQtype; i++) {
+    qtype2str[i] = (qtype_mapping*)NULL;
+  }
+  for (i = 0; map[i].qtype_id != DNS_QTYPE_UNKNOWN; i++) {
+    numKnownQtypes = i;
+    qtype2str[map[i].qtype_id] = &map[i];
+  }
+
+}
+
+dns_qtype_t
+mydns_str_qtype(char *qtypeName) {
+  int idx, interval, cmp;
+
+  idx = interval = numKnownQtypes/2;
+  while (interval > 1) {
+    cmp = strcasecmp(qtypeName, map[idx].qtype_name);
+    if (cmp ==0) { return map[idx].qtype_id; }
+    interval /= 2;
+    if (cmp > 0) {
+      idx -= interval;
+      if (idx < 0) { idx = 0; }
+    } else {
+      idx += interval;
+      if (idx > numKnownQtypes) { idx = numKnownQtypes - 1; }
+    }
+  }
+  while ((cmp = strcasecmp(qtypeName, map[idx].qtype_name)) != 0) {
+    if (cmp > 0) { /* No match possible */ return DNS_QTYPE_UNKNOWN; }
+    idx += 1;
+  }
+  return map[idx].qtype_id;
+}
+
 char *
 mydns_qtype_str(dns_qtype_t qtype) {
   static char *buf = NULL;
+
+  if (!qtype2str) {
+    mydns_qtype_init();
+  }
+  if (qtype2str[qtype]) {
+    return qtype2str[qtype]->qtype_name;
+  }
 
   switch (qtype) {
   case DNS_QTYPE_UNKNOWN:	return ("UNKNOWN");
