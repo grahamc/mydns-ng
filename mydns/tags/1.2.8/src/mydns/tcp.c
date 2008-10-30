@@ -141,20 +141,20 @@ read_tcp_length(TASK *t) {
   }
 
   if ((t->len = ((len[0] << 8) | (len[1]))) < DNS_HEADERSIZE) {
-    Warnx(_("read_tcp_length: read on fd %d: %s: %s (%d octet%s)"),
+    Warnx(_("read_tcp_length: read on fd %d: %s: %s (%u octet%s)"),
 	  t->fd,
 	  clientaddr(t),
 	  _("TCP message too short"),
-	  t->len,
+	  (unsigned int)t->len,
 	  S(t->len));
     return (TASK_ABANDONED);
   }
   if (t->len > DNS_MAXPACKETLEN_TCP) {
-    Warnx(_("read_tcp_length: read on fd %d: %s: %s (%d octet%s)"),
+    Warnx(_("read_tcp_length: read on fd %d: %s: %s (%u octet%s)"),
 	  t->fd,
 	  clientaddr(t),
 	  _("TCP message too long"),
-	  t->len,
+	  (unsigned int)t->len,
 	  S(t->len));
     return (TASK_ABANDONED);
   }

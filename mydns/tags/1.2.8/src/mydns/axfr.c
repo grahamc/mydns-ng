@@ -26,7 +26,7 @@
 
 #define	AXFR_TIME_LIMIT		3600		/* AXFR may not take more than this long, overall */
 
-static size_t total_records, total_octets;
+static uint64_t total_records, total_octets;
 
 
 /**************************************************************************************************
@@ -321,7 +321,7 @@ axfr(TASK *t) {
 #if DEBUG_ENABLED && DEBUG_AXFR
   /* Report result */
   gettimeofday(&finish, NULL);
-  Debug(_("AXFR: %u records, %u octets, %.3fs"), 
+  Debug(_("AXFR: %lu records, %lu octets, %.3fs"), 
 	total_records, total_octets,
 	((finish.tv_sec + finish.tv_usec / 1000000.0) - (start.tv_sec + start.tv_usec / 1000000.0)));
 #endif

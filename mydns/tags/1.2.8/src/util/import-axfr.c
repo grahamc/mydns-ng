@@ -440,8 +440,8 @@ process_axfr_reply(char *reply, size_t replylen) {
 	 mydns_rcode_str(hdr.rcode));
 
 #if DEBUG_ENABLED
-  Debug("%d byte REPLY: qr=%u opcode=%s aa=%u tc=%u rd=%u ra=%u z=%u rcode=%u qd=%u an=%u",
-	replylen, hdr.qr, mydns_opcode_str(hdr.opcode),
+  Debug("%u byte REPLY: qr=%u opcode=%s aa=%u tc=%u rd=%u ra=%u z=%u rcode=%u qd=%u an=%u",
+	(unsigned int)replylen, hdr.qr, mydns_opcode_str(hdr.opcode),
 	hdr.aa, hdr.tc, hdr.rd, hdr.ra, hdr.z, hdr.rcode, qdcount, ancount);
 #endif
 
