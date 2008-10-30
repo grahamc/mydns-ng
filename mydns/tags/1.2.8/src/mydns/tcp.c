@@ -50,13 +50,17 @@ accept_tcp_query(int fd, int family) {
 #endif
 
   if (family == AF_INET) {
-    addrlen = sizeof(struct sockaddr_in);
+    addrlen = sizeof(addr4);
     addr = (struct sockaddr*)&addr4;
 #if HAVE_IPV6
   } else if (family == AF_INET6) {
-    addrlen = sizeof(struct sockaddr_in6);
+    addrlen = sizeof(addr6);
     addr = (struct sockaddr*)&addr6;
 #endif
+  } else {
+    Err(_("accept_tcp_query: cannot accept fd %d family %d not known"),
+	fd,
+	family);
   }
 
   if ((rmt_fd = accept(fd, addr, &addrlen)) < 0) {
@@ -72,7 +76,13 @@ accept_tcp_query(int fd, int family) {
 	) {
       return (-1);
     }
-    return Warn("%s", _("accept (TCP)"));
+    return Warn(_("accept_tcp_query: accept failed on fd %d proto %s"),
+		fd,
+		(family == AF_INET) ? "IPV4"
+#if HAVE_IPV6
+		: (family == AF_INET6) ? "IPV6"
+#endif
+		: _("UNKNOWN"));
   }
   fcntl(rmt_fd, F_SETFL, fcntl(rmt_fd, F_GETFL, 0) | O_NONBLOCK);
   if (!(t = IOtask_init(HIGH_PRIORITY_TASK, NEED_READ, rmt_fd, SOCK_STREAM, family, addr))) {
@@ -112,22 +122,40 @@ read_tcp_length(TASK *t) {
 	return (TASK_CONTINUE);
       }
       if (errno != ECONNRESET)
-	Warn("%s: %s", clientaddr(t), _("recv (length) (TCP)"));
+	Warn(_("read_tcp_length: receive failed for fd %d: %s"),
+	     t->fd,
+	     clientaddr(t));
     } else if (rv == 0) {
       /* Client connection closed */
-      Notice("%s: %s", clientaddr(t), _("Client closed TCP connection"));
+      Notice(_("read_tcp_length: no data for fd %d: %s: %s"),
+	     t->fd,
+	     clientaddr(t),
+	     _("Client closed TCP connection"));
     } else {
-      Warnx("%s: %s", clientaddr(t), _("TCP message length invalid"));
+      Warnx(_("read_tcp_length: incorrect data on fd %d: %s: %s"),
+	    t->fd,
+	    clientaddr(t),
+	    _("TCP message length invalid"));
     }
     return (TASK_ABANDONED);
   }
 
   if ((t->len = ((len[0] << 8) | (len[1]))) < DNS_HEADERSIZE) {
-    Warnx(_("%s: %s (%d octet%s)"), clientaddr(t), _("TCP message too short"), t->len, S(t->len));
+    Warnx(_("read_tcp_length: read on fd %d: %s: %s (%d octet%s)"),
+	  t->fd,
+	  clientaddr(t),
+	  _("TCP message too short"),
+	  t->len,
+	  S(t->len));
     return (TASK_ABANDONED);
   }
   if (t->len > DNS_MAXPACKETLEN_TCP) {
-    Warnx(_("%s: %s (%d octet%s)"), clientaddr(t), _("TCP message too long"), t->len, S(t->len));
+    Warnx(_("read_tcp_length: read on fd %d: %s: %s (%d octet%s)"),
+	  t->fd,
+	  clientaddr(t),
+	  _("TCP message too long"),
+	  t->len,
+	  S(t->len));
     return (TASK_ABANDONED);
   }
 
@@ -156,7 +184,10 @@ read_tcp_query(TASK *t) {
     if (res == TASK_CONTINUE) return (TASK_CONTINUE);
     if (res == TASK_ABANDONED) return (TASK_ABANDONED);
     if (res != TASK_COMPLETED) {
-      Warnx("%s: %d %s", desctask(t), (int)res, _("unexpected result from read_tcp_length"));
+      Warnx(_("read_tcp_query: %s: %d %s"),
+	      desctask(t),
+	    (int)res,
+	    _("unexpected result from read_tcp_length"));
       return (TASK_ABANDONED);
     }
   }
@@ -177,11 +208,18 @@ read_tcp_query(TASK *t) {
 	) {
       return (TASK_CONTINUE);
     }
-    Warn("%s: %s %s", clientaddr(t), _("recv (TCP)"), strerror(errno));
+    Warn(_("read_tcp_query: receive on fd %d: %s: %s %s"),
+	 t->fd,
+	 clientaddr(t),
+	 _("recv (TCP)"),
+	 strerror(errno));
     return (TASK_ABANDONED);
   }
   if (rv == 0) {
-    Notice("%s: %s", clientaddr(t), _("Client closed TCP connection"));
+    Notice(_("read_tcp_query: receive on fd %d: %s: %s"),
+	   t->fd,
+	   clientaddr(t),
+	   _("Client closed TCP connection"));
     return (TASK_ABANDONED);				/* Client closed connection */
   }
 
@@ -191,7 +229,10 @@ read_tcp_query(TASK *t) {
 
   t->offset += rv;
   if (t->offset > t->len) {
-    Warnx("%s: %s", clientaddr(t), _("TCP message data too long"));
+    Warnx(_("read_tcp_query: receive on fd %d: %s: %s"),
+	  t->fd,
+	  clientaddr(t),
+	  _("TCP message data too long"));
     return (TASK_ABANDONED);
   } else if (t->offset < t->len) {
     return (TASK_EXECUTED);				/* Not finished reading */
@@ -230,7 +271,10 @@ write_tcp_length(TASK *t)
 	) {
       return (TASK_CONTINUE); /* Try again later */
     }
-    Warn("%s: %s", clientaddr(t), _("write (length) (TCP)"));
+    Warn(_("write_tcp_length: write on fd %d: %s: %s"),
+	 t->fd,
+	 clientaddr(t),
+	 _("write (length) (TCP)"));
     return (TASK_ABANDONED);
   }
   if (rv == 0) {
@@ -292,7 +336,10 @@ write_tcp_reply(TASK *t)
 #endif
 	)
       return (TASK_CONTINUE);
-    Warn("%s: %s", clientaddr(t), _("write (TCP)"));
+    Warn(_("write_tcp_reply: write on fd %d: %s: %s"),
+	 t->fd,
+	 clientaddr(t),
+	 _("write (TCP)"));
     return (TASK_ABANDONED);
   }
   if (rv == 0) {
