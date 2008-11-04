@@ -18,7 +18,7 @@
 ##	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ##
 
-AC_INIT(mydns, [pre-1.2.8], [support@cohtech.com])		## Package name, version, bugreport address
+AC_INIT(mydns, [1.2.8.5], [support@cohtech.com])	## Package name, version, bugreport address
 AC_PREREQ([2.59])
 AC_COPYRIGHT([Portions of this script are Copyright 2002-2005 Don Moore  2007-2008 Howard Wilkinson])
 AM_INIT_AUTOMAKE([1.9.5 dist-bzip2])
@@ -44,6 +44,7 @@ AC_CHECK_HEADERS([netinet/in.h])
 AC_CHECK_HEADERS([net/if.h])
 AC_CHECK_HEADERS([arpa/inet.h])
 AC_CHECK_HEADERS([inttypes.h])
+AC_CHECK_HEADERS([string.h])
 
 ## Typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -55,13 +56,13 @@ AC_FUNC_MALLOC
 AC_TYPE_SIGNAL
 AC_FUNC_ALLOCA
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([memset getpwuid shutdown inet_ntop inet_pton strsep])
+AC_CHECK_FUNCS([memset getpwuid shutdown inet_ntop inet_pton strsep strndup strdup])
 AC_LIB_SOCKET
 AC_LIB_NSL
 AC_LIB_MATH
 
 ## Declarations
-AC_CHECK_DECLS([strcasecmp, strcoll, strerror, strncasecmp, strsep])
+AC_CHECK_DECLS([strcasecmp, strcoll, strerror, strncasecmp, strsep, strndup, strdup])
 
 
 ##
@@ -75,38 +76,38 @@ PACKAGE_AUTHOR="Don Moore <bboy@bboy.net>  Howard Wilkinson <howard@cohtech.com>
 ##
 ## Some MyDNS-specific checks (see m4/mydns.m4)
 ##
-AC_CHECK_IPV6					#	Check IPv6 support
+AC_CHECK_IPV6			#	Check IPv6 support
 AC_CHECK_SOCKADDR_SA_LEN	#	Check for sa_len in struct sockaddr_in
-AC_MYDNS_PKGINFO				#	Set some package-specific variables
-AC_ENABLE_ALIAS				#	Enable David Phillips aliasing?
-AC_CHECK_MYSQL					#	Check for MySQL support
-AC_CHECK_PGSQL					#	Check for PostgreSQL support
-AC_WITH_OPENSSL				#	Check if OpenSSL is desired
-AC_MYDNS_CONF					#	Set conf file location
+AC_MYDNS_PKGINFO		#	Set some package-specific variables
+AC_ENABLE_ALIAS			#	Enable David Phillips aliasing?
+AC_CHECK_MYSQL			#	Check for MySQL support
+AC_CHECK_PGSQL			#	Check for PostgreSQL support
+AC_WITH_OPENSSL			#	Check if OpenSSL is desired
+AC_MYDNS_CONF			#	Set conf file location
 AC_ENABLE_STATIC_BUILD		#	Build static binary?
-AC_CHOOSE_DB					#	Choose between MySQL and PostgreSQL
-AC_ENABLE_PROFILING			#	Enable profiling?
-AC_ENABLE_DEBUG				#	Enable debugging?
-AC_ENABLE_VALGRIND			#	Compile with Valgrind-friendly flags?
-AC_ENABLE_STRICT				#	Compile with extra-strict warnings?
-AC_ENABLE_ALT_NAMES			#	Alternate column names for DN
-AC_ENABLE_STATUS				#	Enable the STATUS opcode to check server status
+AC_CHOOSE_DB			#	Choose between MySQL and PostgreSQL
+AC_ENABLE_PROFILING		#	Enable profiling?
+AC_ENABLE_DEBUG			#	Enable debugging?
+AC_ENABLE_VALGRIND		#	Compile with Valgrind-friendly flags?
+AC_ENABLE_STRICT		#	Compile with extra-strict warnings?
+AC_ENABLE_ALT_NAMES		#	Alternate column names for DN
+AC_ENABLE_STATUS		#	Enable the STATUS opcode to check server status
 AC_DISABLE_DATE_LOGGING		#	Disable date/time in verbose output?
-AC_MYDNS_VARS					#  Set variables containing dirs
+AC_MYDNS_VARS			#  Set variables containing dirs
 
 AC_OUTPUT(	contrib/Makefile \
-				intl/Makefile \
-				po/Makefile.in \
-				m4/Makefile \
-				Makefile \
-				lib/Makefile \
-				src/Makefile \
-					src/lib/Makefile \
-					src/mydns/Makefile \
-					src/util/Makefile \
-				pkg/Makefile \
-				doc/Makefile
-			)
+		intl/Makefile \
+		po/Makefile.in \
+		m4/Makefile \
+		Makefile \
+		lib/Makefile \
+		src/Makefile \
+		src/lib/Makefile \
+		src/mydns/Makefile \
+		src/util/Makefile \
+		pkg/Makefile \
+		doc/Makefile
+	  )
 
 echo
 echo "  ###"

@@ -52,7 +52,7 @@ char *
 _mydns_strdup(const char *s, arena_t arena, char *file, int line) {
   char *news = NULL;
 
-#if defined(_SVID_SOURCE) || defined(_BSD_SOURCE) || _XOPEN_SOURCE >= 500
+#if HAVE_STRDUP
   news = strdup(s);
   if (!news) Out_Of_Memory();
 #else
@@ -70,7 +70,7 @@ char *
 _mydns_strndup(const char *s, size_t size, arena_t arena, char *file, int line) {
   char *news = NULL;
 
-#if defined(_GNU_SOURCE)
+#if HAVE_STRNDUP
   news = strndup(s, size);
   if (!news) Out_Of_Memory();
 #else
