@@ -174,7 +174,7 @@ db_output_create_tables(void) {
   printf("  id         INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,\n");
   printf("  zone       INT UNSIGNED NOT NULL,\n");
   printf("  name       CHAR(64) NOT NULL,\n");
-  printf("  data       VARBINARY(%d) NOT NULL,\n", mydns_rr_data_length);
+  printf("  data       VARBINARY(%u) NOT NULL,\n", (unsigned int)mydns_rr_data_length);
   printf("  aux        INT UNSIGNED NOT NULL,\n");
   printf("  ttl        INT UNSIGNED NOT NULL default '%u',\n", DNS_DEFAULT_TTL);
   printf("  type       ENUM('A','AAAA',");

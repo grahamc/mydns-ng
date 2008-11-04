@@ -993,8 +993,8 @@ reply_check_truncation(TASK *t, int *ancount, int *nscount, int *arcount) {
     return;
 
 #if DEBUG_ENABLED && DEBUG_REPLY
-  Debug(_("reply_check_truncation() needs to truncate reply (%d) to fit packet max (%d)"),
-	t->rdlen, maxrd);
+  Debug(_("reply_check_truncation() needs to truncate reply (%u) to fit packet max (%u)"),
+	(unsigned int)t->rdlen, (unsigned int)maxrd);
 #endif
 
   /* Loop through an/ns/ar sections, truncating as necessary, and updating counts */

@@ -145,11 +145,11 @@ write_udp_reply(TASK *t) {
     /*
      * This should never ever happen as we have sent a partial packet over UDP
      */
-    Err(_("%s: Send to (UDP) returned %d when writing %d"), desctask(t), rv, t->replylen);
+    Err(_("%s: Send to (UDP) returned %d when writing %u"), desctask(t), rv, (unsigned int)t->replylen);
   }
 
 #if DEBUG_ENABLED && DEBUG_UDP
-  Debug(_("%s: WRITE %u UDP octets (id %u)"), desctask(t), t->replylen, t->id);
+  Debug(_("%s: WRITE %u UDP octets (id %u)"), desctask(t), (unsigned int)t->replylen, t->id);
 #endif
   return (TASK_COMPLETED);
 }

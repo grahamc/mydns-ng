@@ -318,8 +318,8 @@ update_gobble_rr(TASK *t, MYDNS_SOA *soa, char *query, size_t querylen, char *cu
   char		*src = current;
   task_error_t	errcode = 0;
 #if DEBUG_ENABLED && DEBUG_UPDATE
-  Debug(_("%s: update_gobble_rr soa=%p, query=%s, querylen=%d, current=%p, rr=%p"),
-	desctask(t), soa, query, querylen, current, rr);
+  Debug(_("%s: update_gobble_rr soa=%p, query=%s, querylen=%u, current=%p, rr=%p"),
+	desctask(t), soa, query, (unsigned int)querylen, current, rr);
 #endif
 
   if (!(UQRR_NAME(rr) = name_unencode2(query, querylen, &src, &errcode))) {

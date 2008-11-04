@@ -154,7 +154,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
   task_error_t errcode = TASK_FAILED;
 
 #if DEBUG_ENABLED && DEBUG_TASK
-  Debug(_("task_new(%p, %p, %u)"), t, data, len);
+  Debug(_("task_new(%p, %p, %u)"), t, data, (unsigned int)len);
 #endif
 
   /* Query needs to at least contain a proper header */
@@ -585,10 +585,10 @@ task_output_info(TASK *t, char *update_desc) {
 	  "%s "		/* Name */
 	  "%s "		/* Return code (NOERROR, NXDOMAIN, etc) */
 	  "%s "		/* Reason */
-	  "%d "		/* Question section */
-	  "%d "		/* Answer section */
-	  "%d "		/* Authority section */
-	  "%d "		/* Additional section */
+	  "%u "		/* Question section */
+	  "%u "		/* Answer section */
+	  "%u "		/* Authority section */
+	  "%u "		/* Additional section */
 	  "LOG "
 	  "%s "		/* Reply from cache? */
 	  "%s "		/* Opcode */
@@ -608,10 +608,10 @@ task_output_info(TASK *t, char *update_desc) {
 	  t->qname,
 	  mydns_rcode_str(t->hdr.rcode),
 	  err_reason_str(t, t->reason),
-	  t->qdcount,
-	  t->an.size,
-	  t->ns.size,
-	  t->ar.size,
+	  (unsigned int)t->qdcount,
+	  (unsigned int)t->an.size,
+	  (unsigned int)t->ns.size,
+	  (unsigned int)t->ar.size,
 	  (t->reply_from_cache ? "Y" : "N"),
 	  mydns_opcode_str(t->hdr.opcode),
 	  update_desc ? update_desc : ""
