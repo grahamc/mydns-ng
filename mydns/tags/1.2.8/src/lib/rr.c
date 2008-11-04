@@ -804,12 +804,12 @@ mydns_rr_prepare_query(uint32_t zone, dns_qtype_t type, char *name, char *origin
   if (name) {
     for (cp = name; *cp; cp++)
       if (SQL_BADCHAR(*cp))
-	return (0);
+	return (NULL);
   }
   if (origin) {
     for (cp = origin; *cp; cp++)
       if (SQL_BADCHAR(*cp))
-	return (0);
+	return (NULL);
   }
 
 #ifdef DN_COLUMN_NAMES
@@ -912,7 +912,7 @@ int __mydns_rr_do_load(SQL *sqlConn, MYDNS_RR **rptr, char *query, char *origin)
   if (rptr) *rptr = NULL;
 
   /* Verify args */
-  if (!sqlConn || !rptr) {
+  if (!sqlConn || !rptr || !query) {
     errno = EINVAL;
     return (-1);
   }
@@ -965,7 +965,7 @@ __mydns_rr_count(SQL *sqlConn, uint32_t zone,
 
   query = mydns_rr_prepare_query(zone, type, name, origin, active, "COUNT(*)", filter);
 
-  if (!(res = sql_query(sqlConn, query, strlen(query)))) {
+  if (!query || !(res = sql_query(sqlConn, query, strlen(query)))) {
     WarnSQL(sqlConn, _("error processing count with filter %s"), filter);
     return (-1);
   }
