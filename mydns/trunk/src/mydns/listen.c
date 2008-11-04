@@ -290,7 +290,7 @@ addrlist_load(int port) {
   freeAllInterfaceAddresses();
 
   if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-    Warn(_("error creating socket for interface scan"));
+    Warn(_("addrlist_load: error creating socket for interface scan"));
     return NULL;
   }
 
@@ -305,7 +305,7 @@ addrlist_load(int port) {
 	break;
     }
     if ((n == -1) && errno != EINVAL) {
-      Err(_("error setting SIOCGIFCONF for interface scan"));
+      Err(_("addrlist_load: error setting SIOCGIFCONF for interface scan"));
       return NULL;
     }
     buf = REALLOCATE(buf, buflen += 4096, char[]);
@@ -472,14 +472,22 @@ get_opt_addrlist(ADDRLIST *Addresses, const char *opt, int default_port, char *d
 
     if (family == AF_INET) {				/* Add regular IPv4 address */
       if (inet_pton(AF_INET, addr, &addr4) <= 0)
-	Warnx("%s: `%s' %s: %s", addr, desc, _("address"), _("invalid IPv4 address format"));
+	Warnx("get_opt_addrlist: %s: `%s' %s: %s",
+	      addr,
+	      desc,
+	      _("address"),
+	      _("invalid IPv4 address format"));
       else
 	addrlist_add(AF_INET, &addr4, port);
     }
 #if HAVE_IPV6
     else if (family == AF_INET6) {			/* Add regular IPv6 address */
       if (inet_pton(AF_INET6, addr, &addr6) <= 0)
-	Warnx("%s: `%s' %s: %s", addr, desc, _("address"), _("invalid IPv6 address format"));
+	Warnx("get_opt_addrlist: %s: `%s' %s: %s",
+	      addr,
+	      desc,
+	      _("address"),
+	      _("invalid IPv6 address format"));
       else
 	addrlist_add(AF_INET6, &addr6, port);
     }
@@ -500,16 +508,24 @@ ipv4_listener(struct sockaddr_in *sa, int protocol) {
   int fd = -1, opt = 1;
 
   if ((fd = socket(AF_INET, protocol, (protocol == SOCK_STREAM) ? IPPROTO_TCP : IPPROTO_UDP)) < 0)
-    Err(_("socket"));
+    Err(_("ipv4_listener: socket failed to create %s"),
+	(protocol == SOCK_STREAM) ? "TCP" : "UDP");
   if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-    Warn(_("setsockopt"));
+    Warn(_("ipv4_listener: setsockopt failed on socket %d (%s)"),
+	 fd,
+	 (protocol == SOCK_STREAM) ? "TCP" : "UDP");
   fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
   if (bind(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in)) < 0)
-    Err(_("bind (%s): %s:%d"),
-	(protocol == SOCK_STREAM) ? "TCP" : "UDP", inet_ntoa(sa->sin_addr), ntohs(sa->sin_port));
+    Err(_("ipv4_listerner: bind on socket %d (%s) failed: %s+%d"),
+	fd,
+	(protocol == SOCK_STREAM) ? "TCP" : "UDP",
+	inet_ntoa(sa->sin_addr),
+	ntohs(sa->sin_port));
   if (protocol == SOCK_STREAM) {
     if (listen(fd, SOMAXCONN) < 0)
-      Err(_("listen"));
+      Err(_("ipv4_listener: listen on socket %d (%s) failed"),
+	  fd,
+	  (protocol == SOCK_STREAM) ? "TCP" : "UDP");
   } else {
     int n, size;
 
@@ -540,17 +556,24 @@ ipv6_listener(struct sockaddr_in6 *sa, int protocol) {
   int fd = -1, opt = 1;
 
   if ((fd = socket(AF_INET6, protocol, (protocol == SOCK_STREAM) ? IPPROTO_TCP : IPPROTO_UDP)) < 0)
-    Err(_("socket"));
-
+    Err(_("ipv6_listener: socket failed to create %s"),
+	(protocol == SOCK_STREAM) ? "TCP" : "UDP");
   if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-    Warn(_("setsockopt"));
+    Warn(_("ipv6_listener: setsockopt failed on socket %d (%s)"),
+	 fd,
+	 (protocol == SOCK_STREAM) ? "TCP" : "UDP");
   fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
   if (bind(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in6)) < 0)
-    Err(_("bind (%s): %s+%d"), (protocol == SOCK_STREAM) ? "TCP" : "UDP",
-	ipaddr(AF_INET6, &sa->sin6_addr), ntohs(sa->sin6_port));
+    Err(_("ipv6_listener: bind on socket %d (%s): failed %s+%d"),
+	fd,
+	(protocol == SOCK_STREAM) ? "TCP" : "UDP",
+	ipaddr(AF_INET6, &sa->sin6_addr),
+	ntohs(sa->sin6_port));
   if (protocol == SOCK_STREAM) {
-    if (listen(fd, 5) < 0)
-      Err(_("listen"));
+    if (listen(fd, SOMAXCONN) < 0)
+      Err(_("ipv6_listener: listen on socket %d (%s) failed"),
+	  fd,
+	  (protocol == SOCK_STREAM) ? "TCP" : "UDP");
   } else {
     int n = 0;
 
@@ -702,29 +725,38 @@ create_listeners(void) {
 **************************************************************************************************/
 static void
 server_greeting(void) {
-  char	greeting[512], *g = greeting;				/* Server startup message */
-  int	total = 0;						/* Total listening sockets */
+  char	*g = NULL;				/* Server startup message */
+  char	*answer = NULL;
+  int	total = 0;				/* Total listening sockets */
   time_t now = time(NULL);
-
-  memset(&greeting[0], 0, sizeof(greeting));
-
-  g += sprintf(g, "%s %s %s %.24s", progname, PACKAGE_VERSION, _("started"), ctime(&now));
 
   total = num_udp4_fd;
 #if HAVE_IPV6
   total += num_udp6_fd;
 #endif
-  g += sprintf(g, " (%s %d %s)", _("listening on"),
-	       total, total == 1 ? _("address") : _("addresses"));
-
-#if DEBUG_ENABLED
-  g += sprintf(g, "%s", _(" (compiled with debug)"));
-#endif
 
   if (answer_then_quit)
-    g += sprintf(g, _(" (quit after %u requests)"), answer_then_quit);
+    asprintf(&answer, _(" (quit after %u requests)"), answer_then_quit);
 
-  Notice("%s", greeting);
+  ASPRINTF(&g,
+	   "%s %s %s %.24s (%s %d %s)%s%s",
+	   progname,
+	   PACKAGE_VERSION,
+	   _("started"),
+	   ctime(&now),
+	   _("listening on"),
+	   total,
+	   total == 1 ? _("address") : _("addresses"),
+#if DEBUG_ENABLED
+	   _(" (compiled with debug)"),
+#else
+	   "",
+#endif
+	   answer ? answer : "");
+
+  Notice("%s", g);
+  RELEASE(answer);
+  RELEASE(g);
 }
 /*--- server_greeting() -------------------------------------------------------------------------*/
 

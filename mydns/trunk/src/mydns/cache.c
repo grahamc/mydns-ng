@@ -225,7 +225,7 @@ cache_status(CACHE *C) {
 	     " %u collisions (%.0f%%), %.0f%% full (%u records), %u bytes, avg life %u sec"),
 	   C->name, PCT(C->questions, C->hits), C->hits, C->misses,
 	   collisions, PCT(C->slots, collisions),
-	   PCT(C->limit, C->count), C->count, C->size,
+	   PCT(C->limit, C->count), (unsigned int)C->count, (unsigned int)C->size,
 	   (unsigned int)(C->removed
 			  ? C->removed_secs / C->removed
 			  : (time(NULL) - Status.start_time))
@@ -468,8 +468,8 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
     return (NULL);
 
 #if DEBUG_ENABLED && DEBUG_CACHE
-  Debug(_("%s: zone_cache_find(%d, %s, %s, %s, %d, %d, %p)"), desctask(t), zone, origin,
-	mydns_qtype_str(type), name, namelen, *errflag, parent);
+  Debug(_("%s: zone_cache_find(%d, %s, %s, %s, %d, %u, %p)"), desctask(t), zone, origin,
+	mydns_qtype_str(type), name, (unsigned int)namelen, *errflag, parent);
 #endif
 
   if (ZoneCache) {

@@ -52,9 +52,16 @@ char *
 _mydns_strdup(const char *s, arena_t arena, char *file, int line) {
   char *news = NULL;
 
+#if defined(_SVID_SOURCE) || defined(_BSD_SOURCE) || _XOPEN_SOURCE >= 500
   news = strdup(s);
-
   if (!news) Out_Of_Memory();
+#else
+  int slen = strlen(s);
+  news = _mydns_allocate(slen+1, 1, arena, "##char []##", file, line);
+  if (!news) Out_Of_Memory();
+  strncpy(news, s, slen);
+  news[slen] = '\0';
+#endif
 
   return (news);
 }
@@ -63,9 +70,15 @@ char *
 _mydns_strndup(const char *s, size_t size, arena_t arena, char *file, int line) {
   char *news = NULL;
 
+#if defined(_GNU_SOURCE)
   news = strndup(s, size);
-
   if (!news) Out_Of_Memory();
+#else
+  news = _mydns_allocate(size+1, 1, arena, "##char []##", file, line);
+  if (!news) Out_Of_Memory();
+  strncpy(news, s, size);
+  news[size] = '\0';
+#endif
 
   return (news);
 }

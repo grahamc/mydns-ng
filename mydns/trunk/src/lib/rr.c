@@ -341,15 +341,17 @@ mydns_rr_parse_txt(const char *origin, MYDNS_RR *rr) {
 
 static char *
 __mydns_rr_append(char *s1, char *s2) {
-  int newlen = strlen(s1);
+  int s1len = strlen(s1);
+  int s2len = strlen(s2);
+  int newlen = s1len;
   char *name;
-  if (*s1) newlen += 1;
-  newlen += strlen(s2);
+  if (s1len) newlen += 1;
+  newlen += s2len;
 
   name = ALLOCATE(newlen+1, char[]);
-  strcpy(name, s1);
-  if (*name) { strcat(name, "."); }
-  strcat(name, s2);
+  if (s1len) { strncpy(name, s1, s1len); name[s1len] = '.'; s1len += 1; }
+  strncpy(&name[s1len], s2, s2len);
+  name[newlen] = '\0';
   return name;
 }
 

@@ -20,7 +20,7 @@
 
 #include "mydns.h"
 
-SQL *sql;															/* Global SQL connection information */
+SQL *sql;						/* Global SQL connection information */
 
 /* Saved connection information for reconnecting */
 static char *_sql_user = NULL;

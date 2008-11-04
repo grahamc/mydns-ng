@@ -48,11 +48,11 @@ _queue_stats(QUEUE *q) {
 #if !DISABLE_DATE_LOGGING
 	  "%s+%06lu "
 #endif
-	  "%s size=%d, max size=%d"),
+	  "%s size=%u, max size=%u"),
 #if !DISABLE_DATE_LOGGING
 	  datebuf, tv.tv_usec,
 #endif
-	  q->queuename, q->size, q->max_size);
+	q->queuename, (unsigned int)q->size, (unsigned int)q->max_size);
 	  
   msg = ALLOCATE(msgsize, char[]);
 
