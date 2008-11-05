@@ -131,7 +131,7 @@ find_zone(const char *origin) {
 **************************************************************************************************/
 static inline ZONE *
 find_host_zone(char *fqdn, char **hostname) {
-  register char *c;
+  char *c;
   ZONE *z;
 
   *hostname = STRDUP("");
@@ -144,10 +144,11 @@ find_host_zone(char *fqdn, char **hostname) {
       if ((z = find_zone(c + 1))) {
 	REALLOCATE(*hostname, c - fqdn + 1, char[]);
 	memcpy(*hostname, fqdn, c - fqdn);
-	*hostname[c - fqdn] = '\0';
+	(*hostname)[c - fqdn] = '\0';
 	return (z);
       }
 
+  RELEASE(*hostname);
   return NULL;
 }
 /*--- find_host_zone() --------------------------------------------------------------------------*/

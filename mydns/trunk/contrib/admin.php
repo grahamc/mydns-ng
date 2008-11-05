@@ -58,7 +58,7 @@ $rrtype_table_name = "rrtype";
 
 /* limits on TXT record sizes */
 $rr_maxtxtlen = 2048;
-$rr_txtelemlen = 255;
+$rr_maxtxtelemlen = 255;
 
 /*
 **  The following two values configure the number of records shown per page
@@ -1784,20 +1784,49 @@ function db_get_known_types() {
 	Examines the 'active' table in a column and attempts to deduce the legal values for that
 	field.
 **************************************************************************************************/
-function db_get_active_types($table) {
-  $active = array("N", "Y", "D");					/* Default to Y/N */
+function db_get_active_types($table, $deleted) {
+  $active = NULL;
 
   $row = sql_result("SELECT DISTINCT(active) FROM $table LIMIT 1",
 		    "legal value for $table.active");
-  switch (strtolower($row[0])) {
-  case "yes": case "no": case "deleted": $active = array('No', 'Yes', 'Deleted'); break;
-  case "y": case "n": case "d": $active = array('N', 'Y', 'D'); break;
-  case "true": case "false": $active = array('False', 'True', 'Deleted'); break;
-  case "t": case "f": $active = array('F', 'T', 'D'); break;
-  case "0": case "1": $active = array('0', '1', '2'); break;
-  case "active": case "inactive": $active = array('Inactive', 'Active', 'Deleted'); break;
-  case "a": case "i": $active = array('I', 'A', 'D'); break;
-  case "o": $active = array('off', 'on', 'deleted'); break;
+  $entry = strtolower($row[0]);
+  switch ($entry) {
+  case "yes": case "no": case "deleted":
+    $active = array('No', 'Yes');
+    if ($deleted || $entry == "deleted") { $active[] = 'Deleted'; }
+    break;
+  case "y": case "n": case "d":
+    $active = array('N', 'Y');
+    if ($deleted || $entry == "d") { $array[] = 'D'; }
+    break;
+  case "true": case "false":
+    $active = array('False', 'True');
+    if ($deleted || $entry == 'deleted') { $array[] = 'Deleted'; }
+    break;
+  case "t": case "f":
+    $active = array('F', 'T');
+    if ($deleted) { $array[] = 'D'; }
+    break;
+  case "0": case "1": case "2":
+    $active = array('0', '1');
+    if ($deleted || $entry == '2') { $array[] = '2'; }
+    break;
+  case "active": case "inactive":
+    $active = array('Inactive', 'Active');
+    if ($deleted) { $array[] = 'Deleted'; }
+    break;
+  case "a": case "i":
+    $active = array('I', 'A');
+    if ($deleted) { $array[] = 'D'; }
+    break;
+  case "on": case "off":
+    $active = array('off', 'on');
+    if ($deleted) { $array[] = 'deleted'; }
+    break;
+  }
+  unless ($active) {
+    $active = array("N", "Y");					/* Default to Y/N */
+    if ($deleted) { $active[] = "D"; }
   }
   return $active;
 }
@@ -1865,11 +1894,11 @@ function db_get_settings() {
 
   /* Get possible column values for 'active' column */
   if ($soa_use_active)
-    $soa_active_types = db_get_active_types($soa_table_name);
+    $soa_active_types = db_get_active_types($soa_table_name, false);
   if ($soa_use_recursive)
     $soa_recursive_types = db_get_recursive_types($soa_table_name);
   if ($rr_use_active)
-    $rr_active_types = db_get_active_types($rr_table_name);
+    $rr_active_types = db_get_active_types($rr_table_name, true);
 }
 /*--- db_get_settings() -------------------------------------------------------------------------*/
 
