@@ -318,6 +318,10 @@ import_rr(char *name, char *type, char *data, int datalen, unsigned aux, unsigne
   size_t edatalen = 0;
 
 
+  if (!name || !type || !data)
+    Errx(_("Invalid resource record name=%s, type=%s, data=%p"),
+	 (name)?name:"<undef>", (type)?type:"<undef>", data);
+
   rr_imported++;
   Verbose("import rr \"%s\" %s \"%s\"", name, type, data);
 
