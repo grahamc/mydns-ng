@@ -54,7 +54,7 @@ $rr_table_name = "rr";
 **  Define this if you define RR types via foreign keys, not as enumerated
 **  value in $rr_table_name table
 */
-$rrtype_table_name = "rrtype";
+/*$rrtype_table_name = "rrtype";*/
 
 /* limits on TXT record sizes */
 $rr_maxtxtlen = 2048;
@@ -1824,7 +1824,7 @@ function db_get_active_types($table, $deleted) {
     if ($deleted) { $array[] = 'deleted'; }
     break;
   }
-  unless ($active) {
+  if (!$active) {
     $active = array("N", "Y");					/* Default to Y/N */
     if ($deleted) { $active[] = "D"; }
   }
@@ -2887,6 +2887,7 @@ function rr_validate_rp_data(&$errors, &$data, $origin) {
 /*--- rr_validate_rp_data() ---------------------------------------------------------------------*/
 
 function rr_validate_txt_data(&$errors, &$data, $origin) {
+  global $rr_maxtxtlen, $rr_maxtxtelemlen;
   if (strlen($data) > $rr_maxtxtlen) {
     $errors[] = "TXT record length is greater than that allowed in the current implementation ".
       strlen($data) . " > " . $rr_maxtxtlen;
