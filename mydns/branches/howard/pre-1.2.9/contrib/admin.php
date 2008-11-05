@@ -54,7 +54,7 @@ $rr_table_name = "rr";
 **  Define this if you define RR types via foreign keys, not as enumerated
 **  value in $rr_table_name table
 */
-$rrtype_table_name = "rrtype";
+/*$rrtype_table_name = "rrtype";*/
 
 /* limits on TXT record sizes */
 $rr_maxtxtlen = 2048;
@@ -1797,34 +1797,34 @@ function db_get_active_types($table, $deleted) {
     break;
   case "y": case "n": case "d":
     $active = array('N', 'Y');
-    if ($deleted || $entry == "d") { $array[] = 'D'; }
+    if ($deleted || $entry == "d") { $active[] = 'D'; }
     break;
   case "true": case "false":
     $active = array('False', 'True');
-    if ($deleted || $entry == 'deleted') { $array[] = 'Deleted'; }
+    if ($deleted || $entry == 'deleted') { $active[] = 'Deleted'; }
     break;
   case "t": case "f":
     $active = array('F', 'T');
-    if ($deleted) { $array[] = 'D'; }
+    if ($deleted) { $active[] = 'D'; }
     break;
   case "0": case "1": case "2":
     $active = array('0', '1');
-    if ($deleted || $entry == '2') { $array[] = '2'; }
+    if ($deleted || $entry == '2') { $active[] = '2'; }
     break;
   case "active": case "inactive":
     $active = array('Inactive', 'Active');
-    if ($deleted) { $array[] = 'Deleted'; }
+    if ($deleted) { $active[] = 'Deleted'; }
     break;
   case "a": case "i":
     $active = array('I', 'A');
-    if ($deleted) { $array[] = 'D'; }
+    if ($deleted) { $active[] = 'D'; }
     break;
   case "on": case "off":
     $active = array('off', 'on');
-    if ($deleted) { $array[] = 'deleted'; }
+    if ($deleted) { $active[] = 'deleted'; }
     break;
   }
-  unless ($active) {
+  if (!$active) {
     $active = array("N", "Y");					/* Default to Y/N */
     if ($deleted) { $active[] = "D"; }
   }
@@ -1894,11 +1894,11 @@ function db_get_settings() {
 
   /* Get possible column values for 'active' column */
   if ($soa_use_active)
-    $soa_active_types = db_get_active_types($soa_table_name, false);
+    $soa_active_types = db_get_active_types($soa_table_name, 0);
   if ($soa_use_recursive)
     $soa_recursive_types = db_get_recursive_types($soa_table_name);
   if ($rr_use_active)
-    $rr_active_types = db_get_active_types($rr_table_name, true);
+    $rr_active_types = db_get_active_types($rr_table_name, 1);
 }
 /*--- db_get_settings() -------------------------------------------------------------------------*/
 
@@ -2887,6 +2887,7 @@ function rr_validate_rp_data(&$errors, &$data, $origin) {
 /*--- rr_validate_rp_data() ---------------------------------------------------------------------*/
 
 function rr_validate_txt_data(&$errors, &$data, $origin) {
+  global $rr_maxtxtlen, $rr_maxtxtelemlen;
   if (strlen($data) > $rr_maxtxtlen) {
     $errors[] = "TXT record length is greater than that allowed in the current implementation ".
       strlen($data) . " > " . $rr_maxtxtlen;
