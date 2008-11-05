@@ -18,7 +18,7 @@
 ##	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ##
 
-AC_INIT(mydns, [1.2.8.5], [support@cohtech.com])	## Package name, version, bugreport address
+AC_INIT(mydns, [1.2.8.6], [support@cohtech.com])	## Package name, version, bugreport address
 AC_PREREQ([2.59])
 AC_COPYRIGHT([Portions of this script are Copyright 2002-2005 Don Moore  2007-2008 Howard Wilkinson])
 AM_INIT_AUTOMAKE([1.9.5 dist-bzip2])
