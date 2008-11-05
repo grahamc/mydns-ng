@@ -1819,7 +1819,7 @@ function db_get_active_types($table, $deleted) {
     $active = array('I', 'A');
     if ($deleted) { $array[] = 'D'; }
     break;
-  case "o":
+  case "on": case "off":
     $active = array('off', 'on');
     if ($deleted) { $array[] = 'deleted'; }
     break;
