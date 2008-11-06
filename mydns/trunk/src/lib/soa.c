@@ -331,7 +331,8 @@ mydns_soa_load(SQL *sqlConn, MYDNS_SOA **rptr, char *origin) {
 
 #if DEBUG_ENABLED && DEBUG_LIB_SOA
     Debug(_("SOA query: use_soa_active=%d soa_active=%s,%d"), mydns_soa_use_active,
-	  row[MYDNS_SOA_NUMFIELDS], GETBOOL(row[MYDNS_SOA_NUMFIELDS]));
+	  (mydns_soa_use_active)?row[MYDNS_SOA_NUMFIELDS]:"<undef>",
+	  (mydns_soa_use_active)?GETBOOL(row[MYDNS_SOA_NUMFIELDS]):-1);
     Debug(_("SOA query: id=%s, origin=%s, ns=%s, mbox=%s, serial=%s, refresh=%s, "
 	    "retry=%s, expire=%s, minimum=%s, ttl=%s"),
 	  row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]);
