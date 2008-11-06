@@ -152,7 +152,7 @@ Run with multiple processes to support \fIcpucount\fP number of processors.- dep
 .IP "\fBservers\fP = \fIservercount\fP (`\fI1\fP')"
 Number of server processors to run. Set this to 0 to run just a single process,
 1 will run a master and a server process. n runs \fIn\fP servers plus a master.
-It is recommended that this be set to the number of CPUS time 2 plus 1.
+It is recommended that this be set to the number of CPUS times 2 plus 1.
 
 .IP "\fBrecursive\fP = \fIaddress\fP
 If this option is specified, \fIaddress\fP is the address of a DNS server that
