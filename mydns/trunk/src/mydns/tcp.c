@@ -372,6 +372,8 @@ write_tcp_reply(TASK *t)
     return (TASK_ABANDONED);
   }
 
+  t->fd = -1;
+
   return (TASK_COMPLETED);
 }
 /*--- write_tcp_reply() -------------------------------------------------------------------------*/
