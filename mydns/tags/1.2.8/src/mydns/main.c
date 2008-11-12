@@ -504,7 +504,7 @@ void
 free_other_tasks(TASK *t, int closeallfds) {
   int i = 0, j = 0;
 
-  for (i = NORMAL_TASK; i <+ PERIODIC_TASK; i++) {
+  for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
     for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
       QUEUE *TaskQ = TaskArray[i][j];
       TASK *curtask = TaskQ->head;
