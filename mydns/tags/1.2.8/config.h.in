@@ -41,6 +41,14 @@
    */
 #undef HAVE_DCGETTEXT
 
+/* Define to 1 if you have the declaration of `poll', and to 0 if you don't.
+   */
+#undef HAVE_DECL_POLL
+
+/* Define to 1 if you have the declaration of `select', and to 0 if you don't.
+   */
+#undef HAVE_DECL_SELECT
+
 /* Define to 1 if you have the declaration of `strcasecmp', and to 0 if you
    don't. */
 #undef HAVE_DECL_STRCASECMP
@@ -182,6 +190,12 @@
 /* Does the system have pg_config.h? */
 #undef HAVE_PGCONFIG
 
+/* Define to 1 if you have the `poll' function. */
+#undef HAVE_POLL
+
+/* Define to 1 if you have the <poll.h> header file. */
+#undef HAVE_POLL_H
+
 /* Define to 1 if you have the `putenv' function. */
 #undef HAVE_PUTENV
 
@@ -191,6 +205,9 @@
 /* Define to 1 if your system has a GNU libc compatible `realloc' function,
    and to 0 otherwise. */
 #undef HAVE_REALLOC
+
+/* Define to 1 if you have the `select' function. */
+#undef HAVE_SELECT
 
 /* Define to 1 if you have the `setenv' function. */
 #undef HAVE_SETENV
@@ -261,6 +278,9 @@
 
 /* Define to 1 if you have the <sys/resource.h> header file. */
 #undef HAVE_SYS_RESOURCE_H
+
+/* Define to 1 if you have the <sys/select.h> header file. */
+#undef HAVE_SYS_SELECT_H
 
 /* Define to 1 if you have the <sys/socket.h> header file. */
 #undef HAVE_SYS_SOCKET_H

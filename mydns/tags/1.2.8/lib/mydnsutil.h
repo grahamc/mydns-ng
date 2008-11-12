@@ -263,6 +263,14 @@ extern int strcoll ();
 #	include <pwd.h>
 #endif
 
+#if HAVE_POLL_H
+#	include <poll.h>
+#else
+# if HAVE_SYS_SELECT_H
+#	include <sys/select.h>
+# endif
+#endif
+
 #ifndef HAVE_UCHAR
 typedef unsigned char uchar;
 #endif

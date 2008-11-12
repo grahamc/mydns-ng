@@ -817,65 +817,133 @@ do_initial_tasks(INITIALTASK *initial_tasks) {
   }
 }
 
-static int
-build_fdset_for_tasks(QUEUE *TaskQ, fd_set *rfd, fd_set *wfd, fd_set *efd, int *want_timeout) {
-  int maxfd = 0;
-  TASK *t = NULL, *Next_task = NULL;
+#if HAVE_POLL_H == 0
+typedef struct pollfd {
+  int		fd;		/* file descriptor */
+  short		events;		/* requested events */
+  short		revents;	/* returned events */
+} *pollItem;
 
-  for (t = TaskQ->head; t; t = Next_task) {
-    int		fd;
-    time_t	timedout;
+/* Input values */
+#define POLLIN		0x001
+#define POLLPRI		0x002
+#define POLLOUT		0x004
 
-    Next_task = t->next;
+/* Output values */
+#define POLLERR		0x008
+#define POLLHUP		0x010
+#define POLLNVAL	0x020
+#else
+typedef struct pollfd *pollItem;
+#endif
 
-    /* Check if task has timed out */
-    timedout = t->timeout - current_time;
-    if (timedout <= 0) {
-      taskexec_t res = task_timedout(t);
-      if(!((res == TASK_CONTINUE) || (res == TASK_EXECUTED) || (res == TASK_DID_NOT_EXECUTE)))
-	continue;
-      timedout = t->timeout - current_time;
-      if (timedout < 0) timedout = 0;
+static pollItem
+buildIOtaskItem(TASK *t) {
+  static struct pollfd	_item;
+  pollItem		item = NULL;
+
+  if (t->fd && (t->status & (Needs2Read|Needs2Write))) {
+    item = &_item;
+    item->fd = t->fd;
+    item->events = 0;
+    item->revents = 0;
+    if (t->status & Needs2Read) {
+      item->events |= POLLIN;
     }
+    if (t->status & Needs2Write) {
+      item->events |= POLLOUT;
+    }
+  }
+  return item;
+}
 
-    if ((t->status & Needs2Exec) && (t->type != PERIODIC_TASK))
-      *want_timeout = 0;
-    else
-    /* Set timeout to minimum */
-      if (timedout < *want_timeout)
-	*want_timeout = timedout;
+static taskexec_t
+checkTaskTimedOut(TASK *t, int *timeoutWanted) {
+  taskexec_t	res = TASK_DID_NOT_EXECUTE;
 
-    fd = t->fd;
-    if (fd < 0) continue;
+  if (TASKTIMESOUT(t->status)) {
+    time_t	timedOut = t->timeout - current_time;
+    if (timedOut <= 0) {
+      res = task_timedout(t);
+      if ((res == TASK_CONTINUE)
+	  || (res == TASK_EXECUTED)
+	  || (res == TASK_DID_NOT_EXECUTE)) {
+	timedOut = t->timeout - current_time;
+	if (timedOut < 0) timedOut = 0;
+      } else {
+	return res;
+      }
+    }
+    if (timedOut < *timeoutWanted)
+      *timeoutWanted = timedOut;
+  }
+  return res;
+}
 
-    if ((t->status & Needs2Read)) {
+static void
+scheduleTask(TASK *t, fd_set *rfd, fd_set *wfd, fd_set *efd,
+	     pollItem *items,
+	     int *timeoutWanted, int *maxfd, int *numfds) {
+  taskexec_t	res = checkTaskTimedOut(t, timeoutWanted);
+  pollItem	item;
+
+  if ((res != TASK_CONTINUE)
+      && (res != TASK_EXECUTED)
+      && (res != TASK_DID_NOT_EXECUTE)) return;
+
+  if ((t->status & Needs2Exec) && (t->type != PERIODIC_TASK))
+    *timeoutWanted = 0;
+
+  item = buildIOtaskItem(t);
+
+  if (item) {
+    int fd = item->fd;
+    *numfds += 1;
+    *maxfd = (*maxfd > fd)?*maxfd:fd;
+    *items = (pollItem)REALLOCATE(*items, *numfds * sizeof(*item), struct pollfd[]);
+
+    memcpy(&((*items)[*numfds-1]), item, sizeof(*item));
+
+    if ((item->events & POLLIN)) {
       FD_SET(fd, rfd);
-      maxfd = (maxfd > fd)?maxfd:fd;
     }
-    if ((t->status & Needs2Write)) {
+    if ((item->events & POLLOUT)) {
       FD_SET(fd, wfd);
-      maxfd = (maxfd > fd)?maxfd:fd;
     }
     if (t->protocol == SOCK_STREAM) {
       FD_SET(fd, efd);
     }
   }
-
-  if (*want_timeout < 0) *want_timeout = 0;
-  return maxfd;
+  return;
 }
 
-static int
-build_fdsets(int maxfd, fd_set *rfd, fd_set *wfd, fd_set *efd, int *want_timeout) {
+static void
+scheduleTaskQ(QUEUE *taskQ, fd_set *rfd, fd_set *wfd, fd_set *efd,
+	      pollItem *items,
+	      int *timeoutWanted, int *maxfd, int *numfds) {
+  TASK		*t = NULL, *nextTask = NULL;
+
+  for (t = taskQ->head; t; t = nextTask) {
+    nextTask = t->next;
+
+    scheduleTask(t, rfd, wfd, efd, items, timeoutWanted, maxfd, numfds);
+  }
+
+  return;
+}
+
+static void
+scheduleTasks(fd_set *rfd, fd_set *wfd, fd_set *efd,
+	      pollItem *items,
+	      int *timeoutWanted, int *maxfd, int *numfds) {
   int i = 0, j = 0;
 
   for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
     for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
-      int fd = build_fdset_for_tasks(TaskArray[i][j], rfd, wfd, efd, want_timeout);
-      if (fd > maxfd ) maxfd = fd;
+      scheduleTaskQ(TaskArray[i][j], rfd, wfd, efd, items, timeoutWanted, maxfd, numfds);
     }
   }
-  return maxfd;
+  return;
 }
 
 static int
@@ -967,8 +1035,10 @@ server_loop(int plain_maxfd, INITIALTASK *initial_tasks, int serverfd) {
   /* Main loop: Read connections and process queue */
   for (;;) {
     int			maxfd = -1;
+    int			numfds = 0;
+    pollItem		items = NULL;
     int			rv = 0;
-    int			want_timeout = task_timeout;
+    int			timeoutWanted = task_timeout;
     fd_set		rfd, wfd, efd;
     struct timeval	tv = { 0, 0 };
 
@@ -987,17 +1057,26 @@ server_loop(int plain_maxfd, INITIALTASK *initial_tasks, int serverfd) {
 
     gettick();
 
-    maxfd = build_fdsets(maxfd, &rfd, &wfd, &efd, &want_timeout);
-		  
-    if (want_timeout  && TaskArray[NORMAL_TASK][HIGH_PRIORITY_TASK]->head) {
+    scheduleTasks(&rfd, &wfd, &efd, &items, &timeoutWanted, &maxfd, &numfds);
+
+#if DEBUG_ENABLED    
+    if (numfds == 0 || items == NULL) {
+      Err(_("No IO for process - something is wrong"));
+    }
+    Debug(_("Scheduling Tasks - timeout = %d, numfds = %d, maxfd = %d"),
+	  timeoutWanted, numfds, maxfd);
+#endif
+    if (timeoutWanted  && TaskArray[NORMAL_TASK][HIGH_PRIORITY_TASK]->head) {
       /* If we have a high priority normal task to run then wake up in 1/10th second */
       tv.tv_sec = 0;
       tv.tv_usec = 100000;
     } else {
       /* Otherwise wakeup when IO conditions change or when next task times out */
-      tv.tv_sec = want_timeout;
+      tv.tv_sec = timeoutWanted;
       tv.tv_usec = 0;
     }
+
+    RELEASE(items);
     rv = select(maxfd+1, &rfd, &wfd, &efd, &tv);
 
     if (rv < 0) {
@@ -1121,7 +1200,9 @@ master_loop(INITIALTASK *initial_tasks) {
     int			rv = 0;
     fd_set		rfd, wfd, efd;
     int			maxfd = -1;
-    int			want_timeout = task_timeout;
+    int			numfds = 0;
+    pollItem		items = NULL;
+    int			timeoutWanted = task_timeout;
     struct timeval	tv = { 0, 0 };
 
     if (got_sighup) master_sighup(SIGHUP);
@@ -1137,17 +1218,26 @@ master_loop(INITIALTASK *initial_tasks) {
 
     gettick();
 
-    maxfd = build_fdsets(maxfd, &rfd, &wfd, &efd, &want_timeout);
+    scheduleTasks(&rfd, &wfd, &efd, &items, &timeoutWanted, &maxfd, &numfds);
 		  
+#if DEBUG_ENABLED    
+    if (numfds == 0 || items == NULL) {
+      Err(_("No IO for process - something is wrong"));
+    }
+    Debug(_("Scheduling Tasks - timeout = %d, numfds = %d, maxfd = %d"),
+	  timeoutWanted, numfds, maxfd);
+#endif
     if (TaskArray[NORMAL_TASK][HIGH_PRIORITY_TASK]->head) {
       /* If we have a high priority normal task to run then wake up in 1/10th second */
       tv.tv_sec = 0;
       tv.tv_usec = 100000;
     } else {
       /* Otherwise wakeup when IO conditions change or when next task times out */
-      tv.tv_sec = want_timeout;
+      tv.tv_sec = timeoutWanted;
       tv.tv_usec = 0;
     }
+
+    RELEASE(items);
     rv = select(maxfd+1, &rfd, &wfd, &efd, &tv);
 
     if (rv < 0) {
