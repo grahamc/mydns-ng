@@ -40,11 +40,13 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h getopt.h libintl.h netdb.h pwd.h signal.h stdarg.h termios.h time.h])
 AC_CHECK_HEADERS([sys/fcntl.h sys/file.h sys/ioctl.h sys/resource.h])
 AC_CHECK_HEADERS([sys/socket.h sys/sockio.h sys/time.h sys/wait.h])
+AC_CHECK_HEADERS([sys/select.h])
 AC_CHECK_HEADERS([netinet/in.h])
 AC_CHECK_HEADERS([net/if.h])
 AC_CHECK_HEADERS([arpa/inet.h])
 AC_CHECK_HEADERS([inttypes.h])
 AC_CHECK_HEADERS([string.h])
+AC_CHECK_HEADERS([poll.h])
 
 ## Typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -57,12 +59,14 @@ AC_TYPE_SIGNAL
 AC_FUNC_ALLOCA
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([memset getpwuid shutdown inet_ntop inet_pton strsep strndup strdup])
+AC_CHECK_FUNCS([select poll])
 AC_LIB_SOCKET
 AC_LIB_NSL
 AC_LIB_MATH
 
 ## Declarations
 AC_CHECK_DECLS([strcasecmp, strcoll, strerror, strncasecmp, strsep, strndup, strdup])
+AC_CHECK_DECLS([poll, select])
 
 
 ##

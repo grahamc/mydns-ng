@@ -73,7 +73,7 @@ read_udp_query(int fd, int family) {
   if (len == 0) {
     return (TASK_FAILED);
   }
-  if (!(t = task_init(HIGH_PRIORITY_TASK, NEED_ANSWER, fd, SOCK_DGRAM, family, &addr)))
+  if (!(t = IOtask_init(HIGH_PRIORITY_TASK, NEED_ANSWER, fd, SOCK_DGRAM, family, &addr)))
     return (TASK_FAILED);
 
 #if DEBUG_ENABLED && DEBUG_UDP

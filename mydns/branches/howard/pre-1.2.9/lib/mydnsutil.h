@@ -263,6 +263,31 @@ extern int strcoll ();
 #	include <pwd.h>
 #endif
 
+#if HAVE_POLL_H
+#	include <poll.h>
+#else
+# if HAVE_SYS_SELECT_H
+#	include <sys/select.h>
+# endif
+
+struct pollfd {
+  int		fd;		/* file descriptor */
+  short		events;		/* requested events */
+  short		revents;	/* returned events */
+};
+
+/* Input values */
+#define POLLIN		0x001
+#define POLLPRI		0x002
+#define POLLOUT		0x004
+
+/* Output values */
+#define POLLERR		0x008
+#define POLLHUP		0x010
+#define POLLNVAL	0x020
+
+#endif
+
 #ifndef HAVE_UCHAR
 typedef unsigned char uchar;
 #endif
