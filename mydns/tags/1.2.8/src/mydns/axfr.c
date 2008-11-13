@@ -76,18 +76,34 @@ axfr_timeout(int dummy) {
 **************************************************************************************************/
 static void
 axfr_write_wait(TASK *t) {
-  fd_set		wfd;
-  struct timeval 	tv = { 0, 0 };;
   int			rv = 0;
+#if HAVE_POLL
+  struct pollfd item;
+  item.fd = t->fd;
+  item.events = POLLOUT;
+  item.revents = 0;
+
+  rv = poll(&item, 1, -1);
+  if (rv >= 0 && (rv != 1 || !(item.revents & POLLOUT)))
+    axfr_error(t, _("write timeout"));
+#else
+#if HAVE_SELECT
+  fd_set		wfd;
+  struct timeval 	tv = { 0, 0 };
 
   FD_ZERO(&wfd);
   FD_SET(t->fd, &wfd);
   tv.tv_sec = task_timeout;
   tv.tv_usec = 0;
-  if ((rv = select(t->fd + 1, NULL, &wfd, NULL, &tv)) < 0)
-    axfr_error(t, "%s: %s", _("select"), strerror(errno));
-  if (rv != 1 || !FD_ISSET(t->fd, &wfd))
+  rv = select(t->fd + 1, NULL, &wfd, NULL, &tv);
+  if (rv >= 0 && (rv != 1 || !FD_ISSET(t->fd, &wfd)))
     axfr_error(t, _("write timeout"));
+#else
+#error You must have either poll(preferred) or select to compile this code
+#endif
+#endif
+  if (rv < 0)
+    axfr_error(t, "%s: %s", _("select"), strerror(errno));
 }
 /*--- axfr_write_wait() -------------------------------------------------------------------------*/
 
@@ -340,6 +356,10 @@ axfr_fork(TASK *t) {
   int pfd[2] = { -1, -1 };				/* Parent/child pipe descriptors */
   pid_t pid = -1, parent = -1;
 
+#if DEBUG_ENABLED && DEBUG_AXFR 
+  Debug(_("%s: axfr_fork called on fd %d"), desctask(t), t->fd);
+#endif
+
   if (pipe(pfd))
     Err(_("pipe"));
   parent = getpid();
@@ -371,15 +391,26 @@ axfr_fork(TASK *t) {
     sigaction(SIGABRT, &act, NULL);
     sigaction(SIGTERM, &act, NULL);
 
+#if DEBUG_ENABLED && DEBUG_AXFR
+    Debug(_("%s: axfr_fork is in the child"), desctask(t));
+#endif
+
     /*  Let parent know I have started */
     close(pfd[0]);
     if (write(pfd[1], "OK", 2) != 2)
       Warn(_("error writing startup notification"));
     close(pfd[1]);
 
+#if DEBUG_ENABLED && DEBUG_AXFR
+    Debug(_("%s: axfr_fork child has told parent I am running"), desctask(t));
+#endif
+
     /* Clean up parents resources */
     free_other_tasks(t, 1);
 
+#if DEBUG_ENABLED && DEBUG_AXFR
+    Debug(_("%s: AXFR child built"), desctask(t));
+#endif
     /* Do AXFR */
     axfr(t);
   } else {	/* Parent */

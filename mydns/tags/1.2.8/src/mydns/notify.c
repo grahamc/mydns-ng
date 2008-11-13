@@ -412,19 +412,36 @@ notify_read(TASK *t) {
       dequeue(readT);
     }
     {
+      int rv = 0;
+#if HAVE_POLL
+      struct pollfd item;
+
+      item.fd = t->fd;
+      item.events = POLLIN;
+      item.revents = 0;
+
+      rv = poll(&item, 1, 0);
+      if ((rv >= 0) && !(item.revents & POLLIN)) { break; }
+#else
+#if HAVE_SELECT
       fd_set rfds;
-      struct timeval timeout = { 0, 0 };;
+      struct timeval timeout = { 0, 0 };
       FD_ZERO(&rfds);
       FD_SET(t->fd, &rfds);
       timeout.tv_sec = 0;
       timeout.tv_usec = 0;
-      if(select(t->fd+1, &rfds, NULL, NULL, &timeout) < 0) {
+      rv = select(t->fd+1, &rfds, NULL, NULL, &timeout);
+	  if ((rv >= 0) && !FD_ISSET(t->fd, &rfds)) { break; }
+#else
+#error You must have either poll(preferred) or select to compile this code
+#endif
+#endif
+      if (rv < 0) {
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-	Debug(_("%s: select poll on fd %d failed with %s(%d)"), desctask(t), t->fd, strerror(errno), errno);
+	Debug(_("%s: poll fd %d failed with %s(%d)"), desctask(t), t->fd, strerror(errno), errno);
 #endif
 	break;
       }
-      if (!FD_ISSET(t->fd, &rfds)) { break; }
     }
   } while(1);
 

@@ -130,8 +130,8 @@ typedef enum _taskstat_t {
   NEED_TASK_READ = TASKSTAT(2)|RunTask|Needs2Read,
 
   /* Interprocess commands */
-  NEED_COMMAND_READ = TASKSTAT(3)|RunTask|Needs2Read,
-  NEED_COMMAND_WRITE = TASKSTAT(4)|RunTask|Needs2Write,
+  NEED_COMMAND_READ = TASKSTAT(3)|QueryTask|Needs2Read,
+  NEED_COMMAND_WRITE = TASKSTAT(4)|QueryTask|Needs2Write,
 } taskstat_t;
 
 

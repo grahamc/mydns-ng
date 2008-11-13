@@ -292,7 +292,7 @@ extern void		task_remove_extension(TASK *);
 
 extern void		task_build_reply(TASK *);
 extern void		task_output_info(TASK *, char *);
-extern int		task_process(TASK *, fd_set *, fd_set *, fd_set *);
+extern int		task_process(TASK *, int, int, int);
 extern void		task_start();
 
 
