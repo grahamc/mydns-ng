@@ -23,7 +23,7 @@
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_SERVERCOMMS	1
 
-#define KEEPALIVE 300
+#define KEEPALIVE 30
 
 typedef struct _named_message {
   uint16_t	messagelength;
@@ -266,7 +266,7 @@ comms_send(TASK *t, COMMS *comms) {
   if (!comms->donesofar) {
     newt = IOtask_init(NORMAL_PRIORITY_TASK, NEED_COMMAND_WRITE, t->fd, t->protocol, t->family, NULL);
     task_add_extension(newt, comms, __comms_free, comms_send, NULL);
-    newt->timeout = current_time + KEEPALIVE*2;
+    newt->timeout = current_time + task_timeout;
   } else {
     newt = t;
   }
@@ -348,6 +348,10 @@ comms_run(TASK *t, void * data) {
   comms = (COMMS*)data;
 
   rv = comms_recv(t, comms);
+#if DEBUG_ENABLED && DEBUG_SERVERCOMMS
+  Debug(_("%s: Received command %s - result %s"), desctask(t),
+	&comms->message->messagedata[0], task_exec_name(rv));
+#endif
   if ((rv == TASK_FAILED) || (rv == TASK_CONTINUE)) return TASK_CONTINUE;
 
   /* Got a message from the master dispatch it. */
@@ -365,6 +369,7 @@ comms_run(TASK *t, void * data) {
 static taskexec_t
 comms_sendcommand(TASK *t, char *commandstring) {
   COMMS		*comms = NULL;
+  taskexec_t	rv = TASK_FAILED;
 
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
   Debug(_("%s: Sending commands %s"), desctask(t), commandstring);
@@ -374,7 +379,11 @@ comms_sendcommand(TASK *t, char *commandstring) {
   /* Send a command/response */
   comms->message = _message_allocate(commandstring);;
 
-  return comms_send(t, comms);
+  rv = comms_send(t, comms);
+#if DEBUG_ENABLED && DEBUG_SERVERCOMMS
+  Debug(_("%s: Sent command %s - result %s"), desctask(t), commandstring, task_exec_name(rv));
+#endif
+  return rv;
 }
 
 static taskexec_t
@@ -401,7 +410,7 @@ scomms_tick(TASK *t, void *data) {
     named_shutdown(0);
   }
 
-  return rv;
+  return TASK_CONTINUE;
 }
 
 static int
@@ -438,7 +447,7 @@ mcomms_tick(TASK *t, void *data) {
     }
   }
 
-  return rv;
+  return TASK_CONTINUE;
 }
 
 TASK *

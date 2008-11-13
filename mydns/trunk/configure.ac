@@ -18,7 +18,7 @@
 ##	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ##
 
-AC_INIT(mydns, [1.2.8.8], [support@cohtech.com])	## Package name, version, bugreport address
+AC_INIT(mydns, [1.2.8.10], [support@cohtech.com])	## Package name, version, bugreport address
 AC_PREREQ([2.59])
 AC_COPYRIGHT([Portions of this script are Copyright 2002-2005 Don Moore  2007-2008 Howard Wilkinson])
 AM_INIT_AUTOMAKE([1.9.5 dist-bzip2])
@@ -40,11 +40,13 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h getopt.h libintl.h netdb.h pwd.h signal.h stdarg.h termios.h time.h])
 AC_CHECK_HEADERS([sys/fcntl.h sys/file.h sys/ioctl.h sys/resource.h])
 AC_CHECK_HEADERS([sys/socket.h sys/sockio.h sys/time.h sys/wait.h])
+AC_CHECK_HEADERS([sys/select.h])
 AC_CHECK_HEADERS([netinet/in.h])
 AC_CHECK_HEADERS([net/if.h])
 AC_CHECK_HEADERS([arpa/inet.h])
 AC_CHECK_HEADERS([inttypes.h])
 AC_CHECK_HEADERS([string.h])
+AC_CHECK_HEADERS([poll.h])
 
 ## Typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -57,12 +59,14 @@ AC_TYPE_SIGNAL
 AC_FUNC_ALLOCA
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([memset getpwuid shutdown inet_ntop inet_pton strsep strndup strdup])
+AC_CHECK_FUNCS([select poll])
 AC_LIB_SOCKET
 AC_LIB_NSL
 AC_LIB_MATH
 
 ## Declarations
 AC_CHECK_DECLS([strcasecmp, strcoll, strerror, strncasecmp, strsep, strndup, strdup])
+AC_CHECK_DECLS([poll, select])
 
 
 ##

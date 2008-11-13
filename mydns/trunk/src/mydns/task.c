@@ -319,7 +319,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
 
   /* If this is AXFR, fork to handle it so that other requests don't block */
   if (t->protocol == SOCK_STREAM && t->qtype == DNS_QTYPE_AXFR) {
-    task_change_type_and_priority(t, PERIODIC_TASK, NORMAL_PRIORITY_TASK);
+    task_change_type_and_priority(t, IO_TASK, NORMAL_PRIORITY_TASK);
     t->status = NEED_AXFR;
   } else if (t->qtype == DNS_QTYPE_IXFR) {
     t->status = NEED_IXFR;
@@ -630,6 +630,10 @@ task_timedout(TASK *t) {
 
   Status.timedout++;
 
+  if (!t) {
+    Err(_("task_timedout called with NULL task"));
+  }
+
   if (t->timeextension) {
     res = t->timeextension(t, t->extension);
     if (
@@ -657,8 +661,12 @@ task_timedout(TASK *t) {
 	Process the specified task, if possible.  Returns a pointer to the next task.
 **************************************************************************************************/
 static taskexec_t
-task_process_query(TASK *t, fd_set *rfd, fd_set*wfd, fd_set *efd) {
+task_process_query(TASK *t, int rfd, int wfd, int efd) {
   taskexec_t	res = TASK_DID_NOT_EXECUTE;
+
+#if DEBUG_ENABLED && DEBUG_TASK
+  Debug(_("%s: task_process_query called rfd = %d, wfd = %d, efd = %d"), desctask(t), rfd, wfd, efd);
+#endif
 
   switch (TASKIOTYPE(t->status)) {
 
@@ -670,7 +678,7 @@ task_process_query(TASK *t, fd_set *rfd, fd_set*wfd, fd_set *efd) {
       /*
       **  NEED_READ: Need to read query
       */
-      if (FD_ISSET(t->fd, rfd) || FD_ISSET(t->fd, efd)) {
+      if (rfd || efd) {
 	switch (t->protocol) {
 
 	case SOCK_DGRAM:
@@ -694,6 +702,17 @@ task_process_query(TASK *t, fd_set *rfd, fd_set*wfd, fd_set *efd) {
 	}
       }
       return TASK_CONTINUE;
+
+    case NEED_COMMAND_READ:
+
+      if (!rfd && !efd) return TASK_CONTINUE;
+
+      /* Call the run function */
+      if (!t->runextension) return TASK_CONTINUE;
+
+      res = t->runextension(t, t->extension);
+
+      return res;
 
     default:
       Warnx("%s: %d %s", desctask(t), t->status, _("unrecognised task status"));
@@ -762,7 +781,11 @@ task_process_query(TASK *t, fd_set *rfd, fd_set*wfd, fd_set *efd) {
       /*
       **  NEED_WRITE: Need to write reply
       */
-      if (FD_ISSET(t->fd, wfd) || FD_ISSET(t->fd, efd)) {
+#if DEBUG_ENABLED &&DEBUG_TASK
+      Debug(_("%s: task_process_query processing write - wfd = %d, efd = %d"), desctask(t), wfd, efd);
+#endif
+
+      if (wfd || efd) {
 	switch (t->protocol) {
 
 	case SOCK_DGRAM:
@@ -792,6 +815,17 @@ task_process_query(TASK *t, fd_set *rfd, fd_set*wfd, fd_set *efd) {
       }
       return TASK_CONTINUE;
 
+    case NEED_COMMAND_WRITE:
+
+      if (!wfd && !efd) return TASK_CONTINUE;
+
+      /* Call the run function */
+      if (!t->runextension) return TASK_CONTINUE;
+
+      res = t->runextension(t, t->extension);
+
+      return res;
+
     default:
       Warnx("%s: %d %s", desctask(t), t->status, _("unrecognised task status"));
       return TASK_FAILED;
@@ -801,8 +835,12 @@ task_process_query(TASK *t, fd_set *rfd, fd_set*wfd, fd_set *efd) {
 }
 
 static taskexec_t
-task_process_recursive(TASK *t, fd_set *rfd, fd_set*wfd, fd_set *efd) {
+task_process_recursive(TASK *t, int rfd, int wfd, int efd) {
   taskexec_t	res = TASK_DID_NOT_EXECUTE;
+
+#if DEBUG_ENABLED && DEBUG_TASK
+  Debug(_("%s: task_process_recursive called rfd = %d, wfd = %d, efd = %d"), desctask(t), rfd, wfd, efd);
+#endif
 
   switch (TASKIOTYPE(t->status)) {
 
@@ -864,7 +902,7 @@ task_process_recursive(TASK *t, fd_set *rfd, fd_set*wfd, fd_set *efd) {
       /*
       **  NEED_RECURSIVE_FWD_READ: Need to read reply from recursive forwarder
       */
-      if(FD_ISSET(t->fd, rfd) || FD_ISSET(t->fd, efd)) {
+      if(rfd || efd) {
 	res = recursive_fwd_read(t);
 	if (res == TASK_FAILED) return TASK_FAILED;	/* The master task just keeps running */
 	if (res == TASK_COMPLETED) return TASK_COMPLETED;/* The master task has finished */
@@ -890,8 +928,12 @@ task_process_recursive(TASK *t, fd_set *rfd, fd_set*wfd, fd_set *efd) {
 }
 
 static taskexec_t
-task_process_request(TASK *t, fd_set *rfd, fd_set*wfd, fd_set *efd) {
+task_process_request(TASK *t, int rfd, int wfd, int efd) {
   taskexec_t	res = TASK_DID_NOT_EXECUTE;
+
+#if DEBUG_ENABLED && DEBUG_TASK
+  Debug(_("%s: task_process_request called rfd = %d, wfd = %d, efd = %d"), desctask(t), rfd, wfd, efd);
+#endif
 
   switch (TASKIOTYPE(t->status)) {
 
@@ -903,7 +945,7 @@ task_process_request(TASK *t, fd_set *rfd, fd_set*wfd, fd_set *efd) {
       /*
       ** NEED_NOTIFY_WRITE: need to write to slaves
       */
-      if (FD_ISSET(t->fd, wfd)) { /* && (t->timeout <= current_time)) {*/
+      if (wfd) {
 	res = notify_write(t);
 	if (res == TASK_COMPLETED) return TASK_COMPLETED;
 	if( res == TASK_CONTINUE) return TASK_CONTINUE;
@@ -926,7 +968,7 @@ task_process_request(TASK *t, fd_set *rfd, fd_set*wfd, fd_set *efd) {
       /*
       ** NEED_NOTIFY_READ: need to read from a slave
       */
-      if (FD_ISSET(t->fd, rfd)) {
+      if (rfd) {
 	res = notify_read(t);
 	if (res == TASK_COMPLETED) return TASK_COMPLETED;
 	if( res == TASK_CONTINUE) return TASK_CONTINUE;
@@ -949,18 +991,23 @@ task_process_request(TASK *t, fd_set *rfd, fd_set*wfd, fd_set *efd) {
 }
 
 static taskexec_t
-task_process_ticktask(TASK *t, fd_set *rfd, fd_set*wfd, fd_set *efd) {
+task_process_ticktask(TASK *t, int rfd, int wfd, int efd) {
+
+#if DEBUG_ENABLED && DEBUG_TASK
+  Debug(_("%s: task_process_ticktask called rfd = %d, wfd = %d, efd = %d"), desctask(t), rfd, wfd, efd);
+#endif
 
   switch (TASKIOTYPE(t->status)) {
 
   case Needs2Read:
+
     Warnx("%s: %d %s", desctask(t), t->status, _("unrecognised task status"));
     return TASK_FAILED;
 
   case Needs2Write:
+
     Warnx("%s: %d %s", desctask(t), t->status, _("unrecognised task status"));
     return TASK_FAILED;
-
 
   case Needs2Connect:
     Warnx("%s: %d %s", desctask(t), t->status, _("unrecognised task status"));
@@ -985,6 +1032,7 @@ task_process_ticktask(TASK *t, fd_set *rfd, fd_set*wfd, fd_set *efd) {
       return TASK_FAILED;
 
     }
+    break;
 
   default:
     Warnx("%s: %d %s", desctask(t), t->status, _("unrecognised task status"));
@@ -995,8 +1043,12 @@ task_process_ticktask(TASK *t, fd_set *rfd, fd_set*wfd, fd_set *efd) {
 }
 
 static taskexec_t
-task_process_runtask(TASK *t, fd_set *rfd, fd_set*wfd, fd_set *efd) {
+task_process_runtask(TASK *t, int rfd, int wfd, int efd) {
   taskexec_t	res = TASK_DID_NOT_EXECUTE;
+
+#if DEBUG_ENABLED && DEBUG_TASK
+  Debug(_("%s: task_process_runtask called rfd = %d, wfd = %d, efd = %d"), desctask(t), rfd, wfd, efd);
+#endif
 
   switch (t->status) {
 
@@ -1004,13 +1056,8 @@ task_process_runtask(TASK *t, fd_set *rfd, fd_set*wfd, fd_set *efd) {
     axfr_fork(t);
     return TASK_COMPLETED;
 
-  case NEED_COMMAND_WRITE:
-    if (!(FD_ISSET(t->fd, wfd) || FD_ISSET(t->fd, efd))) return TASK_CONTINUE;
-    break;
-
   case NEED_TASK_READ:
-  case NEED_COMMAND_READ:
-    if (!(FD_ISSET(t->fd, rfd) || FD_ISSET(t->fd, efd))) return TASK_CONTINUE;
+    if (!rfd && !efd) return TASK_CONTINUE;
     break;
 
   case NEED_TASK_RUN:
@@ -1031,9 +1078,12 @@ task_process_runtask(TASK *t, fd_set *rfd, fd_set*wfd, fd_set *efd) {
 }
 
 int
-task_process(TASK *t, fd_set *rfd, fd_set *wfd, fd_set *efd) {
+task_process(TASK *t, int rfd, int wfd, int efd) {
   taskexec_t	res = TASK_DID_NOT_EXECUTE;
 
+#if DEBUG_ENABLED && DEBUG_TASK
+  Debug(_("%s: task_process called rfd = %d, wfd = %d, efd = %d"), desctask(t), rfd, wfd, efd);
+#endif
   switch (TASKCLASS(t->status)) {
 
   case QueryTask:
