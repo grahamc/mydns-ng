@@ -413,25 +413,30 @@ notify_read(TASK *t) {
     }
     {
       int rv = 0;
-#if HAVE_POLL
       struct pollfd item;
 
       item.fd = t->fd;
       item.events = POLLIN;
       item.revents = 0;
 
+#if HAVE_POLL
       rv = poll(&item, 1, 0);
       if ((rv >= 0) && !(item.revents & POLLIN)) { break; }
 #else
 #if HAVE_SELECT
-      fd_set rfds;
+      fd_set rfds, efds;
       struct timeval timeout = { 0, 0 };
       FD_ZERO(&rfds);
       FD_SET(t->fd, &rfds);
+      FD_ZERO(&efds);
+      FD_SET(t->fd, &efds);
       timeout.tv_sec = 0;
       timeout.tv_usec = 0;
-      rv = select(t->fd+1, &rfds, NULL, NULL, &timeout);
-	  if ((rv >= 0) && !FD_ISSET(t->fd, &rfds)) { break; }
+      rv = select(t->fd+1, &rfds, NULL, &efds, &timeout);
+      if (rv >= 0) {
+	if (!FD_ISSET(t->fd, &rfds)) { break; }
+	if (FD_ISSET(t->fd, &efds)) { item.revents = POLLERR; rv = 1; }
+      }
 #else
 #error You must have either poll(preferred) or select to compile this code
 #endif
@@ -439,6 +444,12 @@ notify_read(TASK *t) {
       if (rv < 0) {
 #if DEBUG_ENABLED && DEBUG_NOTIFY
 	Debug(_("%s: poll fd %d failed with %s(%d)"), desctask(t), t->fd, strerror(errno), errno);
+#endif
+	break;
+      }
+      if ((item.revents & POLLERR)) {
+#if DEBUG_ENABLED && DEBUG_NOTIFY
+	Debug(_("%s: poll fd %d gave an error"), desctask(t), t->fd);
 #endif
 	break;
       }

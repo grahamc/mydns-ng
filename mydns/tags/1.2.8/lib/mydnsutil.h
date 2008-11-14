@@ -276,15 +276,19 @@ struct pollfd {
   short		revents;	/* returned events */
 };
 
-/* Input values */
-#define POLLIN		0x001
-#define POLLPRI		0x002
-#define POLLOUT		0x004
+/* Input/Output values */
+#define POLLIN		0x0001
+#define POLLPRI		0x0002
+#define POLLOUT		0x0004
+
+#define POLLMSG		0x0400
+#define POLLREMOVE	0x1000
+#define POLLRDHUP	0x2000
 
 /* Output values */
-#define POLLERR		0x008
-#define POLLHUP		0x010
-#define POLLNVAL	0x020
+#define POLLERR		0x0008
+#define POLLHUP		0x0010
+#define POLLNVAL	0x0020
 
 #endif
 

@@ -77,33 +77,40 @@ axfr_timeout(int dummy) {
 static void
 axfr_write_wait(TASK *t) {
   int			rv = 0;
-#if HAVE_POLL
   struct pollfd item;
   item.fd = t->fd;
   item.events = POLLOUT;
   item.revents = 0;
 
+#if HAVE_POLL
   rv = poll(&item, 1, -1);
-  if (rv >= 0 && (rv != 1 || !(item.revents & POLLOUT)))
-    axfr_error(t, _("write timeout"));
+  if (rv >= 0) {
+    if (rv != 1 || !(item.revents & POLLOUT) || (item.revents & (POLLERR|POLLHUP|POLLNVAL)))
+      axfr_error(t, _("axfr_write_wait write timeout failure"));
+  }
 #else
 #if HAVE_SELECT
   fd_set		wfd;
+  fd_set		efd
   struct timeval 	tv = { 0, 0 };
 
   FD_ZERO(&wfd);
   FD_SET(t->fd, &wfd);
+  FD_ZERO(&efd);
+  FD_SET(t->fd, &efd);
   tv.tv_sec = task_timeout;
   tv.tv_usec = 0;
-  rv = select(t->fd + 1, NULL, &wfd, NULL, &tv);
-  if (rv >= 0 && (rv != 1 || !FD_ISSET(t->fd, &wfd)))
-    axfr_error(t, _("write timeout"));
+  rv = select(t->fd + 1, NULL, &wfd, &efd, &tv);
+  if (rv >= 0) {
+    if (rv != 1 || !FD_ISSET(t->fd, &wfd) || FD_ISSET(t->fd, &efd))
+      axfr_error(t, _("axfr_write_waut write timeout failure"));
+  }
 #else
 #error You must have either poll(preferred) or select to compile this code
 #endif
 #endif
   if (rv < 0)
-    axfr_error(t, "%s: %s", _("select"), strerror(errno));
+    axfr_error(t, "axfr_write_wait poll failed %s(%d)", strerror(errno), errno);
 }
 /*--- axfr_write_wait() -------------------------------------------------------------------------*/
 
