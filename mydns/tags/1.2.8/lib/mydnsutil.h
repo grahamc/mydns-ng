@@ -486,7 +486,7 @@ extern int		err_debug;			/* Should ERR_DEBUG output anything? */
 #endif
 extern FILE		*err_file;			/* Output to this file */
 
-
+extern void		error_reinit();
 extern void		error_init(const char *argv0, int facility);
 #if DEBUG_ENABLED
 extern void		Debug(const char *, ...) __printflike(1,2);

@@ -1258,6 +1258,8 @@ spawn_server(INITIALTASK *initial_tasks) {
 
   /* Child == SERVER */
 
+  error_reinit();
+
   /* Delete other server objects as they belong to master.*/
   while (array_numobjects(Servers)) {
     SERVER *server = array_remove(Servers);

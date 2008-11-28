@@ -183,6 +183,8 @@ notify_write(TASK *t) {
 	  ) {
 	continue; /* Try again later */
       }
+      Warn("%s %s(%d) %s %s(%d)", _("Notify Send to Slave "), msg, port,
+	   _("failed with error %s(%d)"), strerror(errno), errno);
       continue;
     }
     slave->lastsent = current_time;
@@ -201,7 +203,8 @@ notify_write(TASK *t) {
   }
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-  Debug(_("%s: DNS NOTIFY wrote notifies to slaves, %d left to reply, timeout %ld - %ld = %ld"), desctask(t),
+  Debug(_("%s: DNS NOTIFY wrote notifies to slaves, %d left to reply, timeout %ld - %ld = %ld"),
+	desctask(t),
 	slavecount, t->timeout, current_time, t->timeout - current_time);
 #endif
 
@@ -266,7 +269,6 @@ _notify_read(TASK *t, struct sockaddr *from, socklen_t fromlen) {
     }
 
     slavecount--;
-
   }
 
   return slavecount;
@@ -324,12 +326,19 @@ notify_read(TASK *t) {
       Debug(_("%s: recv from slave %s(%d) failed - %s(%d)"), desctask(t),
 	    msg, port, strerror(errno), errno);
 #endif
-      Warn("%s", _("recvfrom (UDP)"));
+      Warn("%s %s(%d) %s %s(%d)",
+	   _("recvfrom (UDP) for slave"),
+	   msg, port,
+	   _("failed - "),
+	   strerror(errno), errno);
       goto CLEANUP;
     }
 
     if (rv < sizeof(DNS_HEADERSIZE)) {
-      Warn("%s %d", _("recvfrom (UDP) too short "), rv);
+      Warn("%s %s(%d) %s %d%s %d", _("recvfrom (UDP) for slave"),
+	   msg, port,
+	   _("too short"), rv,
+	   _("bytes should be >"), DNS_HEADERSIZE);
       continue;
     }
 
@@ -383,8 +392,7 @@ notify_read(TASK *t) {
       }
 #endif
       Warn("%s %s %s", _("message from"), msg, _("not a query response or for wrong opcode"));
-      if ((newt = task_init(HIGH_PRIORITY_TASK, NEED_ANSWER, t->fd, SOCK_DGRAM,
-			    from.sa_family, &from))) {
+      if ((newt = task_init(HIGH_PRIORITY_TASK, NEED_ANSWER, t->fd, SOCK_DGRAM, from.sa_family, &from))) {
 	task_new(newt, (unsigned char*)in, rv);
       }
       continue;
@@ -675,11 +683,80 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 
     RELEASE(label);
 
+    if (resolved) { continue; }
+
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-    Debug(_("%s: name_servers2ip() - done local try DNS - %d"), desctask(t), resolved);
+    Debug(_("%s: name_servers2ip() - done try local DNS - %d"), desctask(t), resolved);
 #endif
-    if (!resolved) {
-      /* Look up via DNS instead */
+
+    /* This needs enhancing so that a recursive lookup is run before trying the lcal DNS */
+
+    /* Look up via other DNS/hosts instead */
+#if HAVE_GETADDRINFO
+    {
+      struct addrinfo hosthints;
+      struct addrinfo *hostdata = NULL;
+      struct addrinfo *hostentry;
+
+      hosthints.ai_flags = AI_CANONNAME|AI_ADDRCONFIG;
+#if HAVE_IPV6
+      hosthints.ai_family = AF_UNSPEC;
+#else
+      hosthints.ai_family = AF_INET;
+#endif
+      hosthints.ai_socktype = 0;
+      hosthints.ai_protocol = 0;
+      hosthints.ai_addrlen = 0;
+      hosthints.ai_addr = NULL;
+      hosthints.ai_canonname = NULL;
+      hosthints.ai_next = NULL;
+
+      int rv = getaddrinfo(name_server, NULL, NULL, &hostdata);
+
+      if (!rv) {
+	int j, k;
+
+	for (hostentry = hostdata; hostentry; hostentry = hostentry->ai_next) {
+	  const char *ipaddress = NULL;
+	  NOTIFYSLAVE *slave = (NOTIFYSLAVE*)ALLOCATE(sizeof(NOTIFYSLAVE), NOTIFYSLAVE);
+	  slave->lastsent = 0;
+	  slave->replied = 0;
+	  slave->retries = 0;
+	  if (hostentry->ai_family == AF_INET) {
+	    struct sockaddr_in *ipaddr4 = (struct sockaddr_in*)&(slave->slaveaddr.ips4);
+	    memcpy((void*)ipaddr4, (void*)hostentry->ai_addr, hostentry->ai_addrlen);
+	    ipaddr4->sin_port = htons(DOMAINPORT);
+	    ipaddress = ipaddr(AF_INET, (void*)&ipaddr4->sin_addr);
+#if HAVE_IPV6
+	  } else if (hostentry->ai_family == AF_INET6) {
+	    struct sockaddr_in6 *ipaddr6 = (struct sockaddr_in6*)&(slave->slaveaddr.ips6);
+	    memcpy((void*)ipaddr6, (void*)hostentry->ai_addr, hostentry->ai_addrlen);
+	    ipaddr6->sin6_port = htons(DOMAINPORT);
+	    ipaddress = ipaddr(AF_INET6, (void*)&ipaddr6->sin6_addr);
+#endif
+	  }
+
+	  for (k = 0; k < array_numobjects(ipaddresses); k++) {
+	    char *ipa = array_fetch(ipaddresses, k);
+	    if (!ipa) continue;
+	    if(!strcmp(ipaddress, ipa)) {
+	      RELEASE(slave);
+	      goto DONETHATONE;
+	    }
+	  }
+	  array_append(ipaddresses, STRDUP(ipaddress));
+	  if (hostentry->ai_family == AF_INET) {
+	    array_append(ips4, slave);
+#if HAVE_IPV6
+	  } else if (hostentry->ai_family == AF_INET6) {
+	    array_append(ips6, slave);
+#endif
+	  }
+	DONETHATONE: continue;
+	}
+	freeaddrinfo(hostdata);
+      }
+#else
       struct hostent *hostdata = gethostbyname(name_server);
 
       if (hostdata) {
@@ -726,6 +803,7 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 	DONETHATONE: continue;
 	}
       }
+#endif
     }
 
   }

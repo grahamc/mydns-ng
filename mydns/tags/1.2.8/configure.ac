@@ -18,7 +18,7 @@
 ##	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ##
 
-AC_INIT(mydns, [1.2.8.11], [support@cohtech.com])	## Package name, version, bugreport address
+AC_INIT(mydns, [1.2.8.12], [support@cohtech.com])	## Package name, version, bugreport address
 AC_PREREQ([2.59])
 AC_COPYRIGHT([Portions of this script are Copyright 2002-2005 Don Moore  2007-2008 Howard Wilkinson])
 AM_INIT_AUTOMAKE([1.9.5 dist-bzip2])
@@ -60,6 +60,7 @@ AC_FUNC_ALLOCA
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([memset getpwuid shutdown inet_ntop inet_pton strsep strndup strdup])
 AC_CHECK_FUNCS([select poll])
+AC_CHECK_FUNCS([getaddrinfo getnameinfo])
 AC_LIB_SOCKET
 AC_LIB_NSL
 AC_LIB_MATH
