@@ -334,11 +334,11 @@ notify_read(TASK *t) {
       goto CLEANUP;
     }
 
-    if (rv < sizeof(DNS_HEADERSIZE)) {
+    if (rv < DNS_HEADERSIZE) {
       Warn("%s %s(%d) %s %d%s %d", _("recvfrom (UDP) for slave"),
 	   msg, port,
 	   _("too short"), rv,
-	   _("bytes should be >"), DNS_HEADERSIZE);
+	   _("bytes should be >"), (int)DNS_HEADERSIZE);
       continue;
     }
 

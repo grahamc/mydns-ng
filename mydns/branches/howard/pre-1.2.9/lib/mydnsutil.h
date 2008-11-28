@@ -297,6 +297,7 @@ struct pollfd {
 #ifndef POLLRDHUP
 #define POLLRDHUP	0x2000
 #endif
+/* Output values */
 #ifndef POLLERR
 #define POLLERR		0x0008
 #endif
