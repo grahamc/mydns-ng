@@ -156,7 +156,6 @@ notify_write(TASK *t) {
     }
 
     if ((rv = sendto(t->fd, out, reqlen, 0, slaveaddr, slavelen)) < 0) {
-#if DEBUG_ENABLED && DEBUG_NOTIFY
       const char	*msg = NULL;
       int		port = 0;
       if (slaveaddr->sa_family == AF_INET) {
@@ -168,6 +167,7 @@ notify_write(TASK *t) {
 	port = ntohs(((struct sockaddr_in6*)slaveaddr)->sin6_port);
 #endif
       }
+#if DEBUG_ENABLED && DEBUG_NOTIFY
       Debug(_("%s: send to slave %s(%d) failed - %s(%d)"), desctask(t),
 	    msg, port, strerror(errno), errno);
 #endif
@@ -183,8 +183,7 @@ notify_write(TASK *t) {
 	  ) {
 	continue; /* Try again later */
       }
-      Warn("%s %s(%d) %s %s(%d)", _("Notify Send to Slave "), msg, port,
-	   _("failed with error %s(%d)"), strerror(errno), errno);
+      Warn(_("Notify Send to Slave %s(%d) failed with error %s(%d)"), msg, port, strerror(errno), errno);
       continue;
     }
     slave->lastsent = current_time;
@@ -326,19 +325,12 @@ notify_read(TASK *t) {
       Debug(_("%s: recv from slave %s(%d) failed - %s(%d)"), desctask(t),
 	    msg, port, strerror(errno), errno);
 #endif
-      Warn("%s %s(%d) %s %s(%d)",
-	   _("recvfrom (UDP) for slave"),
-	   msg, port,
-	   _("failed - "),
-	   strerror(errno), errno);
+      Warn(_("recvfrom (UDP) for slave %s(%d) failed with %s(%d)"), msg, port, strerror(errno), errno);
       goto CLEANUP;
     }
 
     if (rv < DNS_HEADERSIZE) {
-      Warn("%s %s(%d) %s %d%s %d", _("recvfrom (UDP) for slave"),
-	   msg, port,
-	   _("too short"), rv,
-	   _("bytes should be >"), (int)DNS_HEADERSIZE);
+      Warn(_("recvfrom (UDP) for slave %s(%d) too short %dbytes should be > %d"), msg, port, rv, (int)DNS_HEADERSIZE);
       continue;
     }
 
@@ -391,7 +383,7 @@ notify_read(TASK *t) {
       DECODEDQUERY: ;
       }
 #endif
-      Warn("%s %s %s", _("message from"), msg, _("not a query response or for wrong opcode"));
+      Warn(_("message from %s not a query response or for wrong opcode"), msg);
       if ((newt = task_init(HIGH_PRIORITY_TASK, NEED_ANSWER, t->fd, SOCK_DGRAM, from.sa_family, &from))) {
 	task_new(newt, (unsigned char*)in, rv);
       }
@@ -542,7 +534,7 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
   res = sql_query(sql, query, querylen);
   RELEASE(query);
   if (!res)
-    ErrSQL(sql, "%s: %s", desctask(t), _("error loading DNS NOTIFY also_notify nameservers"));
+    ErrSQL(sql, _("error loading DNS NOTIFY also_notify nameservers: %s"), desctask(t));
 
   if ((row = sql_getrow(res, NULL))) {
     char *also_notify_servers = row[0];
@@ -837,7 +829,7 @@ notify_allocate_fd(int family, struct sockaddr *sourceaddr)
 
     /* Set REUSEADDR in case anything is left lying around. */
     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-      Warn(_("setsockopt"));
+      Warn(_("setsockopt - %s(%d)"), strerror(errno), errno);
     fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
     if (bind(fd, sourceaddr,
 #if HAVE_IPV6
@@ -855,7 +847,7 @@ notify_allocate_fd(int family, struct sockaddr *sourceaddr)
 	port = ntohs(((struct sockaddr_in6*)sourceaddr)->sin6_port);
 #endif
       }
-      Err(_("bind (UDP): %s:%d"), msg, port);
+      Err(_("bind (UDP): %s:%d - %s(%d)"), msg, port, strerror(errno), errno);
     }
     for (n = 1; n < 1024; n++) {
       opt = n * 1024;
@@ -1106,8 +1098,7 @@ notify_all_soas(TASK *t, void *data) {
   res = sql_query(sql, query, querylen);
   RELEASE(query);
   if(!res) {
-    ErrSQL(sql, "%s: %s", desctask(t),
-	   _("error loading DNS NOTIFY zone origin while building all_soas"));
+    ErrSQL(sql, _("error loading DNS NOTIFY zone origin while building all_soas: %s"), desctask(t));
   }
 
   if ((row = sql_getrow(res, NULL))) {
