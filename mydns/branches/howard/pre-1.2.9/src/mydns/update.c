@@ -187,7 +187,8 @@ update_transaction(TASK *t, const char *query) {
 
 /**************************************************************************************************
 	CHECK_UPDATE
-	If the "update" column exists in the soa table, it should contain a list of wildcards separated
+	If the "update" column exists in the soa table,
+	it should contain a list of wildcards separated
 	by commas.  In order for the DNS UPDATE to continue, one of the wildcards must match the
 	client's IP address.  Returns 0 if okay, -1 if denied.
 **************************************************************************************************/
@@ -218,7 +219,7 @@ check_update(TASK *t, MYDNS_SOA *soa) {
       }
     }
 
-    if (ok || !strcmp(ip, "127.0.0.1")) {					/* OK from localhost */
+    if (ok || !strcmp(ip, "127.0.0.1")) {			/* OK from localhost */
       return 0;
     }
     return dnserror(t, DNS_RCODE_REFUSED, ERR_NO_UPDATE);
@@ -1017,11 +1018,16 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
   int		n = 0, rv = 0;
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
-  Debug(_("%s: DNS UPDATE: check_prerequisite: rr->name=[%s]"), desctask(t), UQRR_NAME(rr));
-  Debug(_("%s: DNS UPDATE: check_prerequisite: rr->class=%s"), desctask(t), mydns_class_str(rr->class));
-  Debug(_("%s: DNS UPDATE: check_prerequisite: q->class=%s"), desctask(t), mydns_class_str(q->class));
-  Debug(_("%s: DNS UPDATE: check_prerequisite: rr->type=%s"), desctask(t), mydns_qtype_str(rr->type));
-  Debug(_("%s: DNS UPDATE: check_prerequisite: rr->rdlength=%u"), desctask(t), UQRR_DATA_LENGTH(rr));
+  Debug(_("%s: DNS UPDATE: check_prerequisite: rr->name=[%s]"),
+	desctask(t), UQRR_NAME(rr));
+  Debug(_("%s: DNS UPDATE: check_prerequisite: rr->class=%s"),
+	desctask(t), mydns_class_str(rr->class));
+  Debug(_("%s: DNS UPDATE: check_prerequisite: q->class=%s"),
+	desctask(t), mydns_class_str(q->class));
+  Debug(_("%s: DNS UPDATE: check_prerequisite: rr->type=%s"),
+	desctask(t), mydns_qtype_str(rr->type));
+  Debug(_("%s: DNS UPDATE: check_prerequisite: rr->rdlength=%u"),
+	desctask(t), UQRR_DATA_LENGTH(rr));
 #endif
 
   /* Get aux/data */
@@ -1115,8 +1121,8 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
       }
     }
   } else if (rr->class == q->class) {
-    int		unique = 0;						/* Is this rrset element unique? */
-    uint32_t	aux = 0;					/* 'aux' value for parsed data */
+    int		unique = 0;			/* Is this rrset element unique? */
+    uint32_t	aux = 0;			/* 'aux' value for parsed data */
     taskexec_t	ures = TASK_FAILED;
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
@@ -1568,7 +1574,8 @@ update_delete_rrset_all(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_
       res2 = sql_nrquery(sql, query, querylen);
       RELEASE(query);
       if (res2 != 0) {
-	WarnSQL(sql, "%s: %s - %s", desctask(t), _("error purging DELETE RR via DNS UPDATE"), query);
+	WarnSQL(sql, "%s: %s - %s",
+		desctask(t), _("error purging DELETE RR via DNS UPDATE"), query);
 	return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
       }
       updates++;
@@ -1863,7 +1870,8 @@ update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_seri
       res2 = sql_nrquery(sql, query, querylen);
       RELEASE(query);
       if (res2 != 0) {
-	WarnSQL(sql, "%s: %s - %s", desctask(t), _("error purging DELETE RR via DNS UPDATE"), query);
+	WarnSQL(sql, "%s: %s - %s",
+		desctask(t), _("error purging DELETE RR via DNS UPDATE"), query);
 	RELEASE(xname);
 	RELEASE(xhost);
 	return dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
@@ -1929,7 +1937,8 @@ process_update(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 #if DEBUG_ENABLED && DEBUG_UPDATE
   Debug(_("%s: DNS UPDATE: process_update: q->name=[%s], q->type=%s, q->class=%s"), desctask(t),
 	UQ_NAME(q), mydns_qtype_str(q->type), mydns_class_str(q->class));
-  Debug(_("%s: DNS UPDATE: process_update: UQRR_NAME(rr)=[%s], rr->type=%s, rr->class=%s"), desctask(t),
+  Debug(_("%s: DNS UPDATE: process_update: UQRR_NAME(rr)=[%s], rr->type=%s, rr->class=%s"),
+	desctask(t),
 	UQRR_NAME(rr), mydns_qtype_str(rr->type), mydns_class_str(rr->class));
 #endif
 
@@ -1990,7 +1999,8 @@ process_update(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 	The temporary prerequisite RRsets are stored in q->tmprr (the count in q->num_tmprr).
 
 	The algorithm used here is to loop through q->tmprr.
-	The <NAME,TYPE> is inspected, and each RR with that <NAME,TYPE> is marked as 'tmprr->checked=1'.
+	The <NAME,TYPE> is inspected, and each RR with that <NAME,TYPE> is marked as
+ 	'tmprr->checked=1'.
 	We then examine each <NAME,TYPE> of that sort in q->tmprr.
 	Then, if any members of that <NAME,TYPE> are not matched, or if the count of records
 	of that <NAME,TYPE> in the database does not match the number of records of that <NAME,TYPE>
@@ -2010,15 +2020,16 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
   /* Examine "tmprr" */
   for (n = 0; n < q->num_tmprr; n++) {
     TMPRR	*tmprr = q->tmprr[n];
-    char	*current_name = TMPRR_NAME(tmprr);			/* Current NAME being examined */
-    dns_qtype_t	current_type = tmprr->type;			/* Current TYPE being examined */
-    MYDNS_RR	*rr_first = NULL;				/* RRs for the current name/type */
-    MYDNS_RR	*rr = NULL;						/* Current RR */
-    int		total_prereq_rr = 0, total_db_rr = 0;		/* Total RRs in prereq and database */
+    char	*current_name = TMPRR_NAME(tmprr);	/* Current NAME being examined */
+    dns_qtype_t	current_type = tmprr->type;		/* Current TYPE being examined */
+    MYDNS_RR	*rr_first = NULL;			/* RRs for the current name/type */
+    MYDNS_RR	*rr = NULL;				/* Current RR */
+    int		total_prereq_rr = 0, total_db_rr = 0;	/* Total RRs in prereq and database */
 
-    if (tmprr->checked) {					/* Ignore if already checked */
+    if (tmprr->checked) {				/* Ignore if already checked */
 #if DEBUG_ENABLED && DEBUG_UPDATE
-      Debug(_("%s: DNS UPDATE: Skipping prerequisite RRsets for %s/%s (already checked)"), desctask(t),
+      Debug(_("%s: DNS UPDATE: Skipping prerequisite RRsets for %s/%s (already checked)"),
+	    desctask(t),
 	    current_name, mydns_qtype_str(current_type));
 #endif
       continue;
@@ -2082,7 +2093,7 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
        If it does, set matched=1.  If it does not, return NXRRSET */
     for (i = 0; i < q->num_tmprr; i++)
       if (q->tmprr[i]->type == current_type && !strcasecmp(TMPRR_NAME(q->tmprr[i]), current_name)) {
-	int found_match = 0;					/* Did we find a match for this RR? */
+	int found_match = 0;		/* Did we find a match for this RR? */
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
 	Debug(_("%s: DNS UPDATE: looking for tmprr[%d] = %s/%s/%u/%s in database"), desctask(t),
@@ -2329,7 +2340,10 @@ dns_update(TASK *t) {
   Debug(_("%s: DNS UPDATE: ADCOUNT=%d (Additional data)"), desctask(t), t->arcount);
 #endif
 
-  /* Check that we are the master for this zone i.e. one of our addresses matches the master record */
+  /*
+   * Check that we are the master for this zone
+   * i.e. one of our addresses matches the master record
+   */
   if(!are_we_master(t, soa)) {
     dnserror(t, DNS_RCODE_NOTAUTH, ERR_NO_UPDATE);
     return (TASK_FAILED);

@@ -89,6 +89,9 @@
 /* Define to 1 if you have the `fgets_unlocked' function. */
 #undef HAVE_FGETS_UNLOCKED
 
+/* Define to 1 if you have the `getaddrinfo' function. */
+#undef HAVE_GETADDRINFO
+
 /* Define to 1 if you have the `getcwd' function. */
 #undef HAVE_GETCWD
 
@@ -103,6 +106,9 @@
 
 /* Define to 1 if you have the `getgid' function. */
 #undef HAVE_GETGID
+
+/* Define to 1 if you have the `getnameinfo' function. */
+#undef HAVE_GETNAMEINFO
 
 /* Define to 1 if you have the <getopt.h> header file. */
 #undef HAVE_GETOPT_H

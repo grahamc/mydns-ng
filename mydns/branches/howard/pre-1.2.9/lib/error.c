@@ -26,6 +26,7 @@
 
 /* The name of the currently running program */
 char	*progname = (char *)PACKAGE;
+int	mypid = -1;
 
 /* Should ERR_VERBOSE cause output? */
 int	err_verbose = 0;
@@ -43,6 +44,11 @@ FILE	*err_file = NULL;
 	Initialize error reporting and output functions.
 **************************************************************************************************/
 void
+error_reinit() {
+  mypid = getpid();
+}
+
+void
 error_init(const char *argv0, int facility) {
   int option;
 
@@ -54,6 +60,8 @@ error_init(const char *argv0, int facility) {
     else
       progname = STRDUP((char *)argv0);
   }
+
+  mypid = (int)getpid();
 
   /* Open syslog */
   if (!err_file) {
@@ -85,7 +93,7 @@ __error_out(int priority, const char *out, int len, char **err_last) {
     }
     if (repeat) {
       if (err_file)
-	fprintf(err_file, _("%s: last message repeated %d times\n"), progname, repeat + 1);
+	fprintf(err_file, _("%s[%d]: last message repeated %d times\n"), progname, mypid, repeat + 1);
       else
 	syslog(priority, _("last message repeated %d times"), repeat + 1);
     }
@@ -94,8 +102,7 @@ __error_out(int priority, const char *out, int len, char **err_last) {
     *err_last = STRDUP(out);
   }
   if (err_file) {
-    fwrite(out, len, 1, err_file);
-    fwrite("\n", strlen("\n"), 1, err_file);
+    fprintf(err_file, _("%s[%d]: %s\n"), progname, mypid, out);
     fflush(err_file);
   } else {
     syslog(priority, "%s", out);

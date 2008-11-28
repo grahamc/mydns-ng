@@ -264,23 +264,24 @@ void
 conf_set_logging(void) {
   char *logtype;
 
+  /* logtype is preset to LOG_DAEMON unless overridden */
   logtype = STRDUP(conf_get(&Conf, "log", NULL));
   strtolower(logtype);
 
   if (!err_file)
     closelog();
 
-  if (!strcmp(logtype, "stderr")) { err_file = stderr; closelog(); }
-  else if (!strcmp(logtype, "stdout")) { err_file = stdout; closelog(); }
-  else if (!strcmp(logtype, "log_daemon")) error_init(NULL, LOG_DAEMON);
-  else if (!strcmp(logtype, "log_local0")) error_init(NULL, LOG_LOCAL0);
-  else if (!strcmp(logtype, "log_local1")) error_init(NULL, LOG_LOCAL1);
-  else if (!strcmp(logtype, "log_local2")) error_init(NULL, LOG_LOCAL2);
-  else if (!strcmp(logtype, "log_local3")) error_init(NULL, LOG_LOCAL3);
-  else if (!strcmp(logtype, "log_local4")) error_init(NULL, LOG_LOCAL4);
-  else if (!strcmp(logtype, "log_local5")) error_init(NULL, LOG_LOCAL5);
-  else if (!strcmp(logtype, "log_local6")) error_init(NULL, LOG_LOCAL6);
-  else if (!strcmp(logtype, "log_local7")) error_init(NULL, LOG_LOCAL7);
+  if (!strcasecmp(logtype, "stderr")) { err_file = stderr; closelog(); }
+  else if (!strcasecmp(logtype, "stdout")) { err_file = stdout; closelog(); }
+  else if (!strcasecmp(logtype, "log_daemon")) error_init(NULL, LOG_DAEMON);
+  else if (!strcasecmp(logtype, "log_local0")) error_init(NULL, LOG_LOCAL0);
+  else if (!strcasecmp(logtype, "log_local1")) error_init(NULL, LOG_LOCAL1);
+  else if (!strcasecmp(logtype, "log_local2")) error_init(NULL, LOG_LOCAL2);
+  else if (!strcasecmp(logtype, "log_local3")) error_init(NULL, LOG_LOCAL3);
+  else if (!strcasecmp(logtype, "log_local4")) error_init(NULL, LOG_LOCAL4);
+  else if (!strcasecmp(logtype, "log_local5")) error_init(NULL, LOG_LOCAL5);
+  else if (!strcasecmp(logtype, "log_local6")) error_init(NULL, LOG_LOCAL6);
+  else if (!strcasecmp(logtype, "log_local7")) error_init(NULL, LOG_LOCAL7);
   else {
     FILE *fp;
 

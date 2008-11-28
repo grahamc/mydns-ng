@@ -276,16 +276,35 @@ struct pollfd {
   short		revents;	/* returned events */
 };
 
-/* Input values */
-#define POLLIN		0x001
-#define POLLPRI		0x002
-#define POLLOUT		0x004
-
-/* Output values */
-#define POLLERR		0x008
-#define POLLHUP		0x010
-#define POLLNVAL	0x020
-
+#endif
+/* Cope with OS's that do not declare some of these */
+/* Input/Output values */
+#ifndef POLLIN
+#define POLLIN		0x0001
+#endif
+#ifndef POLLPRI
+#define POLLPRI		0x0002
+#endif
+#ifndef POLLOUT
+#define POLLOUT		0x0004
+#endif
+#ifndef POLLMSG
+#define POLLMSG		0x0400
+#endif
+#ifndef POLLREMOVE
+#define POLLREMOVE	0x1000
+#endif
+#ifndef POLLRDHUP
+#define POLLRDHUP	0x2000
+#endif
+#ifndef POLLERR
+#define POLLERR		0x0008
+#endif
+#ifndef POLLHUP
+#define POLLHUP		0x0010
+#endif
+#ifndef POLLNVAL
+#define POLLNVAL	0x0020
 #endif
 
 #ifndef HAVE_UCHAR
@@ -482,7 +501,7 @@ extern int		err_debug;			/* Should ERR_DEBUG output anything? */
 #endif
 extern FILE		*err_file;			/* Output to this file */
 
-
+extern void		error_reinit();
 extern void		error_init(const char *argv0, int facility);
 #if DEBUG_ENABLED
 extern void		Debug(const char *, ...) __printflike(1,2);

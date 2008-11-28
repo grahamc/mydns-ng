@@ -60,6 +60,7 @@ AC_FUNC_ALLOCA
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([memset getpwuid shutdown inet_ntop inet_pton strsep strndup strdup])
 AC_CHECK_FUNCS([select poll])
+AC_CHECK_FUNCS([getaddrinfo getnameinfo])
 AC_LIB_SOCKET
 AC_LIB_NSL
 AC_LIB_MATH

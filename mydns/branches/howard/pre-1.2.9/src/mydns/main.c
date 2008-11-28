@@ -864,7 +864,7 @@ checkTaskTimedOut(TASK *t, int *timeoutWanted) {
 static void
 scheduleTask(TASK *t,
 	     struct pollfd *items[],
-	     int *timeoutWanted, int *numfds) {
+	     int *timeoutWanted, int *numfds, int *maxnumfds) {
   taskexec_t	res = checkTaskTimedOut(t, timeoutWanted);
   struct pollfd	*item = NULL;
 
@@ -888,7 +888,10 @@ scheduleTask(TASK *t,
       }
     }
     *numfds += 1;
-    *items = (struct pollfd*)REALLOCATE(*items, *numfds * sizeof(struct pollfd), struct pollfd[]);
+    if (*numfds > *maxnumfds) {
+      *items = (struct pollfd*)REALLOCATE(*items, *numfds * sizeof(struct pollfd), struct pollfd[]);
+      *maxnumfds = *numfds;
+    }
 
     memcpy(&((*items)[*numfds-1]), item, sizeof(*item));
 
@@ -899,28 +902,35 @@ scheduleTask(TASK *t,
 static void
 scheduleTaskQ(QUEUE *taskQ,
 	      struct pollfd *items[],
-	      int *timeoutWanted, int *numfds) {
+	      int *timeoutWanted, int *numfds, int *maxnumfds) {
   TASK		*t = NULL, *nextTask = NULL;
 
   for (t = taskQ->head; t; t = nextTask) {
     nextTask = t->next;
 
-    scheduleTask(t, items, timeoutWanted, numfds);
+    scheduleTask(t, items, timeoutWanted, numfds, maxnumfds);
   }
 
   return;
 }
 
 static void
-scheduleTasks(struct pollfd *items[], int *timeoutWanted, int *numfds) {
+scheduleTasks(struct pollfd *items[], int *timeoutWanted, int *numfds, int *maxnumfds) {
   int i = 0, j = 0;
 
   for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
     for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
-      scheduleTaskQ(TaskArray[i][j], items, timeoutWanted, numfds);
+      scheduleTaskQ(TaskArray[i][j], items, timeoutWanted, numfds, maxnumfds);
     }
   }
   return;
+}
+
+static void
+purge_bad_task(TASK *t) {
+  if (t->protocol != SOCK_STREAM) 
+    Notice(_("purge_bad_task() bad task %s => %d"), desctask(t), t->fd);
+  dequeue(t);
 }
 
 static int
@@ -945,7 +955,7 @@ run_tasks(struct pollfd items[], int numfds) {
 		item = &(items[k]);
 		rfd |= item->revents & POLLIN;
 		wfd |= item->revents & POLLOUT;
-		efd |= item->revents & POLLERR;
+		efd |= item->revents & (POLLERR|POLLNVAL|POLLHUP);
 #if DEBUG_ENABLED
 		Debug(_("%s: item fd = %d, events = %x, revents = %x, rfd = %d, wfd = %d, efd = %d"),
 		      desctask(t),
@@ -955,7 +965,9 @@ run_tasks(struct pollfd items[], int numfds) {
 		break;
 	      }
 	    }
-	    if (!efd) {
+	    if (efd) {
+	      purge_bad_task(t);
+	    } else {
 	      if ((t->status & Needs2Read) && !rfd) continue;
 	      if ((t->status & Needs2Write) && !wfd) continue;
 	    }
@@ -978,13 +990,13 @@ run_tasks(struct pollfd items[], int numfds) {
 }
 
 static void
-purge_bad_task() {
+purge_bad_tasks() {
   /* Find out which task has an invalid fd and kill it */
   int i = 0, j = 0;
   TASK *t = NULL, *next_task = NULL;
 
 #if DEBUG_ENABLED
-  Debug(_("purge_bad_task() called"));
+  Debug(_("purge_bad_tasks() called"));
 #endif
 
   for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
@@ -992,47 +1004,65 @@ purge_bad_task() {
       QUEUE *TaskQ = TaskArray[i][j];
       for (t = TaskQ->head; t; t = next_task) {
 	next_task = t->next;
-	if (t->fd >= 0) {
-	  int rv;
+	while (1) {
+	  if (t->fd >= 0) {
+	    int rv;
+	    struct pollfd item;
+	    item.fd = t->fd;
+	    item.events = POLLIN|POLLOUT|POLLRDHUP;
+	    item.revents = 0;
 #if HAVE_POLL
-	  struct pollfd item;
-	  item.fd = t->fd;
-	  item.events = POLLIN|POLLOUT;
-	  item.revents = 0;
-	  rv = poll(&item, 1, 0);
+	    rv = poll(&item, 1, 0);
 #else
 #if HAVE_SELECT
-	  fd_set rfd, wfd, efd;
-	  struct timeval timeout = { 0, 0 };
-	  FD_ZERO(&rfd);
-	  FD_ZERO(&wfd);
-	  FD_ZERO(&efd);
-	  FD_SET(t->fd, &rfd);
-	  FD_SET(t->fd, &wfd);
-	  FD_SET(t->fd, &efd);
-	  rv = select(t->fd+1, &rfd, &wfd, &efd, &timeout);
+	    fd_set rfd, wfd, efd;
+	    struct timeval timeout = { 0, 0 };
+	    FD_ZERO(&rfd);
+	    FD_ZERO(&wfd);
+	    FD_ZERO(&efd);
+	    FD_SET(t->fd, &rfd);
+	    FD_SET(t->fd, &wfd);
+	    FD_SET(t->fd, &efd);
+	    rv = select(t->fd+1, &rfd, &wfd, &efd, &timeout);
+	    if (rv < 0) {
+	      if (errno == EBADF) {
+		item.revents = POLLNVAL;
+		rv = 1;
+	      }
+	    }
 #else
 #error You must have either poll(preferred) or select to compile this code
 #endif
 #endif
-	  if (rv < 0) {
-	    if (errno == EBADF) {
-	      if (t->protocol != SOCK_STREAM) 
-		Notice(_("purge_bad_task() found bad task %s => %d"), desctask(t), t->fd);
-	      dequeue(t);
+	    if (rv < 0) {
+	      if (errno == EINTR) { continue; }
+	      if (errno == EAGAIN) { /* Could fail here but will log and retry */
+		Warn(_("purge_bad_tasks() received EAGAIN - retrying"));
+		continue;
+	      }
+	      if (errno == EINVAL) {
+		Err(_("purge_bad_tasks() received EINVAL consistency failure in call to poll/select"));
+		break;
+	      }
+	    }
+	    if ((item.revents & (POLLERR|POLLHUP|POLLNVAL))) {
+	      purge_bad_task(t);
 	    }
 	  }
+	  break;
 	}
       }
     }
   }
 #if DEBUG_ENABLED
-  Debug(_("purge_bad_task() returned"));
+  Debug(_("purge_bad_tasks() returned"));
 #endif
 }
 
 static void
 server_loop(INITIALTASK *initial_tasks, int serverfd) {
+  struct pollfd	*items = NULL;
+  int maxnumfds = 0;
 
   do_initial_tasks(initial_tasks);
 
@@ -1047,7 +1077,6 @@ server_loop(INITIALTASK *initial_tasks, int serverfd) {
   /* Main loop: Read connections and process queue */
   for (;;) {
     int			numfds = 0;
-    struct pollfd	*items = NULL;
     int			rv = 0;
     int			timeoutWanted = -1;
     struct timeval	tv = { 0, 0 };
@@ -1059,11 +1088,11 @@ server_loop(INITIALTASK *initial_tasks, int serverfd) {
     if (got_sigusr2) sigusr2(SIGUSR2);
     if (got_sigchld) child_cleanup(SIGCHLD);
 
-    if(shutting_down) break;
+    if(shutting_down) { break; }
 
     gettick();
 
-    scheduleTasks(&items, &timeoutWanted, &numfds);
+    scheduleTasks(&items, &timeoutWanted, &numfds, &maxnumfds);
 
 #if DEBUG_ENABLED    
     if (numfds == 0 || items == NULL) {
@@ -1095,10 +1124,14 @@ server_loop(INITIALTASK *initial_tasks, int serverfd) {
     rv = poll(items, numfds, timeoutWanted);
 
     if (rv < 0) {
-      if (errno == EINTR) continue;
-      if (errno == EBADF) {
-	purge_bad_task();
+      if (errno == EINTR) { continue; }
+      if (errno == EAGAIN) { /* Could fail here but will log and retry */
+	Warn(_("server_loop() received EAGAIN - retrying"));
 	continue;
+      }
+      RELEASE(items);
+      if (errno == EINVAL) {
+	Err(_("server_loop() received EINVAL consistency failure in call to poll/select"));
       }
       Err(_("poll"));
     }
@@ -1134,9 +1167,11 @@ server_loop(INITIALTASK *initial_tasks, int serverfd) {
       if (rv < 0) {
 	if (errno == EINTR) continue;
 	if (errno == EBADF) {
-	  purge_bad_task();
+	  /* As we do not get told which FD failed here then purge and try again */
+	  purge_bad_tasks();
 	  continue;
 	}
+	RELEASE(items);
 	Err(_("select"));
       }
 
@@ -1169,12 +1204,12 @@ server_loop(INITIALTASK *initial_tasks, int serverfd) {
 #endif
     gettick();
 
-    if (shutting_down) break;
+    if (shutting_down) { break; }
 
     run_tasks(items, numfds);
-    RELEASE(items);
   }
 
+  RELEASE(items);
   named_shutdown(shutting_down);
 
 }
@@ -1223,6 +1258,8 @@ spawn_server(INITIALTASK *initial_tasks) {
 
   /* Child == SERVER */
 
+  error_reinit();
+
   /* Delete other server objects as they belong to master.*/
   while (array_numobjects(Servers)) {
     SERVER *server = array_remove(Servers);
@@ -1260,6 +1297,8 @@ spawn_server(INITIALTASK *initial_tasks) {
 static void
 master_loop(INITIALTASK *initial_tasks) {
   int	i;
+  struct pollfd	*items = NULL;
+  int maxnumfds = 0;
 
   do_initial_tasks(initial_tasks);
 
@@ -1272,7 +1311,6 @@ master_loop(INITIALTASK *initial_tasks) {
   for (;;) {
     int			rv = 0;
     int			numfds = 0;
-    struct pollfd	*items = NULL;
     int			timeoutWanted = -1;
     struct timeval	tv = { 0, 0 };
     struct timeval	*tvp = NULL;
@@ -1282,11 +1320,11 @@ master_loop(INITIALTASK *initial_tasks) {
     if (got_sigusr2) master_sigusr2(SIGUSR2);
     if (got_sigchld) master_child_cleanup(SIGCHLD);
 
-    if(shutting_down) break;
+    if(shutting_down) { break; }
 
     gettick();
 
-    scheduleTasks(&items, &timeoutWanted, &numfds);
+    scheduleTasks(&items, &timeoutWanted, &numfds, &maxnumfds);
 		  
 #if DEBUG_ENABLED    
     if (numfds == 0 || items == NULL) {
@@ -1319,9 +1357,13 @@ master_loop(INITIALTASK *initial_tasks) {
 
     if (rv < 0) {
       if (errno == EINTR) continue;
-      if (errno == EBADF) {
-	purge_bad_task();
+      if (errno == EAGAIN) { /* Could fail here but will log and retry */
+	Warn(_("server_loop() received EAGAIN - retrying"));
 	continue;
+      }
+      RELEASE(items);
+      if (errno == EINVAL) {
+	Err(_("server_loop() received EINVAL consistency failure in call to poll/select"));
       }
       Err(_("poll"));
     }
@@ -1357,9 +1399,11 @@ master_loop(INITIALTASK *initial_tasks) {
       if (rv < 0) {
 	if (errno == EINTR) continue;
 	if (errno == EBADF) {
-	  purge_bad_task();
+	  /* As we do not get told which FD failed here then purge and try again */
+	  purge_bad_tasks();
 	  continue;
 	}
+	RELEASE(items);
 	Err(_("select"));
       }
 
@@ -1387,13 +1431,12 @@ master_loop(INITIALTASK *initial_tasks) {
 #endif
     gettick();
 
-    if (shutting_down) break;
+    if (shutting_down) { break; }
 
     run_tasks(items, numfds);
-    RELEASE(items);
-
   }
 
+  RELEASE(items);
   master_shutdown(shutting_down);
 
 }
