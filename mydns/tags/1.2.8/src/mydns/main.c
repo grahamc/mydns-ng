@@ -945,38 +945,36 @@ run_tasks(struct pollfd items[], int numfds) {
       for (t = TaskQ->head; t; t = next_task) {
 	next_task = t->next;
 	int rfd = 0, wfd = 0, efd = 0;
-	if (i == IO_TASK) {
-	  int fd = t->fd;
-	  if (fd >= 0) {
-	    int k = 0;
-	    struct pollfd *item = NULL;
-	    for (k = 0; k < numfds; k++) {
-	      if ((&(items[k]))->fd == fd) {
-		item = &(items[k]);
-		rfd |= item->revents & POLLIN;
-		wfd |= item->revents & POLLOUT;
-		efd |= item->revents & (POLLERR|POLLNVAL|POLLHUP);
+	int fd = t->fd;
+	if (fd >= 0) {
+	  int k = 0;
+	  struct pollfd *item = NULL;
+	  for (k = 0; k < numfds; k++) {
+	    if ((&(items[k]))->fd == fd) {
+	      item = &(items[k]);
+	      rfd |= item->revents & POLLIN;
+	      wfd |= item->revents & POLLOUT;
+	      efd |= item->revents & (POLLERR|POLLNVAL|POLLHUP);
 #if DEBUG_ENABLED
-		Debug(_("%s: item fd = %d, events = %x, revents = %x, rfd = %d, wfd = %d, efd = %d"),
-		      desctask(t),
-		      item->fd, item->events, item->revents,
-		      rfd, wfd, efd);
+	      Debug(_("%s: item fd = %d, events = %x, revents = %x, rfd = %d, wfd = %d, efd = %d"),
+		    desctask(t),
+		    item->fd, item->events, item->revents,
+		    rfd, wfd, efd);
 #endif
-		break;
-	      }
+	      break;
 	    }
-	    if (efd) {
-	      purge_bad_task(t);
-	    } else {
-	      if ((t->status & Needs2Read) && !rfd) continue;
-	      if ((t->status & Needs2Write) && !wfd) continue;
-	    }
-#if DEBUG_ENABLED
-	    if (!item) {
-	      Debug(_("%s: No matching item found for fd = %d"), desctask(t), t->fd);
-	    }
-#endif
 	  }
+	  if (efd) {
+	    purge_bad_task(t);
+	  } else {
+	    if ((t->status & Needs2Read) && !rfd) continue;
+	    if ((t->status & Needs2Write) && !wfd) continue;
+	  }
+#if DEBUG_ENABLED
+	  if (!item) {
+	    Debug(_("%s: No matching item found for fd = %d"), desctask(t), t->fd);
+	  }
+#endif
 	}
 	tasks_executed += task_process(t, rfd, wfd, efd);
 	if (shutting_down) break;
