@@ -864,15 +864,14 @@ __recursive_fwd_connect_udp(TASK *t) {
 
   fd = recursive_udp_fd;
 
-  rv = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
-  if ((rv = connect(fd, rsa, rsalen)) < 0) {
-    Warn("%s: %s %s", desctask(t), _("error connecting to recursive forwarder"),
+  if ((rv = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK)) < 0) {
+    Warn("%s: %s %s", desctask(t), _("error setting non-blocking mode for recursive forwarder"),
 	 recursive_fwd_server);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_FWD_RECURSIVE);
   }
 
-  if (rv < 0) {
-    Warn("%s: %s %s", desctask(t), _("error setting non-blocking mode for recursive forwarder"),
+  if ((rv = connect(fd, rsa, rsalen)) < 0) {
+    Warn("%s: %s %s", desctask(t), _("error connecting to recursive forwarder"),
 	 recursive_fwd_server);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_FWD_RECURSIVE);
   }
@@ -894,7 +893,12 @@ __recursive_fwd_connect_tcp(TASK *t) {
 
   fd = recursive_tcp_fd;
 
-  rv = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
+  if ((rv = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK)) < 0) {
+    Warn("%s: %s %s", desctask(t), _("error setting non-blocking mode for recursive forwarder"),
+	 recursive_fwd_server);
+    return dnserror(t, DNS_RCODE_SERVFAIL, ERR_FWD_RECURSIVE);
+  }
+
 
   if ((rv = connect(fd, rsa, rsalen)) < 0) {
     if (errno == EINPROGRESS) {
@@ -907,12 +911,6 @@ __recursive_fwd_connect_tcp(TASK *t) {
       return TASK_CONTINUE;
     }
     Warn("%s: %s %s", desctask(t), _("error connecting to recursive forwarder"),
-	 recursive_fwd_server);
-    return dnserror(t, DNS_RCODE_SERVFAIL, ERR_FWD_RECURSIVE);
-  }
-
-  if (rv < 0) {
-    Warn("%s: %s %s", desctask(t), _("error setting non-blocking mode for recursive forwarder"),
 	 recursive_fwd_server);
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_FWD_RECURSIVE);
   }
