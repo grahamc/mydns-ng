@@ -529,7 +529,7 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
   querylen = sql_build_query(&query, "SELECT also_notify FROM %s WHERE id=%u;",
 			     mydns_soa_table_name, soa->id);
 #ifdef DEBUG_NOTIFY_SQL
-  Verbose("%s: DNS NOTIFY: %s", desctask(t), query);
+  Debug(_("%s: DNS NOTIFY: %s"), desctask(t), query);
 #endif
   res = sql_query(sql, query, querylen);
   RELEASE(query);
@@ -880,7 +880,7 @@ notify_get_source(int family, char *sourceaddr)
 }
 
 static void
-master_free(TASK *t, void *data) {
+notify_master_free(TASK *t, void *data) {
 
   sockclose(t->fd);
 
@@ -894,7 +894,7 @@ master_free(TASK *t, void *data) {
 }
 
 static taskexec_t
-master_tick(TASK *t, int extension) {
+notify_master_tick(TASK *t, int extension) {
 
   if (
       ((t->family == AF_INET) && (notify_tasks_running <= 0))
@@ -918,9 +918,7 @@ notify_tick(TASK *t, void *extension) {
 }
 
 void
-notify_slaves(TASK *t, MYDNS_SOA *soa)
-{
-
+notify_slaves(TASK *t, MYDNS_SOA *soa) {
   TASK *notify_task = NULL, *notify_master = NULL;
   NOTIFYDATA *notify = NULL;
 
@@ -976,7 +974,7 @@ notify_slaves(TASK *t, MYDNS_SOA *soa)
     Debug(_("%s: notify_slaves has %d slaves to notify for %s"), desctask(t), slavecount, soa->origin);
 #endif
 
-    if (!slavecount) {
+    if (slavecount == 0) {
       array_free(slavesipv4, 1);
 #if HAVE_IPV6
       array_free(slavesipv6,1);
@@ -984,11 +982,10 @@ notify_slaves(TASK *t, MYDNS_SOA *soa)
       return; /* No-one to inform */
     }
 
-    if (array_numobjects(slavesipv4)) {
+    if (array_numobjects(slavesipv4) > 0) {
       static struct sockaddr *notifysource4 = NULL;
       if (!notifysource4)
-	notifysource4 = notify_get_source(AF_INET,
-					  conf_get(&Conf, "notify-source", NULL));
+	notifysource4 = notify_get_source(AF_INET, conf_get(&Conf, "notify-source", NULL));
       /* Allocate an fd for this protocol */
       if (notifyfd < 0) {
 	notifyfd = notify_allocate_fd(AF_INET, notifysource4);
@@ -1002,8 +999,8 @@ notify_slaves(TASK *t, MYDNS_SOA *soa)
 	notify_master = IOtask_init(NORMAL_PRIORITY_TASK, NEED_NOTIFY_READ, notifyfd,
 				    SOCK_DGRAM, AF_INET, notifysource4);
 	notify_master->timeout = current_time + 3600;
-	task_add_extension(notify_master, NULL, (FreeExtension)master_free, NULL,
-			   (TimeExtension)master_tick);
+	task_add_extension(notify_master, NULL, (FreeExtension)notify_master_free, NULL,
+			   (TimeExtension)notify_master_tick);
 	notify_tasks_running = 0;
       }
       notify = (NOTIFYDATA*)ALLOCATE(sizeof(NOTIFYDATA), NOTIFYDATA);
@@ -1011,7 +1008,6 @@ notify_slaves(TASK *t, MYDNS_SOA *soa)
       notify->soa_id = soa->id;
       notify->slaves = slavesipv4;
 
-      /* As we change the remote address as we run use our address for the endpoint */
       notify_task = Ticktask_init(NORMAL_PRIORITY_TASK, NEED_NOTIFY_WRITE, notifyfd,
 				  SOCK_DGRAM, AF_INET, NULL);
       notify_task->timeout = current_time; /* Timeout immediately and therefore run */
@@ -1045,8 +1041,8 @@ notify_slaves(TASK *t, MYDNS_SOA *soa)
 	notify_master = IOtask_init(NORMAL_PRIORITY_TASK, NEED_NOTIFY_READ, notifyfd6,
 				    SOCK_DGRAM, AF_INET6, notifysource6);
 	notify_master->timeout = current_time + 3600;
-	task_add_extension(notify_master, NULL, (FreeExtension)master_free, NULL,
-			   (TimeExtension)master_tick);
+	task_add_extension(notify_master, NULL, (FreeExtension)notify_master_free, NULL,
+			   (TimeExtension)notify_master_tick);
 	notify_tasks_running6 = 0;
       }
       notify = (NOTIFYDATA*)ALLOCATE(sizeof(NOTIFYDATA), NOTIFYDATA);
@@ -1088,7 +1084,7 @@ notify_all_soas(TASK *t, void *data) {
 
   t->timeout = current_time + 1; /* Wait at least 1 seconds before firing the next one */
 
-  querylen = sql_build_query(&query, "SELECT origin,id from %s WHERE id>%d%s%s%s LIMIT 1;",
+  querylen = sql_build_query(&query, "SELECT origin,id from %s WHERE id>%d%s%s%s ORDER BY id ASC LIMIT 1;",
 			     mydns_soa_table_name, initdata->lastzoneid,
 			     (mydns_soa_use_active)? " AND active='" : "",
 			     (mydns_soa_use_active)? mydns_soa_active_types[0] : "",
