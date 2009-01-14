@@ -146,7 +146,8 @@ notify_write(TASK *t) {
       slavelen = sizeof(struct sockaddr_in6);
 #endif
     } else {
-      Err(_("Unknown address family"));
+      Warn(_("DNS NOTIFY Unknown address family %d"), slaveaddr->sa_family);
+      return TASK_FAILED;
     }
 
     if (slaveaddr->sa_family == AF_INET) {
@@ -1219,7 +1220,8 @@ notify_all_soas(TASK *t, void *data) {
     res = sql_query(sql, query, querylen);
     RELEASE(query);
     if(!res) {
-      ErrSQL(sql, _("error loading DNS NOTIFY zone origin while building all_soas: %s"), desctask(t));
+      WarnSQL(sql, _("error loading DNS NOTIFY zone origins while building all_soas: %s"), desctask(t));
+      return TASK_FAILED;
     }
 
     while ((row = sql_getrow(res, NULL))) {
