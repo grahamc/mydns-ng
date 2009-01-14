@@ -526,54 +526,56 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
 
   mydns_rr_free(rr);
 
-  /* Retrieve the ALSO NOTIFY Entries from the SOA */
-  querylen = sql_build_query(&query, "SELECT also_notify FROM %s WHERE id=%u;",
-			     mydns_soa_table_name, soa->id);
+  if (sql_iscolumn(sql, mydns_soa_table_name, "also_notify")) {
+    /* Retrieve the ALSO NOTIFY Entries from the SOA */
+    querylen = sql_build_query(&query, "SELECT also_notify FROM %s WHERE id=%u;",
+			       mydns_soa_table_name, soa->id);
 #ifdef DEBUG_NOTIFY_SQL
-  Debug(_("%s: DNS NOTIFY: %s"), desctask(t), query);
+    Debug(_("%s: DNS NOTIFY: %s"), desctask(t), query);
 #endif
-  res = sql_query(sql, query, querylen);
-  RELEASE(query);
-  if (!res)
-    ErrSQL(sql, _("error loading DNS NOTIFY also_notify nameservers: %s"), desctask(t));
+    res = sql_query(sql, query, querylen);
+    RELEASE(query);
+    if (res) {
+      if ((row = sql_getrow(res, NULL))) {
+	char *also_notify_servers = row[0];
+	char *also_notify_server = NULL;
+	int scanned = 0;
 
-  if ((row = sql_getrow(res, NULL))) {
-    char *also_notify_servers = row[0];
-    char *also_notify_server = NULL;
-    int scanned = 0;
+	if (also_notify_servers) {
+	  while (scanned < strlen(also_notify_servers)) {
+	    char *start = &also_notify_servers[scanned];
+	    char *comma = strchr(start, ',');
+	    int i;
 
-    if (also_notify_servers) {
-      while (scanned < strlen(also_notify_servers)) {
-	char *start = &also_notify_servers[scanned];
-	char *comma = strchr(start, ',');
-	int i;
-
-	if (comma) {
-	  also_notify_server = ALLOCATE(comma - start + 1, char[]);
-	  strncpy(also_notify_server, start, comma - start);
-	  also_notify_server[comma - start] = '\0';
-	  scanned += comma - start + 1;
-	} else {
-	  also_notify_server = ALLOCATE(strlen(start)+1, char[]);
-	  strncpy(also_notify_server, start, strlen(start));
-	  also_notify_server[strlen(start)] = '\0';
-	  scanned += strlen(start) + 1;
-	}
-	for (i = 0; i < array_numobjects(name_servers); i++) {
-	  char *nsn = (char*)array_fetch(name_servers, i);
-	  if (!nsn) continue;
-	  if (!strcasecmp(also_notify_server, nsn)) {
-	    RELEASE(also_notify_server);
-	    goto NEXTSERVER;
+	    if (comma) {
+	      also_notify_server = ALLOCATE(comma - start + 1, char[]);
+	      strncpy(also_notify_server, start, comma - start);
+	      also_notify_server[comma - start] = '\0';
+	      scanned += comma - start + 1;
+	    } else {
+	      also_notify_server = ALLOCATE(strlen(start)+1, char[]);
+	      strncpy(also_notify_server, start, strlen(start));
+	      also_notify_server[strlen(start)] = '\0';
+	      scanned += strlen(start) + 1;
+	    }
+	    for (i = 0; i < array_numobjects(name_servers); i++) {
+	      char *nsn = (char*)array_fetch(name_servers, i);
+	      if (!nsn) continue;
+	      if (!strcasecmp(also_notify_server, nsn)) {
+		RELEASE(also_notify_server);
+		goto NEXTSERVER;
+	      }
+	    }
+	    array_append(name_servers, also_notify_server);
+	  NEXTSERVER: continue;
 	  }
 	}
-	array_append(name_servers, also_notify_server);
-      NEXTSERVER: continue;
       }
+      sql_free(res);
+    } else {
+      WarnSQL(sql, _("error loading DNS NOTIFY also_notify nameservers: %s"), desctask(t));
     }
   }
-
-  sql_free(res);
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
   Debug(_("%s: DNS NOTIFY found %d name servers in zone data and also-notify"), desctask(t),
@@ -924,10 +926,8 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
   NOTIFYDATA *notify = NULL;
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-  Debug(_("%s: notify_slaves called for %s"), desctask(t), soa->origin);
+  Debug(_("%s: DNS NOTIFY notify_slaves called for %s"), desctask(t), soa->origin);
 #endif
-
-  if(!dns_notify_enabled) return;
 
   /*
    * Locate a currently running NOTIFY task for this SOA
@@ -972,7 +972,8 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
 				     );
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-    Debug(_("%s: notify_slaves has %d slaves to notify for %s"), desctask(t), slavecount, soa->origin);
+    Debug(_("%s: DNS NOTIFY notify_slaves has %d slaves to notify for %s"),
+	  desctask(t), slavecount, soa->origin);
 #endif
 
     if (slavecount == 0) {
@@ -997,6 +998,10 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
 	}
       }
       if (notify_tasks_running <= 0) {
+#if DEBUG_ENABLED && DEBUG_NOTIFY
+	Debug(_("%s: DNS NOTIFY notify_slaves initializing master IPV4 task for %s"),
+	      desctask(t), soa->origin);
+#endif
 	notify_master = IOtask_init(NORMAL_PRIORITY_TASK, NEED_NOTIFY_READ, notifyfd,
 				    SOCK_DGRAM, AF_INET, notifysource4);
 	notify_master->timeout = current_time + 3600;
@@ -1009,6 +1014,10 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
       notify->soa_id = soa->id;
       notify->slaves = slavesipv4;
 
+#if DEBUG_ENABLED && DEBUG_NOTIFY
+	Debug(_("%s: DNS NOTIFY notify_slaves initializing notifier IPV4 task for %s"),
+	      desctask(t), soa->origin);
+#endif
       notify_task = Ticktask_init(NORMAL_PRIORITY_TASK, NEED_NOTIFY_WRITE, notifyfd,
 				  SOCK_DGRAM, AF_INET, NULL);
       notify_task->timeout = current_time; /* Timeout immediately and therefore run */
@@ -1039,6 +1048,10 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
 	}
       }
       if (notify_tasks_running6 <= 0) {
+#if DEBUG_ENABLED && DEBUG_NOTIFY
+	Debug(_("%s: DNS NOTIFY notify_slaves initializing master IPV6 task for %s"),
+	      desctask(t), soa->origin);
+#endif
 	notify_master = IOtask_init(NORMAL_PRIORITY_TASK, NEED_NOTIFY_READ, notifyfd6,
 				    SOCK_DGRAM, AF_INET6, notifysource6);
 	notify_master->timeout = current_time + 3600;
@@ -1051,6 +1064,10 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
       notify->soa_id = soa->id;
       notify->slaves = slavesipv6;
       
+#if DEBUG_ENABLED && DEBUG_NOTIFY
+	Debug(_("%s: DNS NOTIFY notify_slaves initializing notifier IPV6 task for %s"),
+	      desctask(t), soa->origin);
+#endif
       notify_task = Ticktask_init(NORMAL_PRIORITY_TASK, NEED_NOTIFY_WRITE, notifyfd,
 				  SOCK_DGRAM, AF_INET6, NULL);
       notify_task->timeout = 0; /* Timeout immediately and therefore run */
@@ -1115,6 +1132,10 @@ notify_all_soas(TASK *t, void *data) {
     while ((row = sql_getrow(res, NULL))) {
       char *origin = row[0];
 
+#if DEBUG_ENABLED && DEBUG_NOTIFY
+      Debug(_("%s: DNS NOTIFY notify_all_soas prime zone %s for NOTIFY check"),
+	    desctask(t), origin);
+#endif
       array_append(initdata->zones, STRDUP(origin));
       initdata->zonecount += 1;
     }
@@ -1129,17 +1150,27 @@ notify_all_soas(TASK *t, void *data) {
   zone = array_fetch(initdata->zones, initdata->lastzone++);
 
   if (mydns_soa_load(sql, &soa, zone) == 0) {
+#if DEBUG_ENABLED && DEBUG_NOTIFY
+    Debug(_("%s: DNS NOTIFY notify_all_soas loaded SOA for zone %s"),
+	  desctask(t), zone);
+#endif
     if (!soa->recursive) {
       notify_slaves(t, soa);
     }
     mydns_soa_free(soa);
   }
+#if DEBUG_ENABLED && DEBUG_NOTIFY
+  else {
+    Debug(_("%s: DNS NOTIFY notify_all_soas failed to load SOA for zone %s"),
+	  desctask(t), zone);
+  }
+#endif
 
   initdata->zonecount -= 1;
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-  Debug(_("%s: DNS NOTIFY loaded a soa for notification zoneid %d, zonesremaining %d"),
-	desctask(t), initdata->lastzone, initdata->zonecount);
+  Debug(_("%s: DNS NOTIFY notify_all_soas loaded a soa for notification zone %s number %d, zonesremaining %d"),
+	desctask(t), zone, initdata->lastzone, initdata->zonecount);
 #endif
 
   return ((initdata->zonecount)?TASK_CONTINUE:TASK_COMPLETED);
