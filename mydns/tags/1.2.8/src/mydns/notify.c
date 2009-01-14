@@ -1173,7 +1173,7 @@ notify_all_soas(TASK *t, void *data) {
 	desctask(t), zone, initdata->lastzone, initdata->zonecount);
 #endif
 
-  return ((initdata->zonecount)?TASK_CONTINUE:TASK_COMPLETED);
+  return ((initdata->zonecount > 0)?TASK_CONTINUE:TASK_COMPLETED);
 }
 
 void
