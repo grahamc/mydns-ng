@@ -118,6 +118,11 @@ notify_write(TASK *t) {
 
   slavecount = array_numobjects(notify->slaves);
 
+#if DEBUG_ENABLED && DEBUG_NOTIFY
+  Debug(_("%s: DNS NOTIFY notify_write called with %d slaves"),
+	desctask(t), slavecount);
+#endif
+
   /*
    * Build notify packet
    */
@@ -127,24 +132,12 @@ notify_write(TASK *t) {
   for (i = 0; i < array_numobjects(notify->slaves); i++) {
     NOTIFYSLAVE *slave = (NOTIFYSLAVE*)array_fetch(notify->slaves, i);
   
-    struct sockaddr *slaveaddr = (struct sockaddr*)&(slave->slaveaddr.ips);
+    struct sockaddr *slaveaddr = (struct sockaddr*)&(slave->slaveaddr);
 
     int		rv = 0;
     int		slavelen = 0;
-
-    if (slave->replied) {
-      slavecount--;
-      continue; /* slave has replied so ignore her */
-    }
-
-    if (slave->retries > notify_retries) {
-      slavecount--;
-      continue; /* slave has exceeded his retry count so ignore him */
-    }
-
-    if (slave->lastsent > (current_time - _notify_timeout(t, slave))) {
-      continue; /* slave has not timed out yet - try again later */
-    }
+    char	*msg = NULL;
+    int		port = 0;
 
     if (slaveaddr->sa_family == AF_INET) {
       slavelen = sizeof(struct sockaddr_in);
@@ -156,20 +149,53 @@ notify_write(TASK *t) {
       Err(_("Unknown address family"));
     }
 
-    if ((rv = sendto(t->fd, out, reqlen, 0, slaveaddr, slavelen)) < 0) {
-      const char	*msg = NULL;
-      int		port = 0;
-      if (slaveaddr->sa_family == AF_INET) {
-	msg = ipaddr(AF_INET, (void*)&(((struct sockaddr_in*)slaveaddr)->sin_addr));
-	port = ntohs(((struct sockaddr_in*)slaveaddr)->sin_port);
+    if (slaveaddr->sa_family == AF_INET) {
+      msg = STRDUP(ipaddr(AF_INET, (void*)&(((struct sockaddr_in*)slaveaddr)->sin_addr)));
+      port = ntohs(((struct sockaddr_in*)slaveaddr)->sin_port);
 #if HAVE_IPV6
-      } else if (slaveaddr->sa_family == AF_INET6) {
-	msg = ipaddr(AF_INET6, (void*)&(((struct sockaddr_in6*)slaveaddr)->sin6_addr));
-	port = ntohs(((struct sockaddr_in6*)slaveaddr)->sin6_port);
+    } else if (slaveaddr->sa_family == AF_INET6) {
+      msg = STRDUP(ipaddr(AF_INET6, (void*)&(((struct sockaddr_in6*)slaveaddr)->sin6_addr)));
+      port = ntohs(((struct sockaddr_in6*)slaveaddr)->sin6_port);
 #endif
-      }
+    }
+
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-      Debug(_("%s: send to slave %s(%d) failed - %s(%d)"), desctask(t),
+    Debug(_("%s: DNS NOTIFY notify_write processing slave %s(%d)"),
+	  desctask(t), msg, port);
+#endif
+ 
+    if (slave->replied) {
+#if DEBUG_ENABLED && DEBUG_NOTIFY
+      Debug(_("%s: DNS NOTIFY notify_write slave %s(%d) has already replied"),
+	    desctask(t), msg, port);
+#endif
+      RELEASE(msg);
+      slavecount--;
+      continue; /* slave has replied so ignore her */
+    }
+
+    if (slave->retries > notify_retries) {
+#if DEBUG_ENABLED && DEBUG_NOTIFY
+      Debug(_("%s: DNS NOTIFY notify_write slave %s(%d) has has exceeded retry count"),
+	    desctask(t), msg, port);
+#endif
+      RELEASE(msg);
+      slavecount--;
+      continue; /* slave has exceeded his retry count so ignore him */
+    }
+
+    if (slave->lastsent > (current_time - _notify_timeout(t, slave))) {
+#if DEBUG_ENABLED && DEBUG_NOTIFY
+      Debug(_("%s: DNS NOTIFY notify_write slave %s(%d) has not timed out yet"),
+	    desctask(t), msg, port);
+#endif
+      RELEASE(msg);
+      continue; /* slave has not timed out yet - try again later */
+    }
+
+    if ((rv = sendto(t->fd, out, reqlen, 0, slaveaddr, slavelen)) < 0) {
+#if DEBUG_ENABLED && DEBUG_NOTIFY
+      Debug(_("%s: DNS NOTIFY notify_write send to slave %s(%d) failed - %s(%d)"), desctask(t),
 	    msg, port, strerror(errno), errno);
 #endif
       if (
@@ -182,17 +208,27 @@ notify_write(TASK *t) {
 #endif
 #endif
 	  ) {
+	RELEASE(msg);
 	continue; /* Try again later */
       }
       Warn(_("Notify Send to Slave %s(%d) failed with error %s(%d)"), msg, port, strerror(errno), errno);
+      RELEASE(msg);
       continue;
     }
+#if DEBUG_ENABLED && DEBUG_NOTIFY
+    else {
+      Debug(_("%s: DNS NOTIFY notify_write sent notify to slave %s:%d"),
+	    desctask(t), msg, port);
+    }
+#endif
+	   
     slave->lastsent = current_time;
     slave->replied = 0;
     slave->retries += 1;
     if (timeout > (current_time + _notify_timeout(t, slave))) {
       timeout = current_time + _notify_timeout(t, slave);
     }
+    RELEASE(msg);
   }
 
   RELEASE(out);
@@ -203,18 +239,18 @@ notify_write(TASK *t) {
   }
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-  Debug(_("%s: DNS NOTIFY wrote notifies to slaves, %d left to reply, timeout %ld - %ld = %ld"),
+  Debug(_("%s: DNS NOTIFY notify_write wrote notifies to slaves, %d left to reply, timeout %ld - %ld = %ld"),
 	desctask(t),
 	slavecount, t->timeout, current_time, t->timeout - current_time);
 #endif
 
-  return ((slavecount)?TASK_CONTINUE:TASK_COMPLETED);
+  return ((slavecount > 0)?TASK_CONTINUE:TASK_COMPLETED);
 }
 
 /* Record the reply from the slave */
 static int
 _notify_read(TASK *t, struct sockaddr *from, socklen_t fromlen) {
-  const char	*msg = NULL;
+  char		*msg = NULL;
 
   NOTIFYDATA	*notify = (NOTIFYDATA*)t->extension;
   int		i = 0;
@@ -223,15 +259,15 @@ _notify_read(TASK *t, struct sockaddr *from, socklen_t fromlen) {
   if (from->sa_family != t->family) return 1; /* Ignore this ... */
 
   if (from->sa_family == AF_INET) {
-    msg = ipaddr(AF_INET, (void*)(&((struct sockaddr_in*)from)->sin_addr));
+    msg = STRDUP(ipaddr(AF_INET, (void*)(&((struct sockaddr_in*)from)->sin_addr)));
 #if HAVE_IPV6
   } else if (from->sa_family == AF_INET6) {
-    msg = ipaddr(AF_INET6, (void*)(&((struct sockaddr_in6*)from)->sin6_addr));
+    msg = STRDUP(ipaddr(AF_INET6, (void*)(&((struct sockaddr_in6*)from)->sin6_addr)));
 #endif
   }
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-  Debug(_("%s: DNS NOTIFY read response from slave %s"), desctask(t), msg);
+  Debug(_("%s: DNS NOTIFY _notify_read read response from slave %s"), desctask(t), msg);
 #endif
 
   slavecount = array_numobjects(notify->slaves);
@@ -239,7 +275,7 @@ _notify_read(TASK *t, struct sockaddr *from, socklen_t fromlen) {
   for (i = 0; i < array_numobjects(notify->slaves); i++) {
     NOTIFYSLAVE *slave = array_fetch(notify->slaves, i);
 
-    struct sockaddr *slaveaddr = (struct sockaddr*)&(slave->slaveaddr.ips);
+    struct sockaddr *slaveaddr = (struct sockaddr*)&(slave->slaveaddr);
     /*
      * Check that the message has been sent by the current slave, if not try next one!
      */
@@ -271,15 +307,17 @@ _notify_read(TASK *t, struct sockaddr *from, socklen_t fromlen) {
     slavecount--;
   }
 
+  RELEASE(msg);
+
   return slavecount;
 }
 
 taskexec_t
 notify_read(TASK *t) {
   int			rv;
-  const char		*msg = NULL;
 
   do {
+    char		*msg = NULL;
     char		in[DNS_MAXPACKETLEN_UDP];
     struct sockaddr	from;
     socklen_t 		fromlen = 0;
@@ -300,11 +338,11 @@ notify_read(TASK *t) {
     fromlen = sizeof(from);
     rv = recvfrom(t->fd, (void*)in, sizeof(in), 0, &from, &fromlen);
     if (from.sa_family == AF_INET) {
-      msg = ipaddr(AF_INET, (void*)&(((struct sockaddr_in*)&from)->sin_addr));
+      msg = STRDUP(ipaddr(AF_INET, (void*)&(((struct sockaddr_in*)&from)->sin_addr)));
       port = ntohs(((struct sockaddr_in*)&from)->sin_port);
 #if HAVE_IPV6
     } else if (from.sa_family == AF_INET6) {
-      msg = ipaddr(AF_INET6, (void*)&(((struct sockaddr_in6*)&from)->sin6_addr));
+      msg = STRDUP(ipaddr(AF_INET6, (void*)&(((struct sockaddr_in6*)&from)->sin6_addr)));
       port = ntohs(((struct sockaddr_in6*)&from)->sin6_port);
 #endif
     }
@@ -323,15 +361,17 @@ notify_read(TASK *t) {
 	goto CLEANUP;
       }
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-      Debug(_("%s: recv from slave %s(%d) failed - %s(%d)"), desctask(t),
+      Debug(_("%s: DNS NOTIFY notify_read recv from slave %s(%d) failed - %s(%d)"), desctask(t),
 	    msg, port, strerror(errno), errno);
 #endif
       Warn(_("recvfrom (UDP) for slave %s(%d) failed with %s(%d)"), msg, port, strerror(errno), errno);
+      RELEASE(msg);
       goto CLEANUP;
     }
 
     if (rv < DNS_HEADERSIZE) {
       Warn(_("recvfrom (UDP) for slave %s(%d) too short %dbytes should be > %d"), msg, port, rv, (int)DNS_HEADERSIZE);
+      RELEASE(msg);
       continue;
     }
 
@@ -343,7 +383,7 @@ notify_read(TASK *t) {
     DNS_GET16(ancount, src);
     DNS_GET16(nscount, src);
     DNS_GET16(arcount, src);
-    Debug(_("%s: DNS NOTIFY read response from slave %s length %d for id = %d, "
+    Debug(_("%s: DNS NOTIFY notify_read read response from slave %s length %d for id = %d, "
 	    "qr = %d, opcode = %d, aa = %d, tc = %d, rd = %d, "
 	    "ra = %d, z = %d, ad = %d, cd = %d, rcode = %d, "
 	    "qdcount = %d, ancount = %d, nscount = %d, arcount = %d"),
@@ -358,12 +398,12 @@ notify_read(TASK *t) {
     if (!hdr.qr || (hdr.opcode != DNS_OPCODE_NOTIFY)) {
       TASK *newt = NULL;
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-      Debug(_("%s: DNS NOTIFY got a non-notify response from %s"), desctask(t), msg);
+      Debug(_("%s: DNS NOTIFY notify_read got a non-notify response from %s"), desctask(t), msg);
       if ((hdr.opcode == DNS_OPCODE_QUERY) && !hdr.qr) {
 	char *current = src;
 	char *msg2 = NULL;
 	task_error_t errcode = TASK_FAILED;
-	Debug(_("%s: DNS NOTIFY response is a query"), desctask(t));
+	Debug(_("%s: DNS NOTIFY notify_read response is a query"), desctask(t));
 	msg2 = name_unencode2(src, rv - DNS_HEADERSIZE, &current, &errcode);
 	if(msg2) {
 	  dns_qtype_t qtype = 0;
@@ -372,7 +412,7 @@ notify_read(TASK *t) {
 	    DNS_GET16(qtype, current);
 	    if (current+SIZE16 <= &in[rv]) {
 	      DNS_GET16(qclass, current);
-	      Debug(_("%s: DNS NOTIFY %s asks for %s - %s against %s"), desctask(t),
+	      Debug(_("%s: DNS NOTIFY notify_read %s asks for %s - %s against %s"), desctask(t),
 		    msg, mydns_qtype_str(qtype), mydns_class_str(qclass), msg2);
 	      RELEASE(msg2);
 	      goto DECODEDQUERY;
@@ -380,7 +420,7 @@ notify_read(TASK *t) {
 	  }
 	  RELEASE(msg2);
 	}
-	Debug(_("%s: DNS NOTIFY %s sent malformed query - ignored"), desctask(t), msg);
+	Debug(_("%s: DNS NOTIFY notify_read %s sent malformed query - ignored"), desctask(t), msg);
       DECODEDQUERY: ;
       }
 #endif
@@ -388,6 +428,7 @@ notify_read(TASK *t) {
       if ((newt = task_init(HIGH_PRIORITY_TASK, NEED_ANSWER, t->fd, SOCK_DGRAM, from.sa_family, &from))) {
 	task_new(newt, (unsigned char*)in, rv);
       }
+      RELEASE(msg);
       continue;
     }
 
@@ -398,15 +439,16 @@ notify_read(TASK *t) {
 
     if (!readT) {
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-      Debug(_("%s: no task found for id %d from %s"), desctask(t), id, msg);
+      Debug(_("%s: DNS NOTIFY notify_read no task found for id %d from %s"), desctask(t), id, msg);
 #endif
+      RELEASE(msg);
       continue;
     }
 
     rv = _notify_read(readT, &from, fromlen);
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-    Debug(_("%s: %d slaves still to be matched"), desctask(readT), rv);
+    Debug(_("%s: DNS NOTIFY notify_read %d slaves still to be matched"), desctask(readT), rv);
 #endif
     if (rv <= 0) {
       /* Task has finished */
@@ -444,17 +486,18 @@ notify_read(TASK *t) {
 #endif
       if (rv < 0) {
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-	Debug(_("%s: poll fd %d failed with %s(%d)"), desctask(t), t->fd, strerror(errno), errno);
+	Debug(_("%s: DNS NOTIFY notify_read poll fd %d failed with %s(%d)"), desctask(t), t->fd, strerror(errno), errno);
 #endif
 	break;
       }
       if ((item.revents & POLLERR)) {
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-	Debug(_("%s: poll fd %d gave an error"), desctask(t), t->fd);
+	Debug(_("%s: DNS NOTIFY notify_read poll fd %d gave an error"), desctask(t), t->fd);
 #endif
 	break;
       }
     }
+    RELEASE(msg);
   } while(1);
 
  CLEANUP:
@@ -465,7 +508,7 @@ notify_read(TASK *t) {
     rv = notify_tasks_running6;
 #endif
 
-  return ((rv)?TASK_CONTINUE:TASK_COMPLETED);
+  return ((rv > 0)?TASK_CONTINUE:TASK_COMPLETED);
 }
 
 static TASK *
@@ -531,7 +574,7 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
     querylen = sql_build_query(&query, "SELECT also_notify FROM %s WHERE id=%u;",
 			       mydns_soa_table_name, soa->id);
 #ifdef DEBUG_NOTIFY_SQL
-    Debug(_("%s: DNS NOTIFY: %s"), desctask(t), query);
+    Debug(_("%s: DNS NOTIFY: notify_get_server_list %s"), desctask(t), query);
 #endif
     res = sql_query(sql, query, querylen);
     RELEASE(query);
@@ -578,8 +621,8 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
   }
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
-  Debug(_("%s: DNS NOTIFY found %d name servers in zone data and also-notify"), desctask(t),
-	array_numobjects(name_servers));
+  Debug(_("%s: DNS NOTIFY notify_get_server_list found %d name servers in zone data and also-notify"),
+	desctask(t), array_numobjects(name_servers));
 #endif
 
   return name_servers;
@@ -593,11 +636,17 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
   ARRAY *ipaddresses = array_init(16);
   int i = 0;
 
-#if DEBUG_ENABLED && DEBUG_NOTIFY
-  Debug(_("%s: name_servers2ip() called name_servers = %p"), desctask(t), name_servers);
+#if DEBUG_ENABLED
+  Debug(_("%s: name_servers2ip() called name_servers = %p"),
+	desctask(t), name_servers);
 #endif
 
   if(!name_servers) return 0;
+
+#if DEBUG_ENABLED
+  Debug(_("%s: name_servers2ip() called name_servers count = %d"),
+	desctask(t), array_numobjects(name_servers));
+#endif
 
   for (i = 0; i < array_numobjects(name_servers); i++) {
     char	*name_server = array_fetch(name_servers, i);
@@ -607,10 +656,20 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
     MYDNS_SOA *nsoa = NULL;
     MYDNS_RR *rr = NULL;
 
+#if DEBUG_ENABLED
+    Debug(_("%s: name_servers2ip() processing name server %s"),
+	  desctask(t), name_server);
+#endif
+
     nsoa = find_soa2(t, name_server, &label);
 
     if (nsoa) {
       MYDNS_RR *r = NULL;
+
+#if DEBUG_ENABLED
+      Debug(_("%s: name_servers2ip() processing rr %s for name server %s"),
+	    desctask(t), label, name_server);
+#endif
 
       rr = find_rr(t, nsoa, DNS_QTYPE_A, label);
 
@@ -623,17 +682,33 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 	  char *ipa = (char*)array_fetch(ipaddresses, j);
 	  if (!ipa) continue;
 	  if (strlen(ipa) != MYDNS_RR_DATA_LENGTH(r)) goto NextA_RR;
-	  if (!strcmp(MYDNS_RR_DATA_VALUE(r), ipa)) goto NextA_RR;
+	  if (!strncmp(MYDNS_RR_DATA_VALUE(r), ipa, MYDNS_RR_DATA_LENGTH(r))) goto NextA_RR;
 	}
-	array_append(ipaddresses, STRDUP(MYDNS_RR_DATA_VALUE(r)));
+#if DEBUG_ENABLED
+	Debug(_("%s: name_servers2ip() processing name server %s got ip address %s(%d)"),
+	      desctask(t), name_server, (char*)MYDNS_RR_DATA_VALUE(r), MYDNS_RR_DATA_LENGTH(r));
+#endif
 	slave = (NOTIFYSLAVE*)ALLOCATE(sizeof(NOTIFYSLAVE), NOTIFYSLAVE);
 	slave->lastsent = 0;
 	slave->replied = 0;
 	slave->retries = 0;
-	ipaddr4 = (struct sockaddr_in*)&(slave->slaveaddr.ips4);
+	ipaddr4 = (struct sockaddr_in*)&(slave->slaveaddr);
 	ipaddr4->sin_family = AF_INET;
 	ipaddr4->sin_port = htons(DOMAINPORT);
-	inet_pton(AF_INET, MYDNS_RR_DATA_VALUE(r), (void*)&(ipaddr4->sin_addr));
+	if ((j = inet_pton(AF_INET, MYDNS_RR_DATA_VALUE(r), (void*)&(ipaddr4->sin_addr))) < 0) {
+	  Warn(_("inet_pton - failed with %s(%d)"), strerror(errno), errno);
+	  RELEASE(slave);
+	  continue;
+	} else if (j == 0) {
+	  Warn(_("inet_pton - failed to convert ip address %s"), (char*)MYDNS_RR_DATA_VALUE(r));
+	  RELEASE(slave);
+	  continue;
+	}
+#if DEBUG_ENABLED
+	Debug(_("%s: name_servers2ip() processing name server %s append IP address to saved vector"),
+	      desctask(t), name_server);
+#endif
+	array_append(ipaddresses, STRNDUP(MYDNS_RR_DATA_VALUE(r), MYDNS_RR_DATA_LENGTH(r)));
 	array_append(ips4, slave);
 
       NextA_RR: continue;
@@ -653,17 +728,33 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 	  char *ipa = (char*)array_fetch(ipaddresses, j);
 	  if (!ipa) continue;
 	  if (strlen(ipa) != MYDNS_RR_DATA_LENGTH(r)) goto NextAAAA_RR;
-	  if (!strcmp(MYDNS_RR_DATA_VALUE(r), ipa)) goto NextAAAA_RR;
+	  if (!strncmp(MYDNS_RR_DATA_VALUE(r), ipa, MYDNS_RR_DATA_LENGTH(r))) goto NextAAAA_RR;
 	}
-	array_append(ipaddresses, STRDUP(MYDNS_RR_DATA_VALUE(r)));
+#if DEBUG_ENABLED
+	Debug(_("%s: name_servers2ip() processing name server %s got ip address %s(%d)"),
+	      desctask(t), name_server, (char*)MYDNS_RR_DATA_VALUE(r), MYDNS_RR_DATA_LENGTH(r));
+#endif
 	slave = (NOTIFYSLAVE*)ALLOCATE(sizeof(NOTIFYSLAVE), NOTIFYSLAVE);
 	slave->lastsent = 0;
 	slave->replied = 0;
 	slave->retries = 0;
-	ipaddr6 = (struct sockaddr_in6*)&(slave->slaveaddr.ips6);
+	ipaddr6 = (struct sockaddr_in6*)&(slave->slaveaddr);
 	ipaddr6->sin6_family = AF_INET6;
 	ipaddr6->sin6_port = htons(DOMAINPORT);
-	inet_pton(AF_INET6, MYDNS_RR_DATA_VALUE(r), (void*)&(ipaddr6->sin6_addr));
+	if ((j = inet_pton(AF_INET6, MYDNS_RR_DATA_VALUE(r), (void*)&(ipaddr6->sin6_addr))) < 0) {
+	  Warn(_("inet_pton - failed with %s(%d)"), strerror(errno), errno);
+	  RELEASE(slave);
+	  continue;
+	} else if (j == 0) {
+	  Warn(_("inet_pton - failed to convert ip address %s"), (char *)MYDNS_RR_DATA_VALUE(r));
+	  RELEASE(slave);
+	  continue;
+	}
+#if DEBUG_ENABLED
+	Debug(_("%s: name_servers2ip() processing name server %s append IP address to saved vector"),
+	      desctask(t), name_server);
+#endif
+	array_append(ipaddresses, STRNDUP(MYDNS_RR_DATA_VALUE(r), MYDNS_RR_DATA_LENGTH(r)));
 	array_append(ips6, slave);
 
       NextAAAA_RR: continue;
@@ -680,11 +771,11 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 
     if (resolved) { continue; }
 
-#if DEBUG_ENABLED && DEBUG_NOTIFY
+#if DEBUG_ENABLED
     Debug(_("%s: name_servers2ip() - done try local DNS - %d"), desctask(t), resolved);
 #endif
 
-    /* This needs enhancing so that a recursive lookup is run before trying the lcal DNS */
+    /* This needs enhancing so that a recursive lookup is run before trying the local DNS */
 
     /* Look up via other DNS/hosts instead */
 #if HAVE_GETADDRINFO
@@ -718,13 +809,13 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 	  slave->replied = 0;
 	  slave->retries = 0;
 	  if (hostentry->ai_family == AF_INET) {
-	    struct sockaddr_in *ipaddr4 = (struct sockaddr_in*)&(slave->slaveaddr.ips4);
+	    struct sockaddr_in *ipaddr4 = (struct sockaddr_in*)&(slave->slaveaddr);
 	    memcpy((void*)ipaddr4, (void*)hostentry->ai_addr, hostentry->ai_addrlen);
 	    ipaddr4->sin_port = htons(DOMAINPORT);
 	    ipaddress = ipaddr(AF_INET, (void*)&ipaddr4->sin_addr);
 #if HAVE_IPV6
 	  } else if (hostentry->ai_family == AF_INET6) {
-	    struct sockaddr_in6 *ipaddr6 = (struct sockaddr_in6*)&(slave->slaveaddr.ips6);
+	    struct sockaddr_in6 *ipaddr6 = (struct sockaddr_in6*)&(slave->slaveaddr);
 	    memcpy((void*)ipaddr6, (void*)hostentry->ai_addr, hostentry->ai_addrlen);
 	    ipaddr6->sin6_port = htons(DOMAINPORT);
 	    ipaddress = ipaddr(AF_INET6, (void*)&ipaddr6->sin6_addr);
@@ -764,14 +855,14 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 	  slave->replied = 0;
 	  slave->retries = 0;
 	  if (hostdata->h_addrtype == AF_INET) {
-	    struct sockaddr_in *ipaddr4 = (struct sockaddr_in*)&(slave->slaveaddr.ips4);
+	    struct sockaddr_in *ipaddr4 = (struct sockaddr_in*)&(slave->slaveaddr);
 	    ipaddr4->sin_family = AF_INET;
 	    ipaddr4->sin_port = htons(DOMAINPORT);
 	    memcpy((void*)&ipaddr4->sin_addr, (void*)hostdata->h_addr_list[j], hostdata->h_length);
 	    ipaddress = ipaddr(AF_INET, (void*)&ipaddr4->sin_addr);
 #if HAVE_IPV6
 	  } else if (hostdata->h_addrtype == AF_INET6) {
-	    struct sockaddr_in6 *ipaddr6 = (struct sockaddr_in6*)&(slave->slaveaddr.ips6);
+	    struct sockaddr_in6 *ipaddr6 = (struct sockaddr_in6*)&(slave->slaveaddr);
 	    ipaddr6->sin6_family = AF_INET6;
 	    ipaddr6->sin6_port = htons(DOMAINPORT);
 	    memcpy((void*)&ipaddr6->sin6_addr, (void*)hostdata->h_addr_list[j], hostdata->h_length);
@@ -803,7 +894,7 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 
   }
 
-#if DEBUG_ENABLED && DEBUG_NOTIFY
+#if DEBUG_ENABLED
   Debug(_("%s: name_servers2ip() - releasing data and then returning ipaddresses=%p, name_servers=%p"),
 	desctask(t), ipaddresses, name_servers);
 #endif
@@ -811,7 +902,7 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
   array_free(ipaddresses, 1);
   array_free(name_servers, 1);
 
-#if DEBUG_ENABLED && DEBUG_NOTIFY
+#if DEBUG_ENABLED
   Debug(_("%s: name_servers2ip() - returning"), desctask(t));
 #endif
 
@@ -839,18 +930,20 @@ notify_allocate_fd(int family, struct sockaddr *sourceaddr)
 	     (family == AF_INET6)?sizeof(struct sockaddr_in6):
 #endif
 	     sizeof(struct sockaddr_in)) < 0) {
-      const char	*msg = NULL;
+      char		*msg = NULL;
       int		port = 0;
       if (family == AF_INET) {
-	msg = ipaddr(AF_INET, (void*)&(((struct sockaddr_in*)sourceaddr)->sin_addr));
+	msg = STRDUP(ipaddr(AF_INET, (void*)&(((struct sockaddr_in*)sourceaddr)->sin_addr)));
 	port = ntohs(((struct sockaddr_in*)sourceaddr)->sin_port);
 #if HAVE_IPV6
       } else if (family == AF_INET6) {
-	msg = ipaddr(AF_INET6, (void*)&(((struct sockaddr_in6*)sourceaddr)->sin6_addr));
+	msg = STRDUP(ipaddr(AF_INET6, (void*)&(((struct sockaddr_in6*)sourceaddr)->sin6_addr)));
 	port = ntohs(((struct sockaddr_in6*)sourceaddr)->sin6_port);
 #endif
       }
-      Err(_("bind (UDP): %s:%d - %s(%d)"), msg, port, strerror(errno), errno);
+      Warn(_("bind (UDP): %s:%d - %s(%d)"), msg, port, strerror(errno), errno);
+      RELEASE(msg);
+      return fd;
     }
     for (n = 1; n < 1024; n++) {
       opt = n * 1024;
