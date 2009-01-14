@@ -35,7 +35,8 @@ typedef struct _notify_data {
 
 typedef struct _init_data {
   int			zonecount;	/* Number of zones still to process */
-  int			lastzoneid;	/* Last zoneid read in */
+  int			lastzone;	/* Last zoneid read in */
+  ARRAY			*zones;		/* Zones to process */
 } INITDATA;
 
 static int notify_tasks_running = 0;
@@ -1070,6 +1071,16 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
   return;
 }
 
+static void
+notify_initfree(TASK *t, void *data) {
+  INITDATA	*initdata = (INITDATA*)data;
+
+  if (initdata->zones != NULL) {
+    array_free(initdata->zones, 1);
+    initdata->zones = NULL;
+  }
+}
+
 static taskexec_t
 notify_all_soas(TASK *t, void *data) {
   INITDATA	*initdata = (INITDATA*)data;
@@ -1077,46 +1088,58 @@ notify_all_soas(TASK *t, void *data) {
   SQL_RES	*res = NULL;
   SQL_ROW	row = NULL;
 
-  size_t	querylen = 0;
-  char		*query = NULL;
+  char *zone = NULL;
+  MYDNS_SOA *soa;
+
+  if (initdata->zones == NULL) {
+    size_t	querylen = 0;
+    char	*query = NULL;
+
+    initdata->zones = array_init(initdata->zonecount);
+
+    initdata->zonecount = 0;
+
+    querylen = sql_build_query(&query, "SELECT origin,id from %s%s%s%s ORDER BY id ASC;",
+			       mydns_soa_table_name,
+			       (mydns_soa_use_active)? " WHERE active='" : "",
+			       (mydns_soa_use_active)? mydns_soa_active_types[0] : "",
+			       (mydns_soa_use_active)? "'" : "");
+
+    /* Retrieve next SOA and build a task for it */
+    res = sql_query(sql, query, querylen);
+    RELEASE(query);
+    if(!res) {
+      ErrSQL(sql, _("error loading DNS NOTIFY zone origin while building all_soas: %s"), desctask(t));
+    }
+
+    while ((row = sql_getrow(res, NULL))) {
+      char *origin = row[0];
+
+      array_append(initdata->zones, STRDUP(origin));
+      initdata->zonecount += 1;
+    }
+
+    sql_free(res);
+  }
 
   if(initdata->zonecount <= 0) return (TASK_COMPLETED);
 
   t->timeout = current_time + 1; /* Wait at least 1 seconds before firing the next one */
 
-  querylen = sql_build_query(&query, "SELECT origin,id from %s WHERE id>%d%s%s%s ORDER BY id ASC LIMIT 1;",
-			     mydns_soa_table_name, initdata->lastzoneid,
-			     (mydns_soa_use_active)? " AND active='" : "",
-			     (mydns_soa_use_active)? mydns_soa_active_types[0] : "",
-			     (mydns_soa_use_active)? "'" : "");
+  zone = array_fetch(initdata->zones, initdata->lastzone++);
 
-  /* Retrieve next SOA and build a task for it */
-  res = sql_query(sql, query, querylen);
-  RELEASE(query);
-  if(!res) {
-    ErrSQL(sql, _("error loading DNS NOTIFY zone origin while building all_soas: %s"), desctask(t));
-  }
-
-  if ((row = sql_getrow(res, NULL))) {
-    char *origin = row[0];
-    MYDNS_SOA *soa;
-
-    initdata->lastzoneid = atou(row[1]);
-    if (mydns_soa_load(sql, &soa, origin) == 0) {
-      if (!soa->recursive) {
-	notify_slaves(t, soa);
-      }
-      mydns_soa_free(soa);
+  if (mydns_soa_load(sql, &soa, zone) == 0) {
+    if (!soa->recursive) {
+      notify_slaves(t, soa);
     }
+    mydns_soa_free(soa);
   }
-
-  sql_free(res);
 
   initdata->zonecount -= 1;
 
 #if DEBUG_ENABLED && DEBUG_NOTIFY
   Debug(_("%s: DNS NOTIFY loaded a soa for notification zoneid %d, zonesremaining %d"),
-	desctask(t), initdata->lastzoneid, initdata->zonecount);
+	desctask(t), initdata->lastzone, initdata->zonecount);
 #endif
 
   return ((initdata->zonecount)?TASK_CONTINUE:TASK_COMPLETED);
@@ -1140,10 +1163,11 @@ notify_start() {
 
   initdata = (INITDATA*)ALLOCATE(sizeof(INITDATA), INITDATA);
   initdata->zonecount = zonecount;
-  initdata->lastzoneid = -1;
+  initdata->lastzone = -1;
+  initdata->zones = NULL;
 
   inittask = Ticktask_init(LOW_PRIORITY_TASK, NEED_TASK_RUN, -1, 0, AF_UNSPEC, NULL);
-  task_add_extension(inittask, initdata, NULL, notify_all_soas, notify_all_soas);
+  task_add_extension(inittask, initdata, notify_initfree, notify_all_soas, notify_all_soas);
   inittask->timeout = current_time + 10; /* Wait 10 seconds before firing first notify set */
 
 }
