@@ -2277,7 +2277,7 @@ are_we_master(TASK *t, MYDNS_SOA *soa) {
   if(array_numobjects(ips4)) {
     for (i = 0; i < array_numobjects(ips4); i++) {
       NOTIFYSLAVE *slave = array_fetch(ips4, i);
-      struct sockaddr_in *ip4 = (struct sockaddr_in*)&(slave->slaveaddr.ips4);
+      struct sockaddr_in *ip4 = (struct sockaddr_in*)&(slave->slaveaddr);
       const char *ip4addr = ipaddr(AF_INET, &(ip4->sin_addr));
       for (j = 0; allLocalAddresses[j]; j++) {
 	if(!strcmp(allLocalAddresses[j], ip4addr)) goto FINISHEDSEARCH;
@@ -2289,7 +2289,7 @@ are_we_master(TASK *t, MYDNS_SOA *soa) {
   if (array_numobjects(ips6)) {
     for (i = 0; i < array_numobjects(ips6); i++) {
       NOTIFYSLAVE *slave = array_fetch(ips6, i);
-      struct sockaddr_in6 *ip6 = (struct sockaddr_in6*)&(slave->slaveaddr.ips6);
+      struct sockaddr_in6 *ip6 = (struct sockaddr_in6*)&(slave->slaveaddr);
       const char *ip6addr = ipaddr(AF_INET6, &(ip6->sin6_addr));
       for (j = 0; allLocalAddresses[j]; j++) {
 	if(!strcmp(allLocalAddresses[j], ip6addr)) goto FINISHEDSEARCH;

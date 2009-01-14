@@ -20,7 +20,7 @@
 
 AC_INIT(mydns, [pre-1.2.9], [support@cohtech.com])	## Package name, version, bugreport address
 AC_PREREQ([2.59])
-AC_COPYRIGHT([Portions of this script are Copyright 2002-2005 Don Moore  2007-2008 Howard Wilkinson])
+AC_COPYRIGHT([Portions of this script are Copyright 2002-2005 Don Moore  2007-2009 Howard Wilkinson])
 AM_INIT_AUTOMAKE([1.9.5 dist-bzip2])
 AM_CONFIG_HEADER(config.h)
 
