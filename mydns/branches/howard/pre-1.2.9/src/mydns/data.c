@@ -42,7 +42,7 @@ find_soa(
   int			errflag = 0;
 
 #if DEBUG_ENABLED && DEBUG_DATA
-  Debug(_("%s: find_soa(%s, %s)"), desctask(t), fqdn, label);
+  DebugX("data", 1, _("%s: find_soa(%s, %s)"), desctask(t), fqdn, label);
 #endif
 
   end = fqdn + fqdnlen;
@@ -88,7 +88,7 @@ find_soa2(
   int			errflag = 0;
 
 #if DEBUG_ENABLED && DEBUG_DATA
-  Debug(_("%s: find_soa2(%s, %s)"), desctask(t), fqdn, (label)?*label:_("<NULL>"));
+  DebugX("data", 1, _("%s: find_soa2(%s, %s)"), desctask(t), fqdn, (label)?*label:_("<NULL>"));
 #endif
 
   end = fqdn + fqdnlen;

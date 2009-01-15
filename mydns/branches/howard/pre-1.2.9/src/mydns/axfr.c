@@ -328,7 +328,7 @@ axfr(TASK *t) {
 
 #if DEBUG_ENABLED && DEBUG_AXFR
   gettimeofday(&start, NULL);
-  Debug(_("%s: Starting AXFR for task ID %u"), desctask(t), t->internal_id);
+  DebugX("axfr", 1,_("%s: Starting AXFR for task ID %u"), desctask(t), t->internal_id);
 #endif
   total_records = total_octets = 0;
   t->no_markers = 1;
@@ -344,9 +344,9 @@ axfr(TASK *t) {
 #if DEBUG_ENABLED && DEBUG_AXFR
   /* Report result */
   gettimeofday(&finish, NULL);
-  Debug(_("AXFR: %u records, %u octets, %.3fs"), 
-	(unsigned int)total_records, (unsigned int)total_octets,
-	((finish.tv_sec + finish.tv_usec / 1000000.0) - (start.tv_sec + start.tv_usec / 1000000.0)));
+  DebugX("axfr", 1,_("AXFR: %u records, %u octets, %.3fs"), 
+	 (unsigned int)total_records, (unsigned int)total_octets,
+	 ((finish.tv_sec + finish.tv_usec / 1000000.0) - (start.tv_sec + start.tv_usec / 1000000.0)));
 #endif
   t->qdcount = 1;
   t->an.size = total_records;
@@ -364,7 +364,7 @@ axfr_fork(TASK *t) {
   pid_t pid = -1, parent = -1;
 
 #if DEBUG_ENABLED && DEBUG_AXFR 
-  Debug(_("%s: axfr_fork called on fd %d"), desctask(t), t->fd);
+  DebugX("axfr", 1,_("%s: axfr_fork called on fd %d"), desctask(t), t->fd);
 #endif
 
   if (pipe(pfd))
@@ -399,7 +399,7 @@ axfr_fork(TASK *t) {
     sigaction(SIGTERM, &act, NULL);
 
 #if DEBUG_ENABLED && DEBUG_AXFR
-    Debug(_("%s: axfr_fork is in the child"), desctask(t));
+    DebugX("axfr", 1,_("%s: axfr_fork is in the child"), desctask(t));
 #endif
 
     /*  Let parent know I have started */
@@ -409,14 +409,14 @@ axfr_fork(TASK *t) {
     close(pfd[1]);
 
 #if DEBUG_ENABLED && DEBUG_AXFR
-    Debug(_("%s: axfr_fork child has told parent I am running"), desctask(t));
+    DebugX("axfr", 1,_("%s: axfr_fork child has told parent I am running"), desctask(t));
 #endif
 
     /* Clean up parents resources */
     free_other_tasks(t, 1);
 
 #if DEBUG_ENABLED && DEBUG_AXFR
-    Debug(_("%s: AXFR child built"), desctask(t));
+    DebugX("axfr", 1,_("%s: AXFR child built"), desctask(t));
 #endif
     /* Do AXFR */
     axfr(t);
@@ -435,7 +435,7 @@ axfr_fork(TASK *t) {
     close(pfd[0]);
 
 #if DEBUG_ENABLED && DEBUG_AXFR
-    Debug(_("AXFR: process started on pid %d for TCP fd %d, task ID %u"), pid, t->fd, t->internal_id);
+    DebugX("axfr", 1,_("AXFR: process started on pid %d for TCP fd %d, task ID %u"), pid, t->fd, t->internal_id);
 #endif
   }
   /* NOTREACHED*/

@@ -972,8 +972,8 @@ truncate_rrlist(TASK *t, off_t maxpkt, RRLIST *rrlist, datasection_t ds) {
       t->rdlen += rr->length;
   }
 #if DEBUG_ENABLED && DEBUG_REPLY
-  Debug(_("%s section truncated from %d records to %d records"),
-	reply_datasection_str[ds], orig_recs, recs);
+  DebugX("reply", 1, _("%s section truncated from %d records to %d records"),
+	 reply_datasection_str[ds], orig_recs, recs);
 #endif
   return (recs);
 }
@@ -993,8 +993,8 @@ reply_check_truncation(TASK *t, int *ancount, int *nscount, int *arcount) {
     return;
 
 #if DEBUG_ENABLED && DEBUG_REPLY
-  Debug(_("reply_check_truncation() needs to truncate reply (%u) to fit packet max (%u)"),
-	(unsigned int)t->rdlen, (unsigned int)maxrd);
+  DebugX("reply", 1, _("reply_check_truncation() needs to truncate reply (%u) to fit packet max (%u)"),
+	 (unsigned int)t->rdlen, (unsigned int)maxrd);
 #endif
 
   /* Loop through an/ns/ar sections, truncating as necessary, and updating counts */
@@ -1091,22 +1091,22 @@ build_reply(TASK *t, int want_additional) {
   DNS_PUT(dest, t->rdata, t->rdlen);				/* Resource record data */
 
 #if DEBUG_ENABLED && DEBUG_REPLY
-  Debug(_("%s: reply:     id = %u"), desctask(t),
-	t->id);
-  Debug(_("%s: reply:     qr = %u (message is a %s)"), desctask(t),
-	t->hdr.qr, t->hdr.qr ? "response" : "query");
-  Debug(_("%s: reply: opcode = %u (%s)"), desctask(t),
-	t->hdr.opcode, mydns_opcode_str(t->hdr.opcode));
-  Debug(_("%s: reply:     aa = %u (answer %s)"), desctask(t),
-	t->hdr.aa, t->hdr.aa ? "is authoritative" : "not authoritative");
-  Debug(_("%s: reply:     tc = %u (message %s)"), desctask(t),
-	t->hdr.tc, t->hdr.tc ? "truncated" : "not truncated");
-  Debug(_("%s: reply:     rd = %u (%s)"), desctask(t),
-	t->hdr.rd, t->hdr.rd ? "recursion desired" : "no recursion");
-  Debug(_("%s: reply:     ra = %u (recursion %s)"), desctask(t),
-	t->hdr.ra, t->hdr.ra ? "available" : "unavailable");
-  Debug(_("%s: reply:  rcode = %u (%s)"), desctask(t),
-	t->hdr.rcode, mydns_rcode_str(t->hdr.rcode));
+  DebugX("reply", 1, _("%s: reply:     id = %u"), desctask(t),
+	 t->id);
+  DebugX("reply", 1, _("%s: reply:     qr = %u (message is a %s)"), desctask(t),
+	 t->hdr.qr, t->hdr.qr ? "response" : "query");
+  DebugX("reply", 1, _("%s: reply: opcode = %u (%s)"), desctask(t),
+	 t->hdr.opcode, mydns_opcode_str(t->hdr.opcode));
+  DebugX("reply", 1, _("%s: reply:     aa = %u (answer %s)"), desctask(t),
+	 t->hdr.aa, t->hdr.aa ? "is authoritative" : "not authoritative");
+  DebugX("reply", 1, _("%s: reply:     tc = %u (message %s)"), desctask(t),
+	 t->hdr.tc, t->hdr.tc ? "truncated" : "not truncated");
+  DebugX("reply", 1, _("%s: reply:     rd = %u (%s)"), desctask(t),
+	 t->hdr.rd, t->hdr.rd ? "recursion desired" : "no recursion");
+  DebugX("reply", 1, _("%s: reply:     ra = %u (recursion %s)"), desctask(t),
+	 t->hdr.ra, t->hdr.ra ? "available" : "unavailable");
+  DebugX("reply", 1, _("%s: reply:  rcode = %u (%s)"), desctask(t),
+	 t->hdr.rcode, mydns_rcode_str(t->hdr.rcode));
   /* escdata(t->reply, t->replylen); */
 #endif
 }

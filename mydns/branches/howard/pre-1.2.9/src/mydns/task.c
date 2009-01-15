@@ -137,7 +137,8 @@ task_find_by_id(TASK *t, QUEUE *TaskQ, unsigned long id) {
     if (ThisT->internal_id == id) return ThisT;
   }
 #if DEBUG_ENABLED && DEBUG_TASK
-  Debug(_("%s: task_find_by_id(%s, %ld) cannot find task on queue"), desctask(t), TaskQ->queuename, id);
+  DebugX("task", 1, _("%s: task_find_by_id(%s, %ld) cannot find task on queue"),
+	 desctask(t), TaskQ->queuename, id);
 #endif
   return NULL;
 }
@@ -154,7 +155,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
   task_error_t errcode = TASK_FAILED;
 
 #if DEBUG_ENABLED && DEBUG_TASK
-  Debug(_("task_new(%p, %p, %u)"), t, data, (unsigned int)len);
+  DebugX("task", 1, _("task_new(%p, %p, %u)"), t, data, (unsigned int)len);
 #endif
 
   /* Query needs to at least contain a proper header */
@@ -184,20 +185,20 @@ task_new(TASK *t, unsigned char *data, size_t len) {
    */
   if (t->hdr.qr) {
 #if DEBUG_ENABLED && DEBUG_TASK
-    Debug(_("%s: task_new(): %s %s %s"),
-	  desctask(t), mydns_rcode_str(DNS_RCODE_FORMERR),
-	  err_reason_str(t, ERR_RESPONSE_BIT_SET),
-	  _("response bit set on query"));
+    DebugX("task", 1, _("%s: task_new(): %s %s %s"),
+	   desctask(t), mydns_rcode_str(DNS_RCODE_FORMERR),
+	   err_reason_str(t, ERR_RESPONSE_BIT_SET),
+	   _("response bit set on query"));
 #endif
     return (TASK_ABANDONED);
   }
 
 #if DEBUG_ENABLED && DEBUG_TASK
-  Debug(_("%s: id=%u qr=%u opcode=%s aa=%u tc=%u rd=%u ra=%u z=%u rcode=%u"), desctask(t),
-	t->id, t->hdr.qr, mydns_opcode_str(t->hdr.opcode),
-	t->hdr.aa, t->hdr.tc, t->hdr.rd, t->hdr.ra, t->hdr.z, t->hdr.rcode);
-  Debug(_("%s: qd=%u an=%u ns=%u ar=%u"), desctask(t),
-	t->qdcount, t->ancount, t->nscount, t->arcount);
+  DebugX("task", 1, _("%s: id=%u qr=%u opcode=%s aa=%u tc=%u rd=%u ra=%u z=%u rcode=%u"), desctask(t),
+	 t->id, t->hdr.qr, mydns_opcode_str(t->hdr.opcode),
+	 t->hdr.aa, t->hdr.tc, t->hdr.rd, t->hdr.ra, t->hdr.z, t->hdr.rcode);
+  DebugX("task", 1, _("%s: qd=%u an=%u ns=%u ar=%u"), desctask(t),
+	 t->qdcount, t->ancount, t->nscount, t->arcount);
 #endif
 
   task_init_header(t);					/* Initialize header fields for reply */
@@ -462,7 +463,7 @@ _task_free(TASK *t, const char *file, int line) {
   if (!t) return;
 
 #if DEBUG_ENABLED && DEBUG_TASK
-  Debug(_("%s: Freeing task at %s:%d"), desctask(t), file, line);
+  DebugX("task", 1, _("%s: Freeing task at %s:%d"), desctask(t), file, line);
 #endif
 
   if (t->protocol == SOCK_STREAM && t->fd >= 0) {
@@ -665,7 +666,7 @@ task_process_query(TASK *t, int rfd, int wfd, int efd) {
   taskexec_t	res = TASK_DID_NOT_EXECUTE;
 
 #if DEBUG_ENABLED && DEBUG_TASK
-  Debug(_("%s: task_process_query called rfd = %d, wfd = %d, efd = %d"), desctask(t), rfd, wfd, efd);
+  DebugX("task", 1, _("%s: task_process_query called rfd = %d, wfd = %d, efd = %d"), desctask(t), rfd, wfd, efd);
 #endif
 
   switch (TASKIOTYPE(t->status)) {
@@ -782,7 +783,7 @@ task_process_query(TASK *t, int rfd, int wfd, int efd) {
       **  NEED_WRITE: Need to write reply
       */
 #if DEBUG_ENABLED &&DEBUG_TASK
-      Debug(_("%s: task_process_query processing write - wfd = %d, efd = %d"), desctask(t), wfd, efd);
+      DebugX("task", 1, _("%s: task_process_query processing write - wfd = %d, efd = %d"), desctask(t), wfd, efd);
 #endif
 
       if (wfd || efd) {
@@ -839,7 +840,8 @@ task_process_recursive(TASK *t, int rfd, int wfd, int efd) {
   taskexec_t	res = TASK_DID_NOT_EXECUTE;
 
 #if DEBUG_ENABLED && DEBUG_TASK
-  Debug(_("%s: task_process_recursive called rfd = %d, wfd = %d, efd = %d"), desctask(t), rfd, wfd, efd);
+  DebugX("task", 1, _("%s: task_process_recursive called rfd = %d, wfd = %d, efd = %d"),
+	 desctask(t), rfd, wfd, efd);
 #endif
 
   switch (TASKIOTYPE(t->status)) {
@@ -931,7 +933,7 @@ task_process_request(TASK *t, int rfd, int wfd, int efd) {
   taskexec_t	res = TASK_DID_NOT_EXECUTE;
 
 #if DEBUG_ENABLED && DEBUG_TASK
-  Debug(_("%s: task_process_request called rfd = %d, wfd = %d, efd = %d"), desctask(t), rfd, wfd, efd);
+  DebugX("task", 1, _("%s: task_process_request called rfd = %d, wfd = %d, efd = %d"), desctask(t), rfd, wfd, efd);
 #endif
 
   switch (TASKIOTYPE(t->status)) {
@@ -993,7 +995,8 @@ static taskexec_t
 task_process_ticktask(TASK *t, int rfd, int wfd, int efd) {
 
 #if DEBUG_ENABLED && DEBUG_TASK
-  Debug(_("%s: task_process_ticktask called rfd = %d, wfd = %d, efd = %d"), desctask(t), rfd, wfd, efd);
+  DebugX("task", 1, _("%s: task_process_ticktask called rfd = %d, wfd = %d, efd = %d"),
+	 desctask(t), rfd, wfd, efd);
 #endif
 
   switch (TASKIOTYPE(t->status)) {
@@ -1046,7 +1049,7 @@ task_process_runtask(TASK *t, int rfd, int wfd, int efd) {
   taskexec_t	res = TASK_DID_NOT_EXECUTE;
 
 #if DEBUG_ENABLED && DEBUG_TASK
-  Debug(_("%s: task_process_runtask called rfd = %d, wfd = %d, efd = %d"), desctask(t), rfd, wfd, efd);
+  DebugX("task", 1, _("%s: task_process_runtask called rfd = %d, wfd = %d, efd = %d"), desctask(t), rfd, wfd, efd);
 #endif
 
   switch (t->status) {
@@ -1081,7 +1084,7 @@ task_process(TASK *t, int rfd, int wfd, int efd) {
   taskexec_t	res = TASK_DID_NOT_EXECUTE;
 
 #if DEBUG_ENABLED && DEBUG_TASK
-  Debug(_("%s: task_process called rfd = %d, wfd = %d, efd = %d"), desctask(t), rfd, wfd, efd);
+  DebugX("task", 1, _("%s: task_process called rfd = %d, wfd = %d, efd = %d"), desctask(t), rfd, wfd, efd);
 #endif
   switch (TASKCLASS(t->status)) {
 
@@ -1148,7 +1151,7 @@ task_process(TASK *t, int rfd, int wfd, int efd) {
   DEQUEUETASK:
 
 #if DEBUG_ENABLED && DEBUG_TASK
-    Debug(_("%s: dequeuing task because %s"), desctask(t), task_exec_name(res));
+    DebugX("task", 1, _("%s: dequeuing task because %s"), desctask(t), task_exec_name(res));
 #endif
 
     if (res == TASK_ABANDONED)

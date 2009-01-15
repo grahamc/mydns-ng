@@ -68,6 +68,45 @@ extern char	*recursion_algorithm;
 extern char	*recursive_fwd_server;		/* Name of server for recursive forwarding */
 extern int	recursive_family;		/* Protocol family for recursion */
 
+#if DEBUG_ENABLED
+extern int		debug_enabled;
+
+extern int		debug_all;
+
+extern int		debug_alias;
+extern int		debug_array;
+extern int		debug_axfr;
+extern int		debug_cache;
+extern int		debug_conf;
+extern int		debug_data;
+extern int		debug_db;
+extern int		debug_encode;
+extern int		debug_error;
+extern int		debug_ixfr;
+extern int		debug_ixfr_sql;
+extern int		debug_lib_rr;
+extern int		debug_lib_soa;
+extern int		debug_listen;
+extern int		debug_memman;
+extern int		debug_notify;
+extern int		debug_notify_sql;
+extern int		debug_queue;
+extern int		debug_recursive;
+extern int		debug_reply;
+extern int		debug_resolve;
+extern int		debug_rr;
+extern int		debug_servercomms;
+extern int		debug_sort;
+extern int		debug_sql;
+extern int		debug_sql_queries;
+extern int		debug_status;
+extern int		debug_task;
+extern int		debug_tcp;
+extern int		debug_udp;
+extern int		debug_update;
+extern int		debug_update_sql;
+#endif
+
 #if HAVE_IPV6
 extern struct sockaddr_in6	recursive_sa6;	/* Recursive server (IPv6) */
 #endif
@@ -141,9 +180,6 @@ extern int mydns_rr_use_serial;
 
 /* Does the specified string end with a dot? */
 #define	ENDS_WITH_DOT(s)	(s && (s[strlen(s)-1] == '.'))
-
-/* Convert str to unsigned int */
-#define atou(s) (uint32_t)strtoul(s, (char **)NULL, 10)
 
 /* Size ranges for various bits of DNS data */
 #define	DNS_MAXPACKETLEN_TCP		65536		/* Use 64k for TCP */

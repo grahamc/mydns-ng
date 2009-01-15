@@ -44,15 +44,15 @@ _queue_stats(QUEUE *q) {
   strftime(datebuf, sizeof(datebuf)-1, "%d-%b-%Y %H:%M:%S", tm);
 #endif
 
-  Debug(_(
+  DebugX("queue", 1,_(
 #if !DISABLE_DATE_LOGGING
-	  "%s+%06lu "
+		      "%s+%06lu "
 #endif
-	  "%s size=%u, max size=%u"),
+		      "%s size=%u, max size=%u"),
 #if !DISABLE_DATE_LOGGING
-	  datebuf, tv.tv_usec,
+	 datebuf, tv.tv_usec,
 #endif
-	q->queuename, (unsigned int)q->size, (unsigned int)q->max_size);
+	 q->queuename, (unsigned int)q->size, (unsigned int)q->max_size);
 	  
   msg = ALLOCATE(msgsize, char[]);
 
@@ -64,7 +64,7 @@ _queue_stats(QUEUE *q) {
     if ((msglen + 2*idsize) >= msgsize) msg = REALLOCATE(msg, msgsize *= 2, char[]);
   }
   if (msglen)
-    Debug(_("Queued tasks %s"), msg);
+    DebugX("queue", 1,_("Queued tasks %s"), msg);
 
   RELEASE(msg);
 #endif
@@ -137,7 +137,7 @@ _enqueue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
     Status.udp_requests++;
 
 #if DEBUG_ENABLED && DEBUG_QUEUE
-  Debug(_("%s: enqueued (by %s:%u)"), desctask(t), file, line);
+  DebugX("queue", 1,_("%s: enqueued (by %s:%u)"), desctask(t), file, line);
 #endif
 
   return (0);
@@ -180,7 +180,7 @@ _dequeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 #if DEBUG_ENABLED && DEBUG_QUEUE
   char *taskdesc = STRDUP(desctask(t));
 
-  Debug(_("%s: dequeuing (by %s:%u)"), taskdesc, file, line);
+  DebugX("queue", 1,_("%s: dequeuing (by %s:%u)"), taskdesc, file, line);
 #endif
 
   if (err_verbose)				/* Output task info if being verbose */
@@ -193,7 +193,7 @@ _dequeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 
   task_free(t);
 #if DEBUG_ENABLED && DEBUG_QUEUE
-  Debug(_("%s: dequeued (by %s:%u)"), taskdesc, file, line);
+  DebugX("queue", 1,_("%s: dequeued (by %s:%u)"), taskdesc, file, line);
   RELEASE(taskdesc);
 #endif
 }
@@ -203,7 +203,7 @@ void
 _requeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 #if DEBUG_ENABLED && DEBUG_QUEUE
   char *taskdesc = desctask(t);
-  Debug(_("%s: requeuing (by %s:%u) called"), taskdesc, file, line);
+  DebugX("queue", 1,_("%s: requeuing (by %s:%u) called"), taskdesc, file, line);
 #endif
 
   __queue_remove(t->TaskQ, t);
