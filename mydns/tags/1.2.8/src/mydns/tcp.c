@@ -224,7 +224,7 @@ read_tcp_query(TASK *t) {
   }
 
 #if DEBUG_ENABLED && DEBUG_TCP
-  Debug(_("%s: 2+%d TCP octets in"), clientaddr(t), rv);
+  DebugX("tcp", 1, _("%s: 2+%d TCP octets in"), clientaddr(t), rv);
 #endif
 
   t->offset += rv;

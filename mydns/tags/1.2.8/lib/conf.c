@@ -21,6 +21,7 @@
 
 #include "mydnsutil.h"
 
+CONF		*Conf = (CONF *)NULL;			/* Config options */
 
 /**************************************************************************************************
 	CONF_TRIM_COMMENTS

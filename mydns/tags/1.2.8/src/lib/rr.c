@@ -53,11 +53,13 @@ char *mydns_rr_active_types[] = { "Y", "N", "D" };
 void *
 __mydns_rr_assert_pointer(void *ptr, char *fieldname, char *filename, int linenumber) {
 #if DEBUG_ENABLED && DEBUG_LIB_RR
-  Debug(_("mydns_rr_assert_pointer() called for field=%s from %s:%d"), fieldname, filename, linenumber);
+  DebugX("lib-rr", 1, _("mydns_rr_assert_pointer() called for field=%s from %s:%d"),
+	 fieldname, filename, linenumber);
 #endif
   if (ptr != NULL) return ptr;
 #if DEBUG_ENABLED
-  Debug(_("%s Pointer is NULL at %s:%d"), fieldname, filename, linenumber);
+  DebugX("lib-rr", 1, _("%s Pointer is NULL at %s:%d"),
+	 fieldname, filename, linenumber);
   abort();
 #endif
   return ptr;
@@ -430,10 +432,10 @@ mydns_rr_build(uint32_t id,
   uint32_t	namelen;
 
 #if DEBUG_ENABLED && DEBUG_LIB_RR
-  Debug(_("mydns_rr_build(): called for id=%d, zone=%d, type=%d, class=%d, aux=%d, "
-	  "ttl=%d, active='%s', stamp=%p, serial=%d, name='%s', data=%p, datalen=%d, origin='%s'"),
-	id, zone, type, class, aux, ttl, active, stamp, serial,
-	(name)?name:_("<NULL>"), data, datalen, origin);
+  DebugX("lib-rr", 1, _("mydns_rr_build(): called for id=%d, zone=%d, type=%d, class=%d, aux=%d, "
+			"ttl=%d, active='%s', stamp=%p, serial=%d, name='%s', data=%p, datalen=%d, origin='%s'"),
+	 id, zone, type, class, aux, ttl, active, stamp, serial,
+	 (name)?name:_("<NULL>"), data, datalen, origin);
 #endif
 
   if ((namelen = (name)?strlen(name):0) > DNS_MAXNAMELEN) {
@@ -536,7 +538,7 @@ mydns_rr_build(uint32_t id,
   }
 
 #if DEBUG_ENABLED && DEBUG_LIB_RR
-  Debug(_("mydns_rr_build(): returning result=%p"), rr);
+  DebugX("lib-rr", 1, _("mydns_rr_build(): returning result=%p"), rr);
 #endif
   return (rr);
 
@@ -566,7 +568,7 @@ mydns_rr_parse(SQL_ROW row, unsigned long *lengths, const char *origin) {
   MYDNS_RR	*rr;
 
 #if DEBUG_ENABLED && DEBUG_LIB_RR
-  Debug(_("mydns_rr_parse(): called for origin %s"), origin);
+  DebugX("lib-rr", 1, _("mydns_rr_parse(): called for origin %s"), origin);
 #endif
 
   if (!(type = mydns_rr_get_type(row[6]))) {
@@ -773,8 +775,8 @@ mydns_rr_prepare_query(uint32_t zone, dns_qtype_t type, char *name, char *origin
 #endif
 
 #if DEBUG_ENABLED && DEBUG_LIB_RR
-  Debug(_("mydns_rr_prepare_query(zone=%u, type='%s', name='%s', origin='%s')"),
-	zone, mydns_qtype_str(type), name ?: _("NULL"), origin ?: _("NULL"));
+  DebugX("lib-rr", 1, _("mydns_rr_prepare_query(zone=%u, type='%s', name='%s', origin='%s')"),
+	 zone, mydns_qtype_str(type), name ?: _("NULL"), origin ?: _("NULL"));
 #endif
 
   /* Get the type='XX' part of the WHERE clause */
@@ -906,7 +908,7 @@ int __mydns_rr_do_load(SQL *sqlConn, MYDNS_RR **rptr, char *query, char *origin)
 
 
 #if DEBUG_ENABLED && DEBUG_LIB_RR
-  Debug(_("mydns_rr_do_load(query='%s', origin='%s')"), query, origin ? origin : _("NULL"));
+  DebugX("lib-rr", 1, _("mydns_rr_do_load(query='%s', origin='%s')"), query, origin ? origin : _("NULL"));
 #endif
 
   if (rptr) *rptr = NULL;
@@ -925,7 +927,7 @@ int __mydns_rr_do_load(SQL *sqlConn, MYDNS_RR **rptr, char *query, char *origin)
   {
     int numresults = sql_num_rows(res);
 
-    Debug(_("RR query: %d row%s: %s"), numresults, S(numresults), query);
+    DebugX("lib-rr", 1, _("RR query: %d row%s: %s"), numresults, S(numresults), query);
   }
 #endif
 

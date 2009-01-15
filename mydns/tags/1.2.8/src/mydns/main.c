@@ -107,6 +107,7 @@ usage(int status) {
     puts("");
 #if DEBUG_ENABLED
     puts(_("  -d, --debug             enable debug output"));
+    puts(_("      --debug-*[=n]       enable debug output for module"));
 #endif
     puts(_("  -v, --verbose           be more verbose while running"));
     puts(_("      --no-data-errors    don't output errors about bad data"));
@@ -153,7 +154,40 @@ cmdline(int argc, char **argv) {
 
     {"no-data-errors",	no_argument,				NULL,	0},
 
-    {NULL,			0,				NULL, 0}
+    {"debug-alias",		optional_argument,		NULL,	0},
+    {"debug-array",		optional_argument,		NULL,	0},
+    {"debug-axfr",		optional_argument,		NULL,	0},
+    {"debug-cache",		optional_argument,		NULL,	0},
+    {"debug-conf",		optional_argument,		NULL,	0},
+    {"debug-data",		optional_argument,		NULL,	0},
+    {"debug-db",		optional_argument,		NULL,	0},
+    {"debug-encode",		optional_argument,		NULL,	0},
+    {"debug-error",		optional_argument,		NULL,	0},
+    {"debug-ixfr",		optional_argument,		NULL,	0},
+    {"debug-ixfr-sql",		optional_argument,		NULL,	0},
+    {"debug-lib-rr",		optional_argument,		NULL,	0},
+    {"debug-lib-soa",		optional_argument,		NULL,	0},
+    {"debug-listen",		optional_argument,		NULL,	0},
+    {"debug-memman",		optional_argument,		NULL,	0},
+    {"debug-notify",		optional_argument,		NULL,	0},
+    {"debug-notify-sql",	optional_argument,		NULL,	0},
+    {"debug-queue",		optional_argument,		NULL,	0},
+    {"debug-recursive",		optional_argument,		NULL,	0},
+    {"debug-reply",		optional_argument,		NULL,	0},
+    {"debug-resolve",		optional_argument,		NULL,	0},
+    {"debug-rr",		optional_argument,		NULL,	0},
+    {"debug-servercomms",	optional_argument,		NULL,	0},
+    {"debug-sort",		optional_argument,		NULL,	0},
+    {"debug-sql",		optional_argument,		NULL,	0},
+    {"debug-sql-queries",	optional_argument,		NULL,	0},
+    {"debug-status",		optional_argument,		NULL,	0},
+    {"debug-task",		optional_argument,		NULL,	0},
+    {"debug-tcp",		optional_argument,		NULL,	0},
+    {"debug-udp",		optional_argument,		NULL,	0},
+    {"debug-update",		optional_argument,		NULL,	0},
+    {"debug-update-sql",	optional_argument,		NULL,	0},
+
+    {NULL,			0,				NULL,	0}
   };
 
   error_init(argv[0], LOG_DAEMON);			/* Init output/logging routines */
@@ -184,6 +218,16 @@ cmdline(int argc, char **argv) {
 	  run_as_root = 1;
 	else if (!strcmp(opt, "no-data-errors"))	/* --no-data-errors */
 	  show_data_errors = 0;
+#if DEBUG_ENABLED
+	else if (!strncmp(opt, "debug-", 6)) { /* --debug-* */
+	  err_verbose = err_debug = 1;
+	  conf_set(&Conf, "debug-enabled", "1", 0);
+	  if (optarg)
+	    conf_set(&Conf, (char*)opt, optarg, 0);
+	  else
+	    conf_set(&Conf, (char*)opt, "1", 0);
+#endif
+	}
       }
       break;
 
@@ -198,6 +242,8 @@ cmdline(int argc, char **argv) {
     case 'd':						/* -d, --debug */
 #if DEBUG_ENABLED
       err_verbose = err_debug = 1;
+      conf_set(&Conf, "debug-enabled", "1", 0);
+      conf_set(&Conf, "debug-all", "1", 0);
 #endif
       break;
 
@@ -500,8 +546,8 @@ free_other_tasks(TASK *t, int closeallfds) {
   int i = 0, j = 0;
 
 #if DEBUG_ENABLED
-  Debug(_("%s: Free up all other tasks closeallfds = %d, fd = %d"), desctask(t),
-	closeallfds, t->fd);
+  DebugX("enabled", 1, _("%s: Free up all other tasks closeallfds = %d, fd = %d"), desctask(t),
+	 closeallfds, t->fd);
 #endif
   for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
     for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
@@ -956,10 +1002,10 @@ run_tasks(struct pollfd items[], int numfds) {
 	      wfd |= item->revents & POLLOUT;
 	      efd |= item->revents & (POLLERR|POLLNVAL|POLLHUP);
 #if DEBUG_ENABLED
-	      Debug(_("%s: item fd = %d, events = %x, revents = %x, rfd = %d, wfd = %d, efd = %d"),
-		    desctask(t),
-		    item->fd, item->events, item->revents,
-		    rfd, wfd, efd);
+	      DebugX("enabled", 1, _("%s: item fd = %d, events = %x, revents = %x, rfd = %d, wfd = %d, efd = %d"),
+		     desctask(t),
+		     item->fd, item->events, item->revents,
+		     rfd, wfd, efd);
 #endif
 	      break;
 	    }
@@ -972,7 +1018,7 @@ run_tasks(struct pollfd items[], int numfds) {
 	  }
 #if DEBUG_ENABLED
 	  if (!item) {
-	    Debug(_("%s: No matching item found for fd = %d"), desctask(t), t->fd);
+	    DebugX("enabled", 1, _("%s: No matching item found for fd = %d"), desctask(t), t->fd);
 	  }
 #endif
 	}
@@ -994,7 +1040,7 @@ purge_bad_tasks() {
   TASK *t = NULL, *next_task = NULL;
 
 #if DEBUG_ENABLED
-  Debug(_("purge_bad_tasks() called"));
+  DebugX("enabled", 1, _("purge_bad_tasks() called"));
 #endif
 
   for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
@@ -1053,7 +1099,7 @@ purge_bad_tasks() {
     }
   }
 #if DEBUG_ENABLED
-  Debug(_("purge_bad_tasks() returned"));
+  DebugX("enabled", 1, _("purge_bad_tasks() returned"));
 #endif
 }
 
@@ -1096,8 +1142,8 @@ server_loop(INITIALTASK *initial_tasks, int serverfd) {
     if (numfds == 0 || items == NULL) {
       Err(_("No IO for process - something is wrong"));
     }
-    Debug(_("Scheduling Tasks - timeout = %d, numfds = %d"),
-	  timeoutWanted, numfds);
+    DebugX("enabled", 1, _("Scheduling Tasks - timeout = %d, numfds = %d"),
+	   timeoutWanted, numfds);
 #endif
     if (timeoutWanted > 0 && TaskArray[NORMAL_TASK][HIGH_PRIORITY_TASK]->head) {
       /* If we have a high priority normal task to run then wake up in 1/10th second */
@@ -1115,9 +1161,9 @@ server_loop(INITIALTASK *initial_tasks, int serverfd) {
 
 #if HAVE_POLL
 #if DEBUG_ENABLED
-      Debug(_("Selecting for IO numfds = %d, timeout = %s(%d)"), numfds,
-	    (timeoutWanted<0)?"no"
-	    :(timeoutWanted==0)?"poll":"yes", timeoutWanted);
+      DebugX("enabled", 1, _("Selecting for IO numfds = %d, timeout = %s(%d)"), numfds,
+	     (timeoutWanted<0)?"no"
+	     :(timeoutWanted==0)?"poll":"yes", timeoutWanted);
 #endif
     rv = poll(items, numfds, timeoutWanted);
 
@@ -1158,7 +1204,7 @@ server_loop(INITIALTASK *initial_tasks, int serverfd) {
 	FD_SET(fd, &efd);
       }
 #if DEBUG_ENABLED
-      Debug(_("Selecting for IO maxfd = %d, timeout = %s"), maxfd, (tvp)?"yes":"no");
+      DebugX("enabled", 1, _("Selecting for IO maxfd = %d, timeout = %s"), maxfd, (tvp)?"yes":"no");
 #endif
       rv = select(maxfd+1, &rfd, &wfd, &efd, tvp);
 
@@ -1192,7 +1238,7 @@ server_loop(INITIALTASK *initial_tasks, int serverfd) {
 	  item->revents |= POLLERR;
 	}
 #if DEBUG_ENABLED
-	Debug(_("Item fd = %d, events = %x, revents = %x"), fd, item->events, item->revents);
+	DebugX("enabled", 1, _("Item fd = %d, events = %x, revents = %x"), fd, item->events, item->revents);
 #endif
       }
     }
@@ -1263,7 +1309,7 @@ spawn_server(INITIALTASK *initial_tasks) {
     SERVER *server = array_remove(Servers);
     if (server) {
 #if DEBUG_ENABLED
-      Debug(_("closing fd %d"), server->serverfd);
+      DebugX("enabled", 1, _("closing fd %d"), server->serverfd);
 #endif
       close(server->serverfd);
       RELEASE(server);
@@ -1278,7 +1324,7 @@ spawn_server(INITIALTASK *initial_tasks) {
   /* Delete pre-existing tasks as they belong to master */
   free_all_tasks();
 #if DEBUG_ENABLED
-  Debug(_("Cleaned up master structures - starting work"));
+  DebugX("enabled", 1, _("Cleaned up master structures - starting work"));
 #endif
 
   sql_close(sql); /* Release the database connection held by the master */
@@ -1328,8 +1374,8 @@ master_loop(INITIALTASK *initial_tasks) {
     if (numfds == 0 || items == NULL) {
       Err(_("No IO for process - something is wrong"));
     }
-    Debug(_("Scheduling Tasks - timeout = %d, numfds = %d"),
-	  timeoutWanted, numfds);
+    DebugX("enabled", 1, _("Scheduling Tasks - timeout = %d, numfds = %d"),
+	   timeoutWanted, numfds);
 #endif
     if (TaskArray[NORMAL_TASK][HIGH_PRIORITY_TASK]->head) {
       /* If we have a high priority normal task to run then wake up in 1/10th second */
@@ -1347,9 +1393,9 @@ master_loop(INITIALTASK *initial_tasks) {
 
 #if HAVE_POLL
 #if DEBUG_ENABLED
-      Debug(_("Selecting for IO numfds = %d, timeout = %s(%d)"), numfds,
-	    (timeoutWanted<0)?"no"
-	    :(timeoutWanted==0)?"poll":"yes", timeoutWanted);
+      DebugX("enabled", 1, _("Selecting for IO numfds = %d, timeout = %s(%d)"), numfds,
+	     (timeoutWanted<0)?"no"
+	     :(timeoutWanted==0)?"poll":"yes", timeoutWanted);
 #endif
     rv = poll(items, numfds, timeoutWanted);
 
@@ -1390,7 +1436,7 @@ master_loop(INITIALTASK *initial_tasks) {
 	FD_SET(fd, &efd);
       }
 #if DEBUG_ENABLED
-      Debug(_("Selecting for IO maxfd = %d, timeout = %s"), maxfd, (tvp)?"yes":"no");
+      DebugX("enabled", 1, _("Selecting for IO maxfd = %d, timeout = %s"), maxfd, (tvp)?"yes":"no");
 #endif
       rv = select(maxfd+1, &rfd, &wfd, &efd, tvp);
 
@@ -1418,7 +1464,7 @@ master_loop(INITIALTASK *initial_tasks) {
 	  item->revents |= POLLERR;
 	}
 #if DEBUG_ENABLED
-	Debug(_("Item fd = %d, events = %x, revents = %x"), fd, item->events, item->revents);
+	DebugX("enabled", 1, _("Item fd = %d, events = %x, revents = %x"), fd, item->events, item->revents);
 #endif
       }
     }

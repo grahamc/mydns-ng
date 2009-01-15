@@ -187,6 +187,40 @@ Debug(const char *fmt, ...) {
   RELEASE(msg);
 }
 /*--- Debug() -----------------------------------------------------------------------------------*/
+
+/**************************************************************************************************
+	DEBUGX
+**************************************************************************************************/
+void
+DebugX(const char *debugId, int debugLvl, const char *fmt, ...) {
+  char *msg = NULL;
+  va_list ap;
+  int debugEnabled = atou(conf_get(&Conf, "debug-enabled", NULL));
+  int allEnabled = atou(conf_get(&Conf, "debug-all", NULL));
+  int levelEnabled = 0;
+  char *level = (char*)ALLOCATE(strlen(debugId) + sizeof("debug-") + 1, (char*));
+
+  level[0] = '\0';
+  strcpy(level, "debug-");
+  strcat(level, debugId);
+
+  levelEnabled = atou(conf_get(&Conf, level, NULL));
+
+  RELEASE(level);
+
+  if (debugEnabled <= 0) return;
+  if (levelEnabled < debugLvl && allEnabled == 0) return;
+
+  /* Construct output string */
+  va_start(ap, fmt);
+  VASPRINTF(&msg, fmt, ap);
+  va_end(ap);
+
+  _error_out(LOG_DEBUG, 0, 0, msg);
+
+  RELEASE(msg);
+}
+/*--- DebugX() -----------------------------------------------------------------------------------*/
 #endif
 
 

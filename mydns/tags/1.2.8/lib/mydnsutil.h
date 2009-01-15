@@ -491,6 +491,11 @@ extern void	_mydns_release(void *, size_t, arena_t, char *, int);
 #define RELEASE(OBJECT)	\
   RELEASE_GLOBAL(OBJECT)
 
+/* Convert str to unsigned int */
+#define atou(s) (uint32_t)strtoul(s, (char **)NULL, 10)
+
+extern CONF	*Conf;				/* Config file data */
+
 /*
 **  error.c
 **  Error reporting functions.
@@ -506,6 +511,7 @@ extern void		error_reinit();
 extern void		error_init(const char *argv0, int facility);
 #if DEBUG_ENABLED
 extern void		Debug(const char *, ...) __printflike(1,2);
+extern void		DebugX(const char *, int, const char *, ...) __printflike(3,4);
 #endif
 extern void		Verbose(const char *, ...) __printflike(1,2);
 extern void		Notice(const char *, ...) __printflike(1,2);

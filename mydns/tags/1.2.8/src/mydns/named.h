@@ -112,7 +112,6 @@ extern ARRAY	*Servers;
 
 
 /* Global variables */
-extern CONF	*Conf;				/* Config file data */
 extern QUEUE	*TaskArray[PERIODIC_TASK+1][LOW_PRIORITY_TASK+1];
 
 extern int	max_used_fd;

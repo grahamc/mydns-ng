@@ -349,8 +349,8 @@ comms_run(TASK *t, void * data) {
 
   rv = comms_recv(t, comms);
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-  Debug(_("%s: Received command %s - result %s"), desctask(t),
-	&comms->message->messagedata[0], task_exec_name(rv));
+  DebugX("servercomms", 1, _("%s: Received command %s - result %s"), desctask(t),
+	 &comms->message->messagedata[0], task_exec_name(rv));
 #endif
   if ((rv == TASK_FAILED) || (rv == TASK_CONTINUE)) return TASK_CONTINUE;
 
@@ -372,7 +372,7 @@ comms_sendcommand(TASK *t, char *commandstring) {
   taskexec_t	rv = TASK_FAILED;
 
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-  Debug(_("%s: Sending commands %s"), desctask(t), commandstring);
+  DebugX("servercomms", 1, _("%s: Sending commands %s"), desctask(t), commandstring);
 #endif
 
   comms = __comms_allocate();
@@ -381,7 +381,7 @@ comms_sendcommand(TASK *t, char *commandstring) {
 
   rv = comms_send(t, comms);
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-  Debug(_("%s: Sent command %s - result %s"), desctask(t), commandstring, task_exec_name(rv));
+  DebugX("servercomms", 1, _("%s: Sent command %s - result %s"), desctask(t), commandstring, task_exec_name(rv));
 #endif
   return rv;
 }
@@ -404,8 +404,8 @@ scomms_tick(TASK *t, void *data) {
   if (rv == TASK_FAILED) {
     /* Nothing from the master for 5 cycles assume one of us has gone AWOL */
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-    Debug(_("%s: Server comms tick - master has not pinged for %d seconds"), desctask(t),
-	  lastseen);
+    DebugX("servercomms", 1, _("%s: Server comms tick - master has not pinged for %d seconds"), desctask(t),
+	   lastseen);
 #endif
     named_shutdown(0);
   }
@@ -432,8 +432,8 @@ mcomms_tick(TASK *t, void *data) {
     /* Shutdown and restart server at other end of connection */
     SERVER *server = find_server_for_task(t);
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-    Debug(_("%s: Master comms tick - connection to server has not pinged for %d seconds"), desctask(t),
-	  lastseen);
+    DebugX("servercomms", 1, _("%s: Master comms tick - connection to server has not pinged for %d seconds"),
+	   desctask(t), lastseen);
 #endif
     if (server) {
       if (server->signalled) {
