@@ -226,8 +226,8 @@ cmdline(int argc, char **argv) {
 	    conf_set(&Conf, (char*)opt, optarg, 0);
 	  else
 	    conf_set(&Conf, (char*)opt, "1", 0);
-#endif
 	}
+#endif
       }
       break;
 
