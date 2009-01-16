@@ -112,7 +112,6 @@ extern ARRAY	*Servers;
 
 
 /* Global variables */
-extern CONF	*Conf;				/* Config file data */
 extern QUEUE	*TaskArray[PERIODIC_TASK+1][LOW_PRIORITY_TASK+1];
 
 extern int	max_used_fd;
@@ -197,13 +196,7 @@ typedef struct _notify_slave {
   int			replied;	/* Have we had a reply from the slave */
   int			retries;        /* How many retries have we made */
   time_t		lastsent;	/* Last message was sent then */
-  union {
-    struct sockaddr	ips;
-    struct sockaddr_in	ips4;
-#if HAVE_IPV6
-    struct sockaddr_in6	ips6;
-#endif
-  } slaveaddr;
+  struct sockaddr	slaveaddr;
 } NOTIFYSLAVE;
 
 extern taskexec_t	notify_write(TASK *);

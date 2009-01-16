@@ -123,8 +123,8 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
   task_error_t	errcode = 0;
 
 #if DEBUG_ENABLED && DEBUG_IXFR
-  Debug("%s: ixfr(%s, %s, \"%s\", %d)", desctask(t),
-	resolve_datasection_str[section], mydns_qtype_str(qtype), fqdn, truncateonly);
+  DebugX("ixfr", 1, "%s: ixfr(%s, %s, \"%s\", %d)", desctask(t),
+	 resolve_datasection_str[section], mydns_qtype_str(qtype), fqdn, truncateonly);
 #endif
 
   if (!dns_ixfr_enabled) {
@@ -148,11 +148,11 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
   }
 
 #if DEBUG_ENABLED && DEBUG_IXFR
-  Debug(_("%s: DNS IXFR: SOA id %u"), desctask(t), soa->id);
-  Debug(_("%s: DNS IXFR: QDCOUNT=%d (Query)"), desctask(t), t->qdcount);
-  Debug(_("%s: DNS IXFR: ANCOUNT=%d (Answer)"), desctask(t), t->ancount);
-  Debug(_("%s: DNS IXFR: AUCOUNT=%d (Authority)"), desctask(t), t->nscount);
-  Debug(_("%s: DNS IXFR: ADCOUNT=%d (Additional data)"), desctask(t), t->arcount);
+  DebugX("ixfr", 1, _("%s: DNS IXFR: SOA id %u"), desctask(t), soa->id);
+  DebugX("ixfr", 1, _("%s: DNS IXFR: QDCOUNT=%d (Query)"), desctask(t), t->qdcount);
+  DebugX("ixfr", 1, _("%s: DNS IXFR: ANCOUNT=%d (Answer)"), desctask(t), t->ancount);
+  DebugX("ixfr", 1, _("%s: DNS IXFR: AUCOUNT=%d (Authority)"), desctask(t), t->nscount);
+  DebugX("ixfr", 1, _("%s: DNS IXFR: ADCOUNT=%d (Additional data)"), desctask(t), t->arcount);
 #endif
   if (!t->nscount)
     return formerr(t, DNS_RCODE_FORMERR, ERR_NO_AUTHORITY,
@@ -191,16 +191,16 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
 
   /* Get the serial number from the RR record in the authority section */
 #if DEBUG_ENABLED && DEBUG_IXFR
-  Debug(_("%s: DNS IXFR Question[zone %s qclass %s qtype %s]"
-	  " Authority[zone %s qclass %s qtype %s ttl %u "
-	  "mname %s rname %s serial %u refresh %u retry %u expire %u minimum %u]"),
-	desctask(t), q->name, mydns_class_str(q->class), mydns_qtype_str(q->type),
-	q->IR.name, mydns_class_str(q->IR.class), mydns_qtype_str(q->IR.type), q->IR.ttl,
-	q->IR.mname, q->IR.rname, q->IR.serial, q->IR.refresh, q->IR.retry, q->IR.expire, q->IR.minimum);
+  DebugX("ixfr", 1, _("%s: DNS IXFR Question[zone %s qclass %s qtype %s]"
+		      " Authority[zone %s qclass %s qtype %s ttl %u "
+		      "mname %s rname %s serial %u refresh %u retry %u expire %u minimum %u]"),
+	 desctask(t), q->name, mydns_class_str(q->class), mydns_qtype_str(q->type),
+	 q->IR.name, mydns_class_str(q->IR.class), mydns_qtype_str(q->IR.type), q->IR.ttl,
+	 q->IR.mname, q->IR.rname, q->IR.serial, q->IR.refresh, q->IR.retry, q->IR.expire, q->IR.minimum);
 #endif
 
   /*
-   * As per RFC 1995 we have 3 options for a response if a delat exists.
+   * As per RFC 1995 we have 3 options for a response if a delta exists.
    *
    * We can send a full zone transfer if it will fit in a UDP packet and is smaller
    * than sending deltas
