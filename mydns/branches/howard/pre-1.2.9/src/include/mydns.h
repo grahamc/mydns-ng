@@ -251,16 +251,30 @@ typedef enum _task_error_t					/* Common errors */
 } task_error_t;
 
 
+/* Task completion codes */
+typedef enum _task_execstatus_t {
+  TASK_ABANDONED	=-2,		/* Task needs to be abandoned - release fd */
+  TASK_FAILED		=-1,		/* Task failed to execute properly kill */
+
+  TASK_COMPLETED	= 0,		/* Task has run to completion dequeue */
+  TASK_FINISHED		= 1,		/* Task finished normally free all resources */
+  TASK_TIMED_OUT	= 2,		/* Task has timed out - dequeue */
+
+  TASK_EXECUTED		= 3,		/* Task executed but did not complete retry later */
+  TASK_DID_NOT_EXECUTE	= 4,		/* Task did not execute try again later */
+  TASK_CONTINUE		= 5,		/* Task needs to run again */
+} taskexec_t;
+
 typedef enum							/* Query classes */
 {                                      
-	DNS_CLASS_UNKNOWN 	= -1,				/* Unknown */
+  DNS_CLASS_UNKNOWN 	= -1,				/* Unknown */
 
-	DNS_CLASS_IN		= 1,				/* Internet */
-	DNS_CLASS_CHAOS		= 3,				/* CHAOS (obsolete) */
-	DNS_CLASS_HESIOD	= 4,				/* HESIOD (obsolete) */
+  DNS_CLASS_IN		= 1,				/* Internet */
+  DNS_CLASS_CHAOS	= 3,				/* CHAOS (obsolete) */
+  DNS_CLASS_HESIOD	= 4,				/* HESIOD (obsolete) */
 
-	DNS_CLASS_NONE		= 254,				/* NONE (RFC 2136) */
-	DNS_CLASS_ANY		= 255				/* ANY */
+  DNS_CLASS_NONE	= 254,				/* NONE (RFC 2136) */
+  DNS_CLASS_ANY		= 255				/* ANY */
 
 } dns_class_t;
 
@@ -351,6 +365,7 @@ typedef void (*rr_free_t)(/* MYDNS_RR * */);
 typedef void (*rr_dup_t)(/* MYDNS_RR *, MYDNS_RR * */);
 typedef size_t (*rr_size_t)(/* MYDNS_RR * */);
 typedef int (*rr_reply_add_t)(/* TASK *t, RR *r, dns_qtype_map *map */);
+typedef taskexec_t (*rr_get_rr_data_t)();
 
 typedef struct {
   char 			*rr_type_name;
@@ -361,6 +376,7 @@ typedef struct {
   rr_dup_t		rr_duplicator;
   rr_size_t		rr_sizor;
   rr_reply_add_t	rr_reply_add;
+  rr_get_rr_data_t	rr_get_rr_data;
   const char		*rr_whereclause;
 } dns_qtype_map;
 
@@ -543,6 +559,67 @@ extern void *__mydns_rr_assert_pointer(void *, char *, char *, int);
 #define MYDNS_RR_NAPTR_ORDER(__rrp)		((__rrp)->recData.naptr.order)
 #define MYDNS_RR_NAPTR_PREF(__rrp)		((__rrp)->recData.naptr.pref)
 #define MYDNS_RR_NAPTR_FLAGS(__rrp)		((__rrp)->recData.naptr.flags)
+
+typedef struct _update_query_rr {
+  dns_qtype_t		type;
+  dns_class_t		class;
+  uint32_t		ttl;
+  char			*name;
+  struct {
+    uint16_t		len;
+    unsigned char	*value;
+  } rdata;
+} UQRR;
+
+#define UQRR_NAME(__rrp)	((__rrp)->name)
+#define UQRR_DATA_LENGTH(__rrp)	((__rrp)->rdata.len)
+#define UQRR_DATA_VALUE(__rrp)	((__rrp)->rdata.value)
+#define UQRR_DATA(__rrp)	((__rrp)->rdata)
+
+/* This is the temporary RRset described in RFC 2136, 3.2.3 */
+typedef struct _update_temp_rrset {
+  dns_qtype_t		type;
+  uint32_t		aux;
+  int			checked;		/* Have we checked this unique name/type? */
+  char			*name;
+  struct {
+    uint16_t		len;
+    char		*value;
+  } tdata;
+  struct {
+    uint16_t		len;
+    char		*value;
+  } tedata;
+} TMPRR;
+
+#define TMPRR_NAME(__rrp)		((__rrp)->name)
+#define TMPRR_DATA_LENGTH(__rrp)	((__rrp)->tdata.len)
+#define TMPRR_DATA_VALUE(__rrp)		((__rrp)->tdata.value)
+#define TMPRR_DATA(__rrp)		((__rrp)->tdata)
+#define TMPRR_EDATA_LENGTH(__rrp)	((__rrp)->tedata.len)
+#define TMPRR_EDATA_VALUE(__rrp)	((__rrp)->tedata.value)
+#define TMPRR_EDATA(__rrp)		((__rrp)->tedata)
+
+typedef struct _update_query {
+  /* Zone section */
+  dns_qtype_t		type;			/* Must be DNS_QTYPE_SOA */
+  dns_class_t		class;			/* The zone's class */
+
+  UQRR			*PR;			/* Prerequisite section RRs */
+  int			numPR;			/* Number of items in 'PR' */
+
+  UQRR			*UP;			/* Update section RRs */
+  int			numUP;			/* Number of items in 'UP' */
+
+  UQRR			*AD;			/* Additional data section RRs */
+  int			numAD;			/* Number of items in 'AD' */
+
+  TMPRR			**tmprr;		/* Temporary RR list for prerequisite */
+  int			num_tmprr;		/* Number of items in "tmprr" */
+  char			*name;			/* The zone name */
+} UQ;
+
+#define UQ_NAME(__qp)		((__qp)->name)
 
 /* sql.c */
 #if USE_PGSQL

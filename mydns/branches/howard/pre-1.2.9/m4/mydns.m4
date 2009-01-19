@@ -873,6 +873,9 @@ AC_DEFUN([AC_MYDNS_VARS],
 		INTLINCLUDE="-I\$(top_srcdir)/intl"
 		AC_SUBST(INTLINCLUDE)
 
+		## Source directory path
+		MYDNSSRCDIR="\$(top_srcdir)/src"
+
 		## Include path and library for lib/ (libmydnsutil)
 		UTILDIR="\$(top_srcdir)/lib"
 		UTILINCLUDE="-I$UTILDIR"
@@ -883,7 +886,7 @@ AC_DEFUN([AC_MYDNS_VARS],
 
 		## Include path and library for src/lib/ (libmydns)
 		MYDNSDIR="\$(top_srcdir)/src/lib"
-		MYDNSINCLUDE="-I$MYDNSDIR"
+		MYDNSINCLUDE="-I$MYDNSSRCDIR/include"
 		LIBMYDNS="$MYDNSDIR/libmydns.a"
 		AC_SUBST(MYDNSDIR)
 		AC_SUBST(MYDNSINCLUDE)

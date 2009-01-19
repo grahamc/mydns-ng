@@ -21,70 +21,65 @@
 #include "named.h"
 
 /* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_REPLY	1
-
-#if DEBUG_ENABLED && DEBUG_REPLY
-/* Strings describing the datasections */
-char *reply_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
-#endif
-
-
+#define	DEBUG_LIB_REPLY	1
 /**************************************************************************************************
-	REPLY_INIT
-	Examines the question data, storing the name offsets (from DNS_HEADERSIZE) for compression.
+	RDATA_ENLARGE
+	Expands t->rdata by `size' bytes.  Returns a pointer to the destination.
 **************************************************************************************************/
-int
-reply_init(TASK *t) {
-  register char *c = NULL;						/* Current character in name */
+char * rdata_enlarge(TASK *t, size_t size) {
+  if (!size)
+    return (NULL);
 
-  /* Examine question data, save labels found therein. The question data should begin with
-     the name we've already parsed into t->qname.  I believe it is safe to assume that no
-     compression will be possible in the question. */
-  for (c = t->qname; *c; c++)
-    if ((c == t->qname || *c == '.') && c[1])
-      if (name_remember(t, (c == t->qname) ? c : (c+1),
-			(((c == t->qname) ? c : (c+1)) - t->qname) + DNS_HEADERSIZE) < -1)
-	return (-1);
+  t->rdlen += size;
+  t->rdata = REALLOCATE(t->rdata, t->rdlen, char[]);
+  return (t->rdata + t->rdlen - size);
+}
+/*--- rdata_enlarge() ---------------------------------------------------------------------------*/
+/**************************************************************************************************
+	REPLY_START_RR
+	Begins an RR.  Appends to t->rdata all the header fields prior to rdlength.
+	Returns the numeric offset of the start of this record within the reply, or -1 on error.
+**************************************************************************************************/
+int reply_start_rr(TASK *t, RR *r, char *name, dns_qtype_t type, uint32_t ttl, char *desc) {
+  char	*enc = NULL;
+  char	*dest = NULL;
+  int	enclen = 0;
+
+  /* name_encode returns dnserror() */
+  if ((enclen = name_encode(t, &enc, name, t->replylen + t->rdlen, 1)) < 0) {
+    return rr_error(r->id, _("rr %u: %s (%s %s) (name=\"%s\")"), r->id,
+		    _("invalid name in \"name\""), desc, _("record"), name);
+  }
+
+  r->length = enclen + SIZE16 + SIZE16 + SIZE32;
+
+  if (!(dest = rdata_enlarge(t, r->length))) {
+    RELEASE(enc);
+    return dnserror(t, DNS_RCODE_SERVFAIL, ERR_INTERNAL);
+  }
+
+  r->offset = dest - t->rdata + DNS_HEADERSIZE + t->qdlen;
+
+  DNS_PUT(dest, enc, enclen);
+  RELEASE(enc);
+  DNS_PUT16(dest, type);
+#if STATUS_ENABLED
+  if (r->rrtype == DNS_RRTYPE_RR && r->rr)
+    DNS_PUT16(dest, ((MYDNS_RR *)(r->rr))->class)
+    else
+#endif
+      DNS_PUT16(dest, DNS_CLASS_IN);
+  DNS_PUT32(dest, ttl);
   return (0);
 }
-/*--- reply_init() ------------------------------------------------------------------------------*/
-
-
-/**************************************************************************************************
-	REPLY_ADD_ADDITIONAL
-	Add ADDITIONAL for each item in the provided list.
-**************************************************************************************************/
-static void
-reply_add_additional(TASK *t, RRLIST *rrlist, datasection_t section) {
-  register RR *p = NULL;
-
-  if (!rrlist)
-    return;
-
-  /* Examine each RR in the rrlist */
-  for (p = rrlist->head; p; p = p->next) {
-    if (p->rrtype == DNS_RRTYPE_RR) {
-      MYDNS_RR *rr = (MYDNS_RR *)p->rr;
-      if (rr->type == DNS_QTYPE_NS || rr->type == DNS_QTYPE_MX || rr->type == DNS_QTYPE_SRV) {
-	(void)resolve(t, ADDITIONAL, DNS_QTYPE_A, MYDNS_RR_DATA_VALUE(rr), 0);
-      }	else if (rr->type == DNS_QTYPE_CNAME) {
-	/* Don't do this */
-	(void)resolve(t, ADDITIONAL, DNS_QTYPE_CNAME, MYDNS_RR_DATA_VALUE(rr), 0);
-      }
-    }
-    t->sort_level++;
-  }
-}
-/*--- reply_add_additional() --------------------------------------------------------------------*/
-
-
+/*--- reply_start_rr() --------------------------------------------------------------------------*/
 /**************************************************************************************************
 	REPLY_ADD_GENERIC_RR
 	Adds a generic resource record whose sole piece of data is a domain-name,
 	or a 16-bit value plus a domain-name.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int reply_add_generic_rr(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_add_generic_rr(TASK *t, RR *r, dns_qtype_map *map) {
   char		*enc = NULL, *dest = NULL, *desc = NULL;
   int		size = 0, enclen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
@@ -120,7 +115,7 @@ int reply_add_generic_rr(TASK *t, RR *r, dns_qtype_map *map) {
 	Adds an A record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int reply_add_a(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_add_a(TASK *t, RR *r, dns_qtype_map *map) {
   char		*dest = NULL;
   int		size = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
@@ -158,7 +153,7 @@ int reply_add_a(TASK *t, RR *r, dns_qtype_map *map) {
 	Adds an AAAA record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int reply_add_aaaa(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_add_aaaa(TASK *t, RR *r, dns_qtype_map *map) {
   char		*dest = NULL;
   int		size = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
@@ -195,7 +190,7 @@ int reply_add_aaaa(TASK *t, RR *r, dns_qtype_map *map) {
 	Adds an HINFO record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int reply_add_hinfo(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_add_hinfo(TASK *t, RR *r, dns_qtype_map *map) {
   char		*dest = NULL;
   size_t	oslen = 0, cpulen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
@@ -238,7 +233,7 @@ int reply_add_hinfo(TASK *t, RR *r, dns_qtype_map *map) {
 	Adds an MX record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int reply_add_mx(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_add_mx(TASK *t, RR *r, dns_qtype_map *map) {
   char		*enc = NULL, *dest = NULL;
   int		size = 0, enclen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
@@ -273,7 +268,7 @@ int reply_add_mx(TASK *t, RR *r, dns_qtype_map *map) {
 	Adds an NAPTR record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int reply_add_naptr(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_add_naptr(TASK *t, RR *r, dns_qtype_map *map) {
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
   size_t	flags_len = 0, service_len = 0, regex_len = 0;
   char		*enc = NULL, *dest = NULL;
@@ -335,7 +330,7 @@ int reply_add_naptr(TASK *t, RR *r, dns_qtype_map *map) {
 	Adds an RP record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int reply_add_rp(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_add_rp(TASK *t, RR *r, dns_qtype_map *map) {
   char		*mbox = NULL, *txt = NULL, *dest = NULL;
   char		*encmbox = NULL, *enctxt = NULL;
   int		size = 0, mboxlen = 0, txtlen = 0;
@@ -382,7 +377,7 @@ int reply_add_rp(TASK *t, RR *r, dns_qtype_map *map) {
 	Add a SOA record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int reply_add_soa(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_add_soa(TASK *t, RR *r, dns_qtype_map *map) {
   char		*dest = NULL, *ns = NULL, *mbox = NULL;
   int		size = 0, nslen = 0, mboxlen = 0;
   MYDNS_SOA	*soa = (MYDNS_SOA *)r->rr;
@@ -430,7 +425,7 @@ int reply_add_soa(TASK *t, RR *r, dns_qtype_map *map) {
 	Adds a SRV record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int reply_add_srv(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_add_srv(TASK *t, RR *r, dns_qtype_map *map) {
   char		*enc = NULL, *dest = NULL;
   int		size = 0, enclen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
@@ -470,7 +465,7 @@ int reply_add_srv(TASK *t, RR *r, dns_qtype_map *map) {
 	Adds a TXT record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int reply_add_txt(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_add_txt(TASK *t, RR *r, dns_qtype_map *map) {
   char		*dest = NULL;
   uint8_t	size = 0;
   size_t	len = 0;
@@ -496,222 +491,15 @@ int reply_add_txt(TASK *t, RR *r, dns_qtype_map *map) {
 /*--- reply_add_txt() ---------------------------------------------------------------------------*/
 
 
-int reply_unexpected_type(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_unexpected_type(TASK *t, RR *r, dns_qtype_map *map) {
   Warnx("%s: %s: %s", desctask(t), map->rr_type_name, _("unexpected resource record type - logic problem"));
   return (-1);
 }
 
-int reply_unknown_type(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_unknown_type(TASK *t, RR *r, dns_qtype_map *map) {
   Warnx("%s: %s: %s", desctask(t), map->rr_type_name, _("unsupported resource record type"));
   return (-1);
 }
-
-/**************************************************************************************************
-	REPLY_PROCESS_RRLIST
-	Adds each resource record found in `rrlist' to the reply.
-**************************************************************************************************/
-static int
-reply_process_rrlist(TASK *t, RRLIST *rrlist) {
-  register RR *r = NULL;
-
-  if (!rrlist)
-    return (0);
-
-  for (r = rrlist->head; r; r = r->next) {
-    dns_qtype_map *map;
-    switch (r->rrtype) {
-    case DNS_RRTYPE_SOA:
-      map = mydns_rr_get_type_by_id(DNS_QTYPE_SOA);
-      if (map->rr_reply_add(t, r, map) < 0)
-	return (-1);
-      break;
-
-    case DNS_RRTYPE_RR:
-      {
-	MYDNS_RR *rr = (MYDNS_RR *)r->rr;
-
-	if (!rr) break;
-
-	map = mydns_rr_get_type_by_id(rr->type);
-	if (map->rr_reply_add(t, r, map) < 0)
-	  return -1;
-
-      }
-      break;
-    }
-  }
-  return (0);
-}
-/*--- reply_process_rrlist() --------------------------------------------------------------------*/
-
-
-/**************************************************************************************************
-	TRUNCATE_RRLIST
-	Returns new count of items in this list.
-	The TC flag is _not_ set if data was truncated from the ADDITIONAL section.
-**************************************************************************************************/
-static int
-truncate_rrlist(TASK *t, off_t maxpkt, RRLIST *rrlist, datasection_t ds) {
-  register RR *rr = NULL;
-  register int recs = 0;
-#if DEBUG_ENABLED && DEBUG_REPLY
-  int orig_recs = rrlist->size;
-#endif
-
-  /* Warn about truncated packets, but only if TCP is not enabled.  Most resolvers will try
-     TCP if a UDP packet is truncated. */
-  if (!tcp_enabled)
-    Verbose("%s: %s", desctask(t), _("query truncated"));
-
-  recs = rrlist->size;
-  for (rr = rrlist->head; rr; rr = rr->next) {
-    if (rr->offset + rr->length >= maxpkt) {
-      recs--;
-      if (ds != ADDITIONAL)
-	t->hdr.tc = 1;
-    } else
-      t->rdlen += rr->length;
-  }
-#if DEBUG_ENABLED && DEBUG_REPLY
-  DebugX("reply", 1, _("%s section truncated from %d records to %d records"),
-	 reply_datasection_str[ds], orig_recs, recs);
-#endif
-  return (recs);
-}
-/*--- truncate_rrlist() -------------------------------------------------------------------------*/
-
-
-/**************************************************************************************************
-	REPLY_CHECK_TRUNCATION
-	If this reply would be truncated, removes any RR's that won't fit and sets the truncation flag.
-**************************************************************************************************/
-static void
-reply_check_truncation(TASK *t, int *ancount, int *nscount, int *arcount) {
-  size_t maxpkt = (t->protocol == SOCK_STREAM ? DNS_MAXPACKETLEN_TCP : DNS_MAXPACKETLEN_UDP);
-  size_t maxrd = maxpkt - (DNS_HEADERSIZE + t->qdlen);
-
-  if (t->rdlen <= maxrd)
-    return;
-
-#if DEBUG_ENABLED && DEBUG_REPLY
-  DebugX("reply", 1, _("reply_check_truncation() needs to truncate reply (%u) to fit packet max (%u)"),
-	 (unsigned int)t->rdlen, (unsigned int)maxrd);
-#endif
-
-  /* Loop through an/ns/ar sections, truncating as necessary, and updating counts */
-  t->rdlen = 0;
-  *ancount = truncate_rrlist(t, maxpkt, &t->an, ANSWER);
-  *nscount = truncate_rrlist(t, maxpkt, &t->ns, AUTHORITY);
-  *arcount = truncate_rrlist(t, maxpkt, &t->ar, ADDITIONAL);
-}
-/*--- reply_check_truncation() ------------------------------------------------------------------*/
-
-void
-abandon_reply(TASK *t) {
-  /* Empty RR lists */
-  rrlist_free(&t->an);
-  rrlist_free(&t->ns);
-  rrlist_free(&t->ar);
-
-  /* Make sure reply is empty */
-  t->replylen = 0;
-  t->rdlen = 0;
-  RELEASE(t->rdata);
-}
-
-/**************************************************************************************************
-	BUILD_CACHE_REPLY
-	Builds reply data from cached answer.
-**************************************************************************************************/
-void
-build_cache_reply(TASK *t) {
-  char *dest = t->reply;
-
-  DNS_PUT16(dest, t->id);							/* Query ID */
-  DNS_PUT(dest, &t->hdr, SIZE16);						/* Header */
-}
-/*--- build_cache_reply() -----------------------------------------------------------------------*/
-
-
-/**************************************************************************************************
-	BUILD_REPLY
-	Given a task, constructs the reply data.
-**************************************************************************************************/
-void
-build_reply(TASK *t, int want_additional) {
-  char	*dest = NULL;
-  int	ancount = 0, nscount = 0, arcount = 0;
-
-  /* Add data to ADDITIONAL section */
-  if (want_additional) {
-    reply_add_additional(t, &t->an, ANSWER);
-    reply_add_additional(t, &t->ns, AUTHORITY);
-  }
-
-  /* Sort records where necessary */
-  if (t->an.a_records > 1)			/* ANSWER section: Sort A/AAAA records */
-    sort_a_recs(t, &t->an, ANSWER);
-  if (t->an.mx_records > 1)			/* ANSWER section: Sort MX records */
-    sort_mx_recs(t, &t->an, ANSWER);
-  if (t->an.srv_records > 1)			/* ANSWER section: Sort SRV records */
-    sort_srv_recs(t, &t->an, ANSWER);
-  if (t->ar.a_records > 1)			/* AUTHORITY section: Sort A/AAAA records */
-    sort_a_recs(t, &t->ar, AUTHORITY);
-
-  /* Build `rdata' containing resource records in ANSWER, AUTHORITY, and ADDITIONAL */
-  t->replylen = DNS_HEADERSIZE + t->qdlen + t->rdlen;
-  if (reply_process_rrlist(t, &t->an)
-      || reply_process_rrlist(t, &t->ns)
-      || reply_process_rrlist(t, &t->ar)) {
-    abandon_reply(t);
-  }
-
-  ancount = t->an.size;
-  nscount = t->ns.size;
-  arcount = t->ar.size;
-
-  /* Verify reply length */
-  reply_check_truncation(t, &ancount, &nscount, &arcount);
-
-  /* Make sure header bits are set correctly */
-  t->hdr.qr = 1;
-  t->hdr.cd = 0;
-
-  /* Construct the reply */
-  t->replylen = DNS_HEADERSIZE + t->qdlen + t->rdlen;
-  dest = t->reply = ALLOCATE(t->replylen, char[]);
-
-  DNS_PUT16(dest, t->id);					/* Query ID */
-  DNS_PUT(dest, &t->hdr, SIZE16);				/* Header */
-  DNS_PUT16(dest, t->qdcount);					/* QUESTION count */
-  DNS_PUT16(dest, ancount);					/* ANSWER count */
-  DNS_PUT16(dest, nscount);					/* AUTHORITY count */
-  DNS_PUT16(dest, arcount);					/* ADDITIONAL count */
-  if (t->qdlen && t->qd)
-    DNS_PUT(dest, t->qd, t->qdlen);				/* Data for QUESTION section */
-  DNS_PUT(dest, t->rdata, t->rdlen);				/* Resource record data */
-
-#if DEBUG_ENABLED && DEBUG_REPLY
-  DebugX("reply", 1, _("%s: reply:     id = %u"), desctask(t),
-	 t->id);
-  DebugX("reply", 1, _("%s: reply:     qr = %u (message is a %s)"), desctask(t),
-	 t->hdr.qr, t->hdr.qr ? "response" : "query");
-  DebugX("reply", 1, _("%s: reply: opcode = %u (%s)"), desctask(t),
-	 t->hdr.opcode, mydns_opcode_str(t->hdr.opcode));
-  DebugX("reply", 1, _("%s: reply:     aa = %u (answer %s)"), desctask(t),
-	 t->hdr.aa, t->hdr.aa ? "is authoritative" : "not authoritative");
-  DebugX("reply", 1, _("%s: reply:     tc = %u (message %s)"), desctask(t),
-	 t->hdr.tc, t->hdr.tc ? "truncated" : "not truncated");
-  DebugX("reply", 1, _("%s: reply:     rd = %u (%s)"), desctask(t),
-	 t->hdr.rd, t->hdr.rd ? "recursion desired" : "no recursion");
-  DebugX("reply", 1, _("%s: reply:     ra = %u (recursion %s)"), desctask(t),
-	 t->hdr.ra, t->hdr.ra ? "available" : "unavailable");
-  DebugX("reply", 1, _("%s: reply:  rcode = %u (%s)"), desctask(t),
-	 t->hdr.rcode, mydns_rcode_str(t->hdr.rcode));
-  /* escdata(t->reply, t->replylen); */
-#endif
-}
-/*--- build_reply() -----------------------------------------------------------------------------*/
 
 /* vi:set ts=3: */
 /* NEED_PO */

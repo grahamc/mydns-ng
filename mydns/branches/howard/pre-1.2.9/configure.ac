@@ -74,7 +74,7 @@ AC_CHECK_DECLS([poll, select])
 ## Package-specific variables
 ##
 PACKAGE_HOMEPAGE="http://mydns.bboy.net"
-PACKAGE_COPYRIGHT="Copyright (C) 2002-2005 Don Moore  2007-2008 Howard Wilkinson"
+PACKAGE_COPYRIGHT="Copyright (C) 2002-2005 Don Moore  2007-2009 Howard Wilkinson"
 PACKAGE_AUTHOR="Don Moore <bboy@bboy.net>  Howard Wilkinson <howard@cohtech.com>"
 
 

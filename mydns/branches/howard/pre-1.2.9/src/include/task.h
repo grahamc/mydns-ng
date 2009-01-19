@@ -36,20 +36,6 @@
 #define TASKVEC_SET(TI, TV)	FD_SET((TI), (fd_set*)(TV))
 #define TASKVEC_ISSET(TI, TV)	FD_ISSET((TI), (fd_set*)(TV))
 
-/* Task completion codes */
-typedef enum _task_execstatus_t {
-  TASK_ABANDONED	=-2,		/* Task needs to be abandoned - release fd */
-  TASK_FAILED		=-1,		/* Task failed to execute properly kill */
-
-  TASK_COMPLETED	= 0,		/* Task has run to completion dequeue */
-  TASK_FINISHED		= 1,		/* Task finished normally free all resources */
-  TASK_TIMED_OUT	= 2,		/* Task has timed out - dequeue */
-
-  TASK_EXECUTED		= 3,		/* Task executed but did not complete retry later */
-  TASK_DID_NOT_EXECUTE	= 4,		/* Task did not execute try again later */
-  TASK_CONTINUE		= 5,		/* Task needs to run again */
-} taskexec_t;
-
 /* Task type select */
 typedef enum _taskpriority_t {
   HIGH_PRIORITY_TASK = 0,

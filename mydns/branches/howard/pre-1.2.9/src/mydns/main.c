@@ -47,8 +47,6 @@ extern int	*tcp6_fd, *udp6_fd;		/* Listening FD's (IPv6) */
 extern int	num_tcp6_fd, num_udp6_fd;	/* Number of listening FD's (IPv6) */
 #endif
 
-int		show_data_errors = 1;		/* Output data errors? */
-
 SERVERSTATUS	Status;				/* Server status information */
 
 extern void	create_listeners(void);

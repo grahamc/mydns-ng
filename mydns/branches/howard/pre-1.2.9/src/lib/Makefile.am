@@ -3,9 +3,9 @@
 ##
 
 noinst_LIBRARIES	=	libmydns.a
-INCLUDES		=	@INTLINCLUDE@ @UTILINCLUDE@ @SQLINCLUDE@
-noinst_HEADERS		=	bits.h cache.h header.h mydns.h named.h task.h
-libmydns_a_SOURCES	=	conf.c db.c ip.c reply.c rr.c rr_type.c soa.c sql.c str.c unencode.c
+INCLUDES		=	@MYDNSINCLUDE@ @INTLINCLUDE@ @UTILINCLUDE@ @SQLINCLUDE@
+libmydns_a_SOURCES	=	conf.c db.c encode.c error.c ip.c reply.c rr.c rr_type.c \
+				soa.c sql.c str.c task.c unencode.c update.c
 
 ctags:
 	ctags @UTILDIR@/*.[ch] *.[ch]

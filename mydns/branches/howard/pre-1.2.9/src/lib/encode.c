@@ -21,18 +21,16 @@
 #include "named.h"
 
 /* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_ENCODE	1
+#define	DEBUG_LIB_ENCODE	1
 
 /* Set this to nonzero to disable encoding */
 #define	NO_ENCODING	0
-
 
 /**************************************************************************************************
 	NAME_REMEMBER
 	Adds the specified name + offset to the `Labels' array within the specified task.
 **************************************************************************************************/
-inline int
-name_remember(TASK *t, char *name, unsigned int offset) {
+inline int name_remember(TASK *t, char *name, unsigned int offset) {
   if (!name || strlen(name) > 64)			/* Don't store labels > 64 bytes in length */
     return (0);
 
@@ -57,8 +55,7 @@ name_remember(TASK *t, char *name, unsigned int offset) {
 	NAME_FORGET
 	Forget all names in the specified task.
 **************************************************************************************************/
-inline void
-name_forget(TASK *t) {
+inline void name_forget(TASK *t) {
 #if DYNAMIC_NAMES
   register int n = 0;
 
@@ -77,8 +74,7 @@ name_forget(TASK *t) {
 	Searches the task's remembered names arary for `name'.
 	Returns the offset within the reply if found, or 0 if not found.
 **************************************************************************************************/
-unsigned int
-name_find(TASK *t, char *name) {
+unsigned int name_find(TASK *t, char *name) {
   register unsigned int n = 0;
 
   for (n = 0; n < t->numNames; n++)
@@ -90,74 +86,7 @@ name_find(TASK *t, char *name) {
 /*--- name_find() -------------------------------------------------------------------------------*/
 
 
-/**************************************************************************************************
-	NAME_ENCODE
-	Encodes `in_name' into `dest'.  Returns the length of data in `dest', or -1 on error.
-	If `name' is not NULL, it should be DNS_MAXNAMELEN bytes or bigger.
-**************************************************************************************************/
-int
-name_encode(TASK *t, char *dest, char *name, unsigned int dest_offset, int compression) {
-  char			namebuf[DNS_MAXNAMELEN+1];;
-  register char		*c = NULL, *d = NULL, *this_name = NULL, *cp = NULL;
-  register int		len = 0;
-  register unsigned int	offset = 0;
-
-  memset(&namebuf[0], 0, sizeof(namebuf));
-
-  strncpy(namebuf, name, sizeof(namebuf)-1);
-
-  /* Label must end in the root zone (with a dot) */
-  if (LASTCHAR(namebuf) != '.')
-    return dnserror(t, DNS_RCODE_SERVFAIL, ERR_NAME_FORMAT);
-
-  /* Examine name one label at a time */
-  for (c = namebuf, d = dest; *c; c++)
-    if (c == namebuf || *c == '.') {
-      if (!c[1]) {
-	len++;
-	if (len > DNS_MAXNAMELEN)
-	  return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_NAME_TOO_LONG);
-	*d++ = 0;
-	return (len);
-      }
-      this_name = (c == namebuf) ? c : (++c);
-
-#if !NO_ENCODING
-      if (compression && !t->no_markers && (offset = name_find(t, this_name))) {
-	/* Found marker for this name - output offset pointer and we're done */
-	len += SIZE16;
-	if (len > DNS_MAXNAMELEN)
-	  return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_NAME_TOO_LONG);
-	offset |= 0xC000;
-	DNS_PUT16(d, offset);
-	return (len);
-      } else	/* No marker for this name; encode current label and store marker */
-#endif
-	{
-	  register unsigned int nlen = 0;
-
-	  if ((cp = strchr(this_name, '.')))
-	    *cp = '\0';
-	  nlen = strlen(this_name);
-	  if (nlen > DNS_MAXLABELLEN)
-	    return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_LABEL_TOO_LONG);
-	  len += nlen + 1;
-	  if (len > DNS_MAXNAMELEN)
-	    return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_NAME_TOO_LONG);
-	  *d++ = (unsigned char)nlen;
-	  memcpy(d, this_name, nlen);
-	  d += nlen;
-	  if (cp)
-	    *cp = '.';
-	  if (!t->no_markers && (name_remember(t, this_name, dest_offset + (c - namebuf)) < 0))
-	    return (-1);
-	}
-    }
-  return (len);
-}
-
-int
-name_encode2(TASK *t, char **dest, char *name, unsigned int dest_offset, int compression) {
+int name_encode(TASK *t, char **dest, char *name, unsigned int dest_offset, int compression) {
   char			*namebuf = NULL;
   register char		*c = NULL, *d = NULL, *this_name = NULL, *cp = NULL;
   register int		len = 0;

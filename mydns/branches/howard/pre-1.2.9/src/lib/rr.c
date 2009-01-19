@@ -57,7 +57,7 @@ __mydns_rr_assert_pointer(void *ptr, char *fieldname, char *filename, int linenu
 	 fieldname, filename, linenumber);
 #endif
   if (ptr != NULL) return ptr;
-#if DEBUG_ENABLED
+#if DEBUG_ENABLED && DEBUG_LIB_RR
   DebugX("lib-rr", 1, _("%s Pointer is NULL at %s:%d"),
 	 fieldname, filename, linenumber);
   abort();

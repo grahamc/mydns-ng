@@ -58,13 +58,12 @@ am__installdirs = "$(DESTDIR)$(sbindir)"
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(sbin_PROGRAMS)
 am_mydns_OBJECTS = alias.$(OBJEXT) array.$(OBJEXT) axfr.$(OBJEXT) \
-	cache.$(OBJEXT) data.$(OBJEXT) db.$(OBJEXT) encode.$(OBJEXT) \
-	error.$(OBJEXT) ixfr.$(OBJEXT) listen.$(OBJEXT) main.$(OBJEXT) \
-	message.$(OBJEXT) notify.$(OBJEXT) queue.$(OBJEXT) \
-	recursive.$(OBJEXT) reply.$(OBJEXT) resolve.$(OBJEXT) \
-	rr.$(OBJEXT) servercomms.$(OBJEXT) sort.$(OBJEXT) \
-	status.$(OBJEXT) task.$(OBJEXT) tcp.$(OBJEXT) udp.$(OBJEXT) \
-	update.$(OBJEXT)
+	cache.$(OBJEXT) data.$(OBJEXT) db.$(OBJEXT) ixfr.$(OBJEXT) \
+	listen.$(OBJEXT) main.$(OBJEXT) message.$(OBJEXT) \
+	notify.$(OBJEXT) queue.$(OBJEXT) recursive.$(OBJEXT) \
+	reply.$(OBJEXT) resolve.$(OBJEXT) rr.$(OBJEXT) \
+	servercomms.$(OBJEXT) sort.$(OBJEXT) status.$(OBJEXT) \
+	task.$(OBJEXT) tcp.$(OBJEXT) udp.$(OBJEXT) update.$(OBJEXT)
 mydns_OBJECTS = $(am_mydns_OBJECTS)
 mydns_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -239,8 +238,8 @@ INCLUDES = @UTILINCLUDE@ @MYDNSINCLUDE@ @INTLINCLUDE@ @SQLINCLUDE@ @SSLINCLUDE@
 LDADD = @LIBMYDNS@ @LIBUTIL@ @LIBINTL@ @LIBSQL@ @LIBSSL@ @LIBSOCKET@ @LIBNSL@ @LIBM@
 mydns_DEPENDENCIES = @LIBMYDNS@ @LIBUTIL@
 noinst_HEADERS = 
-mydns_SOURCES = alias.c array.c axfr.c cache.c data.c db.c encode.c \
-				error.c ixfr.c listen.c main.c message.c notify.c queue.c \
+mydns_SOURCES = alias.c array.c axfr.c cache.c data.c db.c \
+				ixfr.c listen.c main.c message.c notify.c queue.c \
 				recursive.c \
 				reply.c resolve.c rr.c servercomms.c sort.c status.c task.c \
 				tcp.c udp.c update.c
@@ -323,8 +322,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cache.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/db.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/encode.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/error.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ixfr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/listen.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@

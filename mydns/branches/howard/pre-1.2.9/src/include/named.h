@@ -150,16 +150,14 @@ extern MYDNS_SOA	*find_soa2(TASK *, char *, char **);
 extern MYDNS_RR		*find_rr(TASK *, MYDNS_SOA *, dns_qtype_t, char *);
 
 
-/* encode.c */
+/* lib/encode.c */
 extern int		name_remember(TASK *, char *, unsigned int);
 extern void		name_forget(TASK *);
 extern unsigned int	name_find(TASK *, char *);
-extern char		*name_unencode(char *, size_t, char *, char *, size_t);
-extern int		name_encode(TASK *, char *, char *, unsigned int, int);
-extern int		name_encode2(TASK *, char **, char *, unsigned int, int);
+extern int		name_encode(TASK *, char **, char *, unsigned int, int);
 
 
-/* error.c */
+/* lib/error.c */
 extern taskexec_t	_formerr_internal(TASK *, dns_rcode_t, task_error_t, char *, const char *, unsigned int);
 extern taskexec_t	_dnserror_internal(TASK *, dns_rcode_t, task_error_t, const char *, unsigned int);
 extern char		*err_reason_str(TASK *, task_error_t);
@@ -273,17 +271,19 @@ extern void		sort_srv_recs(TASK *, RRLIST *, datasection_t);
 extern taskexec_t	remote_status(TASK *t);
 #endif
 
-/* task.c */
-extern int		task_timedout(TASK *);
+/* lib/task.c */
 extern char		*task_exec_name(taskexec_t);
 extern char		*task_type_name(int);
 extern char		*task_priority_name(int);
 extern char		*task_string_name(TASK *);
+extern const char	*clientaddr(TASK *);
+extern char		*desctask(TASK *);
+
+/* task.c */
+extern int		task_timedout(TASK *);
 extern TASK 		*task_find_by_id(TASK *, QUEUE *, unsigned long);
 extern taskexec_t	task_new(TASK *, unsigned char *, size_t);
 extern void		task_init_header(TASK *);
-extern const char	*clientaddr(TASK *);
-extern char		*desctask(TASK *);
 extern TASK		*_task_init(tasktype_t, taskpriority_t, taskstat_t, int, int, int, void *, const char *, int);
 #define			task_init(P,S,fd,p,f,a)	_task_init(NORMAL_TASK, (P), (S), (fd), (p), (f), (a), __FILE__, __LINE__)
 #define			IOtask_init(P,S,fd,p,f,a)	_task_init(IO_TASK, (P), (S), (fd), (p), (f), (a), __FILE__, __LINE__)
@@ -316,6 +316,99 @@ extern void		tcp_start();
 extern taskexec_t	read_udp_query(int, int);
 extern taskexec_t	write_udp_reply(TASK *);
 extern void		udp_start();
+
+/* lib/unencode.c */
+extern char		*name_unencode(char *, size_t, char *, char *, size_t);
+
+/* lib/update.c */
+extern taskexec_t __mydns_update_get_rr_data_unknown_type(TASK *t,
+							  UQRR *rr,
+							  char **data,
+							  size_t *datalen,
+							  char **edata,
+							  size_t *edatalen,
+							  uint32_t *aux,
+							  dns_qtype_map *map);
+extern taskexec_t __mydns_update_get_rr_data_a(TASK *t,
+					       UQRR *rr,
+					       char **data,
+					       size_t *datalen,
+					       char **edata,
+					       size_t *edatalen,
+					       uint32_t *aux,
+					       dns_qtype_map *map);
+extern taskexec_t __mydns_update_get_rr_data_ns(TASK *t,
+						UQRR *rr,
+						char **data,
+						size_t *datalen,
+						char **edata,
+						size_t *edatalen,
+						uint32_t *aux,
+						dns_qtype_map *map);
+extern taskexec_t __mydns_update_get_rr_data_cname(TASK *t,
+						   UQRR *rr,
+						   char **data,
+						   size_t *datalen,
+						   char **edata,
+						   size_t *edatalen,
+						   uint32_t *aux,
+						   dns_qtype_map *map);
+extern taskexec_t __mydns_update_get_rr_data_ptr(TASK *t,
+						 UQRR *rr,
+						 char **data,
+						 size_t *datalen,
+						 char **edata,
+						 size_t *edatalen,
+						 uint32_t *aux,
+						 dns_qtype_map *map);
+extern taskexec_t __mydns_update_get_rr_data_hinfo(TASK *t,
+						   UQRR *rr,
+						   char **data,
+						   size_t *datalen,
+						   char **edata,
+						   size_t *edatalen,
+						   uint32_t *aux,
+						   dns_qtype_map *map);
+extern taskexec_t __mydns_update_get_rr_data_mx(TASK *t,
+						UQRR *rr,
+						char **data,
+						size_t *datalen,
+						char **edata,
+						size_t *edatalen,
+						uint32_t *aux,
+						dns_qtype_map *map);
+extern taskexec_t __mydns_update_get_rr_data_txt(TASK *t,
+						 UQRR *rr,
+						 char **data,
+						 size_t *datalen,
+						 char **edata,
+						 size_t *edatalen,
+						 uint32_t *aux,
+						 dns_qtype_map *map);
+extern taskexec_t __mydns_update_get_rr_data_rp(TASK *t,
+						UQRR *rr,
+						char **data,
+						size_t *datalen,
+						char **edata,
+						size_t *edatalen,
+						uint32_t *aux,
+						dns_qtype_map *map);
+extern taskexec_t __mydns_update_get_rr_data_aaaa(TASK *t,
+						  UQRR *rr,
+						  char **data,
+						  size_t *datalen,
+						  char **edata,
+						  size_t *edatalen,
+						  uint32_t *aux,
+						  dns_qtype_map *map);
+extern taskexec_t __mydns_update_get_rr_data_srv(TASK *t,
+						 UQRR *rr,
+						 char **data,
+						 size_t *datalen,
+						 char **edata,
+						 size_t *edatalen,
+						 uint32_t *aux,
+						 dns_qtype_map *map);
 
 /* update.c */
 extern taskexec_t	dns_update(TASK *);

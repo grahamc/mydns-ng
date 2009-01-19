@@ -21,11 +21,13 @@
 #include "named.h"
 
 /* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_ERROR	1
+#define	DEBUG_LIB_ERROR	1
 
 
 /* The maximum number of resource record ID errors that we'll remember (and avoid repeating) */
 #define	MAX_RR_ERR_MEMORY	1024
+
+int		show_data_errors = 1;		/* Output data errors? */
 
 uint32_t	rr_err_memory[MAX_RR_ERR_MEMORY];
 
