@@ -18,7 +18,7 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **************************************************************************************************/
 
-#include "mydns.h"
+#include "named.h"
 
 char *mydns_soa_table_name = NULL;
 char *mydns_soa_where_clause = NULL;

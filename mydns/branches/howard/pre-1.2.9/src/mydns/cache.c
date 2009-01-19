@@ -473,7 +473,7 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
 
 #if DEBUG_ENABLED && DEBUG_CACHE
   DebugX("cache", 1, _("%s: zone_cache_find(%d, %s, %s, %s, %d, %u, %p)"), desctask(t), zone, origin,
-	 mydns_qtype_str(type), name, (unsigned int)namelen, *errflag, parent);
+	 mydns_rr_get_type_by_id(type)->rr_type_name, name, (unsigned int)namelen, *errflag, parent);
 #endif
 
   if (ZoneCache) {
@@ -567,13 +567,13 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
   } else {
 #if DEBUG_ENABLED && DEBUG_SQL_QUERIES
     DebugX("cache", 1, _("%s: SQL query: table \"%s\", zone=%u,type=\"%s\",name=\"%s\""),
-	   desctask(t), mydns_rr_table_name, zone, mydns_qtype_str(type), name);
+	   desctask(t), mydns_rr_table_name, zone, mydns_rr_get_type_by_id(type)->rr_type_name, name);
 #endif
     if (mydns_rr_load_active(sql, &rr, zone, type, name, origin) != 0) {
       sql_reopen();
       if (mydns_rr_load_active(sql, &rr, zone, type, name, origin) != 0) {
 	WarnSQL(sql, _("error finding %s type resource records for name `%s' in zone %u"),
-		mydns_qtype_str(type), name, zone);
+		mydns_rr_get_type_by_id(type)->rr_type_name, name, zone);
 	sql_reopen();
 	*errflag = 1;
 	return (NULL);

@@ -225,7 +225,7 @@ rrproblem(const char *fmt, ...) {
   else
     printf("-\t");
 
-  printf("%s\t", rr ? mydns_qtype_str(rr->type) : "-");		/* 6. rr type */
+  printf("%s\t", rr ? mydns_rr_get_type_by_id(rr->type)->rr_type_name : "-");		/* 6. rr type */
   printf("%s\n", (data && *data) ? data : "-");			/* 7. data */
 
   fflush(stdout);

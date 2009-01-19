@@ -301,7 +301,7 @@ update_rrdump(TASK *t, char *section, int which, UQRR *rr) {
 
   DebugX("update", 1, _("%s: DNS UPDATE: >>> %s %d: name=[%s] type=%s class=%s ttl=%u rdlength=%u rdata=[%s]"),
 	 desctask(t), section, which, UQRR_NAME(rr),
-	 mydns_qtype_str(rr->type), mydns_class_str(rr->class),
+	 mydns_rr_get_type_by_id(rr->type)->rr_type_name, mydns_class_str(rr->class),
 	 rr->ttl, UQRR_DATA_LENGTH(rr), buf);
 
   RELEASE(buf);
@@ -373,7 +373,7 @@ parse_update_query(TASK *t, MYDNS_SOA *soa, UQ *q) {
 #if DEBUG_ENABLED && DEBUG_UPDATE
   DebugX("update", 1, _("%s: parse_update_query called with soa = %p, q = %p"), desctask(t), soa, q);
   DebugX("update", 1, _("%s:   ZONE: name=[%s]  type=%s  class=%s"), desctask(t),
-	 UQ_NAME(q), mydns_qtype_str(q->type), mydns_class_str(q->class));
+	 UQ_NAME(q), mydns_rr_get_type_by_id(q->type)->rr_type_name, mydns_class_str(q->class));
 #endif
 
   /* ZONE: Must contain exactly one RR with type SOA (RFC 2136 3.1.1) */
@@ -501,11 +501,11 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
   switch (rr->type) {
 
   case DNS_QTYPE_UNKNOWN:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_NONE:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_A:
@@ -522,11 +522,11 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
     break;
 
   case DNS_QTYPE_MD:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_MF:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_CNAME:
@@ -536,27 +536,27 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
     break;
 
   case DNS_QTYPE_SOA:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_MB:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_MG:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_MR:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_NULL:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_WKS:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_PTR:
@@ -592,7 +592,7 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
     break;
 
   case DNS_QTYPE_MINFO:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_MX:
@@ -627,43 +627,43 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
     break;
 
   case DNS_QTYPE_AFSDB:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_X25:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_ISDN:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_RT:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_NSAP:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_NSAP_PTR:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_SIG:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_KEY:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_PX:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_GPOS:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_AAAA:
@@ -679,19 +679,19 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
     break;
 
   case DNS_QTYPE_LOC:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_NXT:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_EID:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_NIMLOC:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_SRV: {
@@ -711,140 +711,140 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
     break;
 
   case DNS_QTYPE_ATMA:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_NAPTR:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_KX:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_CERT:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_A6:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_DNAME:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_SINK:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_OPT:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_APL:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_DS:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_SSHFP:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_IPSECKEY:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_RRSIG:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_NSEC:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_DNSKEY:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_DHCID:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_NSEC3:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_NSEC3PARAM:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_HIP:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_SPF:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_UINFO:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_UID:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_GID:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_UNSPEC:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_TKEY:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_TSIG:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_IXFR:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_AXFR:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_MAILB:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_MAILA:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_ANY:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_TA:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
   case DNS_QTYPE_DLV:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 
 #if ALIAS_ENABLED
   case DNS_QTYPE_ALIAS:
-    *datalen = ASPRINTF(data, "Unknown type %s", mydns_qtype_str(rr->type));
+    *datalen = ASPRINTF(data, "Unknown type %s", mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     return (TASK_FAILED);
 #endif
 
@@ -972,7 +972,7 @@ update_zone_has_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 #if DEBUG_ENABLED && DEBUG_UPDATE
   DebugX("update", 1, _("%s: DNS UPDATE: update_zone_has_rrset: does [%s] have an RR for [%s] with type %s?"),
 	 desctask(t),
-	 soa->origin, UQRR_NAME(rr), mydns_qtype_str(rr->type));
+	 soa->origin, UQRR_NAME(rr), mydns_rr_get_type_by_id(rr->type)->rr_type_name);
 #endif
 
   update_escape_name(t, soa, q, rr, &xname, &xhost);
@@ -980,7 +980,7 @@ update_zone_has_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
   querylen = sql_build_query(&query,
 			     "SELECT id FROM %s "
 			     " WHERE zone=%u AND (name='%s' OR name='%s') AND type='%s' LIMIT 1",
-			     mydns_rr_table_name, soa->id, xhost, xname, mydns_qtype_str(rr->type));
+			     mydns_rr_table_name, soa->id, xhost, xname, mydns_rr_get_type_by_id(rr->type)->rr_type_name);
 #if DEBUG_ENABLED && DEBUG_UPDATE_SQL
   DebugX("update-sql", 1, _("%s: DNS UPDATE: %s"), desctask(t), query);
 #endif
@@ -1025,7 +1025,7 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
   DebugX("update", 1, _("%s: DNS UPDATE: check_prerequisite: q->class=%s"),
 	 desctask(t), mydns_class_str(q->class));
   DebugX("update", 1, _("%s: DNS UPDATE: check_prerequisite: rr->type=%s"),
-	 desctask(t), mydns_qtype_str(rr->type));
+	 desctask(t), mydns_rr_get_type_by_id(rr->type)->rr_type_name);
   DebugX("update", 1, _("%s: DNS UPDATE: check_prerequisite: rr->rdlength=%u"),
 	 desctask(t), UQRR_DATA_LENGTH(rr));
 #endif
@@ -1083,7 +1083,7 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 #if DEBUG_ENABLED && DEBUG_UPDATE
 	DebugX("update", 1,
 	       _("%s: DNS UPDATE: check_prerequisite failed: zone contains no names matching [%s] with type %s"),
-	       desctask(t), UQRR_NAME(rr), mydns_qtype_str(rr->type));
+	       desctask(t), UQRR_NAME(rr), mydns_rr_get_type_by_id(rr->type)->rr_type_name);
 #endif
 	return dnserror(t, DNS_RCODE_NXRRSET, ERR_PREREQUISITE_FAILED);
       } else {
@@ -1114,7 +1114,7 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
       if (rv == 1) {
 #if DEBUG_ENABLED && DEBUG_UPDATE
 	DebugX("update", 1, _("%s: DNS UPDATE: check_prerequisite failed: zone contains a name matching [%s] with type %s"),
-	       desctask(t), UQRR_NAME(rr), mydns_qtype_str(rr->type));
+	       desctask(t), UQRR_NAME(rr), mydns_rr_get_type_by_id(rr->type)->rr_type_name);
 #endif
 	return dnserror(t, DNS_RCODE_YXRRSET, ERR_PREREQUISITE_FAILED);
       } else {
@@ -1128,7 +1128,7 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
     DebugX("update", 1, _("%s: DNS UPDATE: want to add %s/%s to tmprr"), desctask(t),
-	   UQRR_NAME(rr), mydns_qtype_str(rr->type));
+	   UQRR_NAME(rr), mydns_rr_get_type_by_id(rr->type)->rr_type_name);
 #endif
 
     /* Get the RR data */
@@ -1263,7 +1263,7 @@ prescan_update(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
   if ((rr->class == DNS_CLASS_ANY) && (!update_rrtype_ok(rr->type) && rr->type != DNS_QTYPE_ANY)) {
 #if DEBUG_ENABLED && DEBUG_UPDATE
     DebugX("update", 1, _("%s: DNS UPDATE: prescan_update failed test 5 (rr->type is %s)"), desctask(t),
-	   mydns_qtype_str(rr->type));
+	   mydns_rr_get_type_by_id(rr->type)->rr_type_name);
 #endif
     return dnserror(t, DNS_RCODE_FORMERR, ERR_INVALID_TYPE);
   }
@@ -1308,7 +1308,7 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
   DebugX("update", 1, _("%s: UPDATE_ADD_RR: %s %u %s %s %u %s"), desctask(t),
-	 UQRR_NAME(rr), rr->ttl, mydns_class_str(rr->class), mydns_qtype_str(rr->type), aux, data);
+	 UQRR_NAME(rr), rr->ttl, mydns_class_str(rr->class), mydns_rr_get_type_by_id(rr->type)->rr_type_name, aux, data);
 #endif
 
   /* Construct query */
@@ -1330,7 +1330,7 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 			       "WHERE zone=%u AND (name='%s' OR name='%s') AND type='%s' "
 			       "AND data='%s' AND active='%s'%s%s%s",
 			       mydns_rr_table_name, soa->id,
-			       xhost, xname, mydns_qtype_str(rr->type), xdata,
+			       xhost, xname, mydns_rr_get_type_by_id(rr->type)->rr_type_name, xdata,
 			       mydns_rr_active_types[0],
 			       (edatalen)?" AND edatakey=md5('":"",
 			       (edatalen)?xedata:"",
@@ -1354,7 +1354,7 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 			       " VALUES (%u,'%s','%s','%s',%u,%u,%u,'%s'%s%s%s%s%s%s)",
 			       mydns_rr_table_name,
 			       (edatalen)?",edata,edatakey":"",
-			       soa->id, xhost, mydns_qtype_str(rr->type),
+			       soa->id, xhost, mydns_rr_get_type_by_id(rr->type)->rr_type_name,
 			       xdata, aux, rr->ttl, next_serial, mydns_rr_active_types[0],
 			       (edatalen)?",'":"",
 			       (edatalen)?xedata:"",
@@ -1382,7 +1382,7 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 			       "WHERE zone=%u AND (name='%s' OR name='%s') AND type='%s' "
 			       "AND data='%s'%s%s%s LIMIT 1",
 			       mydns_rr_table_name, soa->id,
-			       xhost, xname, mydns_qtype_str(rr->type), xdata,
+			       xhost, xname, mydns_rr_get_type_by_id(rr->type)->rr_type_name, xdata,
 			       (edatalen)?" AND edatakey=md5('":"",
 			       (edatalen)?xedata:"",
 			       (edatalen)?"')":"");
@@ -1445,7 +1445,7 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 				   (edatalen) ?",edata,edatakey" : "",
 				   mydns_rr_use_active ? ",active" : "",
 				   mydns_rr_use_serial ? ",serial" : "",
-				   soa->id, xhost, mydns_qtype_str(rr->type), xdata, aux, rr->ttl,
+				   soa->id, xhost, mydns_rr_get_type_by_id(rr->type)->rr_type_name, xdata, aux, rr->ttl,
 				   (edatalen) ? ",'" : "",
 				   (edatalen) ? xedata : "",
 				   (edatalen) ? "'" : "",
@@ -1484,7 +1484,7 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
   /* Output info to verbose log */
   { char	*tmp = NULL;
     ASPRINTF(&tmp, "ADD %s %u IN %s %u %s",
-	     UQRR_NAME(rr), rr->ttl, mydns_qtype_str(rr->type), aux, data);
+	     UQRR_NAME(rr), rr->ttl, mydns_rr_get_type_by_id(rr->type)->rr_type_name, aux, data);
     task_output_info(t, tmp);
     RELEASE(tmp);
   }
@@ -1512,7 +1512,7 @@ update_delete_rrset_all(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
   DebugX("update", 1, _("%s: UPDATE_DELETE_RRSET_ALL: %s %u %s %s"), desctask(t),
-	 UQRR_NAME(rr), rr->ttl, mydns_class_str(rr->class), mydns_qtype_str(rr->type));
+	 UQRR_NAME(rr), rr->ttl, mydns_class_str(rr->class), mydns_rr_get_type_by_id(rr->type)->rr_type_name);
 #endif
 
   /* Delete rrset - check both the FQDN and the hostname without trailing dot */
@@ -1644,7 +1644,7 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
   DebugX("update", 1, _("%s: UPDATE_DELETE_RR: %s %u %s %s"), desctask(t),
-	 UQRR_NAME(rr), rr->ttl, mydns_class_str(rr->class), mydns_qtype_str(rr->type));
+	 UQRR_NAME(rr), rr->ttl, mydns_class_str(rr->class), mydns_rr_get_type_by_id(rr->type)->rr_type_name);
 #endif
 
   if ((ures = update_get_rr_data(t, soa, q, rr,
@@ -1657,7 +1657,7 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
   DebugX("update", 1, _("%s: DNS UPDATE: DELETE RR: %s IN %s %s"), desctask(t),
-	 UQRR_NAME(rr), mydns_qtype_str(rr->type), data);
+	 UQRR_NAME(rr), mydns_rr_get_type_by_id(rr->type)->rr_type_name, data);
 #endif
 
   update_escape_name(t, soa, q, rr, &xname, &xhost);
@@ -1684,7 +1684,7 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
 			       "WHERE zone=%u AND (name='%s' OR name='%s') AND type='%s' "
 			       "AND data='%s' AND aux=%u AND active='%s'%s%s%s",
 			       mydns_rr_table_name,
-			       soa->id, xname, xhost, mydns_qtype_str(rr->type),
+			       soa->id, xname, xhost, mydns_rr_get_type_by_id(rr->type)->rr_type_name,
 			       xdata, aux, mydns_rr_active_types[0],
 			       (edatalen)?" AND edatakey=md5('":"",
 			       (edatalen)?xedata:"",
@@ -1713,7 +1713,7 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
 				 "WHERE zone=%u AND (name='%s' OR name='%s') AND type='%s' "
 				 "AND data='%s' AND aux=%u AND active='%s'%s%s%s",
 				 mydns_rr_table_name,
-				 soa->id, xname, xhost, mydns_qtype_str(rr->type),
+				 soa->id, xname, xhost, mydns_rr_get_type_by_id(rr->type)->rr_type_name,
 				 xdata, aux, mydns_rr_active_types[2],
 				 (edatalen)?" AND edatakey=md5('":"",
 				 (edatalen)?xedata:"",
@@ -1746,7 +1746,7 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
 			       "WHERE zone=%u AND (name='%s' OR name='%s') AND type='%s' "
 			       "AND data='%s' AND aux=%u AND active='%s'%s%s%s",
 			       mydns_rr_table_name, mydns_rr_active_types[2], next_serial,
-			       soa->id, xname, xhost, mydns_qtype_str(rr->type), xdata, aux,
+			       soa->id, xname, xhost, mydns_rr_get_type_by_id(rr->type)->rr_type_name, xdata, aux,
 			       mydns_rr_active_types[0],
 			       (edatalen)?" AND edatakey=md5('":"",
 			       (edatalen)?xedata:"",
@@ -1758,7 +1758,7 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
 			       "WHERE zone=%u AND (name='%s' OR name='%s') AND type='%s' "
 			       "AND data='%s' AND aux=%u%s%s%s",
 			       mydns_rr_table_name,
-			       soa->id, xname, xhost, mydns_qtype_str(rr->type), xdata, aux,
+			       soa->id, xname, xhost, mydns_rr_get_type_by_id(rr->type)->rr_type_name, xdata, aux,
 			       (edatalen)?" AND edatakey=md5('":"",
 			       (edatalen)?xedata:"",
 			       (edatalen)?"')":"");
@@ -1785,7 +1785,7 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
 
   /* Output info to verbose log */
   { char	*tmp = NULL;
-    ASPRINTF(&tmp, "DELETE %s IN %s %s", UQRR_NAME(rr), mydns_qtype_str(rr->type), data);
+    ASPRINTF(&tmp, "DELETE %s IN %s %s", UQRR_NAME(rr), mydns_rr_get_type_by_id(rr->type)->rr_type_name, data);
     task_output_info(t, tmp);
     RELEASE(tmp);
   }
@@ -1812,7 +1812,7 @@ update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_seri
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
   DebugX("update", 1, _("%s: UPDATE_DELETE_RRSET: %s %u %s %s"), desctask(t),
-	 UQRR_NAME(rr), rr->ttl, mydns_class_str(rr->class), mydns_qtype_str(rr->type));
+	 UQRR_NAME(rr), rr->ttl, mydns_class_str(rr->class), mydns_rr_get_type_by_id(rr->type)->rr_type_name);
 #endif
 
   /* Delete rr - check both the FQDN and the hostname without trailing dot */
@@ -1838,7 +1838,7 @@ update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_seri
 			       "AND active='%s'",
 			       (mydns_rr_extended_data)?",edatakey":"",
 			       mydns_rr_table_name,
-			       soa->id, xname, xhost, mydns_qtype_str(rr->type),
+			       soa->id, xname, xhost, mydns_rr_get_type_by_id(rr->type)->rr_type_name,
 			       mydns_rr_active_types[0]);
     res = sql_query(sql, query, querylen);
     RELEASE(query);
@@ -1887,14 +1887,14 @@ update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_seri
 			       "UPDATE %s SET active='%s',serial=%u "
 			       "WHERE zone=%u AND (name='%s' OR name='%s') AND type='%s'",
 			       mydns_rr_table_name, mydns_rr_active_types[2], next_serial,
-			       soa->id, xname, xhost, mydns_qtype_str(rr->type));
+			       soa->id, xname, xhost, mydns_rr_get_type_by_id(rr->type)->rr_type_name);
   } else {
     updates++;
     querylen = sql_build_query(&query,
 			       "DELETE FROM %s "
 			       "WHERE zone=%u AND (name='%s' OR name='%s') AND type='%s'",
 			       mydns_rr_table_name,
-			       soa->id, xname, xhost, mydns_qtype_str(rr->type));
+			       soa->id, xname, xhost, mydns_rr_get_type_by_id(rr->type)->rr_type_name);
   }
 #if DEBUG_ENABLED && DEBUG_UPDATE
   DebugX("update", 1, _("%s: DNS UPDATE: DELETE RRSET: %s"), desctask(t), query);
@@ -1916,7 +1916,7 @@ update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_seri
 
   /* Output info to verbose log */
   { char *tmp;
-    ASPRINTF(&tmp, "DELETE %s IN %s", UQRR_NAME(rr), mydns_qtype_str(rr->type));
+    ASPRINTF(&tmp, "DELETE %s IN %s", UQRR_NAME(rr), mydns_rr_get_type_by_id(rr->type)->rr_type_name);
     task_output_info(t, tmp);
     RELEASE(tmp);
   }
@@ -1937,10 +1937,10 @@ process_update(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
   DebugX("update", 1, _("%s: DNS UPDATE: process_update: q->name=[%s], q->type=%s, q->class=%s"), desctask(t),
-	 UQ_NAME(q), mydns_qtype_str(q->type), mydns_class_str(q->class));
+	 UQ_NAME(q), mydns_rr_get_type_by_id(q->type)->rr_type_name, mydns_class_str(q->class));
   DebugX("update", 1, _("%s: DNS UPDATE: process_update: UQRR_NAME(rr)=[%s], rr->type=%s, rr->class=%s"),
 	 desctask(t),
-	 UQRR_NAME(rr), mydns_qtype_str(rr->type), mydns_class_str(rr->class));
+	 UQRR_NAME(rr), mydns_rr_get_type_by_id(rr->type)->rr_type_name, mydns_class_str(rr->class));
 #endif
 
   /* 2.5.1: Add to an RRset */
@@ -2031,14 +2031,14 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
 #if DEBUG_ENABLED && DEBUG_UPDATE
       DebugX("update", 1, _("%s: DNS UPDATE: Skipping prerequisite RRsets for %s/%s (already checked)"),
 	     desctask(t),
-	     current_name, mydns_qtype_str(current_type));
+	     current_name, mydns_rr_get_type_by_id(current_type)->rr_type_name);
 #endif
       continue;
     }
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
     DebugX("update", 1, _("%s: DNS UPDATE: Checking prerequisite RRsets for %s/%s"), desctask(t),
-	   current_name, mydns_qtype_str(current_type));
+	   current_name, mydns_rr_get_type_by_id(current_type)->rr_type_name);
 #endif
 
     /* Load all RRs for this name/type */
@@ -2046,7 +2046,7 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
       sql_reopen();
       if (mydns_rr_load_active(sql, &rr_first, soa->id, current_type, current_name, NULL) != 0) {
 	WarnSQL(sql, _("error finding %s type resource records for name `%s' in zone %u"),
-		mydns_qtype_str(current_type), current_name, soa->id);
+		mydns_rr_get_type_by_id(current_type)->rr_type_name, current_name, soa->id);
 	sql_reopen();
 	return dnserror(t, DNS_RCODE_FORMERR, ERR_DB_ERROR);
       }
@@ -2056,7 +2056,7 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
     if (!rr_first) {
 #if DEBUG_ENABLED && DEBUG_UPDATE
       DebugX("update", 1, _("%s: DNS UPDATE: Found prerequisite RRsets for %s/%s, but none in database (NXRRSET)"),
-	     desctask(t), current_name, mydns_qtype_str(current_type));
+	     desctask(t), current_name, mydns_rr_get_type_by_id(current_type)->rr_type_name);
 #endif
       return dnserror(t, DNS_RCODE_NXRRSET, ERR_PREREQUISITE_FAILED);
     }
@@ -2066,7 +2066,7 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
       total_db_rr++;
 #if DEBUG_ENABLED && DEBUG_UPDATE
     DebugX("update", 1, _("%s: DNS UPDATE: Found %d database RRsets for %s/%s"), desctask(t), total_db_rr,
-	   current_name, mydns_qtype_str(current_type));
+	   current_name, mydns_rr_get_type_by_id(current_type)->rr_type_name);
 #endif
 
     /* Mark all <NAME,TYPE> matches in tmprr with checked=1, and count the number of RRs */
@@ -2077,7 +2077,7 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
       }
 #if DEBUG_ENABLED && DEBUG_UPDATE
     DebugX("update", 1, _("%s: DNS UPDATE: Found %d prerequisite RRsets for %s/%s"), desctask(t), total_prereq_rr,
-	   current_name, mydns_qtype_str(current_type));
+	   current_name, mydns_rr_get_type_by_id(current_type)->rr_type_name);
 #endif
 
     /* If total_db_rr doesn't equal total_prereq_rr, return NXRRSET */
@@ -2085,7 +2085,7 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
 #if DEBUG_ENABLED && DEBUG_UPDATE
       DebugX("update", 1,
 	     _("%s: DNS UPDATE: Found %d prerequisite RRsets for %s/%s, but %d in database (NXRRSET)"),
-	     desctask(t), total_prereq_rr, current_name, mydns_qtype_str(current_type), total_db_rr);
+	     desctask(t), total_prereq_rr, current_name, mydns_rr_get_type_by_id(current_type)->rr_type_name, total_db_rr);
 #endif
       mydns_rr_free(rr_first);
       return dnserror(t, DNS_RCODE_NXRRSET, ERR_PREREQUISITE_FAILED);
@@ -2099,7 +2099,7 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
 	DebugX("update", 1, _("%s: DNS UPDATE: looking for tmprr[%d] = %s/%s/%u/%s in database"), desctask(t),
-	       i, TMPRR_NAME(q->tmprr[i]), mydns_qtype_str(q->tmprr[i]->type),
+	       i, TMPRR_NAME(q->tmprr[i]), mydns_rr_get_type_by_id(q->tmprr[i]->type)->rr_type_name,
 	       q->tmprr[i]->aux, TMPRR_DATA_VALUE(q->tmprr[i]));
 #endif
 	for (rr = rr_first; rr && !found_match; rr = rr->next) {
@@ -2121,7 +2121,7 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
 	if (!found_match) {
 #if DEBUG_ENABLED && DEBUG_UPDATE
 	  DebugX("update", 1, _("%s: DNS UPDATE: No match for prerequisite %s/%s/%u/%s (NXRRSET)"), desctask(t),
-		 TMPRR_NAME(q->tmprr[i]), mydns_qtype_str(q->tmprr[i]->type),
+		 TMPRR_NAME(q->tmprr[i]), mydns_rr_get_type_by_id(q->tmprr[i]->type)->rr_type_name,
 		 q->tmprr[i]->aux, TMPRR_DATA_VALUE(q->tmprr[i]));
 #endif
 	  mydns_rr_free(rr_first);

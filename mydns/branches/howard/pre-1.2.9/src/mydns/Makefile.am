@@ -12,7 +12,7 @@ LDADD			=	@LIBMYDNS@ @LIBUTIL@ @LIBINTL@ @LIBSQL@ @LIBSSL@ @LIBSOCKET@ @LIBNSL@ 
 
 mydns_DEPENDENCIES	=	@LIBMYDNS@ @LIBUTIL@
 
-noinst_HEADERS		=	cache.h named.h task.h
+noinst_HEADERS		=	
 mydns_SOURCES		=	alias.c array.c axfr.c cache.c data.c db.c encode.c \
 				error.c ixfr.c listen.c main.c message.c notify.c queue.c \
 				recursive.c \

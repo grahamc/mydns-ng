@@ -128,7 +128,7 @@ rrlist_add(
 	DebugX("rr", 1, _("%s: RRLIST_ADD: %s (id=%u) (name='%s',qtype='%s',data='%s') (`%s')"), desctask(t),
 	       datasection_str[ds], r->id,
 	       (char *)(strlen(MYDNS_RR_NAME(r)) ? MYDNS_RR_NAME(r) : (char *)""),
-	       mydns_qtype_str(r->type), (char*)MYDNS_RR_DATA_VALUE(r), name);
+	       mydns_rr_get_type_by_id(r->type)->rr_type_name, (char*)MYDNS_RR_DATA_VALUE(r), name);
       }
       break;
     }

@@ -227,6 +227,23 @@ extern taskexec_t	recursive_fwd_write(TASK *);
 extern taskexec_t	recursive_fwd_read(TASK *);
 
 
+/* lib/reply.c */
+extern char		*rdata_enlarge(TASK *t, size_t size);
+extern int		reply_start_rr(TASK *t, RR *r, char *name, dns_qtype_t type, uint32_t ttl, char *desc);
+extern int		__mydns_reply_add_generic_rr(TASK *t, RR *r, dns_qtype_map *map);
+extern int		__mydns_reply_add_a(TASK *t, RR *r, dns_qtype_map *map);
+extern int		__mydns_reply_add_aaaa(TASK *t, RR *r, dns_qtype_map *map);
+extern int		__mydns_reply_add_hinfo(TASK *t, RR *r, dns_qtype_map *map);
+extern int		__mydns_reply_add_mx(TASK *t, RR *r, dns_qtype_map *map);
+extern int		__mydns_reply_add_naptr(TASK *t, RR *r, dns_qtype_map *map);
+extern int		__mydns_reply_add_rp(TASK *t, RR *r, dns_qtype_map *map);
+extern int		__mydns_reply_add_soa(TASK *t, RR *r, dns_qtype_map *map);
+extern int		__mydns_reply_add_srv(TASK *t, RR *r, dns_qtype_map *map);
+extern int		__mydns_reply_add_txt(TASK *t, RR *r, dns_qtype_map *map);
+extern int		__mydns_reply_unexpected_type(TASK *t, RR *r, dns_qtype_map *map);
+extern int		__mydns_reply_unknown_type(TASK *t, RR *r, dns_qtype_map *map);
+
+
 /* reply.c */
 extern int		reply_init(TASK *);
 extern void		abandon_reply(TASK *);

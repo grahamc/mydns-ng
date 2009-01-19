@@ -117,7 +117,7 @@ cname_recurse(TASK *t, datasection_t section, dns_qtype_t qtype,
     if (t->Cnames[n] == cname->id) {
       /* CNAME loop: Send what we have so far and consider the resolution complete */
       Verbose(_("%s: %s: %s %s %s (depth %d)"), desctask(t), _("CNAME loop detected"),
-	      MYDNS_RR_NAME(cname), mydns_qtype_str(cname->type), (char*)MYDNS_RR_DATA_VALUE(cname), level);
+	      MYDNS_RR_NAME(cname), mydns_rr_get_type_by_id(cname->type)->rr_type_name, (char*)MYDNS_RR_DATA_VALUE(cname), level);
       return (TASK_COMPLETED);
     }
   t->Cnames[level] = cname->id;
@@ -295,7 +295,7 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
 
 #if DEBUG_ENABLED && DEBUG_RESOLVE
   DebugX("resolve", 1, _("%s: resolve_label(%s, %s, %s, %s, %d)"), desctask(t),
-	 fqdn, soa->origin, label, mydns_qtype_str(qtype), level);
+	 fqdn, soa->origin, label, mydns_rr_get_type_by_id(qtype)->rr_type_name, level);
 #endif
 
   /* Do any records match this label exactly? */
@@ -452,7 +452,7 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
 
 #if DEBUG_ENABLED && DEBUG_RESOLVE
   DebugX("resolve", 1, _("%s: resolve(%s, %s, \"%s\", %d)"),
-	 desctask(t), resolve_datasection_str[section], mydns_qtype_str(qtype), fqdn, level);
+	 desctask(t), resolve_datasection_str[section], mydns_rr_get_type_by_id(qtype)->rr_type_name, fqdn, level);
 #endif
 
 #if STATUS_ENABLED

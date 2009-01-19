@@ -410,7 +410,7 @@ process_axfr_answer(char *reply, size_t replylen, char *src) {
     break;
 
   default:
-    Warnx("%s %s: %s", name, mydns_qtype_str(type), _("discarding unsupported RR type"));
+    Warnx("%s %s: %s", name, mydns_rr_get_type_by_id(type)->rr_type_name, _("discarding unsupported RR type"));
     break;
   }
   RELEASE(name);

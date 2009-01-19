@@ -18,7 +18,7 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **************************************************************************************************/
 
-#include "mydns.h"
+#include "named.h"
 
 
 /**************************************************************************************************
@@ -43,104 +43,6 @@ mydns_class_str(dns_class_t c) {
   return (buf);
 }
 /*--- mydns_class_str() -------------------------------------------------------------------------*/
-
-
-/**************************************************************************************************
-	MYDNS_QTYPE_STR
-	Returns a pointer to a static string describing the specified query/response type.
-**************************************************************************************************/
-char *
-mydns_qtype_str(dns_qtype_t qtype) {
-  static char *buf = NULL;
-
-  switch (qtype) {
-  case DNS_QTYPE_UNKNOWN:	return ("UNKNOWN");
-
-  case DNS_QTYPE_A:		return ("A");
-  case DNS_QTYPE_NS:		return ("NS");
-  case DNS_QTYPE_MD:		return ("MD");
-  case DNS_QTYPE_MF:		return ("MF");
-  case DNS_QTYPE_CNAME:		return ("CNAME");
-  case DNS_QTYPE_SOA:		return ("SOA");
-  case DNS_QTYPE_MB:		return ("MB");
-  case DNS_QTYPE_MG:		return ("MG");
-  case DNS_QTYPE_MR:		return ("MR");
-  case DNS_QTYPE_NULL:		return ("NULL");
-  case DNS_QTYPE_WKS:		return ("WKS");
-  case DNS_QTYPE_PTR:		return ("PTR");
-  case DNS_QTYPE_HINFO:		return ("HINFO");
-  case DNS_QTYPE_MINFO:		return ("MINFO");
-  case DNS_QTYPE_MX:		return ("MX");
-  case DNS_QTYPE_TXT:		return ("TXT");
-  case DNS_QTYPE_RP:		return ("RP");
-  case DNS_QTYPE_AFSDB:		return ("AFSDB");
-  case DNS_QTYPE_X25:		return ("X25");
-  case DNS_QTYPE_ISDN:		return ("ISDN");
-  case DNS_QTYPE_RT:		return ("RT");
-  case DNS_QTYPE_NSAP:		return ("NSAP");
-  case DNS_QTYPE_NSAP_PTR:	return ("NSAP_PTR");
-  case DNS_QTYPE_SIG:		return ("SIG");
-  case DNS_QTYPE_KEY:		return ("KEY");
-  case DNS_QTYPE_PX:		return ("PX");
-  case DNS_QTYPE_GPOS:		return ("GPOS");
-  case DNS_QTYPE_AAAA:		return ("AAAA");
-  case DNS_QTYPE_LOC:		return ("LOC");
-  case DNS_QTYPE_NXT:		return ("NXT");
-  case DNS_QTYPE_EID:		return ("EID");
-  case DNS_QTYPE_NIMLOC:	return ("NIMLOC");
-  case DNS_QTYPE_SRV:		return ("SRV");
-  case DNS_QTYPE_ATMA:		return ("ATMA");
-  case DNS_QTYPE_NAPTR:		return ("NAPTR");
-  case DNS_QTYPE_KX:		return ("KX");
-  case DNS_QTYPE_CERT:		return ("CERT");
-  case DNS_QTYPE_A6:		return ("A6");
-  case DNS_QTYPE_DNAME:		return ("DNAME");
-  case DNS_QTYPE_SINK:		return ("SINK");
-  case DNS_QTYPE_OPT:		return ("OPT");
-  case DNS_QTYPE_APL:		return ("APL");
-  case DNS_QTYPE_DS:		return ("DS");
-  case DNS_QTYPE_SSHFP:		return ("SSHFP");
-  case DNS_QTYPE_IPSECKEY:	return ("IPSECKEY");
-  case DNS_QTYPE_RRSIG:		return ("RRSIG");
-  case DNS_QTYPE_NSEC:		return ("NSEC");
-  case DNS_QTYPE_DNSKEY:	return ("DNSKEY");
-  case DNS_QTYPE_DHCID:		return ("DHCID");
-  case DNS_QTYPE_NSEC3:		return ("NSEC");
-  case DNS_QTYPE_NSEC3PARAM:	return ("NSEC3PARAM");
-
-  case DNS_QTYPE_HIP:		return ("HIP");
-
-  case DNS_QTYPE_SPF:		return ("SPF");
-  case DNS_QTYPE_UINFO:		return ("UINFO");
-  case DNS_QTYPE_UID:		return ("UID");
-  case DNS_QTYPE_GID:		return ("GID");
-  case DNS_QTYPE_UNSPEC:	return ("UNSPEC");
-
-  case DNS_QTYPE_TKEY:		return ("TKEY");
-  case DNS_QTYPE_TSIG:		return ("TSIG");
-  case DNS_QTYPE_IXFR:		return ("IXFR");
-  case DNS_QTYPE_AXFR:		return ("AXFR");
-  case DNS_QTYPE_MAILB:		return ("MAILB");
-  case DNS_QTYPE_MAILA:		return ("MAILA");
-  case DNS_QTYPE_ANY:		return ("ANY");
-
-  case DNS_QTYPE_TA:		return ("TA");
-  case DNS_QTYPE_DLV:		return ("DLV");
-
-#if ALIAS_ENABLED
-  case DNS_QTYPE_ALIAS:		return ("ALIAS");
-#endif
-
-  case DNS_QTYPE_NONE:		break;
-  }
-
-  RELEASE(buf);
-  ASPRINTF(&buf, "%03d", qtype);
-
-  return (buf);
-}
-/*--- mydns_qtype_str() -------------------------------------------------------------------------*/
-
 
 /**************************************************************************************************
 	MYDNS_OPCODE_STR

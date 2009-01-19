@@ -124,7 +124,7 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
 
 #if DEBUG_ENABLED && DEBUG_IXFR
   DebugX("ixfr", 1, "%s: ixfr(%s, %s, \"%s\", %d)", desctask(t),
-	 resolve_datasection_str[section], mydns_qtype_str(qtype), fqdn, truncateonly);
+	 resolve_datasection_str[section], mydns_rr_get_type_by_id(qtype)->rr_type_name, fqdn, truncateonly);
 #endif
 
   if (!dns_ixfr_enabled) {
@@ -194,8 +194,8 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
   DebugX("ixfr", 1, _("%s: DNS IXFR Question[zone %s qclass %s qtype %s]"
 		      " Authority[zone %s qclass %s qtype %s ttl %u "
 		      "mname %s rname %s serial %u refresh %u retry %u expire %u minimum %u]"),
-	 desctask(t), q->name, mydns_class_str(q->class), mydns_qtype_str(q->type),
-	 q->IR.name, mydns_class_str(q->IR.class), mydns_qtype_str(q->IR.type), q->IR.ttl,
+	 desctask(t), q->name, mydns_class_str(q->class), mydns_rr_get_type_by_id(q->type)->rr_type_name,
+	 q->IR.name, mydns_class_str(q->IR.class), mydns_rr_get_type_by_id(q->IR.type)->rr_type_name, q->IR.ttl,
 	 q->IR.mname, q->IR.rname, q->IR.serial, q->IR.refresh, q->IR.retry, q->IR.expire, q->IR.minimum);
 #endif
 

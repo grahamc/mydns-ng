@@ -414,7 +414,7 @@ notify_read(TASK *t) {
 	    if (current+SIZE16 <= &in[rv]) {
 	      DNS_GET16(qclass, current);
 	      DebugX("notify", 1, _("%s: DNS NOTIFY notify_read %s asks for %s - %s against %s"), desctask(t),
-		     msg, mydns_qtype_str(qtype), mydns_class_str(qclass), msg2);
+		     msg, mydns_rr_get_type_by_id(qtype)->rr_type_name, mydns_class_str(qclass), msg2);
 	      RELEASE(msg2);
 	      goto DECODEDQUERY;
 	    }

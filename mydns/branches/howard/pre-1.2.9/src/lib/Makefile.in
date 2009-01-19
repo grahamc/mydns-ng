@@ -59,8 +59,8 @@ ARFLAGS = cru
 libmydns_a_AR = $(AR) $(ARFLAGS)
 libmydns_a_LIBADD =
 am_libmydns_a_OBJECTS = conf.$(OBJEXT) db.$(OBJEXT) ip.$(OBJEXT) \
-	rr.$(OBJEXT) soa.$(OBJEXT) sql.$(OBJEXT) str.$(OBJEXT) \
-	unencode.$(OBJEXT)
+	reply.$(OBJEXT) rr.$(OBJEXT) rr_type.$(OBJEXT) soa.$(OBJEXT) \
+	sql.$(OBJEXT) str.$(OBJEXT) unencode.$(OBJEXT)
 libmydns_a_OBJECTS = $(am_libmydns_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -232,8 +232,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LIBRARIES = libmydns.a
 INCLUDES = @INTLINCLUDE@ @UTILINCLUDE@ @SQLINCLUDE@
-noinst_HEADERS = bits.h header.h mydns.h
-libmydns_a_SOURCES = conf.c db.c ip.c rr.c soa.c sql.c str.c unencode.c
+noinst_HEADERS = bits.h cache.h header.h mydns.h named.h task.h
+libmydns_a_SOURCES = conf.c db.c ip.c reply.c rr.c rr_type.c soa.c sql.c str.c unencode.c
 all: all-am
 
 .SUFFIXES:
@@ -284,7 +284,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/conf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/db.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ip.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reply.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rr_type.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/soa.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sql.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/str.Po@am__quote@

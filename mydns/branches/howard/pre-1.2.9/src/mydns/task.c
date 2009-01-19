@@ -370,7 +370,7 @@ desctask(TASK *t) {
   if (desc) RELEASE(desc);
 
   ASPRINTF(&desc, "%s: %s %s (%u) %s, %s %s",
-	   clientaddr(t), mydns_qtype_str(t->qtype),
+	   clientaddr(t), mydns_rr_get_type_by_id(t->qtype)->rr_type_name,
 	   t->qname ? (char *)t->qname : _("<NONE>"),
 	   t->internal_id, task_status_name(t), task_priority_name(t->priority),
 	   task_type_name(t->type)) < 0;
@@ -605,7 +605,7 @@ task_output_info(TASK *t, char *update_desc) {
 	  :"UNKNOWN",
 	  clientaddr(t),
 	  mydns_class_str(t->qclass),
-	  mydns_qtype_str(t->qtype),
+	  mydns_rr_get_type_by_id(t->qtype)->rr_type_name,
 	  t->qname,
 	  mydns_rcode_str(t->hdr.rcode),
 	  err_reason_str(t, t->reason),

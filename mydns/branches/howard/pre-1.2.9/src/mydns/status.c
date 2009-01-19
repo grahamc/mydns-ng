@@ -34,14 +34,14 @@ static inline void
 status_fake_rr(TASK *t, datasection_t ds, const char *name, const char *fmt, ...) {
   va_list	ap;
   char		*buf = NULL;
-  MYDNS_RR 	*rr = NULL;						/* Temporary resource record */
+  MYDNS_RR 	*rr = NULL;					/* Temporary resource record */
 
   va_start(ap, fmt);
   VASPRINTF(&buf, fmt, ap);
   va_end(ap);
 
-  rr = mydns_rr_build(0, 0, DNS_QTYPE_TXT, DNS_CLASS_CHAOS, 0, 0, NULL, NULL, 0,
-		      (char*)name, buf, strlen(buf), NULL);
+  rr = mydns_rr_build(0, 0, mydns_rr_get_type_by_id(DNS_QTYPE_TXT), DNS_CLASS_CHAOS,
+		      0, 0, NULL, NULL, 0, (char*)name, buf, strlen(buf), NULL);
   /* Add to list */
   rrlist_add(t, ds, DNS_RRTYPE_RR, (void *)rr, (char*)name);
   mydns_rr_free(rr);

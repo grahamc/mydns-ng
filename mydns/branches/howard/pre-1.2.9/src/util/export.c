@@ -234,7 +234,7 @@ bind_dump_soa(MYDNS_SOA *soa) {
 **************************************************************************************************/
 static void
 bind_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
-  char *type = mydns_qtype_str(
+  char *type = mydns_rr_get_type_by_id(
 #if ALIAS_ENABLED
 			       (rr->alias == 0) ?
 #endif /* ALIAS_ENABLED */
@@ -242,7 +242,7 @@ bind_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
 #if ALIAS_ENABLED
 			       : DNS_QTYPE_CNAME
 #endif /* ALIAS_ENABLED */
-	);
+	)->rr_type_name;
 
   printf("%-*s", maxlen, MYDNS_RR_NAME(rr));
 

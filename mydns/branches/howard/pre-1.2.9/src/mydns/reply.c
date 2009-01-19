@@ -79,73 +79,17 @@ reply_add_additional(TASK *t, RRLIST *rrlist, datasection_t section) {
 
 
 /**************************************************************************************************
-	RDATA_ENLARGE
-	Expands t->rdata by `size' bytes.  Returns a pointer to the destination.
-**************************************************************************************************/
-static inline char *
-rdata_enlarge(TASK *t, size_t size) {
-  if (!size)
-    return (NULL);
-
-  t->rdlen += size;
-  t->rdata = REALLOCATE(t->rdata, t->rdlen, char[]);
-  return (t->rdata + t->rdlen - size);
-}
-/*--- rdata_enlarge() ---------------------------------------------------------------------------*/
-
-
-/**************************************************************************************************
-	REPLY_START_RR
-	Begins an RR.  Appends to t->rdata all the header fields prior to rdlength.
-	Returns the numeric offset of the start of this record within the reply, or -1 on error.
-**************************************************************************************************/
-static inline int
-reply_start_rr(TASK *t, RR *r, char *name, dns_qtype_t type, uint32_t ttl, char *desc) {
-  char	*enc = NULL;
-  char	*dest = NULL;
-  int	enclen = 0;
-
-  /* name_encode returns dnserror() */
-  if ((enclen = name_encode2(t, &enc, name, t->replylen + t->rdlen, 1)) < 0) {
-    return rr_error(r->id, _("rr %u: %s (%s %s) (name=\"%s\")"), r->id,
-		    _("invalid name in \"name\""), desc, _("record"), name);
-  }
-
-  r->length = enclen + SIZE16 + SIZE16 + SIZE32;
-
-  if (!(dest = rdata_enlarge(t, r->length))) {
-    RELEASE(enc);
-    return dnserror(t, DNS_RCODE_SERVFAIL, ERR_INTERNAL);
-  }
-
-  r->offset = dest - t->rdata + DNS_HEADERSIZE + t->qdlen;
-
-  DNS_PUT(dest, enc, enclen);
-  RELEASE(enc);
-  DNS_PUT16(dest, type);
-#if STATUS_ENABLED
-  if (r->rrtype == DNS_RRTYPE_RR && r->rr)
-    DNS_PUT16(dest, ((MYDNS_RR *)(r->rr))->class)
-    else
-#endif
-      DNS_PUT16(dest, DNS_CLASS_IN);
-  DNS_PUT32(dest, ttl);
-  return (0);
-}
-/*--- reply_start_rr() --------------------------------------------------------------------------*/
-
-
-/**************************************************************************************************
 	REPLY_ADD_GENERIC_RR
 	Adds a generic resource record whose sole piece of data is a domain-name,
 	or a 16-bit value plus a domain-name.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-static inline int
-reply_add_generic_rr(TASK *t, RR *r, char *desc) {
-  char		*enc = NULL, *dest = NULL;
+int reply_add_generic_rr(TASK *t, RR *r, dns_qtype_map *map) {
+  char		*enc = NULL, *dest = NULL, *desc = NULL;
   int		size = 0, enclen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
+
+  desc = map->rr_type_name;
 
   if (reply_start_rr(t, r, (char*)r->name, rr->type, rr->ttl, desc) < 0)
     return (-1);
@@ -176,8 +120,7 @@ reply_add_generic_rr(TASK *t, RR *r, char *desc) {
 	Adds an A record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-static inline int
-reply_add_a(TASK *t, RR *r) {
+int reply_add_a(TASK *t, RR *r, dns_qtype_map *map) {
   char		*dest = NULL;
   int		size = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
@@ -215,8 +158,7 @@ reply_add_a(TASK *t, RR *r) {
 	Adds an AAAA record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-static inline int
-reply_add_aaaa(TASK *t, RR *r) {
+int reply_add_aaaa(TASK *t, RR *r, dns_qtype_map *map) {
   char		*dest = NULL;
   int		size = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
@@ -253,8 +195,7 @@ reply_add_aaaa(TASK *t, RR *r) {
 	Adds an HINFO record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-static inline int
-reply_add_hinfo(TASK *t, RR *r) {
+int reply_add_hinfo(TASK *t, RR *r, dns_qtype_map *map) {
   char		*dest = NULL;
   size_t	oslen = 0, cpulen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
@@ -297,8 +238,7 @@ reply_add_hinfo(TASK *t, RR *r) {
 	Adds an MX record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-static inline int
-reply_add_mx(TASK *t, RR *r) {
+int reply_add_mx(TASK *t, RR *r, dns_qtype_map *map) {
   char		*enc = NULL, *dest = NULL;
   int		size = 0, enclen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
@@ -333,8 +273,7 @@ reply_add_mx(TASK *t, RR *r) {
 	Adds an NAPTR record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-static inline int
-reply_add_naptr(TASK *t, RR *r) {
+int reply_add_naptr(TASK *t, RR *r, dns_qtype_map *map) {
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
   size_t	flags_len = 0, service_len = 0, regex_len = 0;
   char		*enc = NULL, *dest = NULL;
@@ -396,8 +335,7 @@ reply_add_naptr(TASK *t, RR *r) {
 	Adds an RP record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-static inline int
-reply_add_rp(TASK *t, RR *r) {
+int reply_add_rp(TASK *t, RR *r, dns_qtype_map *map) {
   char		*mbox = NULL, *txt = NULL, *dest = NULL;
   char		*encmbox = NULL, *enctxt = NULL;
   int		size = 0, mboxlen = 0, txtlen = 0;
@@ -444,8 +382,7 @@ reply_add_rp(TASK *t, RR *r) {
 	Add a SOA record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-static inline int
-reply_add_soa(TASK *t, RR *r) {
+int reply_add_soa(TASK *t, RR *r, dns_qtype_map *map) {
   char		*dest = NULL, *ns = NULL, *mbox = NULL;
   int		size = 0, nslen = 0, mboxlen = 0;
   MYDNS_SOA	*soa = (MYDNS_SOA *)r->rr;
@@ -493,8 +430,7 @@ reply_add_soa(TASK *t, RR *r) {
 	Adds a SRV record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-static inline int
-reply_add_srv(TASK *t, RR *r) {
+int reply_add_srv(TASK *t, RR *r, dns_qtype_map *map) {
   char		*enc = NULL, *dest = NULL;
   int		size = 0, enclen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
@@ -534,8 +470,7 @@ reply_add_srv(TASK *t, RR *r) {
 	Adds a TXT record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-static inline int
-reply_add_txt(TASK *t, RR *r) {
+int reply_add_txt(TASK *t, RR *r, dns_qtype_map *map) {
   char		*dest = NULL;
   uint8_t	size = 0;
   size_t	len = 0;
@@ -561,6 +496,16 @@ reply_add_txt(TASK *t, RR *r) {
 /*--- reply_add_txt() ---------------------------------------------------------------------------*/
 
 
+int reply_unexpected_type(TASK *t, RR *r, dns_qtype_map *map) {
+  Warnx("%s: %s: %s", desctask(t), map->rr_type_name, _("unexpected resource record type - logic problem"));
+  return (-1);
+}
+
+int reply_unknown_type(TASK *t, RR *r, dns_qtype_map *map) {
+  Warnx("%s: %s: %s", desctask(t), map->rr_type_name, _("unsupported resource record type"));
+  return (-1);
+}
+
 /**************************************************************************************************
 	REPLY_PROCESS_RRLIST
 	Adds each resource record found in `rrlist' to the reply.
@@ -573,9 +518,11 @@ reply_process_rrlist(TASK *t, RRLIST *rrlist) {
     return (0);
 
   for (r = rrlist->head; r; r = r->next) {
+    dns_qtype_map *map;
     switch (r->rrtype) {
     case DNS_RRTYPE_SOA:
-      if (reply_add_soa(t, r) < 0)
+      map = mydns_rr_get_type_by_id(DNS_QTYPE_SOA);
+      if (map->rr_reply_add(t, r, map) < 0)
 	return (-1);
       break;
 
@@ -583,358 +530,12 @@ reply_process_rrlist(TASK *t, RRLIST *rrlist) {
       {
 	MYDNS_RR *rr = (MYDNS_RR *)r->rr;
 
-	if (!rr)
-	  break;
+	if (!rr) break;
 
-	switch (rr->type) {
-	case DNS_QTYPE_UNKNOWN:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unexpected resource record type - logic problem"));
-	  break;
+	map = mydns_rr_get_type_by_id(rr->type);
+	if (map->rr_reply_add(t, r, map) < 0)
+	  return -1;
 
-	case DNS_QTYPE_NONE:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unexpected resource record type - logic problem"));
-	  break;
-
-	case DNS_QTYPE_A:
-	  if (reply_add_a(t, r) < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_NS:
-	  if (reply_add_generic_rr(t, r, "NS") < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_MD:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_MF:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_CNAME:
-	  if (reply_add_generic_rr(t, r, "CNAME") < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_SOA:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unexpected resource record type - logic problem"));
-	  break;
-
-	case DNS_QTYPE_MB:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_MG:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_MR:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_NULL:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_WKS:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_PTR:
-	  if (reply_add_generic_rr(t, r, "PTR") < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_HINFO:
-	  if (reply_add_hinfo(t, r) < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_MINFO:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_MX:
-	  if (reply_add_mx(t, r) < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_TXT:
-	  if (reply_add_txt(t, r) < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_RP:
-	  if (reply_add_rp(t, r) < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_AFSDB:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_X25:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_ISDN:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_RT:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_NSAP:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_NSAP_PTR:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_SIG:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_KEY:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_PX:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_GPOS:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_AAAA:
-	  if (reply_add_aaaa(t, r) < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_LOC:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_NXT:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_EID:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_NIMLOC:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_SRV:
-	  if (reply_add_srv(t, r) < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_ATMA:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_NAPTR:
-	  if (reply_add_naptr(t, r) < 0)
-	    return (-1);
-	  break;
-
-	case DNS_QTYPE_KX:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_CERT:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_A6:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_DNAME:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_SINK:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_OPT:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_APL:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_DS:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_SSHFP:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_IPSECKEY:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_RRSIG:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_NSEC:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_DNSKEY:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_DHCID:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_NSEC3:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_NSEC3PARAM:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_HIP:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_SPF:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_UINFO:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_UID:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_GID:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_UNSPEC:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_TKEY:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_TSIG:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_IXFR:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unexpect resource record type - logic problem"));
-	  break;
-
-	case DNS_QTYPE_AXFR:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unexpected resource record type - logic problem"));
-	  break;
-
-	case DNS_QTYPE_MAILB:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_MAILA:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_ANY:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unexpected resource record type - logic problem"));
-	  break;
-
-	case DNS_QTYPE_TA:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-	case DNS_QTYPE_DLV:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unsupported resource record type"));
-	  break;
-
-#if ALIAS_ENABLED
-	case DNS_QTYPE_ALIAS:
-	  Warnx("%s: %s: %s", desctask(t), mydns_qtype_str(rr->type),
-		_("unexpected resource record type - logic problem"));
-	  break;
-#endif
-
-	}
       }
       break;
     }

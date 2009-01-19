@@ -143,12 +143,18 @@ db_output_create_tables(void) {
   printf("  aux    INTEGER NOT NULL default 0,\n");
   printf("  ttl    INTEGER NOT NULL default %u,\n", DNS_DEFAULT_TTL);
   printf("  type   VARCHAR(5) NOT NULL CHECK ");
-  printf("(type='A' OR type='AAAA' ");
-#if ALIAS_ENABLED
-  printf("OR type='ALIAS' ");
-#endif
-  printf("OR type='CNAME' OR type='HINFO' OR type='MX' OR type='NAPTR' OR type='NS' ");
-  printf("OR type='PTR' OR type='RP' OR type='SRV' OR type='TXT'),\n");
+
+  {
+    int i;
+
+    printf("(");
+    for (i = 0; i < RR_TYPES_ENTRIES; i++) {
+      if (!RR_TYPES_BY_NAME[i]->rr_persistent) continue;
+      if (i != 0) printf(" OR ");
+      printf("'%s'", RR_TYPES_BY_NAME[i]->rr_type_name);
+    }
+    printf("),\n");
+  }
   if (mydns_rr_extended_data) {
     printf("  edata      BYTEA DEFAULT NULL,\n");
     printf("  edatakey   CHAR(32) DEFAULT NULL,\n");
@@ -177,11 +183,19 @@ db_output_create_tables(void) {
   printf("  data       VARBINARY(%u) NOT NULL,\n", (unsigned int)mydns_rr_data_length);
   printf("  aux        INT UNSIGNED NOT NULL,\n");
   printf("  ttl        INT UNSIGNED NOT NULL default '%u',\n", DNS_DEFAULT_TTL);
-  printf("  type       ENUM('A','AAAA',");
-#if ALIAS_ENABLED
-  printf("'ALIAS',");
-#endif
-  printf("'CNAME','HINFO','MX','NAPTR','NS','PTR','RP','SRV','TXT'),\n");
+
+  {
+    int i;
+
+    printf("  type       ENUM(");
+    for (i = 0; i < RR_TYPES_ENTRIES; i++) {
+      if (!RR_TYPES_BY_NAME[i]->rr_persistent) continue;
+      if (i != 0) printf(", ");
+      printf("'%s'", RR_TYPES_BY_NAME[i]->rr_type_name);
+    }
+    printf("),\n");
+  }
+
   if (mydns_rr_extended_data) {
     printf("  edata      BLOB(65408) DEFAULT NULL,\n");
     printf("  edatakey   CHAR(32) DEFAULT NULL,\n");
