@@ -57,9 +57,10 @@ ARFLAGS = cru
 libmydns_a_AR = $(AR) $(ARFLAGS)
 libmydns_a_LIBADD =
 am_libmydns_a_OBJECTS = conf.$(OBJEXT) db.$(OBJEXT) encode.$(OBJEXT) \
-	error.$(OBJEXT) ip.$(OBJEXT) reply.$(OBJEXT) rr.$(OBJEXT) \
-	rr_type.$(OBJEXT) soa.$(OBJEXT) sql.$(OBJEXT) str.$(OBJEXT) \
-	task.$(OBJEXT) unencode.$(OBJEXT) update.$(OBJEXT)
+	error.$(OBJEXT) import.$(OBJEXT) ip.$(OBJEXT) reply.$(OBJEXT) \
+	rr.$(OBJEXT) rr_type.$(OBJEXT) soa.$(OBJEXT) sql.$(OBJEXT) \
+	str.$(OBJEXT) task.$(OBJEXT) unencode.$(OBJEXT) \
+	update.$(OBJEXT)
 libmydns_a_OBJECTS = $(am_libmydns_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -230,7 +231,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LIBRARIES = libmydns.a
 INCLUDES = @MYDNSINCLUDE@ @INTLINCLUDE@ @UTILINCLUDE@ @SQLINCLUDE@
-libmydns_a_SOURCES = conf.c db.c encode.c error.c ip.c reply.c rr.c rr_type.c \
+libmydns_a_SOURCES = conf.c db.c encode.c error.c import.c ip.c \
+				reply.c rr.c rr_type.c \
 				soa.c sql.c str.c task.c unencode.c update.c
 
 all: all-am
@@ -284,6 +286,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/db.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/encode.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/error.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/import.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ip.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reply.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rr.Po@am__quote@

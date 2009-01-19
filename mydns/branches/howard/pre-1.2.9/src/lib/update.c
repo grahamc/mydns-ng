@@ -96,7 +96,7 @@ taskexec_t __mydns_update_get_rr_data_ns(TASK *t,
   unsigned char	*src = (unsigned char*)UQRR_DATA_VALUE(rr);
   task_error_t	errcode = 0;
 
-  if (!(*data = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
+  if (!(*data = name_unencode(t->query, t->len, (char**)&src, &errcode)))
     return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
   *datalen = strlen(*data);
   return TASK_EXECUTED;
@@ -113,7 +113,7 @@ taskexec_t __mydns_update_get_rr_data_cname(TASK *t,
   unsigned char	*src = (unsigned char*)UQRR_DATA_VALUE(rr);
   task_error_t	errcode = 0;
 
-  if (!(*data = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
+  if (!(*data = name_unencode(t->query, t->len, (char**)&src, &errcode)))
     return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
   *datalen = strlen(*data);
   return TASK_EXECUTED;
@@ -130,7 +130,7 @@ taskexec_t __mydns_update_get_rr_data_ptr(TASK *t,
   unsigned char	*src = (unsigned char*)UQRR_DATA_VALUE(rr);
   task_error_t	errcode = 0;
 
-  if (!(*data = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
+  if (!(*data = name_unencode(t->query, t->len, (char**)&src, &errcode)))
     return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
   *datalen = strlen(*data);
   return TASK_EXECUTED;
@@ -183,7 +183,7 @@ taskexec_t __mydns_update_get_rr_data_mx(TASK *t,
   task_error_t	errcode = 0;
 
   DNS_GET16(*aux, src);
-  if (!(*data = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
+  if (!(*data = name_unencode(t->query, t->len, (char**)&src, &errcode)))
     return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
   *datalen = strlen(*data);
   return TASK_EXECUTED;
@@ -220,9 +220,9 @@ taskexec_t __mydns_update_get_rr_data_rp(TASK *t,
   task_error_t	errcode = 0;
   char *data1, *data2;
 
-  if (!(data1 = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
+  if (!(data1 = name_unencode(t->query, t->len, (char**)&src, &errcode)))
     return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
-  if (!(data2 = name_unencode2(t->query, t->len, (char**)&src, &errcode))) {
+  if (!(data2 = name_unencode(t->query, t->len, (char**)&src, &errcode))) {
     RELEASE(data1);
     return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
   }
@@ -270,7 +270,7 @@ taskexec_t __mydns_update_get_rr_data_srv(TASK *t,
   DNS_GET16(weight, src);
   DNS_GET16(port, src);
 
-  if (!(data1 = name_unencode2(t->query, t->len, (char**)&src, &errcode)))
+  if (!(data1 = name_unencode(t->query, t->len, (char**)&src, &errcode)))
     return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
 
   *datalen = ASPRINTF(data, "%u %u %s", weight, port, data1);

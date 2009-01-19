@@ -85,7 +85,7 @@ ixfr_gobble_authority_rr(TASK *t, MYDNS_SOA *soa, char *query, size_t querylen, 
   int rdlength = 0;
   task_error_t errcode = TASK_FAILED;
 
-  if (!(IARR_NAME(rr) = name_unencode2(query, querylen, &src, &errcode))) {
+  if (!(IARR_NAME(rr) = name_unencode(query, querylen, &src, &errcode))) {
     formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
     return NULL;
   }
@@ -94,12 +94,12 @@ ixfr_gobble_authority_rr(TASK *t, MYDNS_SOA *soa, char *query, size_t querylen, 
   DNS_GET32(rr->ttl, src);
 
   DNS_GET16(rdlength, src);
-  if (!(IARR_MNAME(rr) = name_unencode2(query, querylen, &src, &errcode))) {
+  if (!(IARR_MNAME(rr) = name_unencode(query, querylen, &src, &errcode))) {
     formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
     return NULL;
   }
 
-  if (!(IARR_RNAME(rr) = name_unencode2(query, querylen, &src, &errcode))) {
+  if (!(IARR_RNAME(rr) = name_unencode(query, querylen, &src, &errcode))) {
     formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
     return NULL;
   }
@@ -176,7 +176,7 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
 
   q = allocate_iq();
 
-  if (!(IQ_NAME(q) = name_unencode2(query, querylen, &src, &errcode))) {
+  if (!(IQ_NAME(q) = name_unencode(query, querylen, &src, &errcode))) {
     free_iq(q);
     return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
   }

@@ -171,6 +171,44 @@ extern int		rr_error(uint32_t, const char *, ...) __printflike(2,3);
 extern taskexec_t	ixfr(TASK *, datasection_t, dns_qtype_t, char *, int);
 extern void		ixfr_start();
 
+/* lib/import.c */
+extern char *__mydns_process_axfr_soa(char *rv, char *name, char *origin,
+				      char *reply, size_t replylen, char *src, uint32_t ttl,
+				      dns_qtype_map *map);
+extern char *__mydns_process_axfr_a(char *rv, char *name, char *origin,
+				    char *reply, size_t replylen, char *src, uint32_t ttl,
+				    dns_qtype_map *map);
+extern char *__mydns_process_axfr_aaaa(char *rv, char *name, char *origin,
+				       char *reply, size_t replylen, char *src, uint32_t ttl,
+				       dns_qtype_map *map);
+extern char *__mydns_process_axfr_cname(char *rv, char *name, char *origin,
+					char *reply, size_t replylen, char *src, uint32_t ttl,
+					dns_qtype_map *map);
+extern char *__mydns_process_axfr_hinfo(char *rv, char *name, char *origin,
+					char *reply, size_t replylen, char *src, uint32_t ttl,
+					dns_qtype_map *map);
+extern char *__mydns_process_axfr_mx(char *rv, char *name, char *origin,
+				     char *reply, size_t replylen, char *src, uint32_t ttl,
+				     dns_qtype_map *map);
+extern char *__mydns_process_axfr_ns(char *rv, char *name, char *origin,
+				     char *reply, size_t replylen, char *src, uint32_t ttl,
+				     dns_qtype_map *map);
+extern char *__mydns_process_axfr_ptr(char *rv, char *name, char *origin,
+				      char *reply, size_t replylen, char *src, uint32_t ttl,
+				      dns_qtype_map *map);
+extern char *__mydns_process_axfr_rp(char *rv, char *name, char *origin,
+				     char *reply, size_t replylen, char *src, uint32_t ttl,
+				     dns_qtype_map *map);
+extern char *__mydns_process_axfr_srv(char *rv, char *name, char *origin,
+				      char *reply, size_t replylen, char *src, uint32_t ttl,
+				      dns_qtype_map *map);
+extern char *__mydns_process_axfr_txt(char *rv, char *name, char *origin,
+				      char *reply, size_t replylen, char *src, uint32_t ttl,
+				      dns_qtype_map *map);
+extern char *__mydns_process_axfr_default(char *rv, char *name, char *origin,
+					  char *reply, size_t replylen, char *src, uint32_t ttl,
+					  dns_qtype_map *map);
+
 /* main.c */
 extern struct timeval	*gettick();
 extern int		Max_FDs;
@@ -316,9 +354,6 @@ extern void		tcp_start();
 extern taskexec_t	read_udp_query(int, int);
 extern taskexec_t	write_udp_reply(TASK *);
 extern void		udp_start();
-
-/* lib/unencode.c */
-extern char		*name_unencode(char *, size_t, char *, char *, size_t);
 
 /* lib/update.c */
 extern taskexec_t __mydns_update_get_rr_data_unknown_type(TASK *t,

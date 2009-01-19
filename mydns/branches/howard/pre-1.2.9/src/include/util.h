@@ -35,6 +35,17 @@ extern void db_connect(void);
 extern uint32_t sqlnum(const char *, ...) __printflike(1,2);
 extern inline void meter(unsigned long, unsigned long);
 
+extern uint32_t got_soa;
+extern int opt_output;
+extern int opt_notrim;
+extern int opt_replace;
+extern int IXFR;							/* Serial number on the rr records */
+extern char *ACTIVE;							/* ACTIVE String to use */
+
+extern uint32_t	import_zone_id;				/* ID of current zone */
+extern uint32_t	import_serial;				/* Serial number of current zone */
+
+extern int	soa_imported, rr_imported, ptr_imported;	/* Number of records imported */
 
 #endif /* !_MYDNS_UTIL_DIR_H */
 

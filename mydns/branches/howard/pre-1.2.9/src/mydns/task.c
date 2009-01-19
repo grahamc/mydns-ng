@@ -116,7 +116,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
   qdtop = src;
 
   /* Get query name */
-  if (!(qname = (unsigned char*)name_unencode2((char*)t->qd, t->qdlen, (char**)&src, &errcode))) {
+  if (!(qname = (unsigned char*)name_unencode((char*)t->qd, t->qdlen, (char**)&src, &errcode))) {
     Warnx(_("%s: FORMERR in query decoding name"), desctask(t));
     return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
   }

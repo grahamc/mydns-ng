@@ -18,8 +18,6 @@ mydnsimport_DEPENDENCIES		=	$(LIBDEPS)
 mydnsptrconvert_DEPENDENCIES		=	$(LIBDEPS)
 mydns_conf_DEPENDENCIES			=	$(LIBDEPS)
 
-noinst_HEADERS				=	util.h
-
 mydnscheck_SOURCES			=	check.c util.c
 mydnsexport_SOURCES			=	export.c util.c
 mydnsimport_SOURCES			=	import.c import-axfr.c import-tinydns.c util.c

@@ -262,7 +262,7 @@ update_gobble_rr(TASK *t, MYDNS_SOA *soa, char *query, size_t querylen, char *cu
 	 desctask(t), soa, query, (unsigned int)querylen, current, rr);
 #endif
 
-  if (!(UQRR_NAME(rr) = name_unencode2(query, querylen, &src, &errcode))) {
+  if (!(UQRR_NAME(rr) = name_unencode(query, querylen, &src, &errcode))) {
     formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
     return NULL;
   }
@@ -305,7 +305,7 @@ parse_update_query(TASK *t, MYDNS_SOA *soa, UQ *q) {
   /*
   **  Zone section (RFC 2136 2.3)
   */
-  if (!(UQ_NAME(q) = name_unencode2(query, querylen, &src, &errcode)))
+  if (!(UQ_NAME(q) = name_unencode(query, querylen, &src, &errcode)))
     return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
   DNS_GET16(q->type, src);
   DNS_GET16(q->class, src);
@@ -751,24 +751,7 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 **************************************************************************************************/
 static inline int
 update_rrtype_ok(dns_qtype_t type) {
-  switch (type) {
-    /* We support UPDATEs of these types: */
-  case DNS_QTYPE_A:
-  case DNS_QTYPE_AAAA:
-  case DNS_QTYPE_CNAME:
-  case DNS_QTYPE_HINFO:
-  case DNS_QTYPE_MX:
-  case DNS_QTYPE_NS:
-  case DNS_QTYPE_TXT:
-  case DNS_QTYPE_PTR:
-  case DNS_QTYPE_RP:
-  case DNS_QTYPE_SRV:
-    return 1;
-
-  default:
-    return 0;
-  }
-  return 0;
+  return mydns_rr_get_type_by_id(type)->rr_update_supported;
 }
 /*--- update_rrtype_ok() ------------------------------------------------------------------------*/
 
@@ -1580,25 +1563,28 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
 
   /* Examine "tmprr" */
   for (n = 0; n < q->num_tmprr; n++) {
-    TMPRR	*tmprr = q->tmprr[n];
-    char	*current_name = TMPRR_NAME(tmprr);	/* Current NAME being examined */
-    dns_qtype_t	current_type = tmprr->type;		/* Current TYPE being examined */
-    MYDNS_RR	*rr_first = NULL;			/* RRs for the current name/type */
-    MYDNS_RR	*rr = NULL;				/* Current RR */
-    int		total_prereq_rr = 0, total_db_rr = 0;	/* Total RRs in prereq and database */
+    TMPRR		*tmprr = q->tmprr[n];
+    char		*current_name = TMPRR_NAME(tmprr);	/* Current NAME being examined */
+    dns_qtype_t		current_type = tmprr->type;		/* Current TYPE being examined */
+    MYDNS_RR		*rr_first = NULL;			/* RRs for the current name/type */
+    MYDNS_RR		*rr = NULL;				/* Current RR */
+    int			total_prereq_rr = 0, total_db_rr = 0;	/* Total RRs in prereq and database */
+    dns_qtype_map	*map;
+
+    map = mydns_rr_get_type_by_id(current_type);
 
     if (tmprr->checked) {				/* Ignore if already checked */
 #if DEBUG_ENABLED && DEBUG_UPDATE
       DebugX("update", 1, _("%s: DNS UPDATE: Skipping prerequisite RRsets for %s/%s (already checked)"),
 	     desctask(t),
-	     current_name, mydns_rr_get_type_by_id(current_type)->rr_type_name);
+	     current_name, map->rr_type_name);
 #endif
       continue;
     }
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
     DebugX("update", 1, _("%s: DNS UPDATE: Checking prerequisite RRsets for %s/%s"), desctask(t),
-	   current_name, mydns_rr_get_type_by_id(current_type)->rr_type_name);
+	   current_name, map->rr_type_name);
 #endif
 
     /* Load all RRs for this name/type */
@@ -1606,7 +1592,7 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
       sql_reopen();
       if (mydns_rr_load_active(sql, &rr_first, soa->id, current_type, current_name, NULL) != 0) {
 	WarnSQL(sql, _("error finding %s type resource records for name `%s' in zone %u"),
-		mydns_rr_get_type_by_id(current_type)->rr_type_name, current_name, soa->id);
+		map->rr_type_name, current_name, soa->id);
 	sql_reopen();
 	return dnserror(t, DNS_RCODE_FORMERR, ERR_DB_ERROR);
       }
@@ -1616,7 +1602,7 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
     if (!rr_first) {
 #if DEBUG_ENABLED && DEBUG_UPDATE
       DebugX("update", 1, _("%s: DNS UPDATE: Found prerequisite RRsets for %s/%s, but none in database (NXRRSET)"),
-	     desctask(t), current_name, mydns_rr_get_type_by_id(current_type)->rr_type_name);
+	     desctask(t), current_name, map->rr_type_name);
 #endif
       return dnserror(t, DNS_RCODE_NXRRSET, ERR_PREREQUISITE_FAILED);
     }
@@ -1626,7 +1612,7 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
       total_db_rr++;
 #if DEBUG_ENABLED && DEBUG_UPDATE
     DebugX("update", 1, _("%s: DNS UPDATE: Found %d database RRsets for %s/%s"), desctask(t), total_db_rr,
-	   current_name, mydns_rr_get_type_by_id(current_type)->rr_type_name);
+	   current_name, map->rr_type_name);
 #endif
 
     /* Mark all <NAME,TYPE> matches in tmprr with checked=1, and count the number of RRs */
@@ -1637,7 +1623,7 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
       }
 #if DEBUG_ENABLED && DEBUG_UPDATE
     DebugX("update", 1, _("%s: DNS UPDATE: Found %d prerequisite RRsets for %s/%s"), desctask(t), total_prereq_rr,
-	   current_name, mydns_rr_get_type_by_id(current_type)->rr_type_name);
+	   current_name, map->rr_type_name);
 #endif
 
     /* If total_db_rr doesn't equal total_prereq_rr, return NXRRSET */
@@ -1645,7 +1631,7 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
 #if DEBUG_ENABLED && DEBUG_UPDATE
       DebugX("update", 1,
 	     _("%s: DNS UPDATE: Found %d prerequisite RRsets for %s/%s, but %d in database (NXRRSET)"),
-	     desctask(t), total_prereq_rr, current_name, mydns_rr_get_type_by_id(current_type)->rr_type_name, total_db_rr);
+	     desctask(t), total_prereq_rr, current_name, map->rr_type_name, total_db_rr);
 #endif
       mydns_rr_free(rr_first);
       return dnserror(t, DNS_RCODE_NXRRSET, ERR_PREREQUISITE_FAILED);
@@ -1659,7 +1645,7 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
 
 #if DEBUG_ENABLED && DEBUG_UPDATE
 	DebugX("update", 1, _("%s: DNS UPDATE: looking for tmprr[%d] = %s/%s/%u/%s in database"), desctask(t),
-	       i, TMPRR_NAME(q->tmprr[i]), mydns_rr_get_type_by_id(q->tmprr[i]->type)->rr_type_name,
+	       i, TMPRR_NAME(q->tmprr[i]), map->rr_type_name,
 	       q->tmprr[i]->aux, TMPRR_DATA_VALUE(q->tmprr[i]));
 #endif
 	for (rr = rr_first; rr && !found_match; rr = rr->next) {
@@ -1668,7 +1654,7 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
 	      && !memcmp(MYDNS_RR_DATA_VALUE(rr),
 			 TMPRR_DATA_VALUE(q->tmprr[i]),
 			 TMPRR_DATA_LENGTH(q->tmprr[i]))) {
-	    if (current_type == DNS_QTYPE_MX || current_type == DNS_QTYPE_SRV) {
+	    if (map->rr_match_aux) {
 	      if (q->tmprr[i]->aux == rr->aux)
 		found_match = 1;
 	    } else {

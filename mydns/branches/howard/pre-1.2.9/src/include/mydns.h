@@ -366,6 +366,7 @@ typedef void (*rr_dup_t)(/* MYDNS_RR *, MYDNS_RR * */);
 typedef size_t (*rr_size_t)(/* MYDNS_RR * */);
 typedef int (*rr_reply_add_t)(/* TASK *t, RR *r, dns_qtype_map *map */);
 typedef taskexec_t (*rr_get_rr_data_t)();
+typedef char *(*rr_process_axfr_t)();
 
 typedef struct {
   char 			*rr_type_name;
@@ -377,6 +378,9 @@ typedef struct {
   rr_size_t		rr_sizor;
   rr_reply_add_t	rr_reply_add;
   rr_get_rr_data_t	rr_get_rr_data;
+  rr_process_axfr_t	rr_process_axfr;
+  int			rr_update_supported;
+  int			rr_match_aux;
   const char		*rr_whereclause;
 } dns_qtype_map;
 
@@ -757,8 +761,7 @@ extern int		hinfo_parse(char *, char *, char *, size_t);
 
 
 /* unencode.c */
-extern char		*name_unencode(char *, size_t, char *, char *, size_t);
-extern char		*name_unencode2(char *, size_t, char **, task_error_t *);
+extern char		*name_unencode(char *, size_t, char **, task_error_t *);
 
 /* db.c */
 extern void		db_connect(void);
