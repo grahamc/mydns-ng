@@ -22,31 +22,52 @@
 
 #include "util.h"
 
-CONF *Conf;															/* Configuration data */
-
-
 /**************************************************************************************************
-	DB_CONNECT
-	Connect to the database.
+	METER
+	Outputs a very simple progress meter - only used if stderr is a terminal.
+	If "total" is zero, the meter is erased.
 **************************************************************************************************/
-void
-db_connect(void)
-{
-	char *user = conf_get(&Conf, "db-user", NULL);
-	char *host = conf_get(&Conf, "db-host", NULL);
-	char *database = conf_get(&Conf, "database", NULL);
-	char *password = conf_get(&Conf, "db-password", NULL);
+void meter(unsigned long current, unsigned long total) {
+  static char *m = NULL;
+  int num;
+  time_t now;
+  static time_t last_update = 0;
 
-	/* If db- vars aren't present, try mysql- for backwards compatibility */
-	if (!user) user = conf_get(&Conf, "mysql-user", NULL);
-	if (!host) host = conf_get(&Conf, "mysql-host", NULL);
-	if (!password) password = conf_get(&Conf, "mysql-password", NULL);
-	if (!password) password = conf_get(&Conf, "mysql-pass", NULL);
+  if (!isatty(STDERR_FILENO))
+    return;
 
-	sql_open(user, password, host, database);
-	Verbose(_("connected to %s, database \"%s\""), host, database);
+  if (!m) m = ALLOCATE(80, char[]);
+
+  if (!total || current > total) {						/* Erase meter */
+    memset(m, ' ', 73);
+    m[72] = '\r';
+    fwrite(m, 73, 1, stderr);
+    fflush(stderr);
+    last_update = 0;
+    return;
+  }
+
+  if (current % 5)
+    return;
+
+  time(&now);
+  if (now == last_update)
+    return;
+  last_update = now;
+
+  /* Create meter */
+  memset(m, '.', 63);
+  m[0] = m[60] = '|';
+  m[5] = m[10] = m[15] = m[20] = m[25] = m[30] = m[35] = m[40] = m[45] = m[50] = m[55] = ':';
+  m[61] = '\r';
+  m[62] = '\0';
+
+  num = ((double)((double)current / (double)total) * 58.0) + 1;
+  memset(m + 1, '#', num < 0 || num > 58 ? 58 : num);
+  fprintf(stderr, "  %6.2f%% %s\r", PCT(total,current), m);
+  fflush(stderr);
 }
-/*--- db_connect() ------------------------------------------------------------------------------*/
+/*--- meter() -----------------------------------------------------------------------------------*/
 
 /* vi:set ts=3: */
 /* NEED_PO */

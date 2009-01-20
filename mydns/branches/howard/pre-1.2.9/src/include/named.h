@@ -133,9 +133,39 @@ extern void		*array_remove(ARRAY *);
 #define array_store(A,I,O)	((A)->objects[(I)] = (O))
 #define array_max(A)		((A)->maxidx)
 #define array_numobjects(A)	(array_max((A))+1)
+
 /* axfr.c */
 extern void		axfr(TASK *);
 extern void		axfr_fork(TASK *);
+
+/* lib/check.c */
+extern char *__mydns_expand_data(char *s, char *origin);
+extern void __mydns_rrproblem(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+			      const char *fmt, ...) __printflike(5,6);
+extern void __mydns_check_name_extended(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+					const char *name_in, size_t namelen_in, const char *fqdn, const char *col);
+extern void __mydns_check_name(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+			       const char *name_in, size_t namelen_in, const char *col, int is_rr, int allow_underscore);
+extern void __mydns_check_rr_a(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+			       const char *a_in, size_t alen_in);
+extern void __mydns_check_rr_aaaa(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+				  const char *aaaa_in, size_t aaaalen_in);
+extern void __mydns_check_rr_cname(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+				   const char *cname_in, size_t cnamelen_in);
+extern void __mydns_check_rr_hinfo(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+				   const char *hinfo_in, size_t hinfolen_in);
+extern void __mydns_check_rr_mx(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+				const char *mx_in, size_t mxlen_in);
+extern void __mydns_check_rr_naptr(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+				   const char *naptr_in, size_t naptrlen_int);
+extern void __mydns_check_rr_ns(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+				const char *ns_in, size_t nslen_in);
+extern void __mydns_check_rr_rp(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+				const char *rp_in, size_t rplen_in);
+extern void __mydns_check_rr_txt(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+				 const char *txt_in, size_t txtlen_in);
+extern void __mydns_check_rr_unknown(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+				     const char *unknown_in, size_t unknownlen_in);
 
 /* conf.c */
 extern void		load_config(void);
@@ -356,6 +386,7 @@ extern taskexec_t	write_udp_reply(TASK *);
 extern void		udp_start();
 
 /* lib/update.c */
+extern char *mydns_name_2_shortname(char *name, char *origin, int empty_name_is_ok);
 extern taskexec_t __mydns_update_get_rr_data_unknown_type(TASK *t,
 							  UQRR *rr,
 							  char **data,

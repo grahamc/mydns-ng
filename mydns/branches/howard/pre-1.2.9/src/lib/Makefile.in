@@ -56,11 +56,11 @@ AR = ar
 ARFLAGS = cru
 libmydns_a_AR = $(AR) $(ARFLAGS)
 libmydns_a_LIBADD =
-am_libmydns_a_OBJECTS = conf.$(OBJEXT) db.$(OBJEXT) encode.$(OBJEXT) \
-	error.$(OBJEXT) import.$(OBJEXT) ip.$(OBJEXT) reply.$(OBJEXT) \
-	rr.$(OBJEXT) rr_type.$(OBJEXT) soa.$(OBJEXT) sql.$(OBJEXT) \
-	str.$(OBJEXT) task.$(OBJEXT) unencode.$(OBJEXT) \
-	update.$(OBJEXT)
+am_libmydns_a_OBJECTS = conf.$(OBJEXT) check.$(OBJEXT) db.$(OBJEXT) \
+	encode.$(OBJEXT) error.$(OBJEXT) import.$(OBJEXT) ip.$(OBJEXT) \
+	reply.$(OBJEXT) rr.$(OBJEXT) rr_type.$(OBJEXT) soa.$(OBJEXT) \
+	sql.$(OBJEXT) str.$(OBJEXT) task.$(OBJEXT) unencode.$(OBJEXT) \
+	update.$(OBJEXT) util.$(OBJEXT)
 libmydns_a_OBJECTS = $(am_libmydns_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -231,9 +231,9 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LIBRARIES = libmydns.a
 INCLUDES = @MYDNSINCLUDE@ @INTLINCLUDE@ @UTILINCLUDE@ @SQLINCLUDE@
-libmydns_a_SOURCES = conf.c db.c encode.c error.c import.c ip.c \
+libmydns_a_SOURCES = conf.c check.c db.c encode.c error.c import.c ip.c \
 				reply.c rr.c rr_type.c \
-				soa.c sql.c str.c task.c unencode.c update.c
+				soa.c sql.c str.c task.c unencode.c update.c util.c
 
 all: all-am
 
@@ -282,6 +282,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/conf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/db.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/encode.Po@am__quote@
@@ -297,6 +298,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/task.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unencode.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/update.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/util.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

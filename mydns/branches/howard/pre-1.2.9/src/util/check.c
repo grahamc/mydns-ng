@@ -20,6 +20,7 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **********************************************************************************************/
 
+#include "named.h"
 #include "util.h"
 
 MYDNS_SOA	*soa;					/* Current SOA record being scanned */
@@ -29,32 +30,8 @@ char		*data = NULL;				/* Current expanded data */
 int		opt_consistency = 0;			/* Consistency check? */
 int		opt_consistency_only = 0;		/* Consistency check only? */
 
-#ifdef EXTENDED_CHECK_WRITTEN
-int		opt_extended_check = 0;			/* Extended check? */
-#endif
 
 int		syntax_errors, consistency_errors;	/* Number of errors found */
-
-static char *
-__EXPAND_DATA(char *s) {
-  int slen = strlen(s);
-
-  if (*s) slen += 1;
-  slen += strlen(soa->origin);
-
-  s = REALLOCATE(s, slen + 1, char[]);
-  if (*s) strcat(s, ".");
-  strcat(s, soa->origin);
-
-  return s;
-}
-
-#define EXPAND_DATA(str) \
-			if (!(str)[0] || LASTCHAR((str)) != '.') \
-			{ \
-			  str=__EXPAND_DATA(str); \
-			}
-
 
 /**********************************************************************************************
 	USAGE
@@ -192,164 +169,6 @@ cmdline(int argc, char **argv) {
 /*--- cmdline() -----------------------------------------------------------------------------*/
 
 
-/**********************************************************************************************
-	RRPROBLEM
-	Output a string describing a problem found.
-**********************************************************************************************/
-static void rrproblem(const char *fmt, ...) __printflike(1,2);
-static void
-rrproblem(const char *fmt, ...) {
-  va_list ap;
-
-  meter(0,0);
-
-  va_start(ap, fmt);
-  vprintf(fmt, ap);						/* 1. message */
-  va_end(ap);
-  printf("\t");
-
-  if (soa)							/* 2. soa id */
-    printf("%u\t", soa->id);
-  else
-    printf("-\t");
-
-  if (rr)							/* 3. rr id */
-    printf("%u\t", rr->id);
-  else
-    printf("-\t");
-
-  printf("%s\t", *name ? name : "-");				/* 4. name */
-
-  if (soa || rr)						/* 5. ttl */
-    printf("%u\t", rr ? rr->ttl : soa->ttl);
-  else
-    printf("-\t");
-
-  printf("%s\t", rr ? mydns_rr_get_type_by_id(rr->type)->rr_type_name : "-");		/* 6. rr type */
-  printf("%s\n", (data && *data) ? data : "-");			/* 7. data */
-
-  fflush(stdout);
-
-  syntax_errors++;
-}
-/*--- rrproblem() ---------------------------------------------------------------------------*/
-
-
-#ifdef EXTENDED_CHECK_WRITTEN
-/**********************************************************************************************
-	CHECK_NAME_EXTENDED
-**********************************************************************************************/
-static void
-check_name_extended(const char *name_in, const char *fqdn, const char *col) {
-  /* XXX: Add check to detect names that we should be authoritative for but
-     that do not have records */
-}
-/*--- check_name_extended() -----------------------------------------------------------------*/
-#endif
-
-
-/**********************************************************************************************
-	SHORTNAME
-	Removes the origin from a name if it is present.
-	If empty_name_is_ok is nonzero, then return "" if the empty string matches the origin.
-**********************************************************************************************/
-static char *
-shortname(char *name_to_shorten, int empty_name_is_ok) {
-  size_t nlen = strlen(name_to_shorten), olen = strlen(soa->origin);
-
-  if (nlen < olen) 
-    return (name_to_shorten);
-  if (!strcasecmp(soa->origin, name_to_shorten)) {
-    if (empty_name_is_ok) 
-      return ("");
-    else 
-      return (name_to_shorten);
-  }
-  if (!strcasecmp(name_to_shorten + nlen - olen, soa->origin))
-    name[nlen - olen - 1] = '\0';
-  return (name_to_shorten);
-}
-/*--- shortname() ---------------------------------------------------------------------------*/
-
-
-/**********************************************************************************************
-	CHECK_NAME
-	Verifies that "name" is a valid name.
-**********************************************************************************************/
-static void
-check_name(const char *name_in, const char *col, int is_rr, int allow_underscore) {
-  char		*buf, *b, *label;
-  char		*fqdn;
-  int		fqdnlen;
-  int		buflen;
-  
-  fqdnlen = strlen(name_in);
-  if (is_rr && *name_in && LASTCHAR(name_in) != '.') fqdnlen += strlen(soa->origin) + 1;
-
-  fqdn = ALLOCATE(fqdnlen + 1, char[]);
-  memset(fqdn, 0, fqdnlen + 1);
-
-  strncpy(fqdn, name_in, fqdnlen);
-
-  /* If last character isn't '.', append the origin */
-  if (is_rr && *fqdn && LASTCHAR(fqdn) != '.') {
-    strcat(fqdn, ".");
-    strcat(fqdn, soa->origin);
-  }
-
-  if (!strlen(fqdn))
-    return rrproblem(_("FQDN in `%s' is empty"), col);
-
-  if (strlen(fqdn) > DNS_MAXNAMELEN)
-    return rrproblem(_("FQDN in `%s' is too long"), col);
-
-  /* Break into labels, verifying each */
-  if (strcmp(fqdn, ".")) {
-    buf = STRDUP(fqdn);
-    for (b = buf; (label = strsep(&b, ".")); ) {
-      register int len = strlen(label);
-      register char *cp;
-
-      if (!b) {		/* Last label - should be the empty string */
-	if (strlen(label))
-	  rrproblem(_("Last label in `%s' not the root zone"), col);
-	break;
-      }
-      if (strcmp(label, "*")) {
-	if (len > DNS_MAXLABELLEN)
-	  rrproblem(_("Label in `%s' is too long"), col);
-	if (len < 1)
-	  rrproblem(_("Blank label in `%s'"), col);
-	for (cp = label; *cp; cp++) {
-	  if (*cp == '-' && cp == label)
-	    rrproblem(_("Label in `%s' begins with a hyphen"), col);
-	  if (*cp == '-' && ((cp - label) == len-1))
-	    rrproblem(_("Label in `%s' ends with a hyphen"), col);
-	  if (!isalnum((int)(*cp)) && *cp != '-') {
-	    if (is_rr && *cp == '*')
-	      rrproblem(_("Wildcard character `%c' in `%s' not alone"), *cp, col);
-	    else if (*cp == '_' && allow_underscore)
-	      ;
-	    else
-	      rrproblem(_("Label in `%s' contains illegal character `%c'"), col, *cp);
-	  }
-	}
-      } else if (!is_rr)
-	rrproblem(_("Wildcard not allowed in `%s'"), col);
-    }
-    RELEASE(buf);
-  }
-
-#ifdef EXTENDED_CHECK_WRITTEN
-  /* If extended check, do extended check */
-  if (is_rr && opt_extended_check)
-    check_name_extended(name_in, fqdn, col);
-#endif
-  RELEASE(fqdn);
-}
-/*--- check_name() ------------------------------------------------------------------------------*/
-
-
 /**************************************************************************************************
 	CHECK_SOA
 	Perform SOA check for this zone and return the SOA record.
@@ -368,113 +187,22 @@ check_soa(const char *zone) {
   /* SOA validation */
   name = REALLOCATE(name, strlen(soa->origin) + 1, char[]);
   strcpy(name, soa->origin);
-  check_name(soa->ns, "soa.ns", 0, 0);
-  check_name(soa->mbox, "soa.mbox", 0, 0);
+  __mydns_check_name(soa, rr, name, data, soa->ns, strlen(soa->ns), "soa.ns", 0, 0);
+  __mydns_check_name(soa, rr, name, data, soa->mbox, strlen(soa->mbox), "soa.mbox", 0, 0);
 
   if (LASTCHAR(name) != '.')
-    rrproblem(_("soa.origin is not a FQDN (no trailing dot)"));
+    __mydns_rrproblem(soa, rr, name, data, _("soa.origin is not a FQDN (no trailing dot)"));
 
-  if (soa->refresh < 300) rrproblem(_("soa.refresh is less than 300 seconds"));
-  if (soa->retry < 300) rrproblem(_("soa.retry is less than 300 seconds"));
-  if (soa->expire < 300) rrproblem(_("soa.expire is less than 300 seconds"));
-  if (soa->minimum < 300) rrproblem(_("soa.minimum is less than 300 seconds"));
-  if (soa->ttl < 300) rrproblem(_("soa.ttl is less than 300 seconds"));
-  if (soa->minimum < 300) rrproblem(_("soa.minimum is less than 300 seconds"));
+  if (soa->refresh < 300) __mydns_rrproblem(soa, rr, name, data, _("soa.refresh is less than 300 seconds"));
+  if (soa->retry < 300) __mydns_rrproblem(soa, rr, name, data, _("soa.retry is less than 300 seconds"));
+  if (soa->expire < 300) __mydns_rrproblem(soa, rr, name, data, _("soa.expire is less than 300 seconds"));
+  if (soa->minimum < 300) __mydns_rrproblem(soa, rr, name, data, _("soa.minimum is less than 300 seconds"));
+  if (soa->ttl < 300) __mydns_rrproblem(soa, rr, name, data, _("soa.ttl is less than 300 seconds"));
+  if (soa->minimum < 300) __mydns_rrproblem(soa, rr, name, data, _("soa.minimum is less than 300 seconds"));
 
   return (soa);
 }
 /*--- check_soa() -------------------------------------------------------------------------------*/
-
-
-/**************************************************************************************************
-	CHECK_RR_CNAME
-	Expanded check for CNAME resource record.
-**************************************************************************************************/
-static void
-check_rr_cname(void) {
-  char *xname;
-  int found = 0;
-
-  EXPAND_DATA(data);
-  check_name(data, "rr.data", 1, 0);
-
-  /* A CNAME record can't have any other type of RR data for the same name */
-  xname = sql_escstr(sql, (char *)name);
-  found = sql_count(sql,
-		    "SELECT COUNT(*) FROM %s WHERE zone=%u AND name='%s' AND type != 'CNAME' AND type != 'ALIAS'",
-		    mydns_rr_table_name, rr->zone, xname);
-  RELEASE(xname);
-  /* If not found that way, check short name */
-  if (!found) {
-    xname = sql_escstr(sql, (char *)shortname(name, 1));
-    found = sql_count(sql,
-		      "SELECT COUNT(*) FROM %s WHERE zone=%u AND name='%s' AND type != 'CNAME' AND type != 'ALIAS'",
-		      mydns_rr_table_name, rr->zone, xname);
-    RELEASE(xname);
-    EXPAND_DATA(name);
-  }
-
-  if (found)
-    rrproblem(_("non-CNAME record(s) present alongside CNAME"));
-}
-/*--- check_rr_cname() --------------------------------------------------------------------------*/
-
-
-/**************************************************************************************************
-	CHECK_RR_HINFO
-	Expanded check for HINFO resource record.
-**************************************************************************************************/
-static void
-check_rr_hinfo(void) {
-  char	os[DNS_MAXNAMELEN + 1] = "", cpu[DNS_MAXNAMELEN + 1] = "";
-
-  if (hinfo_parse(MYDNS_RR_DATA_VALUE(rr), cpu, os, DNS_MAXNAMELEN) < 0)
-    rrproblem(_("data too long in HINFO record"));
-}
-/*--- check_rr_hinfo() --------------------------------------------------------------------------*/
-
-
-/**************************************************************************************************
-	CHECK_RR_NAPTR
-	Expanded check for NAPTR resource record.
-**************************************************************************************************/
-static void
-check_rr_naptr(void) {
-  char *tmp, *data_copy, *p;
-
-  data_copy = STRNDUP(MYDNS_RR_DATA(rr), MYDNS_RR_DATA_LENGTH(rr));
-  p = data_copy;
-
-  if (!strsep_quotes2(&p, &tmp))
-    return rrproblem(_("'order' field missing from NAPTR record"));
-  RELEASE(tmp);
-
-  if (!strsep_quotes2(&p, &tmp))
-    return rrproblem(_("'preference' field missing from NAPTR record"));
-  RELEASE(tmp);
-
-  if (!strsep_quotes2(&p, &tmp))
-    return rrproblem(_("'flags' field missing from NAPTR record"));
-  RELEASE(tmp);
-
-  if (!strsep_quotes2(&p, &tmp))
-    return rrproblem(_("'service' field missing from NAPTR record"));
-  RELEASE(tmp);
-
-  if (!strsep_quotes2(&p, &tmp))
-    return rrproblem(_("'regexp' field missing from NAPTR record"));
-  RELEASE(tmp);
-
-  if (!strsep_quotes2(&p, &tmp))
-    return rrproblem(_("'replacement' field missing from NAPTR record"));
-  RELEASE(tmp);
-
-  /* For now, don't check 'replacement'.. the example in the RFC even contains illegal chars */
-  /* EXPAND_DATA(tmp); */
-  /* check_name(tmp, "replacement", 1, 0); */
-  RELEASE(data_copy);
-}
-/*--- check_rr_naptr() --------------------------------------------------------------------------*/
 
 
 /**************************************************************************************************
@@ -485,119 +213,23 @@ static void
 check_rr(void) {
   /* Expand RR's name into `name' */
   int	namelen = strlen(MYDNS_RR_NAME(rr));
+  dns_qtype_map *map;
 
   name = REALLOCATE(name, namelen+1, char[]);
   memset(name, 0, namelen+1);
   data = REALLOCATE(data, MYDNS_RR_DATA_LENGTH(rr)+1, char[]);
   memset(data, 0, MYDNS_RR_DATA_LENGTH(rr)+1);
   strncpy(name, MYDNS_RR_NAME(rr), namelen);
-  strncpy(data, MYDNS_RR_DATA_VALUE(rr), MYDNS_RR_DATA_LENGTH(rr));
-  EXPAND_DATA(name);
-  switch (rr->type) {
-  case DNS_QTYPE_TXT:
-  case DNS_QTYPE_SRV:
-    check_name(name, "rr.name", 1, 1);
-    break;
-  default:
-    check_name(name, "rr.name", 1, 0);
-  }
+  memcpy(data, MYDNS_RR_DATA_VALUE(rr), MYDNS_RR_DATA_LENGTH(rr));
+  name = __mydns_expand_data(name, soa->origin);
+
+  map = mydns_rr_get_type_by_id(rr->type);
 
   if (!ignore_minimum && (rr->ttl < soa->minimum))
-    rrproblem(_("TTL below zone minimum"));
+    __mydns_rrproblem(soa, rr, name, data, _("TTL below zone minimum"));
 
-  switch (rr->type) {
-  case DNS_QTYPE_A:							/* Data: IPv4 address */
-    {
-      struct in_addr addr;
-#if ALIAS_ENABLED
-      if (rr->alias == 1)
-	check_rr_cname();
-      else {
-#endif /* ALIAS_ENABLED */
-	if (inet_pton(AF_INET, data, (void *)&addr) <= 0)
-	  rrproblem(_("IPv4 address in `data' is invalid"));
-#if ALIAS_ENABLED
-      }
-#endif /* ALIAS_ENABLED */
-    }
-    break;
+  map->rr_check_rr(soa, rr, name, data, data, MYDNS_RR_DATA_LENGTH(rr));
 
-  case DNS_QTYPE_AAAA:							/* Data: IPv6 address */
-    {
-      uint8_t addr[16];
-      if (inet_pton(AF_INET6, data, (void *)&addr) <= 0)
-	rrproblem(_("IPv6 address in `data' is invalid"));
-    }
-    break;
-
-  case DNS_QTYPE_CNAME:							/* Data: Name */
-    check_rr_cname();
-    break;
-
-  case DNS_QTYPE_HINFO:							/* Data: Host info */
-    check_rr_hinfo();
-    break;
-
-  case DNS_QTYPE_MX:							/* Data: Name */
-    EXPAND_DATA(data);
-    check_name(data, "rr.data", 1, 0);
-    break;
-
-  case DNS_QTYPE_NAPTR:							/* Data: Multiple fields */
-    check_rr_naptr();
-    break;
-
-  case DNS_QTYPE_NS:							/* Data: Name */
-    EXPAND_DATA(data);
-    check_name(data, "rr.data", 1, 0);
-    break;
-
-  case DNS_QTYPE_PTR:							/* Data: PTR */
-    /* TODO */
-    break;
-
-  case DNS_QTYPE_RP:							/* Data: Responsible person */
-    {
-      char	*txt;
-
-      txt = ALLOCATE(strlen(MYDNS_RR_RP_TXT(rr)) + 1, char[]);
-      strcpy(txt, MYDNS_RR_RP_TXT(rr));
-      EXPAND_DATA(txt);
-      check_name(data, "rr.data (mbox)", 1,0 );
-      check_name(txt, "rr.data (txt)", 1, 0);
-      RELEASE(txt);
-    }
-    break;
-
-  case DNS_QTYPE_SRV:							/* Data: Server location */
-    /* TODO */
-    break;
-
-  case DNS_QTYPE_TXT:							/* Data: Undefined text string */
-    /*
-     * Data length must be less than DNS_MAXTXTLEN
-     * and each element must be less than DNS_MAXTXTELEMLEN
-     */
-    if (MYDNS_RR_DATA_LENGTH(rr) > DNS_MAXTXTLEN)
-      rrproblem(_("Text record length is too great"));
-    {
-      char	*txt = MYDNS_RR_DATA_VALUE(rr);
-      uint16_t	txtlen = MYDNS_RR_DATA_LENGTH(rr);
-
-      while (txtlen > 0) {
-	uint16_t len = strlen(txt);
-	if (len > DNS_MAXTXTELEMLEN)
-	  rrproblem(_("Text element in TXT record is too long"));
-	txt = &txt[len];
-	txtlen -= len;
-      }
-    }
-    break;
-
-  default:
-    rrproblem(_("Unknown/unsupported resource record type"));
-    break;
-  }
 }
 /*--- check_rr() --------------------------------------------------------------------------------*/
 

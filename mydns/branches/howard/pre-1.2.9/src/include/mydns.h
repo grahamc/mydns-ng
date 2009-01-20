@@ -367,6 +367,7 @@ typedef size_t (*rr_size_t)(/* MYDNS_RR * */);
 typedef int (*rr_reply_add_t)(/* TASK *t, RR *r, dns_qtype_map *map */);
 typedef taskexec_t (*rr_get_rr_data_t)();
 typedef char *(*rr_process_axfr_t)();
+typedef void (*rr_check_rr_t)();
 
 typedef struct {
   char 			*rr_type_name;
@@ -379,6 +380,7 @@ typedef struct {
   rr_reply_add_t	rr_reply_add;
   rr_get_rr_data_t	rr_get_rr_data;
   rr_process_axfr_t	rr_process_axfr;
+  rr_check_rr_t		rr_check_rr;
   int			rr_update_supported;
   int			rr_match_aux;
   const char		*rr_whereclause;

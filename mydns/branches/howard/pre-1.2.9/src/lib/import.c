@@ -218,11 +218,10 @@ import_rr(char *name, char *type, char *data, int datalen, unsigned aux, unsigne
 /*--- import_rr() -------------------------------------------------------------------------------*/
 
 /**************************************************************************************************
-	SHORTNAME
+	MYDNS_NAME_2_SHORTNAME
 	Removes the origin from a name if it is present.
 **************************************************************************************************/
-static char *
-shortname(char *name, char *origin, int empty_name_is_ok) {
+char *mydns_name_2_shortname(char *name, char *origin, int empty_name_is_ok) {
   size_t nlen = strlen(name), olen = strlen(origin);
 
   if (opt_notrim)
@@ -239,7 +238,7 @@ shortname(char *name, char *origin, int empty_name_is_ok) {
     name[nlen - olen - 1] = '\0';
   return (name);
 }
-/*--- shortname() -------------------------------------------------------------------------------*/
+/*--- mydns_name_2_shortname() -----------------------------------------------------------------*/
 
 
 char *__mydns_process_axfr_soa(char *rv, char *name, char *origin,
@@ -278,7 +277,7 @@ char *__mydns_process_axfr_a(char *rv, char *name, char *origin,
   struct in_addr addr;
   memcpy(&addr.s_addr, src, SIZE32);
   data = (char*)ipaddr(AF_INET, &addr);
-  import_rr(shortname(name, origin, 1), "A", data, strlen(data), 0, ttl);
+  import_rr(mydns_name_2_shortname(name, origin, 1), "A", data, strlen(data), 0, ttl);
   return rv;
 
 }
@@ -293,7 +292,7 @@ char *__mydns_process_axfr_aaaa(char *rv, char *name, char *origin,
 
   memcpy(&addr, src, sizeof(addr));
   if ((data = (char*)ipaddr(AF_INET6, &addr))) {
-    import_rr(shortname(name, origin, 1), "AAAA", data, strlen(data), 0, ttl);
+    import_rr(mydns_name_2_shortname(name, origin, 1), "AAAA", data, strlen(data), 0, ttl);
   } else {
     Notice("%s IN AAAA: %s", name, strerror(errno));
   }
@@ -307,7 +306,9 @@ char *__mydns_process_axfr_cname(char *rv, char *name, char *origin,
   task_error_t errcode;
   if (!(data = name_unencode(reply, replylen, &src, &errcode)))
     Errx("%s CNAME: %s: %s", name, _("error reading data"), data);
-  import_rr(shortname(name, origin, 1), "CNAME", shortname(data, origin, 0), strlen(shortname(data, origin, 0)), 0, ttl);
+  import_rr(mydns_name_2_shortname(name, origin, 1), "CNAME",
+	    mydns_name_2_shortname(data, origin, 0),
+	    strlen(mydns_name_2_shortname(data, origin, 0)), 0, ttl);
   RELEASE(data);
   return rv;
 }
@@ -344,7 +345,7 @@ char *__mydns_process_axfr_hinfo(char *rv, char *name, char *origin,
 	   quote2 ? "\"" : "", data2, quote2 ? "\"" : "");
   RELEASE(data);
   RELEASE(data2);
-  import_rr(shortname(name, origin, 1), "HINFO", insdata, strlen(insdata), 0, ttl);
+  import_rr(mydns_name_2_shortname(name, origin, 1), "HINFO", insdata, strlen(insdata), 0, ttl);
   RELEASE(insdata);
   return rv;
 }
@@ -358,7 +359,9 @@ char *__mydns_process_axfr_mx(char *rv, char *name, char *origin,
   DNS_GET16(pref, src);
   if (!(data = name_unencode(reply, replylen, &src, &errcode)))
     Errx("%s MX: %s: %s", name, _("error reading data"), data);
-  import_rr(shortname(name, origin, 1), "MX", shortname(data, origin, 0), strlen(shortname(data, origin, 0)), pref, ttl);
+  import_rr(mydns_name_2_shortname(name, origin, 1), "MX",
+	    mydns_name_2_shortname(data, origin, 0),
+	    strlen(mydns_name_2_shortname(data, origin, 0)), pref, ttl);
   RELEASE(data);
   return rv;
 }
@@ -370,7 +373,9 @@ char *__mydns_process_axfr_ns(char *rv, char *name, char *origin,
   task_error_t errcode;
   if (!(data = name_unencode(reply, replylen, &src, &errcode)))
     Errx("%s NS: %s: %s", name, _("error reading data"), data);
-  import_rr(shortname(name, origin, 1), "NS", shortname(data, origin, 0), strlen(shortname(data, origin, 0)), 0, ttl);
+  import_rr(mydns_name_2_shortname(name, origin, 1), "NS",
+	    mydns_name_2_shortname(data, origin, 0),
+	    strlen(mydns_name_2_shortname(data, origin, 0)), 0, ttl);
   RELEASE(data);
   return rv;
 }
@@ -384,7 +389,9 @@ char *__mydns_process_axfr_ptr(char *rv, char *name, char *origin,
   addr.s_addr = mydns_revstr_ip4(name);
   if (!(data = name_unencode(reply, replylen, &src, &errcode)))
     Errx("%s PTR: %s: %s", name, _("error reading data"), data);
-  import_rr(shortname(name, origin, 1), "PTR", shortname(data, origin, 0), strlen(shortname(data, origin, 0)), 0, ttl);
+  import_rr(mydns_name_2_shortname(name, origin, 1), "PTR",
+	    mydns_name_2_shortname(data, origin, 0),
+	    strlen(mydns_name_2_shortname(data, origin, 0)), 0, ttl);
   RELEASE(data);
   return rv;
 }
@@ -406,10 +413,10 @@ char *__mydns_process_axfr_rp(char *rv, char *name, char *origin,
     Errx("%s RP: %s: %s", name, _("error reading txt"), txtref);
       
   /* Construct data to insert */
-  ASPRINTF(&insdata, "%s %s", shortname(data, origin, 0), shortname(txtref, origin, 0));
+  ASPRINTF(&insdata, "%s %s", mydns_name_2_shortname(data, origin, 0), mydns_name_2_shortname(txtref, origin, 0));
   RELEASE(data);
   RELEASE(txtref);
-  import_rr(shortname(name, origin, 1), "RP", insdata, strlen(insdata), 0, ttl);
+  import_rr(mydns_name_2_shortname(name, origin, 1), "RP", insdata, strlen(insdata), 0, ttl);
   RELEASE(insdata);
   return rv;
 }
@@ -427,9 +434,9 @@ char *__mydns_process_axfr_srv(char *rv, char *name, char *origin,
   DNS_GET16(port, src);
   if (!(data = name_unencode(reply, replylen, &src, &errcode)))
     Errx("%s SRV: %s: %s", name, _("error reading data"), data);
-  ASPRINTF(&databuf, "%u %u %s", weight, port, shortname(data, origin, 0));
+  ASPRINTF(&databuf, "%u %u %s", weight, port, mydns_name_2_shortname(data, origin, 0));
   RELEASE(data);
-  import_rr(shortname(name, origin, 1), "SRV", databuf, strlen(databuf), priority, ttl);
+  import_rr(mydns_name_2_shortname(name, origin, 1), "SRV", databuf, strlen(databuf), priority, ttl);
   RELEASE(databuf);
   return rv;
 }
@@ -444,7 +451,7 @@ char *__mydns_process_axfr_txt(char *rv, char *name, char *origin,
   memcpy(data, src, len);
   data[len] = '\0';
   src += len;
-  import_rr(shortname(name, origin, 1), "TXT", data, len, 0, ttl);
+  import_rr(mydns_name_2_shortname(name, origin, 1), "TXT", data, len, 0, ttl);
   RELEASE(data);
   return rv;
 }
