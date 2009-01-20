@@ -23,6 +23,25 @@
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_LIB_TASK	1
 
+uint8_t		*taskvec = NULL;
+uint16_t	internal_id = 0;
+uint32_t 	answer_then_quit = 0;		/* Answer this many queries then quit */
+
+QUEUE 		*TaskArray[PERIODIC_TASK+1][LOW_PRIORITY_TASK+1];
+
+TASK *task_find_by_id(TASK *t, QUEUE *TaskQ, unsigned long id) {
+  TASK	*ThisT = NULL;
+
+  for (ThisT = TaskQ->head; ThisT ; ThisT = ThisT->next) {
+    if (ThisT->internal_id == id) return ThisT;
+  }
+#if DEBUG_ENABLED && DEBUG_LIB_TASK
+  DebugX("task", 1, _("%s: task_find_by_id(%s, %ld) cannot find task on queue"),
+	 desctask(t), TaskQ->queuename, id);
+#endif
+  return NULL;
+}
+
 char * task_exec_name(taskexec_t rv) {
   switch(rv) {
 
@@ -160,6 +179,234 @@ char * desctask(TASK *t) {
   return (desc);
 }
 /*--- desctask() --------------------------------------------------------------------------------*/
+
+
+/**************************************************************************************************
+	_TASK_FREE
+	Free the memory used by a task.
+**************************************************************************************************/
+void
+_task_free(TASK *t, const char *file, int line) {
+
+  if (!t) return;
+
+#if DEBUG_ENABLED && DEBUG_TASK
+  DebugX("task", 1, _("%s: Freeing task at %s:%d"), desctask(t), file, line);
+#endif
+
+  if (t->protocol == SOCK_STREAM && t->fd >= 0) {
+    close(t->fd);
+  }
+
+  if (t->extension && t->freeextension) {
+    t->freeextension(t, t->extension);
+  }
+	
+  RELEASE(t->extension);
+	  
+#if DYNAMIC_NAMES
+  {
+    register int n;
+    for (n = 0; n < t->numNames; n++)
+      RELEASE(t->Names[n]);
+    if (t->numNames)
+      RELEASE(t->Names);
+    RELEASE(t->Offsets);
+  }
+#endif
+
+  RELEASE(t->query);
+  RELEASE(t->qd);
+  rrlist_free(&t->an);
+  rrlist_free(&t->ns);
+  rrlist_free(&t->ar);
+  RELEASE(t->rdata);
+  RELEASE(t->reply);
+
+  TASKVEC_CLR(t->id, taskvec);
+
+  RELEASE(t);
+
+  if (answer_then_quit && (Status.udp_requests + Status.tcp_requests) >= answer_then_quit)
+    named_cleanup(SIGQUIT);
+}
+/*--- _task_free() ------------------------------------------------------------------------------*/
+
+void
+task_add_extension(TASK *t, void *extension, FreeExtension freeextension, RunExtension runextension,
+		   TimeExtension timeextension)
+{
+  if (t->extension && t->freeextension) {
+    t->freeextension(t, t->extension);
+  }
+  RELEASE(t->extension);
+
+  t->extension = extension;
+  t->freeextension = freeextension;
+  t->runextension = runextension;
+  t->timeextension = timeextension;
+}
+
+void
+task_remove_extension(TASK *t) {
+  if (t->extension && t->freeextension) {
+    t->freeextension(t, t->extension);
+  }
+  RELEASE(t->extension);
+  t->extension = NULL;
+  t->freeextension = NULL;
+  t->runextension = NULL;
+  t->timeextension = NULL;
+  return;
+}
+
+/**************************************************************************************************
+	_TASK_INIT
+	Allocates and initializes a new task, and returns a pointer to it.
+	t = task_init(taskpriority, NEED_ZONE, fd, SOCK_DGRAM, AF_INET, &addr);
+**************************************************************************************************/
+TASK *
+_task_init(
+	   tasktype_t		type,			/* Type of task to create */
+	   taskpriority_t	priority,		/* Priority of queue to use */
+	   taskstat_t		status,			/* Initial status */
+	   int 			fd,			/* Associated file descriptor for socket */
+	   int			protocol,		/* Protocol (SOCK_DGRAM or SOCK_STREAM) */
+	   int 			family,			/* Protocol (SOCK_DGRAM or SOCK_STREAM) */
+	   void 		*addr,			/* Remote address */
+	   const char		*file,
+	   int			line
+) {
+  TASK				*new = NULL;
+  QUEUE				**TaskQ = NULL;
+  uint16_t			id = 0;
+
+  if (!taskvec) {
+    taskvec = (uint8_t*)ALLOCATE(TASKVECSZ, uint8_t[]);
+    TASKVEC_ZERO(taskvec);
+  }
+
+  new = ALLOCATE(sizeof(TASK), TASK);
+
+  new->status = status;
+  new->fd = fd;
+  new->protocol = protocol;
+  new->family = family;
+  if (addr) {
+    if (family == AF_INET) {
+      memcpy(&new->addr4, addr, sizeof(struct sockaddr_in));
+#if HAVE_IPV6
+    } else if (family == AF_INET6) {
+      memcpy(&new->addr6, addr, sizeof(struct sockaddr_in6));
+#endif
+    }
+  }
+  new->type = type;
+  new->priority = priority;
+  while(TASKVEC_ISSET(id = internal_id++, taskvec)) continue;
+  TASKVEC_SET(id, taskvec);
+  new->internal_id = id;
+  new->timeout = current_time + task_timeout;
+  new->minimum_ttl = DNS_MINIMUM_TTL;
+  new->reply_cache_ok = 1;
+
+  new->extension = NULL;
+  new->freeextension = NULL;
+  new->runextension = NULL;
+  new->timeextension = NULL;
+
+  TaskQ = &(TaskArray[type][priority]);
+
+  if (enqueue(TaskQ, new) < 0) {
+    task_free(new);
+    return (NULL);
+  }
+
+  return (new);
+}
+/*--- _task_init() -------------------------------------------------------------------------------*/
+
+void
+_task_change_type(TASK *t, tasktype_t type, taskpriority_t priority) {
+  requeue(&TaskArray[type][priority], t);
+  t->type = type;
+  t->priority = priority;
+}
+
+/**************************************************************************************************
+	TASK_OUTPUT_INFO
+**************************************************************************************************/
+void
+task_output_info(TASK *t, char *update_desc) {
+#if !DISABLE_DATE_LOGGING
+  struct timeval tv = { 0, 0 };
+  time_t tt = 0;
+  struct tm *tm = NULL;
+  char datebuf[80]; /* This is magic and needs rethinking - string should be ~ 23 characters */
+#endif
+
+  /* If we've already outputted the info for this (i.e. multiple DNS UPDATE requests), ignore */
+  if (t->info_already_out)
+    return;
+
+  /* Don't output anything for TCP sockets in the process of closing */
+  if (t->protocol == SOCK_STREAM && t->fd < 0)
+    return;
+
+#if !DISABLE_DATE_LOGGING
+  gettimeofday(&tv, NULL);
+  tt = tv.tv_sec;
+  tm = localtime(&tt);
+
+  strftime(datebuf, sizeof(datebuf)-1, "%d-%b-%Y %H:%M:%S", tm);
+#endif
+
+  Verbose(
+#if !DISABLE_DATE_LOGGING
+	  "%s+%06lu "
+#endif
+	  "#%u "
+	  "%u "		/* Client-provided ID */
+	  "%s "		/* TCP or UDP? */
+	  "%s "		/* Client IP */
+	  "%s "		/* Class */
+	  "%s "		/* Query type (A, MX, etc) */
+	  "%s "		/* Name */
+	  "%s "		/* Return code (NOERROR, NXDOMAIN, etc) */
+	  "%s "		/* Reason */
+	  "%u "		/* Question section */
+	  "%u "		/* Answer section */
+	  "%u "		/* Authority section */
+	  "%u "		/* Additional section */
+	  "LOG "
+	  "%s "		/* Reply from cache? */
+	  "%s "		/* Opcode */
+	  "\"%s\""	/* UPDATE description (if any) */
+	  ,
+#if !DISABLE_DATE_LOGGING
+	  datebuf, tv.tv_usec,
+#endif
+	  t->internal_id,
+	  t->id,
+	  (t->protocol == SOCK_STREAM)?"TCP"
+	  :(t->protocol == SOCK_DGRAM)?"UDP"
+	  :"UNKNOWN",
+	  clientaddr(t),
+	  mydns_class_str(t->qclass),
+	  mydns_rr_get_type_by_id(t->qtype)->rr_type_name,
+	  t->qname,
+	  mydns_rcode_str(t->hdr.rcode),
+	  err_reason_str(t, t->reason),
+	  (unsigned int)t->qdcount,
+	  (unsigned int)t->an.size,
+	  (unsigned int)t->ns.size,
+	  (unsigned int)t->ar.size,
+	  (t->reply_from_cache ? "Y" : "N"),
+	  mydns_opcode_str(t->hdr.opcode),
+	  update_desc ? update_desc : ""
+	  );
+}
+/*--- task_output_info() ------------------------------------------------------------------------*/
 
 
 /* vi:set ts=3: */

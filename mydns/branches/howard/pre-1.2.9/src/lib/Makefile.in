@@ -56,12 +56,15 @@ AR = ar
 ARFLAGS = cru
 libmydns_a_AR = $(AR) $(ARFLAGS)
 libmydns_a_LIBADD =
-am_libmydns_a_OBJECTS = conf.$(OBJEXT) check.$(OBJEXT) db.$(OBJEXT) \
-	encode.$(OBJEXT) error.$(OBJEXT) export.$(OBJEXT) \
-	import.$(OBJEXT) ip.$(OBJEXT) reply.$(OBJEXT) \
+am_libmydns_a_OBJECTS = alias.$(OBJEXT) array.$(OBJEXT) \
+	cache.$(OBJEXT) conf.$(OBJEXT) check.$(OBJEXT) data.$(OBJEXT) \
+	db.$(OBJEXT) encode.$(OBJEXT) error.$(OBJEXT) export.$(OBJEXT) \
+	import.$(OBJEXT) ip.$(OBJEXT) message.$(OBJEXT) \
+	queue.$(OBJEXT) recursive.$(OBJEXT) reply.$(OBJEXT) \
 	resolve.$(OBJEXT) rr.$(OBJEXT) rr_type.$(OBJEXT) soa.$(OBJEXT) \
-	sql.$(OBJEXT) str.$(OBJEXT) task.$(OBJEXT) unencode.$(OBJEXT) \
-	update.$(OBJEXT) util.$(OBJEXT)
+	sql.$(OBJEXT) status.$(OBJEXT) str.$(OBJEXT) support.$(OBJEXT) \
+	task.$(OBJEXT) unencode.$(OBJEXT) update.$(OBJEXT) \
+	util.$(OBJEXT)
 libmydns_a_OBJECTS = $(am_libmydns_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -232,10 +235,17 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LIBRARIES = libmydns.a
 INCLUDES = @MYDNSINCLUDE@ @INTLINCLUDE@ @UTILINCLUDE@ @SQLINCLUDE@
-libmydns_a_SOURCES = conf.c check.c db.c encode.c error.c export.c \
+libmydns_a_SOURCES = alias.c array.c \
+				cache.c conf.c check.c \
+				data.c db.c \
+				encode.c error.c export.c \
 				import.c ip.c \
-				reply.c resolve.c rr.c rr_type.c \
-				soa.c sql.c str.c task.c unencode.c update.c util.c
+				message.c \
+				queue.c \
+				recursive.c reply.c resolve.c rr.c rr_type.c \
+				soa.c sql.c status.c str.c support.c \
+				task.c \
+				unencode.c update.c util.c
 
 all: all-am
 
@@ -284,21 +294,30 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alias.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/array.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cache.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/conf.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/db.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/encode.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/error.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/export.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/import.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ip.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/message.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/queue.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recursive.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reply.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/resolve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rr_type.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/soa.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sql.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/status.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/str.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/support.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/task.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unencode.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/update.Po@am__quote@

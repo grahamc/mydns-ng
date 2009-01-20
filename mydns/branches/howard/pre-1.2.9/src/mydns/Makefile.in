@@ -57,13 +57,10 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)"
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(sbin_PROGRAMS)
-am_mydns_OBJECTS = alias.$(OBJEXT) array.$(OBJEXT) axfr.$(OBJEXT) \
-	cache.$(OBJEXT) data.$(OBJEXT) db.$(OBJEXT) ixfr.$(OBJEXT) \
-	listen.$(OBJEXT) main.$(OBJEXT) message.$(OBJEXT) \
-	notify.$(OBJEXT) queue.$(OBJEXT) recursive.$(OBJEXT) \
-	reply.$(OBJEXT) rr.$(OBJEXT) servercomms.$(OBJEXT) \
-	sort.$(OBJEXT) status.$(OBJEXT) task.$(OBJEXT) tcp.$(OBJEXT) \
-	udp.$(OBJEXT) update.$(OBJEXT)
+am_mydns_OBJECTS = axfr.$(OBJEXT) db.$(OBJEXT) ixfr.$(OBJEXT) \
+	listen.$(OBJEXT) main.$(OBJEXT) notify.$(OBJEXT) \
+	reply.$(OBJEXT) servercomms.$(OBJEXT) sort.$(OBJEXT) \
+	task.$(OBJEXT) tcp.$(OBJEXT) udp.$(OBJEXT) update.$(OBJEXT)
 mydns_OBJECTS = $(am_mydns_OBJECTS)
 mydns_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -238,11 +235,16 @@ INCLUDES = @UTILINCLUDE@ @MYDNSINCLUDE@ @INTLINCLUDE@ @SQLINCLUDE@ @SSLINCLUDE@
 LDADD = @LIBMYDNS@ @LIBUTIL@ @LIBINTL@ @LIBSQL@ @LIBSSL@ @LIBSOCKET@ @LIBNSL@ @LIBM@
 mydns_DEPENDENCIES = @LIBMYDNS@ @LIBUTIL@
 noinst_HEADERS = 
-mydns_SOURCES = alias.c array.c axfr.c cache.c data.c db.c \
-				ixfr.c listen.c main.c message.c notify.c queue.c \
-				recursive.c \
-				reply.c rr.c servercomms.c sort.c status.c task.c \
-				tcp.c udp.c update.c
+mydns_SOURCES = axfr.c \
+				db.c \
+				ixfr.c \
+				listen.c \
+				main.c \
+				notify.c \
+				reply.c \
+				servercomms.c sort.c \
+				task.c tcp.c \
+				udp.c update.c
 
 CLEANFILES = malloc_trace gmon.out bb.out
 all: all-am
@@ -316,24 +318,15 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alias.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/array.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/axfr.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cache.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/db.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ixfr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/listen.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/message.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/notify.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/queue.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recursive.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reply.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/servercomms.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sort.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/status.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/task.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tcp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/udp.Po@am__quote@

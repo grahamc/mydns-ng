@@ -25,6 +25,7 @@
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_STATUS 1
 
+SERVERSTATUS	Status;				/* Server status information */
 
 /**************************************************************************************************
 	STATUS_FAKE_RR

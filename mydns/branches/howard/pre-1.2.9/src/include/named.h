@@ -120,7 +120,7 @@ extern CACHE	*Cache;				/* Zone cache */
 extern time_t	current_time;			/* Current time */
 
 #if ALIAS_ENABLED
-/* alias.c */
+/* lib/alias.c */
 extern int	 alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, char *label, MYDNS_RR *alias);
 #endif
 
@@ -174,8 +174,7 @@ extern void		check_config_file_perms(void);
 
 
 /* data.c */
-extern MYDNS_SOA	*find_soa(TASK *, char *, char *);
-extern MYDNS_SOA	*find_soa2(TASK *, char *, char **);
+extern MYDNS_SOA	*find_soa(TASK *, char *, char **);
 extern MYDNS_RR		*find_rr(TASK *, MYDNS_SOA *, dns_qtype_t, char *);
 
 
@@ -348,7 +347,7 @@ extern void		build_reply(TASK *, int);
 extern taskexec_t	resolve(TASK *, datasection_t, dns_qtype_t, char *, int);
 
 
-/* rr.c */
+/* lib/rr.c */
 extern void		rrlist_add(TASK *, datasection_t, dns_rrtype_t, void *, char *);
 extern void		rrlist_free(RRLIST *);
 
@@ -366,7 +365,15 @@ extern void		sort_srv_recs(TASK *, RRLIST *, datasection_t);
 extern taskexec_t	remote_status(TASK *t);
 #endif
 
+/* support.c */
+extern int 	shutting_down;		/* Shutdown in progress? */
+extern void	named_cleanup(int signo);
+
 /* lib/task.c */
+extern uint8_t		*taskvec;
+extern uint16_t		internal_id;
+extern uint32_t 	answer_then_quit;		/* Answer this many queries then quit */
+
 extern char		*task_exec_name(taskexec_t);
 extern char		*task_type_name(int);
 extern char		*task_priority_name(int);

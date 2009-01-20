@@ -37,6 +37,7 @@ CACHE *NegativeCache = NULL;						/* Negative zone cache */
 extern char	*dn_default_ns;						/* Default NS for directNIC */
 #endif
 
+time_t		current_time;			/* Current time */
 
 #if (HASH_TYPE == ORIGINAL_HASH) || (HASH_TYPE == ADDITIVE_HASH)
 /**************************************************************************************************

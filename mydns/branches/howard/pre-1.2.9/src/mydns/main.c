@@ -21,10 +21,7 @@
 #include "named.h"
 
 
-QUEUE 		*TaskArray[PERIODIC_TASK+1][LOW_PRIORITY_TASK+1];
-
 struct timeval	current_tick;			/* Current micro-second time */
-time_t		current_time;			/* Current time */
 
 static int	servers = 0;			/* Number of server processes to run */
 ARRAY		*Servers = NULL;
@@ -34,10 +31,8 @@ static int	got_sigusr1 = 0,
 	   	got_sighup = 0,
 	   	got_sigalrm = 0,		/* Signal flags */
 	   	got_sigchld = 0;		/* Signal flags */
-static int 	shutting_down = 0;		/* Shutdown in progress? */
 
 int		run_as_root = 0;		/* Run as root user? */
-uint32_t 	answer_then_quit = 0;		/* Answer this many queries then quit */
 char		hostname[256];			/* Hostname of local machine */
 
 extern int	*tcp4_fd, *udp4_fd;		/* Listening FD's (IPv4) */
@@ -46,8 +41,6 @@ extern int	num_tcp4_fd, num_udp4_fd;	/* Number of listening FD's (IPv4) */
 extern int	*tcp6_fd, *udp6_fd;		/* Listening FD's (IPv6) */
 extern int	num_tcp6_fd, num_udp6_fd;	/* Number of listening FD's (IPv6) */
 #endif
-
-SERVERSTATUS	Status;				/* Server status information */
 
 extern void	create_listeners(void);
 
@@ -564,16 +557,6 @@ free_other_tasks(TASK *t, int closeallfds) {
       }
     }
   }
-}
-
-/**************************************************************************************************
-	NAMED_CLEANUP
-**************************************************************************************************/
-void
-named_cleanup(int signo) {
-
-  shutting_down = signo;
-
 }
 
 void
