@@ -16,7 +16,7 @@ noinst_HEADERS		=
 mydns_SOURCES		=	alias.c array.c axfr.c cache.c data.c db.c \
 				ixfr.c listen.c main.c message.c notify.c queue.c \
 				recursive.c \
-				reply.c resolve.c rr.c servercomms.c sort.c status.c task.c \
+				reply.c rr.c servercomms.c sort.c status.c task.c \
 				tcp.c udp.c update.c
 
 CLEANFILES		=	malloc_trace gmon.out bb.out

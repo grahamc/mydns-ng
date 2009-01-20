@@ -664,7 +664,7 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 	   desctask(t), name_server);
 #endif
 
-    nsoa = find_soa2(t, name_server, &label);
+    nsoa = find_soa(t, name_server, &label);
 
     if (nsoa) {
       MYDNS_RR *r = NULL;

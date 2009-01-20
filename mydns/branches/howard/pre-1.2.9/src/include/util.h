@@ -24,15 +24,12 @@
 #include "mydnsutil.h"
 #include "mydns.h"
 
-/* I'm not done with tinydns-data support yet.  It won't work.
-	Defining this and recompiling will NOT let you import tinydns-data files! */
-#define TINYDNS_IMPORT
-
 extern CONF *Conf;						/* Configuration data */
 
 extern void load_config(void);
 extern void db_connect(void);
 extern uint32_t sqlnum(const char *, ...) __printflike(1,2);
+extern char *__mydns_expand_data(char *s, char *origin);
 extern void meter(unsigned long, unsigned long);
 
 extern uint32_t got_soa;
@@ -50,6 +47,10 @@ extern uint32_t	import_serial;					/* Serial number of current zone */
 extern int	soa_imported, rr_imported, ptr_imported;	/* Number of records imported */
 
 extern int	syntax_errors, consistency_errors;		/* Number of errors found */
+
+#define TINYDNS_NAMEFIX(str) \
+  str = __mydns_expand_data((str), soa->origin);			\
+  if (LASTCHAR((str)) == '.') LASTCHAR((str)) = '\0';
 
 #endif /* !_MYDNS_UTIL_DIR_H */
 

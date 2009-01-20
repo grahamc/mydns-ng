@@ -227,14 +227,17 @@ bind_dump_soa(MYDNS_SOA *soa) {
 }
 /*--- bind_dump_soa() ---------------------------------------------------------------------------*/
 
-
 /**************************************************************************************************
 	BIND_DUMP_RR
 	Output resource record, BIND format.
 **************************************************************************************************/
 static void
 bind_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
-  char *type = mydns_rr_get_type_by_id(
+  dns_qtype_map *map;
+  char *type_name;
+  int ttl, aux;
+
+  map = mydns_rr_get_type_by_id(
 #if ALIAS_ENABLED
 			       (rr->alias == 0) ?
 #endif /* ALIAS_ENABLED */
@@ -242,63 +245,18 @@ bind_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
 #if ALIAS_ENABLED
 			       : DNS_QTYPE_CNAME
 #endif /* ALIAS_ENABLED */
-	)->rr_type_name;
+			       );
 
-  printf("%-*s", maxlen, MYDNS_RR_NAME(rr));
+  type_name = map->rr_type_name;
 
-  printf("\t%u\tIN %-5s\t", (rr->ttl < soa->minimum) ? soa->minimum : rr->ttl, type);
+  ttl = (rr->ttl < soa->minimum) ? soa->minimum : rr->ttl;
+  aux = rr->aux;
 
-  if (rr->type == DNS_QTYPE_MX)
-    printf("%u %s\n", (uint32_t)rr->aux, (char*)MYDNS_RR_DATA_VALUE(rr));
-  else if (rr->type == DNS_QTYPE_SRV)
-    printf("%u %u %u %s\n", (uint32_t)rr->aux, MYDNS_RR_SRV_WEIGHT(rr), MYDNS_RR_SRV_PORT(rr),
-	   (char*)MYDNS_RR_DATA_VALUE(rr));
-  else if (rr->type == DNS_QTYPE_RP)
-    printf("%s %s\n", (char*)MYDNS_RR_DATA_VALUE(rr), MYDNS_RR_RP_TXT(rr));
-  else if (rr->type == DNS_QTYPE_TXT) {
-    register unsigned char *c;
-    unsigned int length = MYDNS_RR_DATA_LENGTH(rr);
-    putc('"', stdout);
-    for (c = (unsigned char*)MYDNS_RR_DATA_VALUE(rr); length; length--, c++) {
-      if (*c == '\0') {
-	putc('"', stdout);
-	putc(' ', stdout);
-	putc('"', stdout);
-	continue;
-      }
-      if (*c == '"')
-	putc('\\', stdout);
-      putc(*c, stdout);
-    }
-    putc('"', stdout);
-    putc('\n', stdout);
-  } else
-    printf("%s\n", (char*)MYDNS_RR_DATA_VALUE(rr));
+  map->rr_export_bind_rr(soa, rr,
+			 MYDNS_RR_NAME(rr), MYDNS_RR_DATA_VALUE(rr), MYDNS_RR_DATA_LENGTH(rr),
+			 ttl, aux, maxlen);
 }
 /*--- bind_dump_rr() ----------------------------------------------------------------------------*/
-
-static char *
-__EXPAND_DATA(char *s, MYDNS_SOA *soa) {
-  int slen = strlen(s);
-
-  if (*s) slen += 1;
-  slen += strlen(soa->origin);
-
-  s = REALLOCATE(s, slen + 1, char[]);
-  if (*s) strcat(s, ".");
-  strcat(s, soa->origin);
-
-  return s;
-}
-
-
-#define TINYDNS_NAMEFIX(str) \
-  if (!(str)[0] || LASTCHAR((str)) != '.')	\
-    {									\
-      str = __EXPAND_DATA((str), soa);					\
-    }									\
-  if (LASTCHAR((str)) == '.') LASTCHAR((str)) = '\0';
-
 
 /**************************************************************************************************
 	TINYDNS_DUMP_SOA
@@ -324,85 +282,26 @@ tinydns_dump_soa(MYDNS_SOA *soa) {
 }
 /*--- tinydns_dump_soa() ------------------------------------------------------------------------*/
 
-
 /**************************************************************************************************
 	TINYDNS_DUMP_RR
 	Output resource record, BIND format.
 **************************************************************************************************/
 static void
 tinydns_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
+  dns_qtype_map *map;
   char *name = NULL, *data = NULL;
+
+  map = mydns_rr_get_type_by_id(rr->type);
 
   name = STRDUP(MYDNS_RR_NAME(rr));
   TINYDNS_NAMEFIX(name);
 
-  switch (rr->type) {
-  case DNS_QTYPE_A:
-    printf("=%s:%s:%u\n", name, (char*)MYDNS_RR_DATA_VALUE(rr), rr->ttl);
-    break;
+  data = ALLOCATE(MYDNS_RR_DATA_LENGTH(rr)+1, char[]);
+  memset(data, '\0', MYDNS_RR_DATA_LENGTH(rr));
+  memcpy(data, MYDNS_RR_DATA_VALUE(rr), MYDNS_RR_DATA_LENGTH(rr));
 
-  case DNS_QTYPE_AAAA:
-    /* Not supported by tinydns (?) */
-    break;
+  map->rr_export_tinydns_rr(soa, rr, name, data, MYDNS_RR_DATA_LENGTH(rr), rr->ttl, rr->aux);
 
-  case DNS_QTYPE_CNAME:
-    data = STRDUP(MYDNS_RR_DATA_VALUE(rr));
-    TINYDNS_NAMEFIX(data);
-    printf("C%s:%s:%u\n", name, data, rr->ttl);
-    break;
-
-  case DNS_QTYPE_MX:
-    data = STRDUP(MYDNS_RR_DATA_VALUE(rr));
-    TINYDNS_NAMEFIX(data);
-    printf("@%s::%s:%u:%u\n", name, data, rr->aux, rr->ttl);
-    break;
-
-  case DNS_QTYPE_NS:
-    data = STRDUP(MYDNS_RR_DATA_VALUE(rr));
-    TINYDNS_NAMEFIX(data);
-    printf(".%s::%s:%u\n", name, data, rr->ttl);
-    break;
-
-    /* tinydns does not natively support SRV; However, there's a patch
-       (http://tinydns.org/srv-patch) to support it.  This code complies with
-       its format, which is "Sfqdn:ip:x:port:weight:priority:ttl:timestamp" */
-  case DNS_QTYPE_SRV:
-    data = STRDUP(MYDNS_RR_DATA_VALUE(rr));
-    TINYDNS_NAMEFIX(data);
-    printf("S%s::%s:%u:%u:%u:%u\n", name, data, MYDNS_RR_SRV_PORT(rr), MYDNS_RR_SRV_WEIGHT(rr), rr->aux, rr->ttl);
-    break;
-
-  case DNS_QTYPE_TXT:
-    {
-      char *databuf, *c, *d;
-      int databuflen = MYDNS_RR_DATA_LENGTH(rr);
-      int len = databuflen;
-      databuf = ALLOCATE(databuflen + 1, char[]);
-      memset(databuf, 0, databuflen + 1);
-      memcpy(databuf, MYDNS_RR_DATA_VALUE(rr), databuflen);
-
-      /* Need to output colons as octal - also any other wierd chars */
-      for (c = (char*)MYDNS_RR_DATA_VALUE(rr), d = databuf; len; len--, c++) {
-	if (*c == ':' || !isprint((int)(*c))) {
-	  char *newdatabuf;
-	  databuflen += 3; /* Original Length + 3 more characters */
-	  /* Grow by a lump usually */
-	  newdatabuf = REALLOCATE(databuf, ((databuflen/512)+1)*512, char[]);
-	  if (newdatabuf != databuf) d = &newdatabuf[d - databuf];
-	  databuf = newdatabuf;
-	  d += sprintf(d, "\\%03o", *c);
-	} else
-	  *(d++) = *c;
-      }
-      *d = '\0';
-      printf("'%s:%s:%u\n", name, databuf, rr->ttl);
-      RELEASE(databuf);
-    }
-    break;
-
-  default:
-    break;
-  }
 }
 /*--- tinydns_dump_rr() -------------------------------------------------------------------------*/
 

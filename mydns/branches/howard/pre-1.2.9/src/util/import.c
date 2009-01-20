@@ -25,22 +25,16 @@
 #define DEBUG_SQL	0
 
 extern void import_axfr(char *hostport, char *import_zone);
-#ifdef TINYDNS_IMPORT
 extern void import_tinydns(char *datafile, char *import_zone);
-#endif
 
 enum _input_format {						/* Import format types */
 	INPUT_UNKNOWN,
 	INPUT_AXFR,
-#ifdef TINYDNS_IMPORT
 	INPUT_TINYDNS
-#endif
 } input_format = INPUT_UNKNOWN;
 
 char *axfr_host = NULL;						/* Host to import via AXFR */
-#ifdef TINYDNS_IMPORT
 char *tinydns_datafile = NULL;					/* Name of tinydns-data format file */
-#endif
 
 /**************************************************************************************************
 	USAGE
@@ -58,9 +52,7 @@ usage(int status) {
     puts("");
     puts(_("  -c, --conf=FILE         read config from FILE instead of the default"));
     puts(_("  -a, --axfr=HOST         import zones from HOST via AXFR"));
-#ifdef TINYDNS_IMPORT
     puts(_("  -t, --tinydns=FILE      import zones from tinydns-data format FILE"));
-#endif
     puts("");
     puts(_("  -D, --database=DB       database name to use"));
     puts(_("  -h, --host=HOST         connect to SQL server at HOST"));
@@ -100,9 +92,7 @@ cmdline(int argc, char **argv) {
   int	optc, optindex;
   struct option const longopts[] = {
     {"axfr",			required_argument,	NULL,	'a'},
-#ifdef TINYDNS_IMPORT
     {"tinydns",			required_argument,	NULL,	't'},
-#endif
 
     {"conf",			required_argument,	NULL,	'c'},
     {"database",		required_argument,	NULL,	'D'},
@@ -158,12 +148,10 @@ cmdline(int argc, char **argv) {
 	ACTIVE="Y";
       }
       break;
-#ifdef TINYDNS_IMPORT
     case 't':								/* -t, --tinydns */
       tinydns_datafile = optarg;
       input_format = INPUT_TINYDNS;
       break;
-#endif
     case 'c':								/* -c, --conf=FILE */
       opt_conf = optarg;
       break;
@@ -240,11 +228,9 @@ main(int argc, char **argv) {
       usage(EXIT_FAILURE);
       break;
 
-#ifdef TINYDNS_IMPORT
     case INPUT_TINYDNS:
       import_tinydns(tinydns_datafile, NULL);
       break;
-#endif
 
     case INPUT_UNKNOWN:
       break;
@@ -261,11 +247,9 @@ main(int argc, char **argv) {
 		rr_imported, ptr_imported);
       break;
 
-#ifdef TINYDNS_IMPORT
     case INPUT_TINYDNS:
       import_tinydns(tinydns_datafile, (char *)argv[optind]);
       break;
-#endif
 
     case INPUT_UNKNOWN:
       break;

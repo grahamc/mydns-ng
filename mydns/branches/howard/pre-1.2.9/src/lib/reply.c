@@ -26,7 +26,7 @@
 	RDATA_ENLARGE
 	Expands t->rdata by `size' bytes.  Returns a pointer to the destination.
 **************************************************************************************************/
-char * rdata_enlarge(TASK *t, size_t size) {
+static char *rdata_enlarge(TASK *t, size_t size) {
   if (!size)
     return (NULL);
 
@@ -40,7 +40,7 @@ char * rdata_enlarge(TASK *t, size_t size) {
 	Begins an RR.  Appends to t->rdata all the header fields prior to rdlength.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int reply_start_rr(TASK *t, RR *r, char *name, dns_qtype_t type, uint32_t ttl, char *desc) {
+static int reply_start_rr(TASK *t, RR *r, char *name, dns_qtype_t type, uint32_t ttl, char *desc) {
   char	*enc = NULL;
   char	*dest = NULL;
   int	enclen = 0;
@@ -73,6 +73,31 @@ int reply_start_rr(TASK *t, RR *r, char *name, dns_qtype_t type, uint32_t ttl, c
   return (0);
 }
 /*--- reply_start_rr() --------------------------------------------------------------------------*/
+/**************************************************************************************************
+	REPLY_ADD_ADDITIONAL
+	Add ADDITIONAL for each item in the provided list.
+**************************************************************************************************/
+void mydns_reply_add_additional(TASK *t, RRLIST *rrlist, datasection_t section) {
+  register RR *p = NULL;
+
+  if (!rrlist)
+    return;
+
+  /* Examine each RR in the rrlist */
+  for (p = rrlist->head; p; p = p->next) {
+    if (p->rrtype == DNS_RRTYPE_RR) {
+      MYDNS_RR *rr = (MYDNS_RR *)p->rr;
+      if (rr->type == DNS_QTYPE_NS || rr->type == DNS_QTYPE_MX || rr->type == DNS_QTYPE_SRV) {
+	(void)resolve(t, ADDITIONAL, DNS_QTYPE_A, MYDNS_RR_DATA_VALUE(rr), 0);
+      }	else if (rr->type == DNS_QTYPE_CNAME) {
+	/* Don't do this */
+	(void)resolve(t, ADDITIONAL, DNS_QTYPE_CNAME, MYDNS_RR_DATA_VALUE(rr), 0);
+      }
+    }
+    t->sort_level++;
+  }
+}
+/*--- reply_add_additional() --------------------------------------------------------------------*/
 /**************************************************************************************************
 	REPLY_ADD_GENERIC_RR
 	Adds a generic resource record whose sole piece of data is a domain-name,

@@ -61,9 +61,9 @@ am_mydns_OBJECTS = alias.$(OBJEXT) array.$(OBJEXT) axfr.$(OBJEXT) \
 	cache.$(OBJEXT) data.$(OBJEXT) db.$(OBJEXT) ixfr.$(OBJEXT) \
 	listen.$(OBJEXT) main.$(OBJEXT) message.$(OBJEXT) \
 	notify.$(OBJEXT) queue.$(OBJEXT) recursive.$(OBJEXT) \
-	reply.$(OBJEXT) resolve.$(OBJEXT) rr.$(OBJEXT) \
-	servercomms.$(OBJEXT) sort.$(OBJEXT) status.$(OBJEXT) \
-	task.$(OBJEXT) tcp.$(OBJEXT) udp.$(OBJEXT) update.$(OBJEXT)
+	reply.$(OBJEXT) rr.$(OBJEXT) servercomms.$(OBJEXT) \
+	sort.$(OBJEXT) status.$(OBJEXT) task.$(OBJEXT) tcp.$(OBJEXT) \
+	udp.$(OBJEXT) update.$(OBJEXT)
 mydns_OBJECTS = $(am_mydns_OBJECTS)
 mydns_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -241,7 +241,7 @@ noinst_HEADERS =
 mydns_SOURCES = alias.c array.c axfr.c cache.c data.c db.c \
 				ixfr.c listen.c main.c message.c notify.c queue.c \
 				recursive.c \
-				reply.c resolve.c rr.c servercomms.c sort.c status.c task.c \
+				reply.c rr.c servercomms.c sort.c status.c task.c \
 				tcp.c udp.c update.c
 
 CLEANFILES = malloc_trace gmon.out bb.out
@@ -330,7 +330,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/queue.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recursive.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reply.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/resolve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/servercomms.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sort.Po@am__quote@

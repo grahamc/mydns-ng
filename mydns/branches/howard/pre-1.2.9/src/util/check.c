@@ -50,9 +50,7 @@ usage(int status) {
     puts(_("  -c, --conf=FILE         read config from FILE instead of the default"));
     puts(_("  -c, --consistency       do key consistency checks"));
     puts(_("  -C, --consistency-only  do only the key consistency checks"));
-#ifdef EXTENDED_CHECK_WRITTEN
     puts(_("  -x, --extended          extended check for data/name references"));
-#endif
     puts("");
     puts(_("  -D, --database=DB       database name to use"));
     puts(_("  -h, --host=HOST         connect to SQL server at HOST"));
@@ -85,9 +83,7 @@ cmdline(int argc, char **argv) {
     {"conf",			required_argument,	NULL,	'f'},
     {"consistency-only",	no_argument,		NULL,	'C'},
     {"consistency",		no_argument,		NULL,	'c'},
-#ifdef EXTENDED_CHECK_WRITTEN
     {"extended",		no_argument,		NULL,	'x'},
-#endif
 
     {"database",		required_argument,	NULL,	'D'},
     {"host",			required_argument,	NULL,	'h'},
@@ -155,11 +151,9 @@ cmdline(int argc, char **argv) {
     case 'v':							/* -v, --verbose */
       err_verbose = 1;
       break;
-#ifdef EXTENDED_CHECK_WRITTEN
     case 'x':							/* -x, --extended */
       opt_extended_check = 1;
       break;
-#endif
     default:
       usage(EXIT_FAILURE);
     }

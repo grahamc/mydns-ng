@@ -22,8 +22,6 @@
 
 #include "util.h"
 
-#ifdef TINYDNS_IMPORT
-
 #define MAX_FIELDS		20					/* Max fields per line */
 #define TINYDNS_DEF_REFRESH	16384
 #define TINYDNS_DEF_RETRY	2048
@@ -918,8 +916,6 @@ import_tinydns(char *datafile, char *import_zone) {
     Notice("%s: %s: %s", filename, import_zone, _("zone imported"));
 }
 /*--- import_tinydns() --------------------------------------------------------------------------*/
-
-#endif /* TINYDNS */
 
 /* vi:set ts=3: */
 /* NEED_PO */

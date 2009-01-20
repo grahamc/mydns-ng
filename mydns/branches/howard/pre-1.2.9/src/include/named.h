@@ -139,7 +139,6 @@ extern void		axfr(TASK *);
 extern void		axfr_fork(TASK *);
 
 /* lib/check.c */
-extern char *__mydns_expand_data(char *s, char *origin);
 extern void __mydns_rrproblem(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
 			      const char *fmt, ...) __printflike(5,6);
 extern void __mydns_check_name_extended(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
@@ -196,6 +195,35 @@ extern int		rr_error(uint32_t, const char *, ...) __printflike(2,3);
 
 #define formerr(task,rcode,reason,xtra)	_formerr_internal((task),(rcode),(reason),(xtra),__FILE__,__LINE__)
 #define dnserror(task,rcode,reason)			_dnserror_internal((task),(rcode),(reason),__FILE__,__LINE__)
+
+/* lib/export.c */
+void __mydns_bind_dump_rr_unknown(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+				  size_t datalen, int ttl, int aux, int maxlen);
+void __mydns_bind_dump_rr_a(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+			    size_t datalen, int ttl, int aux, int maxlen);
+void __mydns_bind_dump_rr_mx(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+			     size_t datalen, int ttl, int aux, int maxlen);
+void __mydns_bind_dump_rr_srv(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+			      size_t datalen, int ttl, int aux, int maxlen);
+void __mydns_bind_dump_rr_rp(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+			     size_t datalen, int ttl, int aux, int maxlen);
+void __mydns_bind_dump_rr_txt(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+			      size_t datalen, int ttl, int aux, int maxlen);
+
+void __mydns_tinydns_dump_rr_unknown(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+				     size_t datalen, int ttl, int aux);
+void __mydns_tinydns_dump_rr_a(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+			       size_t datalen, int ttl, int aux);
+void __mydns_tinydns_dump_rr_cname(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+				   size_t datalen, int ttl, int aux);
+void __mydns_tinydns_dump_rr_mx(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+				size_t datalen, int ttl, int aux);
+void __mydns_tinydns_dump_rr_ns(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+				size_t datalen, int ttl, int aux);
+void __mydns_tinydns_dump_rr_srv(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+				 size_t datalen, int ttl, int aux);
+void __mydns_tinydns_dump_rr_txt(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+				 size_t datalen, int ttl, int aux);
 
 /* ixfr.c */
 extern taskexec_t	ixfr(TASK *, datasection_t, dns_qtype_t, char *, int);
@@ -294,8 +322,7 @@ extern taskexec_t	recursive_fwd_read(TASK *);
 
 
 /* lib/reply.c */
-extern char		*rdata_enlarge(TASK *t, size_t size);
-extern int		reply_start_rr(TASK *t, RR *r, char *name, dns_qtype_t type, uint32_t ttl, char *desc);
+extern void		mydns_reply_add_additional(TASK *t, RRLIST *rrlist, datasection_t section);
 extern int		__mydns_reply_add_generic_rr(TASK *t, RR *r, dns_qtype_map *map);
 extern int		__mydns_reply_add_a(TASK *t, RR *r, dns_qtype_map *map);
 extern int		__mydns_reply_add_aaaa(TASK *t, RR *r, dns_qtype_map *map);

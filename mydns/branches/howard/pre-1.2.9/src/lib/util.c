@@ -22,6 +22,20 @@
 
 #include "util.h"
 
+char *__mydns_expand_data(char *s, char *origin) {
+  if (!(s[0]) || LASTCHAR(s) != '.') {
+    int slen = strlen(s);
+
+    if (*s) slen += 1;
+    slen += strlen(origin);
+
+    s = REALLOCATE(s, slen + 1, char[]);
+    if (*s) strcat(s, ".");
+    strcat(s, origin);
+  }
+  return s;
+}
+
 /**************************************************************************************************
 	METER
 	Outputs a very simple progress meter - only used if stderr is a terminal.

@@ -39,7 +39,7 @@ find_alias(TASK *t, char *fqdn) {
 	
   /* Load the SOA for the alias name. */
 
-  if (!(soa = find_soa2(t, fqdn, &name)))
+  if (!(soa = find_soa(t, fqdn, &name)))
     return (NULL);
 
   /* Examine each label in the name, one at a time; look for relevant records */
@@ -119,7 +119,7 @@ find_alias(TASK *t, char *fqdn) {
 #if DEBUG_ENABLED && DEBUG_ALIAS
 	      DebugX("alias", 1, _("%s: alias(%s) -> trying recursive look up in %s"), desctask(t), label, zc);
 #endif
-	      xsoa = find_soa2(t, zc, NULL);
+	      xsoa = find_soa(t, zc, NULL);
 #if DEBUG_ENABLED && DEBUG_ALIAS
 	      DebugX("alias", 1, _("%s: resolve(%s) -> got %s for recursive look up in %s"), desctask(t),
 		    label, ((xsoa)?xsoa->origin:"<no match>"), zc);

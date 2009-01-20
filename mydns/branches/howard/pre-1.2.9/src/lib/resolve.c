@@ -35,7 +35,7 @@ char *resolve_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITION
 **************************************************************************************************/
 static taskexec_t
 resolve_soa(TASK *t, datasection_t section, char *fqdn, int level) {
-  MYDNS_SOA *soa = find_soa2(t, fqdn, NULL);
+  MYDNS_SOA *soa = find_soa(t, fqdn, NULL);
 
 #if DEBUG_ENABLED && DEBUG_RESOLVE
   DebugX("resolve", 1, _("%s: resolve_soa(%s) -> soa %s"), desctask(t), fqdn, (soa)?soa->origin:_("not found"));
@@ -383,7 +383,7 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
 	  DebugX("resolve", 1, _("%s: resolve_label(%s) -> trying recursive look up in %s"),
 		 desctask(t), label, zc);
 #endif
-	  xsoa = find_soa2(t, zc, NULL);
+	  xsoa = find_soa(t, zc, NULL);
 #if DEBUG_ENABLED && DEBUG_RESOLVE
 	  DebugX("resolve", 1, _("%s: resolve_label(%s) -> got %s for recursive look up in %s"),
 		 desctask(t), label, ((xsoa)?xsoa->origin:"<no match>"), zc);
@@ -472,7 +472,7 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
   ** authoritative
   ** Go recursive if the SOA is so labelled
   */
-  soa = find_soa2(t, fqdn, &name);
+  soa = find_soa(t, fqdn, &name);
 
 #if DEBUG_ENABLED && DEBUG_RESOLVE
   DebugX("resolve", 1, _("%s: resolve(%s) -> soa %s"), desctask(t), fqdn, (soa)?soa->origin:_("not found"));
