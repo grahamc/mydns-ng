@@ -1,3 +1,11 @@
+21-Jan-2009	Howard Wilkinson	<howard@cohtech.com>	[1.2.8.18]
+	*	Fixes to scheduler code and various patches have been made since 1.2.8 release
+		These have not been recorded in the updates as I forgot.
+	*	Added module based debug facility which will eventually allow
+		selective debug operation.
+	*	Converted to using poll rather than select if available on the platform
+	*	Updated documentation for debug options.
+	
 29-Jul-2008	Howard Wilkinson	<howard@cohtech.com>	[1.2.8]
 	*	mainly memory management fixes
 	*	Addition of wildcard matching in the parent (ancestor zones)

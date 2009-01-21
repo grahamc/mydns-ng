@@ -256,6 +256,11 @@ to switch this off, a positive number to specify how many levels and '-1' for in
 you have deeply nested zones and search many levels. You have been warned, if
 you need to do this then increase the number of 'servers']
 
+.IP "\fBdebug-<module>\fP = \fI<debug level>\fP"
+Switches on module based debug for the module in question.
+The debug level sets the volume and detail of messages produced.
+See output of --dump-config option for modules available.
+
 .\"--------------------------------------------------------------------------
 .\"  SECURITY
 .\"--------------------------------------------------------------------------
