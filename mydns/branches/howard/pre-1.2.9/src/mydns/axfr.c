@@ -297,7 +297,7 @@ axfr_get_soa(TASK *t) {
     ErrSQL(sql, "%s: %s", desctask(t), _("error loading zone"));
   if (soa) {
     return (soa);
-	}
+  }
 
   /* STILL no SOA?  We aren't authoritative */
   dnserror(t, DNS_RCODE_REFUSED, ERR_ZONE_NOT_FOUND);
@@ -397,6 +397,8 @@ axfr_fork(TASK *t) {
     sigaction(SIGQUIT, &act, NULL);
     sigaction(SIGABRT, &act, NULL);
     sigaction(SIGTERM, &act, NULL);
+
+    error_reinit();
 
 #if DEBUG_ENABLED && DEBUG_AXFR
     DebugX("axfr", 1,_("%s: axfr_fork is in the child"), desctask(t));

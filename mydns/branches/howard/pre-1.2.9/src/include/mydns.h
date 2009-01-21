@@ -655,12 +655,14 @@ typedef MYSQL_ROW SQL_ROW;
 extern uint32_t		mydns_revstr_ip4(char *);
 extern int		mydns_extract_arpa(char *, uint8_t ip[]);
 
-/* rr.c */
+/* lib/rr.c */
 extern int __mydns_rr_parse_default(const char *origin, MYDNS_RR *rr);
-extern int __mydns_rr_parse_cname_etc(const char *origin, MYDNS_RR *rr);
+extern int __mydns_rr_parse_cname(const char *origin, MYDNS_RR *rr);
+extern int __mydns_rr_parse_mx(const char *origin, MYDNS_RR *rr);
+extern int __mydns_rr_parse_naptr(const char *origin, MYDNS_RR *rr);
+extern int __mydns_rr_parse_ns(const char *origin, MYDNS_RR *rr);
 extern int __mydns_rr_parse_rp(const char *origin, MYDNS_RR *rr);
 extern int __mydns_rr_parse_srv(const char *origin, MYDNS_RR *rr);
-extern int __mydns_rr_parse_naptr(const char *origin, MYDNS_RR *rr);
 extern int __mydns_rr_parse_txt(const char *origin, MYDNS_RR *rr);
 
 extern void __mydns_rr_free_default(MYDNS_RR *rr);
@@ -668,13 +670,13 @@ extern void __mydns_rr_free_naptr(MYDNS_RR *rr);
 extern void __mydns_rr_free_rp(MYDNS_RR *rr);
 
 extern void __mydns_rr_duplicate_default(MYDNS_RR *dst, MYDNS_RR *src);
-extern void __mydns_rr_duplicate_srv(MYDNS_RR *dst, MYDNS_RR *src);
-extern void __mydns_rr_duplicate_rp(MYDNS_RR *dst, MYDNS_RR *src);
 extern void __mydns_rr_duplicate_naptr(MYDNS_RR *dst, MYDNS_RR *src);
+extern void __mydns_rr_duplicate_rp(MYDNS_RR *dst, MYDNS_RR *src);
+extern void __mydns_rr_duplicate_srv(MYDNS_RR *dst, MYDNS_RR *src);
 
 extern size_t __mydns_rr_size_default(MYDNS_RR *rr);
 extern size_t __mydns_rr_size_naptr(MYDNS_RR *rr);
-extern size_t __mydns_rr_size_rr(MYDNS_RR *rr);
+extern size_t __mydns_rr_size_rp(MYDNS_RR *rr);
 
 extern long		mydns_rr_count(SQL *);
 extern void		mydns_rr_get_active_types(SQL *);

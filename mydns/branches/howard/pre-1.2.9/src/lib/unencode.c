@@ -29,8 +29,7 @@
 	Returns the new location of src, or NULL if an error occurred.
 	If an error occurs, puts a descriptive message in `dest'.
 **************************************************************************************************/
-char *
-name_unencode(char *start, size_t slen, char **current, task_error_t *errcode) {
+char *name_unencode(char *start, size_t slen, char **current, task_error_t *errcode) {
   char		*dest = NULL;
   int		destlen = 16;
   register char	*s = *current;				/* Current pointer into input */
@@ -39,7 +38,7 @@ name_unencode(char *start, size_t slen, char **current, task_error_t *errcode) {
   register char len;
   register char *rp = NULL;
 
-#define CHECK_DEST_SPACE2(n)  \
+#define CHECK_DEST_SPACE(n)  \
   if (d >= dest+(destlen-(n))) {		 	\
     int doffset = d - dest;			 	\
     destlen += (n > 16)?n:16;			 	\
@@ -54,7 +53,7 @@ name_unencode(char *start, size_t slen, char **current, task_error_t *errcode) {
   d = dest;
 
   if (*s == 0) {						/* The name is just "." */
-    CHECK_DEST_SPACE2(2);
+    CHECK_DEST_SPACE(2);
     *d++ = '.';
     *d = '\0';
     *current = s+1;
@@ -96,14 +95,14 @@ name_unencode(char *start, size_t slen, char **current, task_error_t *errcode) {
 	return (NULL);
       }
       for (n = 0; n < len; n++) {				/* Get label */
-	CHECK_DEST_SPACE2(1);
+	CHECK_DEST_SPACE(1);
 	*d++ = tolower(*s++);
       }
-      CHECK_DEST_SPACE2(1);
+      CHECK_DEST_SPACE(1);
       *d++ = '.';
     }
   }
-  CHECK_DEST_SPACE2(1);
+  CHECK_DEST_SPACE(1);
   *d = '\0';
   *current = (rp ? rp : s+1);
   return dest; /* Could realloc to string length here but should be a small overhead so ignore */

@@ -31,5 +31,41 @@ void named_cleanup(int signo) {
 
 }
 
+/**************************************************************************************************
+	MYDNS_NAME_2_SHORTNAME
+	Removes the origin from a name if it is present.
+**************************************************************************************************/
+char *mydns_name_2_shortname(char *name, char *origin, int empty_name_is_ok, int notrim) {
+  size_t nlen = 0, olen = 0;
+  int name_is_dotted, origin_is_dotted;
+
+  if (name) nlen = strlen(name); else return name;
+  if (origin) olen = strlen(origin); else return name;
+
+  if (notrim)
+    return (name);
+
+  name_is_dotted = (LASTCHAR(name) == '.');
+  origin_is_dotted = (LASTCHAR(origin) == '.');
+
+  if (name_is_dotted && !origin_is_dotted) nlen -= 1;
+  if (origin_is_dotted && !name_is_dotted) olen -= 1;
+
+  if (nlen < olen)
+    return (name);
+
+  if (!strncasecmp(origin, name, nlen)) {
+    if (empty_name_is_ok)
+      return ("");
+    else
+      return (name);
+  }
+  if (!strncasecmp(name + nlen - olen, origin, olen)
+      && name[nlen - olen - 1] == '.')
+    name[nlen - olen - 1] = '\0';
+  return (name);
+}
+/*--- mydns_name_2_shortname() -----------------------------------------------------------------*/
+
 /* vi:set ts=3: */
 /* NEED_PO */

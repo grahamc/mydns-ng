@@ -216,7 +216,7 @@ void __mydns_check_rr_cname(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char
   /* If not found that way, check short name */
   if (!found) {
     xname = STRDUP(name);
-    xname = sql_escstr(sql, mydns_name_2_shortname(xname, soa->origin, 1));
+    xname = sql_escstr(sql, mydns_name_2_shortname(xname, soa->origin, 1, 0));
     found = sql_count(sql,
 		      "SELECT COUNT(*) FROM %s WHERE zone=%u AND name='%s' AND type != 'CNAME' AND type != 'ALIAS'",
 		      mydns_rr_table_name, rr->zone, xname);

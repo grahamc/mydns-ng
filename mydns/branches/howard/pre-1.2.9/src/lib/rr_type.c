@@ -56,23 +56,23 @@ DEFINE_RR_TYPE(A6, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
 DEFINE_RR_TYPE(AAAA, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
 	       __mydns_rr_duplicate_default, __mydns_rr_size_default,  \
 	       __mydns_reply_add_aaaa, __mydns_update_get_rr_data_aaaa, \
-	       __mydns_process_axfr_default, __mydns_check_rr_aaaa,				\
-	       __mydns_bind_dump_rr_unknown, __mydns_tinydns_dump_rr_unknown, \
+	       __mydns_process_axfr_aaaa, __mydns_check_rr_aaaa,				\
+	       __mydns_bind_dump_rr_default, __mydns_tinydns_dump_rr_unknown, \
 	       1, 0, NULL);
 
 #if ALIAS_ENABLED
 DEFINE_RR_TYPE(A, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
 	       __mydns_rr_duplicate_default, __mydns_rr_size_default,  \
 	       __mydns_reply_add_a, __mydns_update_get_rr_data_a, \
-	       __mydns_process_axfr_default, __mydns_check_rr_a,			  \
-	       __mydns_bind_dump_rr_unknown, __mydns_tinydns_dump_rr_unknown, \
+	       __mydns_process_axfr_a, __mydns_check_rr_a,			  \
+	       __mydns_bind_dump_rr_default, __mydns_tinydns_dump_rr_a, \
 	       1, 0, " AND (type='A' OR type='ALIAS')");
 #else
 DEFINE_RR_TYPE(A, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
 	       __mydns_rr_duplicate_default, __mydns_rr_size_default,  \
 	       __mydns_reply_add_a, __mydns_update_get_rr_data_a, \
-	       __mydns_process_axfr_default, __mydns_check_rr_a,				\
-	       __mydns_bind_dump_rr_unknown, __mydns_tinydns_dump_rr_unknown, \
+	       __mydns_process_axfr_a, __mydns_check_rr_a,				\
+	       __mydns_bind_dump_rr_default, __mydns_tinydns_dump_rr_a, \
 	       1, 0, NULL);
 #endif
 
@@ -127,11 +127,11 @@ DEFINE_RR_TYPE(CERT, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
 	       __mydns_bind_dump_rr_unknown, __mydns_tinydns_dump_rr_unknown, \
 	       0, 0, NULL);
 
-DEFINE_RR_TYPE(CNAME, 1, __mydns_rr_parse_cname_etc, __mydns_rr_free_default, \
+DEFINE_RR_TYPE(CNAME, 1, __mydns_rr_parse_cname, __mydns_rr_free_default, \
 	        __mydns_rr_duplicate_default, __mydns_rr_size_default,  \
 	       __mydns_reply_add_generic_rr, __mydns_update_get_rr_data_cname, \
-	       __mydns_process_axfr_default, __mydns_check_rr_cname,				\
-	       __mydns_bind_dump_rr_unknown, __mydns_tinydns_dump_rr_unknown, \
+	       __mydns_process_axfr_cname, __mydns_check_rr_cname,				\
+	       __mydns_bind_dump_rr_default, __mydns_tinydns_dump_rr_cname, \
 	       1, 0, NULL);
 
 DEFINE_RR_TYPE(DHCID, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
@@ -192,9 +192,9 @@ DEFINE_RR_TYPE(GPOS, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
 
 DEFINE_RR_TYPE(HINFO, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
 	        __mydns_rr_duplicate_default, __mydns_rr_size_default,  \
-	       __mydns_reply_unknown_type, __mydns_update_get_rr_data_hinfo, \
-	       __mydns_process_axfr_default, __mydns_check_rr_hinfo,				\
-	       __mydns_bind_dump_rr_unknown, __mydns_tinydns_dump_rr_unknown, \
+	       __mydns_reply_add_hinfo, __mydns_update_get_rr_data_hinfo, \
+	       __mydns_process_axfr_hinfo, __mydns_check_rr_hinfo,				\
+	       __mydns_bind_dump_rr_default, __mydns_tinydns_dump_rr_unknown, \
 	       1, 0, NULL);
 
 DEFINE_RR_TYPE(HIP, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
@@ -302,18 +302,18 @@ DEFINE_RR_TYPE(MR, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
 	       __mydns_bind_dump_rr_unknown, __mydns_tinydns_dump_rr_unknown, \
 	       0, 0, NULL);
 
-DEFINE_RR_TYPE(MX, 1, __mydns_rr_parse_cname_etc, __mydns_rr_free_default, \
+DEFINE_RR_TYPE(MX, 1, __mydns_rr_parse_mx, __mydns_rr_free_default, \
 	        __mydns_rr_duplicate_default, __mydns_rr_size_default,  \
 	       __mydns_reply_add_mx, __mydns_update_get_rr_data_mx, \
-	       __mydns_process_axfr_default, __mydns_check_rr_mx,				\
-	       __mydns_bind_dump_rr_unknown, __mydns_tinydns_dump_rr_unknown, \
+	       __mydns_process_axfr_mx, __mydns_check_rr_mx,				\
+	       __mydns_bind_dump_rr_mx, __mydns_tinydns_dump_rr_mx, \
 	       1, 1, NULL);
 
 DEFINE_RR_TYPE(NAPTR, 1, __mydns_rr_parse_naptr, __mydns_rr_free_naptr, \
-	        __mydns_rr_duplicate_naptr, __mydns_rr_size_default,  \
+	        __mydns_rr_duplicate_naptr, __mydns_rr_size_naptr,  \
 	       __mydns_reply_add_naptr, __mydns_update_get_rr_data_unknown_type, \
 	       __mydns_process_axfr_default, __mydns_check_rr_naptr,				\
-	       __mydns_bind_dump_rr_unknown, __mydns_tinydns_dump_rr_unknown, \
+	       __mydns_bind_dump_rr_default, __mydns_tinydns_dump_rr_unknown, \
 	       0, 0, NULL);
 
 DEFINE_RR_TYPE(NIMLOC, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
@@ -344,11 +344,11 @@ DEFINE_RR_TYPE(NSAP_PTR, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
 	       __mydns_bind_dump_rr_unknown, __mydns_tinydns_dump_rr_unknown, \
 	       0, 0, NULL);
 
-DEFINE_RR_TYPE(NS, 1, __mydns_rr_parse_cname_etc, __mydns_rr_free_default, \
+DEFINE_RR_TYPE(NS, 1, __mydns_rr_parse_ns, __mydns_rr_free_default, \
 	        __mydns_rr_duplicate_default, __mydns_rr_size_default,  \
 	       __mydns_reply_add_generic_rr, __mydns_update_get_rr_data_ns, \
-	       __mydns_process_axfr_default, __mydns_check_rr_ns,				\
-	       __mydns_bind_dump_rr_unknown, __mydns_tinydns_dump_rr_unknown, \
+	       __mydns_process_axfr_ns, __mydns_check_rr_ns,				\
+	       __mydns_bind_dump_rr_default, __mydns_tinydns_dump_rr_ns, \
 	       1, 0, NULL);
 
 DEFINE_RR_TYPE(NSEC3, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
@@ -396,8 +396,8 @@ DEFINE_RR_TYPE(OPT, 0, __mydns_rr_parse_default, __mydns_rr_free_default, \
 DEFINE_RR_TYPE(PTR, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
 	        __mydns_rr_duplicate_default, __mydns_rr_size_default,  \
 	       __mydns_reply_add_generic_rr, __mydns_update_get_rr_data_ptr, \
-	       __mydns_process_axfr_default, __mydns_check_rr_unknown,				\
-	       __mydns_bind_dump_rr_unknown, __mydns_tinydns_dump_rr_unknown, \
+	       __mydns_process_axfr_ptr, __mydns_check_rr_unknown,				\
+	       __mydns_bind_dump_rr_default, __mydns_tinydns_dump_rr_unknown, \
 	       1, 0, NULL);
 
 DEFINE_RR_TYPE(PX, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
@@ -408,10 +408,10 @@ DEFINE_RR_TYPE(PX, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
 	       0, 0, NULL);
 
 DEFINE_RR_TYPE(RP, 1, __mydns_rr_parse_rp, __mydns_rr_free_rp, \
-	        __mydns_rr_duplicate_rp, __mydns_rr_size_default,  \
+	        __mydns_rr_duplicate_rp, __mydns_rr_size_rp,  \
 	       __mydns_reply_add_rp, __mydns_update_get_rr_data_rp, \
-	       __mydns_process_axfr_default, __mydns_check_rr_rp,				\
-	       __mydns_bind_dump_rr_unknown, __mydns_tinydns_dump_rr_unknown, \
+	       __mydns_process_axfr_rp, __mydns_check_rr_rp,				\
+	       __mydns_bind_dump_rr_rp, __mydns_tinydns_dump_rr_unknown, \
 	       1, 0, NULL);
 
 DEFINE_RR_TYPE(RRSIG, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
@@ -444,8 +444,8 @@ DEFINE_RR_TYPE(SINK, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
 
 DEFINE_RR_TYPE(SOA, 0, __mydns_rr_parse_default, __mydns_rr_free_default, \
 	        __mydns_rr_duplicate_default, __mydns_rr_size_default,  \
-	       __mydns_reply_unexpected_type, __mydns_update_get_rr_data_unknown_type, \
-	       __mydns_process_axfr_default, __mydns_check_rr_unknown,				\
+	       __mydns_reply_add_soa, __mydns_update_get_rr_data_unknown_type, \
+	       __mydns_process_axfr_soa, __mydns_check_rr_unknown,				\
 	       __mydns_bind_dump_rr_unknown, __mydns_tinydns_dump_rr_unknown, \
 	       0, 0, NULL);
 
@@ -459,8 +459,8 @@ DEFINE_RR_TYPE(SPF, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
 DEFINE_RR_TYPE(SRV, 1, __mydns_rr_parse_srv, __mydns_rr_free_default, \
 	        __mydns_rr_duplicate_srv, __mydns_rr_size_default,  \
 	       __mydns_reply_add_srv, __mydns_update_get_rr_data_srv, \
-	       __mydns_process_axfr_default, __mydns_check_rr_unknown,				\
-	       __mydns_bind_dump_rr_unknown, __mydns_tinydns_dump_rr_unknown, \
+	       __mydns_process_axfr_srv, __mydns_check_rr_srv,				\
+	       __mydns_bind_dump_rr_srv, __mydns_tinydns_dump_rr_srv, \
 	       1, 1, NULL);
 
 DEFINE_RR_TYPE(SSHFP, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
@@ -494,8 +494,8 @@ DEFINE_RR_TYPE(TSIG, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
 DEFINE_RR_TYPE(TXT, 1, __mydns_rr_parse_txt, __mydns_rr_free_default, \
 	        __mydns_rr_duplicate_default, __mydns_rr_size_default,  \
 	       __mydns_reply_add_txt, __mydns_update_get_rr_data_txt, \
-	       __mydns_process_axfr_default, __mydns_check_rr_txt,				\
-	       __mydns_bind_dump_rr_unknown, __mydns_tinydns_dump_rr_unknown, \
+	       __mydns_process_axfr_txt, __mydns_check_rr_txt,				\
+	       __mydns_bind_dump_rr_txt, __mydns_tinydns_dump_rr_txt, \
 	       1, 0, NULL);
 
 DEFINE_RR_TYPE(UID, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \

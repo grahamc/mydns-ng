@@ -24,11 +24,11 @@
 #define	DEBUG_SORT	1
 
 #define	RR_IS_RR(R)		((R)->rrtype == DNS_RRTYPE_RR)
-#define	RR_IS_ADDR(R) 	(RR_IS_RR((R)) && (RR_IS_A((R)) || RR_IS_AAAA((R))))
+#define	RR_IS_ADDR(R)	 	(RR_IS_RR((R)) && (RR_IS_A((R)) || RR_IS_AAAA((R))))
 #define	RR_IS_A(R)		(RR_IS_RR((R)) && (((MYDNS_RR *)(R)->rr)->type == DNS_QTYPE_A))
-#define	RR_IS_AAAA(R)	(RR_IS_RR((R)) && (((MYDNS_RR *)(R)->rr)->type == DNS_QTYPE_AAAA))
+#define	RR_IS_AAAA(R)		(RR_IS_RR((R)) && (((MYDNS_RR *)(R)->rr)->type == DNS_QTYPE_AAAA))
 #define	RR_IS_MX(R)		(RR_IS_RR((R)) && (((MYDNS_RR *)(R)->rr)->type == DNS_QTYPE_MX))
-#define	RR_IS_SRV(R)	(RR_IS_RR((R)) && (((MYDNS_RR *)(R)->rr)->type == DNS_QTYPE_SRV))
+#define	RR_IS_SRV(R)		(RR_IS_RR((R)) && (((MYDNS_RR *)(R)->rr)->type == DNS_QTYPE_SRV))
 
 #define	RAND(x)			((uint32_t)(((double)(x) + 1.0) * rand() / (RAND_MAX)))
 

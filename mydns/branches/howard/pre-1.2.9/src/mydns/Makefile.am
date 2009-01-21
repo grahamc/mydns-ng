@@ -17,7 +17,7 @@ mydns_SOURCES		=	axfr.c \
 				db.c \
 				ixfr.c \
 				listen.c \
-				main.c \
+				main.c  \
 				notify.c \
 				reply.c \
 				servercomms.c sort.c \

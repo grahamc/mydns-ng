@@ -166,10 +166,10 @@ int __mydns_rr_parse_default(const char *origin, MYDNS_RR *rr) {
 }
 /*--- __mydns_rr_parse_default() ------------------------------------------------------------------*/
 /**************************************************************************************************
-	__MYDNS_RR_PARSE_CNAME_ETC
-	Default parser for any record
+	__MYDNS_RR_PARSE_HOSTNAME_DATA
+	Default parser for record where data is a hostname
 **************************************************************************************************/
-int __mydns_rr_parse_cname_etc(const char *origin, MYDNS_RR *rr) {
+static inline int __mydns_rr_parse_hostname_data(const char *origin, MYDNS_RR *rr) {
   uint16_t datalen;
 
   /* Append origin to data if it's not there for these types: */
@@ -194,6 +194,19 @@ int __mydns_rr_parse_cname_etc(const char *origin, MYDNS_RR *rr) {
   }
   return __mydns_rr_parse_default(origin, rr);
 }
+
+int __mydns_rr_parse_cname(const char *origin, MYDNS_RR *rr) {
+  return __mydns_rr_parse_hostname_data(origin, rr);
+}
+
+int __mydns_rr_parse_mx(const char *origin, MYDNS_RR *rr) {
+  return __mydns_rr_parse_hostname_data(origin, rr);
+}
+
+int __mydns_rr_parse_ns(const char *origin, MYDNS_RR *rr) {
+  return __mydns_rr_parse_hostname_data(origin, rr);
+}
+
 /*--- __mydns_rr_parse_cname_etc() ---------------------------------------------------------------*/
 /**************************************************************************************************
 	__MYDNS_RR_PARSE_RP
@@ -655,7 +668,7 @@ size_t __mydns_rr_size_naptr(MYDNS_RR *rr) {
   return size;
 }
 
-size_t __mydns_rr_size_rr(MYDNS_RR *rr) {
+size_t __mydns_rr_size_rp(MYDNS_RR *rr) {
   return strlen(__MYDNS_RR_RP_TXT(rr)) + 1;
 }
 

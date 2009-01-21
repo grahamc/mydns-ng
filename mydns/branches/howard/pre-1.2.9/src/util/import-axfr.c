@@ -24,17 +24,7 @@
 #include "util.h"
 #include <netdb.h>
 
-static char *thishostname, *zone;			/* Hostname of remote host and zone */
-static char *origin = NULL;				/* The origin name reported by the peer */
-
-extern int opt_notrim;					/* Don't remove trailing origin */
-extern int opt_output;					/* Output instead of insert */
-
-extern uint32_t import_soa(const char *import_origin, const char *ns, const char *mbox,
-	unsigned serial, unsigned refresh, unsigned retry, unsigned expire,
-	unsigned minimum, unsigned ttl);
-extern void import_rr(char *name, char *type, char *data, int datalen, unsigned aux, unsigned ttl);
-
+static char *thishostname;			/* Hostname of remote host */
 
 /**************************************************************************************************
 	AXFR_CONNECT
@@ -42,7 +32,7 @@ extern void import_rr(char *name, char *type, char *data, int datalen, unsigned 
 	fd to newly created socket.
 **************************************************************************************************/
 static int
-axfr_connect(char *hostportp, char **hostnamep) {
+axfr_connect(char *hostportp, char **hostnamep, char *zone) {
   char		hostport[512];
   char		*rem_hostname, *portp;
   unsigned int port = 53;
@@ -180,7 +170,7 @@ request_axfr(int fd, char *rem_hostname, char *zone) {
 	is returned.
 **************************************************************************************************/
 static char *
-process_axfr_answer(char *reply, size_t replylen, char *src) {
+process_axfr_answer(char *reply, size_t replylen, char *src, char* origin) {
   char *name, *data, *rv;
   task_error_t errcode;
   uint16_t type, class, rdlen;
@@ -213,7 +203,7 @@ process_axfr_answer(char *reply, size_t replylen, char *src) {
 	PROCESS_AXFR_REPLY
 **************************************************************************************************/
 static int
-process_axfr_reply(char *reply, size_t replylen) {
+process_axfr_reply(char *reply, size_t replylen, char *origin) {
   char *src = reply, *name;
   task_error_t errcode;
   uint16_t n, qdcount, ancount;
@@ -245,7 +235,7 @@ process_axfr_reply(char *reply, size_t replylen) {
 
   /* Process all RRs in the answer section */
   for (n = 0; n < ancount; n++)
-    if (!(src = process_axfr_answer(reply, replylen, src)))
+    if (!(src = process_axfr_answer(reply, replylen, src, origin)))
       return (-1);
 
   return (0);
@@ -261,6 +251,7 @@ import_axfr(char *hostport, char *import_zone) {
   unsigned char *reply, len[2];
   int fd;
   size_t replylen;
+  char *zone;
 
 #if DEBUG_ENABLED
   Debug("STARTING AXFR of \"%s\" from %s", import_zone, hostport);
@@ -269,10 +260,10 @@ import_axfr(char *hostport, char *import_zone) {
   thishostname = zone = NULL;
   got_soa = 0;
 
-  zone = import_zone;
+  zone = STRDUP(import_zone);
 
   /* Connect to remote host */
-  if ((fd = axfr_connect(hostport, &thishostname)) < 0)
+  if ((fd = axfr_connect(hostport, &thishostname, zone)) < 0)
     Errx("%s: %s", hostport, _("failed to connect"));
 #if DEBUG_ENABLED
   Debug("connected to %s", hostport);
@@ -288,11 +279,13 @@ import_axfr(char *hostport, char *import_zone) {
     reply = ALLOCATE(replylen, char[]);
     if (recv(fd, reply, replylen, MSG_WAITALL) != replylen)
       Errx(_("short message from server"));
-    if (process_axfr_reply((char*)reply, replylen))
+    if (process_axfr_reply((char*)reply, replylen, zone))
       break;
     RELEASE(reply);
   }
   close(fd);
+
+  RELEASE(zone);
 
 #if DEBUG_ENABLED
   Debug("COMPLETED AXFR of \"%s\" from %s", import_zone, hostport);

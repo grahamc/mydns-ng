@@ -22,18 +22,15 @@
 
 #include "util.h"
 
-static void __mydns_bind_dump_rr_default(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
-					 size_t datalen, int ttl, int aux, int maxlen, char *type) {
-  printf("%-*s\t%u\tIN %-5s\t%s\n", maxlen, name, ttl, type, data);
+void __mydns_bind_dump_rr_default(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+					 size_t datalen, int ttl, int aux, int maxlen) {
+  dns_qtype_map *map = mydns_rr_get_type_by_id(rr->type);
+
+  printf("%-*s\t%u\tIN %-5s\t%s\n", maxlen, name, ttl, map->rr_type_name, data);
 }
 
 void __mydns_bind_dump_rr_unknown(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
 				  size_t datalen, int ttl, int aux, int maxlen) {
-}
-
-void __mydns_bind_dump_rr_a(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
-			    size_t datalen, int ttl, int aux, int maxlen) {
-  __mydns_bind_dump_rr_default(soa, rr, name, data, datalen, ttl, aux, maxlen, "A");
 }
 
 void __mydns_bind_dump_rr_mx(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,

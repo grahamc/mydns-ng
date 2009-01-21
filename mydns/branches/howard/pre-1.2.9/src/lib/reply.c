@@ -22,6 +22,7 @@
 
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_LIB_REPLY	1
+
 /**************************************************************************************************
 	RDATA_ENLARGE
 	Expands t->rdata by `size' bytes.  Returns a pointer to the destination.
@@ -35,6 +36,7 @@ static char *rdata_enlarge(TASK *t, size_t size) {
   return (t->rdata + t->rdlen - size);
 }
 /*--- rdata_enlarge() ---------------------------------------------------------------------------*/
+
 /**************************************************************************************************
 	REPLY_START_RR
 	Begins an RR.  Appends to t->rdata all the header fields prior to rdlength.
@@ -73,6 +75,7 @@ static int reply_start_rr(TASK *t, RR *r, char *name, dns_qtype_t type, uint32_t
   return (0);
 }
 /*--- reply_start_rr() --------------------------------------------------------------------------*/
+
 /**************************************************************************************************
 	REPLY_ADD_ADDITIONAL
 	Add ADDITIONAL for each item in the provided list.
@@ -98,6 +101,7 @@ void mydns_reply_add_additional(TASK *t, RRLIST *rrlist, datasection_t section) 
   }
 }
 /*--- reply_add_additional() --------------------------------------------------------------------*/
+
 /**************************************************************************************************
 	REPLY_ADD_GENERIC_RR
 	Adds a generic resource record whose sole piece of data is a domain-name,
