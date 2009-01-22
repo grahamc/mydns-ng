@@ -37,8 +37,6 @@ CACHE *NegativeCache = NULL;						/* Negative zone cache */
 extern char	*dn_default_ns;						/* Default NS for directNIC */
 #endif
 
-time_t		current_time;			/* Current time */
-
 #if (HASH_TYPE == ORIGINAL_HASH) || (HASH_TYPE == ADDITIVE_HASH)
 /**************************************************************************************************
 	ISPRIME
@@ -233,7 +231,7 @@ cache_status(CACHE *C) {
 	   PCT(C->limit, C->count), (unsigned int)C->count, (unsigned int)C->size,
 	   (unsigned int)(C->removed
 			  ? C->removed_secs / C->removed
-			  : (time(NULL) - Status.start_time))
+			  : (time(NULL) - status_start_time()))
 	   );
   }
 }

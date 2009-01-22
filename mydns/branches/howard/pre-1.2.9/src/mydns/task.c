@@ -234,7 +234,7 @@ taskexec_t
 task_timedout(TASK *t) {
   taskexec_t res = TASK_TIMED_OUT;
 
-  Status.timedout++;
+  status_task_timedout(t);
 
   if (!t) {
     Err(_("task_timedout called with NULL task"));
@@ -770,34 +770,6 @@ task_process(TASK *t, int rfd, int wfd, int efd) {
   return (res != TASK_DID_NOT_EXECUTE);
 }
 /*--- task_process() ----------------------------------------------------------------------------*/
-
-static void _task_close_queue(QUEUE *TaskP) {
-
-  register TASK *t = NULL;
-
-  /* Close any TCP connections and any NOTIFY sockets */
-  for (t = (TASK*)(TaskP->head); t; t = task_next(t)) {
-    if (t->protocol == SOCK_STREAM && t->fd >= 0)
-      sockclose(t->fd);
-    else if (t->protocol == SOCK_DGRAM
-	     && (t->status & (ReqTask|TickTask|RunTask))
-	     && t->fd >= 0)
-      sockclose(t->fd);
-    dequeue(t);
-  }
-}
-
-void task_free_all() {
-  int i = 0, j = 0;
-
-  for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
-    for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
-      QUEUE *TaskQ = TaskArray[i][j];
-      _task_close_queue(TaskQ);
-      /*TaskArray[i][j] = NULL;*/
-    }
-  }
-}
 
 void task_free_others(TASK *t, int closeallfds) {
   int i = 0, j = 0;

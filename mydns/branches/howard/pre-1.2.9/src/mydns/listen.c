@@ -30,18 +30,6 @@
 #  include <sys/ioctl.h>
 
 
-int *udp4_fd = (int *)NULL;					/* Listening socket: UDP, IPv4 */
-int *tcp4_fd = (int *)NULL;					/* Listening socket: TCP, IPv4 */
-int num_udp4_fd = 0;						/* Number of items in 'udp4_fd' */
-int num_tcp4_fd = 0;						/* Number of items in 'tcp4_fd' */
-
-#if HAVE_IPV6
-int *udp6_fd = (int *)NULL;					/* Listening socket: UDP, IPv6 */
-int *tcp6_fd = (int *)NULL;					/* Listening socket: TCP, IPv6 */
-int num_udp6_fd = 0;						/* Number of items in 'udp6_fd' */
-int num_tcp6_fd = 0;						/* Number of items in 'tcp6_fd' */
-#endif
-
 extern char	*opt_conf;
 extern uint32_t answer_then_quit;
 

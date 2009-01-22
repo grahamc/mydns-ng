@@ -21,10 +21,7 @@
 #include "named.h"
 
 
-struct timeval	current_tick;			/* Current micro-second time */
-
 static int	servers = 0;			/* Number of server processes to run */
-ARRAY		*Servers = NULL;
 
 static int	got_sigusr1 = 0,
 	   	got_sigusr2 = 0,
@@ -33,13 +30,6 @@ static int	got_sigusr1 = 0,
 	   	got_sigchld = 0;		/* Signal flags */
 
 int		run_as_root = 0;		/* Run as root user? */
-
-extern int	*tcp4_fd, *udp4_fd;		/* Listening FD's (IPv4) */
-extern int	num_tcp4_fd, num_udp4_fd;	/* Number of listening FD's (IPv4) */
-#if HAVE_IPV6
-extern int	*tcp6_fd, *udp6_fd;		/* Listening FD's (IPv6) */
-extern int	num_tcp6_fd, num_udp6_fd;	/* Number of listening FD's (IPv6) */
-#endif
 
 extern void	create_listeners(void);
 
@@ -373,20 +363,13 @@ create_pidfile(void) {
 /*--- create_pidfile() --------------------------------------------------------------------------*/
 
 
-void
-kill_server(SERVER *server, int sig) {
-  kill(server->pid, sig);
-}
-
 /**************************************************************************************************
 	SIGUSR1
 	Outputs server stats.
 **************************************************************************************************/
 void
 master_sigusr1(int dummy) {
-  int n = 0;
-  for (n = 0; n < array_numobjects(Servers); n++)
-    kill_server((SERVER*)array_fetch(Servers, n), SIGUSR1);
+  server_kill_all(SIGUSR1);
   got_sigusr1 = 0;
 }
 
@@ -404,9 +387,7 @@ sigusr1(int dummy) {
 **************************************************************************************************/
 void
 master_sigusr2(int dummy) {
-  int n = 0;
-  for (n = 0; n < array_numobjects(Servers); n++)
-    kill_server((SERVER*)array_fetch(Servers, n), SIGUSR2);
+  server_kill_all(SIGUSR2);
   got_sigusr2 = 0;
 }
 
@@ -427,9 +408,7 @@ sigusr2(int dummy) {
 **************************************************************************************************/
 void
 master_sighup(int dummy) {
-  int n = 0;
-  for (n = 0; n < array_numobjects(Servers); n++)
-    kill_server((SERVER*)array_fetch(Servers, n), SIGHUP);
+  server_kill_all(SIGHUP);
   got_sighup = 0;
 }
 
@@ -472,52 +451,6 @@ signal_handler(int signo) {
 
 
 void
-named_shutdown(int signo) {
-  int n = 0;
-
-  switch (signo) {
-  case 0:
-    Notice(_("Normal shutdown")); break;
-  case SIGINT:
-    Notice(_("interrupted")); break;
-  case SIGQUIT:
-    Notice(_("quit")); break;
-  case SIGTERM:
-    Notice(_("terminated")); break;
-  case SIGABRT:
-    Notice(_("aborted")); break;
-  default:
-    Notice(_("exiting due to signal %d"), signo); break;
-  }
-
-  server_status();
-
-  task_free_all();
-
-  cache_empty(ZoneCache);
-#if USE_NEGATIVE_CACHE
-  cache_empty(NegativeCache);
-#endif
-  cache_empty(ReplyCache);
-
-  /* Close listening FDs - do not sockclose these are shared with other processes */
-  for (n = 0; n < num_tcp4_fd; n++)
-    close(tcp4_fd[n]);
-
-  for (n = 0; n < num_udp4_fd; n++)
-    close(udp4_fd[n]);
-
-#if HAVE_IPV6
-  for (n = 0; n < num_tcp6_fd; n++)
-    close(tcp6_fd[n]);
-
-  for (n = 0; n < num_udp6_fd; n++)
-    close(udp6_fd[n]);
-#endif	/* HAVE_IPV6 */
-
-}
-
-void
 master_shutdown(int signo) {
   int i = 0, m = 0, n = 0, status = 0, running_procs = 0;
 
@@ -527,7 +460,7 @@ master_shutdown(int signo) {
     SERVER	*server = (SERVER*)array_fetch(Servers, n);
     if(server->pid != -1) {
       running_procs += 1;
-      kill_server(server, signo);
+      server_kill(server, signo);
     }
   }
 
@@ -618,18 +551,6 @@ reap_child() {
   }
 
   return pid;
-}
-
-SERVER *
-find_server_for_task(TASK *t) {
-  int n = 0;
-
-  for (n = 0; n < array_numobjects(Servers); n++) {
-    SERVER *server = (SERVER*)array_fetch(Servers, n);
-    if (server->listener == t) return server;
-  }
-
-  return NULL;
 }
 
 static void
@@ -738,15 +659,6 @@ init_rlimits(void)
 #endif
 }
 /*--- init_rlimits() ----------------------------------------------------------------------------*/
-
-struct timeval *
-gettick() {
-
-  gettimeofday(&current_tick, NULL);
-  current_time = current_tick.tv_sec;
-
-  return (&current_tick);
-}
 
 static void
 do_initial_tasks(INITIALTASK *initial_tasks) {
@@ -1198,7 +1110,7 @@ main(int argc, char **argv)
   /* Start listening fd's */
   create_listeners();
 
-  time(&Status.start_time);
+  status_start_server();
 
   if (run_as_root) {
     chdir("/tmp");

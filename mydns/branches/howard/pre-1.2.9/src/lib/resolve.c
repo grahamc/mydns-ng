@@ -457,7 +457,7 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
 
 #if STATUS_ENABLED
   if (t->qclass == DNS_CLASS_CHAOS)
-    return remote_status(t);
+    return status_get_rr(t);
 #endif
 
   if (!axfr_enabled && t->qtype == DNS_QTYPE_AXFR)

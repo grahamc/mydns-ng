@@ -1,7 +1,6 @@
 /**************************************************************************************************
-	$Id: main.c,v 1.122 2005/12/08 17:45:56 bboy Exp $
 
-	Copyright (C) 2002-2005  Don Moore <bboy@bboy.net>
+	Copyright (C) 2009- Howard Wilkinson <howard@cohtech.com>
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -23,12 +22,56 @@
 int	 	shutting_down = 0;		/* Shutdown in progress? */
 char		hostname[256];			/* Hostname of local machine */
 
+struct timeval	current_tick;			/* Current micro-second time */
+time_t		current_time;			/* Current time */
+
+struct timeval *gettick() {
+
+  gettimeofday(&current_tick, NULL);
+  current_time = current_tick.tv_sec;
+
+  return (&current_tick);
+}
+
 /**************************************************************************************************
 	NAMED_CLEANUP
 **************************************************************************************************/
 void named_cleanup(int signo) {
 
   shutting_down = signo;
+
+}
+
+void
+named_shutdown(int signo) {
+  int n = 0;
+
+  switch (signo) {
+  case 0:
+    Notice(_("Normal shutdown")); break;
+  case SIGINT:
+    Notice(_("interrupted")); break;
+  case SIGQUIT:
+    Notice(_("quit")); break;
+  case SIGTERM:
+    Notice(_("terminated")); break;
+  case SIGABRT:
+    Notice(_("aborted")); break;
+  default:
+    Notice(_("exiting due to signal %d"), signo); break;
+  }
+
+  server_status();
+
+  task_free_all();
+
+  cache_empty(ZoneCache);
+#if USE_NEGATIVE_CACHE
+  cache_empty(NegativeCache);
+#endif
+  cache_empty(ReplyCache);
+
+  listen_close_all();
 
 }
 

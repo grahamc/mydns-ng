@@ -28,10 +28,13 @@
 
 #include "mydns.h"
 #include "taskobj.h"
+#include "status.h"
+#include "server.h"
+#include "listen.h"
+#include "support.h"
 
 #include "cache.h"
 #include "header.h"
-#include "support.h"
 #include "task.h"
 
 #if HAVE_SYS_RESOURCE_H
@@ -75,27 +78,6 @@
 #if DEBUG_ENABLED
 extern char *datasection_str[];			/* Strings describing data section types */
 #endif
-
-#define MAX_RESULTS	20
-typedef struct _serverstatus									/* Server status information */
-{
-	time_t	start_time;	 										/* Time server started */
-	uint32_t	udp_requests, tcp_requests;					/* Total # of requests handled */
-	uint32_t	timedout;	 										/* Number of requests that timed out */
-	uint32_t	results[MAX_RESULTS];							/* Result codes */
-} SERVERSTATUS;
-
-extern SERVERSTATUS Status;
-
-typedef struct _named_server {
-  pid_t		pid;
-  int		serverfd;
-  TASK		*listener;
-  int		signalled;
-} SERVER;
-
-extern ARRAY	*Servers;
-
 
 /* Global variables */
 
@@ -244,11 +226,6 @@ extern char *__mydns_process_axfr_txt(char *rv, char *name, char *origin,
 				      dns_qtype_map *map);
 
 /* main.c */
-extern struct timeval	*gettick();
-extern int		Max_FDs;
-extern void		named_shutdown(int);
-extern void		free_other_tasks(TASK *, int);
-extern SERVER		*find_server_for_task(TASK*);
 extern void		kill_server(SERVER *, int);
 
 /* message.c */
@@ -330,35 +307,6 @@ extern void		sort_srv_recs(TASK *, RRLIST *, datasection_t);
 #if STATUS_ENABLED
 extern taskexec_t	remote_status(TASK *t);
 #endif
-
-/* support.c */
-
-/* task.c */
-extern int		task_timedout(TASK *);
-extern TASK 		*task_find_by_id(TASK *, QUEUE *, unsigned long);
-extern taskexec_t	task_new(TASK *, unsigned char *, size_t);
-extern void		task_init_header(TASK *);
-extern TASK		*_task_init(tasktype_t, taskpriority_t, taskstat_t, int, int, int, void *, const char *, int);
-#define			task_init(P,S,fd,p,f,a)	_task_init(NORMAL_TASK, (P), (S), (fd), (p), (f), (a), __FILE__, __LINE__)
-#define			IOtask_init(P,S,fd,p,f,a)	_task_init(IO_TASK, (P), (S), (fd), (p), (f), (a), __FILE__, __LINE__)
-#define			Ticktask_init(P,S,fd,p,f,a)	_task_init(PERIODIC_TASK, (P), (S), (fd), (p), (f), (a), __FILE__, __LINE__)
-
-extern void		_task_change_type(TASK *, tasktype_t, taskpriority_t);
-#define			task_change_type(t,T) _task_change_type((t), (T), (t)->priority)
-#define			task_change_priority(t,P) _task_change_type((t),(t)->type,(P))
-#define			task_change_type_and_priority(t,T,P) _task_change_type((t),(T),(P))
-
-extern void		_task_free(TASK *, const char *, int);
-#define			task_free(T)	if ((T)) _task_free((T), __FILE__, __LINE__), (T) = NULL
-
-extern void		task_add_extension(TASK*, void*, FreeExtension, RunExtension, TimeExtension);
-extern void		task_remove_extension(TASK *);
-
-extern void		task_build_reply(TASK *);
-extern void		task_output_info(TASK *, char *);
-extern int		task_process(TASK *, int, int, int);
-extern void		task_start();
-
 
 /* tcp.c */
 extern int		accept_tcp_query(int, int);

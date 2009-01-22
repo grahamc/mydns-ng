@@ -27,6 +27,130 @@
 #include "bits.h"
 #include "header.h"
 
+/* The record types */
+typedef enum _dns_rrtype_t				/* DNS record types (for MyDNS) */
+{
+	DNS_RRTYPE_SOA,
+	DNS_RRTYPE_RR
+} dns_rrtype_t;
+
+typedef enum							/* Query classes */
+{                                      
+  DNS_CLASS_UNKNOWN 	= -1,				/* Unknown */
+
+  DNS_CLASS_IN		= 1,				/* Internet */
+  DNS_CLASS_CHAOS	= 3,				/* CHAOS (obsolete) */
+  DNS_CLASS_HESIOD	= 4,				/* HESIOD (obsolete) */
+
+  DNS_CLASS_NONE	= 254,				/* NONE (RFC 2136) */
+  DNS_CLASS_ANY		= 255				/* ANY */
+
+} dns_class_t;
+
+typedef enum							/* Query types */
+{
+	DNS_QTYPE_UNKNOWN		= -1,			/* Unknown */
+
+	DNS_QTYPE_NONE			= 0,			/* None/invalid */
+	DNS_QTYPE_A			= 1,			/* Address */
+	DNS_QTYPE_NS			= 2,			/* Nameserver */
+	DNS_QTYPE_MD			= 3,			/* Mail dest */
+	DNS_QTYPE_MF			= 4,			/* Mail forwarder */
+	DNS_QTYPE_CNAME			= 5,			/* Canonical name */
+	DNS_QTYPE_SOA			= 6,			/* Start of authority */
+	DNS_QTYPE_MB			= 7,			/* Mailbox name */
+	DNS_QTYPE_MG			= 8,			/* Mail group */
+	DNS_QTYPE_MR			= 9,			/* Mail rename */
+	DNS_QTYPE_NULL			= 10,			/* Null */
+	DNS_QTYPE_WKS			= 11,			/* Well known service */
+	DNS_QTYPE_PTR			= 12,			/* IP -> fqdn mapping */
+	DNS_QTYPE_HINFO			= 13,			/* Host info */
+	DNS_QTYPE_MINFO			= 14,			/* Mailbox info */
+	DNS_QTYPE_MX			= 15,			/* Mail routing info */
+	DNS_QTYPE_TXT			= 16,			/* Text */
+	DNS_QTYPE_RP			= 17,			/* Responsible person */
+	DNS_QTYPE_AFSDB			= 18,			/* AFS cell database */
+	DNS_QTYPE_X25			= 19,			/* X_25 calling address */
+	DNS_QTYPE_ISDN			= 20,			/* ISDN calling address */
+	DNS_QTYPE_RT			= 21,			/* Router */
+	DNS_QTYPE_NSAP			= 22,			/* NSAP address */
+	DNS_QTYPE_NSAP_PTR		= 23,			/* Reverse NSAP lookup (depreciated) */
+	DNS_QTYPE_SIG			= 24,			/* Security signature */
+	DNS_QTYPE_KEY			= 25,			/* Security key */
+	DNS_QTYPE_PX			= 26,			/* X.400 mail mapping */
+	DNS_QTYPE_GPOS			= 27,			/* Geographical position (withdrawn) */
+	DNS_QTYPE_AAAA			= 28,			/* IPv6 Address */
+	DNS_QTYPE_LOC			= 29,			/* Location info */
+	DNS_QTYPE_NXT			= 30,			/* Next domain (security) */
+	DNS_QTYPE_EID			= 31,			/* Endpoint identifier */
+	DNS_QTYPE_NIMLOC		= 32,			/* Nimrod Locator */
+	DNS_QTYPE_SRV			= 33,			/* Server */
+	DNS_QTYPE_ATMA			= 34,			/* ATM Address */
+	DNS_QTYPE_NAPTR			= 35,			/* Naming Authority Pointer */
+	DNS_QTYPE_KX			= 36,			/* Key Exchange */
+	DNS_QTYPE_CERT			= 37,			/* Certification record */
+	DNS_QTYPE_A6			= 38,			/* IPv6 address (deprecates AAAA) */
+	DNS_QTYPE_DNAME			= 39,			/* Non-terminal DNAME (for IPv6) */
+	DNS_QTYPE_SINK			= 40,			/* Kitchen sink (experimentatl) */
+	DNS_QTYPE_OPT			= 41,			/* EDNS0 option (meta-RR) */
+	DNS_QTYPE_APL			= 42,
+	DNS_QTYPE_DS			= 43,
+	DNS_QTYPE_SSHFP			= 44,
+	DNS_QTYPE_IPSECKEY		= 45,
+	DNS_QTYPE_RRSIG			= 46,
+	DNS_QTYPE_NSEC			= 47,
+	DNS_QTYPE_DNSKEY		= 48,
+	DNS_QTYPE_DHCID			= 49,
+	DNS_QTYPE_NSEC3			= 50,
+	DNS_QTYPE_NSEC3PARAM		= 51,
+
+	DNS_QTYPE_HIP			= 55,
+
+	DNS_QTYPE_SPF			= 99,
+	DNS_QTYPE_UINFO			= 100,
+	DNS_QTYPE_UID			= 101,
+	DNS_QTYPE_GID			= 102,
+	DNS_QTYPE_UNSPEC		= 103,
+
+	DNS_QTYPE_TKEY			= 249,
+	DNS_QTYPE_TSIG			= 250,			/* Transaction signature */
+	DNS_QTYPE_IXFR			= 251,			/* Incremental zone transfer */
+	DNS_QTYPE_AXFR			= 252,			/* Zone transfer */
+	DNS_QTYPE_MAILB			= 253,			/* Transfer mailbox records */
+	DNS_QTYPE_MAILA			= 254,			/* Transfer mail agent records */
+	DNS_QTYPE_ANY			= 255,			/* Any */
+
+	DNS_QTYPE_TA			= 32768,
+	DNS_QTYPE_DLV			= 32769,
+
+#if ALIAS_ENABLED
+	DNS_QTYPE_ALIAS			= 65280,		/* Extension - David Phillips, alias patch */
+#endif
+} dns_qtype_t;
+
+/* Size ranges for various bits of DNS data */
+#define	DNS_MAXPACKETLEN_TCP		65536		/* Use 64k for TCP */
+#define	DNS_MAXPACKETLEN_UDP		512		/* RFC1035: "512 octets or less" */
+#define	DNS_MAXNAMELEN			255		/* RFC1035: "255 octets or less" */
+#define	DNS_MAXESC			DNS_MAXNAMELEN + DNS_MAXNAMELEN + 1
+#define	DNS_MAXLABELLEN			63		/* RFC1035: "63 octets or less" */
+#define	DNS_POINTER_MASK		0xC0
+#define	DNS_QUERYBUFSIZ			512		/* Used as buffer size for SQL queries */
+#define DNS_MAXDATALEN			65536		/* Should be RFC1035: Drawn from BIND LENGTHs
+							 */
+#define DNS_DATALEN			128		/* Length of data field */
+#define DNS_MAXTXTLEN			2048		/* Arbitrary limit for TXT data */
+#define DNS_MAXTXTELEMLEN		255		/* Maximum string length in a text entry */
+/* Default values in SOA records */
+#define	DNS_DEFAULT_REFRESH		28800
+#define	DNS_DEFAULT_RETRY		7200
+#define	DNS_DEFAULT_EXPIRE		604800
+#define	DNS_DEFAULT_MINIMUM		86400
+#define	DNS_DEFAULT_TTL			86400
+#define	DNS_MINIMUM_TTL			300
+
+#include "taskobj.h"
+
 /* Table names */
 #define	MYDNS_SOA_TABLE	"soa"
 #define	MYDNS_RR_TABLE		"rr"
@@ -181,27 +305,6 @@ extern int mydns_rr_use_serial;
 /* Does the specified string end with a dot? */
 #define	ENDS_WITH_DOT(s)	(s && (s[strlen(s)-1] == '.'))
 
-/* Size ranges for various bits of DNS data */
-#define	DNS_MAXPACKETLEN_TCP		65536		/* Use 64k for TCP */
-#define	DNS_MAXPACKETLEN_UDP		512		/* RFC1035: "512 octets or less" */
-#define	DNS_MAXNAMELEN			255		/* RFC1035: "255 octets or less" */
-#define	DNS_MAXESC			DNS_MAXNAMELEN + DNS_MAXNAMELEN + 1
-#define	DNS_MAXLABELLEN			63		/* RFC1035: "63 octets or less" */
-#define	DNS_POINTER_MASK		0xC0
-#define	DNS_QUERYBUFSIZ			512		/* Used as buffer size for SQL queries */
-#define DNS_MAXDATALEN			65536		/* Should be RFC1035: Drawn from BIND LENGTHs
-							 */
-#define DNS_DATALEN			128		/* Length of data field */
-#define DNS_MAXTXTLEN			2048		/* Arbitrary limit for TXT data */
-#define DNS_MAXTXTELEMLEN		255		/* Maximum string length in a text entry */
-/* Default values in SOA records */
-#define	DNS_DEFAULT_REFRESH		28800
-#define	DNS_DEFAULT_RETRY		7200
-#define	DNS_DEFAULT_EXPIRE		604800
-#define	DNS_DEFAULT_MINIMUM		86400
-#define	DNS_DEFAULT_TTL			86400
-#define	DNS_MINIMUM_TTL			300
-
 /* Information about the PTR suffix */
 /* #define	PTR_SUFFIX					".in-addr.arpa." */
 /* #define	PTR_SUFFIX_LEN				14 */
@@ -210,155 +313,6 @@ extern int mydns_rr_use_serial;
 #define INET_ATON(a,b,c,d) (((a) << 24) | ((b) << 16) | ((c) << 8) | (d))
 
 
-typedef enum _task_error_t					/* Common errors */
-{
-	ERR_NONE = 0,						/* No error */
-	ERR_INTERNAL,						/* "Internal error" */
-	ERR_ZONE_NOT_FOUND,					/* "Zone not found" */
-	ERR_NO_MATCHING_RECORDS,				/* "No matching resource records" */
-	ERR_NO_AXFR,						/* "AXFR disabled" */
-	ERR_RR_NAME_TOO_LONG,					/* "Name too long in RR" */
-	ERR_RR_LABEL_TOO_LONG,					/* "Label too long in RR" */
-	ERR_Q_BUFFER_OVERFLOW,					/* "Input name buffer overflow" */
-	ERR_Q_INVALID_COMPRESSION,				/* "Invalid compression method" */
-	ERR_Q_NAME_TOO_LONG,					/* "Question name too long" */
-	ERR_Q_LABEL_TOO_LONG,					/* "Question label too long" */
-	ERR_NO_CLASS,						/* "Unknown class" */
-	ERR_NAME_FORMAT,					/* "Invalid name format" */
-	ERR_TIMEOUT,						/* "Communications timeout" */
-	ERR_BROKEN_GLUE,					/* "Malformed glue" */
-	ERR_INVALID_ADDRESS,					/* "Invalid address" */
-	ERR_INVALID_TYPE,					/* "Invalid type" */
-	ERR_INVALID_CLASS,					/* "Invalid class" */
-	ERR_INVALID_TTL,					/* "Invalid TTL" (for update) */
-	ERR_INVALID_DATA,					/* "Invalid data" (for update) */
-	ERR_DB_ERROR,						/* "Database error" */
-	ERR_NO_QUESTION,					/* "No question in query" */
-	ERR_NO_AUTHORITY,					/* "No authority data" (for ixfr) */
-	ERR_MULTI_QUESTIONS,					/* "Multiple questions in query" */
-	ERR_MULTI_AUTHORITY,					/* "Multiple authority records in quer" */
-	ERR_QUESTION_TRUNCATED,					/* "Question truncated" */
-	ERR_UNSUPPORTED_OPCODE,					/* "Unsupported opcode" */
-	ERR_UNSUPPORTED_TYPE,					/* "Unsupported type" */
-	ERR_MALFORMED_REQUEST,					/* "Malformed request" */
-	ERR_IXFR_NOT_ENABLED,					/* "IXFR not enabled" */
-	ERR_TCP_NOT_ENABLED,					/* "TCP not enabled" */
-	ERR_RESPONSE_BIT_SET,					/* "Response bit set on query" */
-	ERR_FWD_RECURSIVE,					/* "Recursive query forwarding error" */
-	ERR_NO_UPDATE,						/* "UPDATE denied" */
-	ERR_PREREQUISITE_FAILED,				/* "UPDATE prerequisite failed" */
-
-} task_error_t;
-
-
-/* Task completion codes */
-typedef enum _task_execstatus_t {
-  TASK_ABANDONED	=-2,		/* Task needs to be abandoned - release fd */
-  TASK_FAILED		=-1,		/* Task failed to execute properly kill */
-
-  TASK_COMPLETED	= 0,		/* Task has run to completion dequeue */
-  TASK_FINISHED		= 1,		/* Task finished normally free all resources */
-  TASK_TIMED_OUT	= 2,		/* Task has timed out - dequeue */
-
-  TASK_EXECUTED		= 3,		/* Task executed but did not complete retry later */
-  TASK_DID_NOT_EXECUTE	= 4,		/* Task did not execute try again later */
-  TASK_CONTINUE		= 5,		/* Task needs to run again */
-} taskexec_t;
-
-typedef enum							/* Query classes */
-{                                      
-  DNS_CLASS_UNKNOWN 	= -1,				/* Unknown */
-
-  DNS_CLASS_IN		= 1,				/* Internet */
-  DNS_CLASS_CHAOS	= 3,				/* CHAOS (obsolete) */
-  DNS_CLASS_HESIOD	= 4,				/* HESIOD (obsolete) */
-
-  DNS_CLASS_NONE	= 254,				/* NONE (RFC 2136) */
-  DNS_CLASS_ANY		= 255				/* ANY */
-
-} dns_class_t;
-
-
-typedef enum							/* Query types */
-{
-	DNS_QTYPE_UNKNOWN		= -1,			/* Unknown */
-
-	DNS_QTYPE_NONE			= 0,			/* None/invalid */
-	DNS_QTYPE_A			= 1,			/* Address */
-	DNS_QTYPE_NS			= 2,			/* Nameserver */
-	DNS_QTYPE_MD			= 3,			/* Mail dest */
-	DNS_QTYPE_MF			= 4,			/* Mail forwarder */
-	DNS_QTYPE_CNAME			= 5,			/* Canonical name */
-	DNS_QTYPE_SOA			= 6,			/* Start of authority */
-	DNS_QTYPE_MB			= 7,			/* Mailbox name */
-	DNS_QTYPE_MG			= 8,			/* Mail group */
-	DNS_QTYPE_MR			= 9,			/* Mail rename */
-	DNS_QTYPE_NULL			= 10,			/* Null */
-	DNS_QTYPE_WKS			= 11,			/* Well known service */
-	DNS_QTYPE_PTR			= 12,			/* IP -> fqdn mapping */
-	DNS_QTYPE_HINFO			= 13,			/* Host info */
-	DNS_QTYPE_MINFO			= 14,			/* Mailbox info */
-	DNS_QTYPE_MX			= 15,			/* Mail routing info */
-	DNS_QTYPE_TXT			= 16,			/* Text */
-	DNS_QTYPE_RP			= 17,			/* Responsible person */
-	DNS_QTYPE_AFSDB			= 18,			/* AFS cell database */
-	DNS_QTYPE_X25			= 19,			/* X_25 calling address */
-	DNS_QTYPE_ISDN			= 20,			/* ISDN calling address */
-	DNS_QTYPE_RT			= 21,			/* Router */
-	DNS_QTYPE_NSAP			= 22,			/* NSAP address */
-	DNS_QTYPE_NSAP_PTR		= 23,			/* Reverse NSAP lookup (depreciated) */
-	DNS_QTYPE_SIG			= 24,			/* Security signature */
-	DNS_QTYPE_KEY			= 25,			/* Security key */
-	DNS_QTYPE_PX			= 26,			/* X.400 mail mapping */
-	DNS_QTYPE_GPOS			= 27,			/* Geographical position (withdrawn) */
-	DNS_QTYPE_AAAA			= 28,			/* IPv6 Address */
-	DNS_QTYPE_LOC			= 29,			/* Location info */
-	DNS_QTYPE_NXT			= 30,			/* Next domain (security) */
-	DNS_QTYPE_EID			= 31,			/* Endpoint identifier */
-	DNS_QTYPE_NIMLOC		= 32,			/* Nimrod Locator */
-	DNS_QTYPE_SRV			= 33,			/* Server */
-	DNS_QTYPE_ATMA			= 34,			/* ATM Address */
-	DNS_QTYPE_NAPTR			= 35,			/* Naming Authority Pointer */
-	DNS_QTYPE_KX			= 36,			/* Key Exchange */
-	DNS_QTYPE_CERT			= 37,			/* Certification record */
-	DNS_QTYPE_A6			= 38,			/* IPv6 address (deprecates AAAA) */
-	DNS_QTYPE_DNAME			= 39,			/* Non-terminal DNAME (for IPv6) */
-	DNS_QTYPE_SINK			= 40,			/* Kitchen sink (experimentatl) */
-	DNS_QTYPE_OPT			= 41,			/* EDNS0 option (meta-RR) */
-	DNS_QTYPE_APL			= 42,
-	DNS_QTYPE_DS			= 43,
-	DNS_QTYPE_SSHFP			= 44,
-	DNS_QTYPE_IPSECKEY		= 45,
-	DNS_QTYPE_RRSIG			= 46,
-	DNS_QTYPE_NSEC			= 47,
-	DNS_QTYPE_DNSKEY		= 48,
-	DNS_QTYPE_DHCID			= 49,
-	DNS_QTYPE_NSEC3			= 50,
-	DNS_QTYPE_NSEC3PARAM		= 51,
-
-	DNS_QTYPE_HIP			= 55,
-
-	DNS_QTYPE_SPF			= 99,
-	DNS_QTYPE_UINFO			= 100,
-	DNS_QTYPE_UID			= 101,
-	DNS_QTYPE_GID			= 102,
-	DNS_QTYPE_UNSPEC		= 103,
-
-	DNS_QTYPE_TKEY			= 249,
-	DNS_QTYPE_TSIG			= 250,			/* Transaction signature */
-	DNS_QTYPE_IXFR			= 251,			/* Incremental zone transfer */
-	DNS_QTYPE_AXFR			= 252,			/* Zone transfer */
-	DNS_QTYPE_MAILB			= 253,			/* Transfer mailbox records */
-	DNS_QTYPE_MAILA			= 254,			/* Transfer mail agent records */
-	DNS_QTYPE_ANY			= 255,			/* Any */
-
-	DNS_QTYPE_TA			= 32768,
-	DNS_QTYPE_DLV			= 32769,
-
-#if ALIAS_ENABLED
-	DNS_QTYPE_ALIAS			= 65280,		/* Extension - David Phillips, alias patch */
-#endif
-} dns_qtype_t;
 
 typedef int (*rr_parser_t)(/* const char * origin, MYDNS_RR *rr */);
 typedef void (*rr_free_t)(/* MYDNS_RR * */);
@@ -438,14 +392,6 @@ typedef enum
 	DNS_RCODE_BADTRUNC		= 22,		/* Bad Truncation */
 
 } dns_rcode_t;
-
-
-/* The record types */
-typedef enum _dns_rrtype_t				/* DNS record types (for MyDNS) */
-{
-	DNS_RRTYPE_SOA,
-	DNS_RRTYPE_RR
-} dns_rrtype_t;
 
 
 typedef enum _datasection_t				/* Sections in reply */

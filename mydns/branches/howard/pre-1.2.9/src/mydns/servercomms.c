@@ -1,7 +1,6 @@
 /**************************************************************************************************
-	$Id: array.c,v 1.0 2007/10/04 11:10:00 howard Exp $
 
-	Copyright (C) 2007  Howard Wilkinson <howard@cohtech.com>
+	Copyright (C) 2007-2009  Howard Wilkinson <howard@cohtech.com>
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -18,7 +17,14 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **************************************************************************************************/
 
-#include "named.h"
+#include <time.h>
+
+#include "memoryman.h"
+
+#include "support.h"
+
+#include "server.h"
+#include "task.h"
 
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_SERVERCOMMS	1
@@ -430,7 +436,7 @@ mcomms_tick(TASK *t, void *data) {
 
   if (rv == TASK_FAILED) {
     /* Shutdown and restart server at other end of connection */
-    SERVER *server = find_server_for_task(t);
+    SERVER *server = server_find_by_task(t);
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
     DebugX("servercomms", 1, _("%s: Master comms tick - connection to server has not pinged for %d seconds"),
 	   desctask(t), lastseen);
@@ -441,7 +447,7 @@ mcomms_tick(TASK *t, void *data) {
       } else {
 	server->signalled = SIGTERM;
       }
-      kill_server(server, server->signalled);
+      server_kill(server, server->signalled);
       t->timeout = current_time + 5; /* Give the server time to die */
       rv = TASK_CONTINUE;
     }

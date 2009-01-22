@@ -236,7 +236,7 @@ _task_free(TASK *t, const char *file, int line) {
 
   RELEASE(t);
 
-  if (answer_then_quit && (Status.udp_requests + Status.tcp_requests) >= answer_then_quit)
+  if (answer_then_quit && (status_udp_requests() + status_tcp_requests()) >= answer_then_quit)
     named_cleanup(SIGQUIT);
 }
 /*--- _task_free() ------------------------------------------------------------------------------*/
@@ -428,9 +428,9 @@ int _task_enqueue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
   t->len = 0;							/* Reset TCP packet len */
 
   if (t->protocol == SOCK_STREAM)
-    Status.tcp_requests++;
+    status_tcp_request(t);
   else if (t->protocol == SOCK_DGRAM)
-    Status.udp_requests++;
+    status_udp_request(t);
 
 #if DEBUG_ENABLED && DEBUG_TASK
   DebugX("lib-task", 1,_("%s: enqueued (by %s:%u)"), desctask(t), file, line);
@@ -456,8 +456,7 @@ void _task_dequeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
   if (err_verbose)				/* Output task info if being verbose */
     task_output_info(t, NULL);
 
-  if (t->hdr.rcode >= 0 && t->hdr.rcode < MAX_RESULTS)		/* Store results in stats */
-    Status.results[t->hdr.rcode]++;
+  status_result(t, t->hdr.rcode);
 
   queue_remove(q, t);
 
@@ -532,6 +531,34 @@ void task_queue_stats() {
   for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
     for (j= HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
       _task_1_queue_stats(TaskArray[j][i]);
+    }
+  }
+}
+
+static void _task_close_queue(QUEUE *TaskP) {
+
+  register TASK *t = NULL;
+
+  /* Close any TCP connections and any NOTIFY sockets */
+  for (t = (TASK*)(TaskP->head); t; t = task_next(t)) {
+    if (t->protocol == SOCK_STREAM && t->fd >= 0)
+      sockclose(t->fd);
+    else if (t->protocol == SOCK_DGRAM
+	     && (t->status & (ReqTask|TickTask|RunTask))
+	     && t->fd >= 0)
+      sockclose(t->fd);
+    dequeue(t);
+  }
+}
+
+void task_free_all() {
+  int i = 0, j = 0;
+
+  for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
+    for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
+      QUEUE *TaskQ = TaskArray[i][j];
+      _task_close_queue(TaskQ);
+      /*TaskArray[i][j] = NULL;*/
     }
   }
 }

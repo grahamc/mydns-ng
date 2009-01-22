@@ -114,10 +114,9 @@ status_version_mydns(TASK *t) {
 
 
 /**************************************************************************************************
-	REMOTE_STATUS
+	STATUS_GET_RR
 **************************************************************************************************/
-taskexec_t
-remote_status(TASK *t) {
+taskexec_t status_get_rr(TASK *t) {
   if (t->qtype != DNS_QTYPE_TXT)
     return formerr(t, DNS_RCODE_NOTIMP, ERR_NO_CLASS, NULL);
 
@@ -133,6 +132,27 @@ remote_status(TASK *t) {
 }
 /*--- remote_status() ---------------------------------------------------------------------------*/
 
+void status_task_timedout(TASK *t) {
+  Status.timedout++;
+}
+
+void status_start_server() {
+  time(&Status.start_time);
+}
+
+void status_tcp_request(TASK *t) {
+  Status.tcp_requests++;
+}
+
+void status_udp_request(TASK *t) {
+  Status.udp_requests++;
+}
+
+void status_result(TASK *t, int rcode) {
+  if (rcode >= 0 && rcode < MAX_RESULTS) {
+    Status.results[rcode]++;
+  }
+}
 #endif	/* STATUS_ENABLED */
 
 /* vi:set ts=3: */

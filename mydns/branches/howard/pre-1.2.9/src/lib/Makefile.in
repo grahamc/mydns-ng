@@ -59,11 +59,12 @@ libmydns_a_LIBADD =
 am_libmydns_a_OBJECTS = alias.$(OBJEXT) cache.$(OBJEXT) conf.$(OBJEXT) \
 	check.$(OBJEXT) data.$(OBJEXT) db.$(OBJEXT) encode.$(OBJEXT) \
 	error.$(OBJEXT) export.$(OBJEXT) import.$(OBJEXT) ip.$(OBJEXT) \
-	message.$(OBJEXT) queue.$(OBJEXT) recursive.$(OBJEXT) \
-	reply.$(OBJEXT) resolve.$(OBJEXT) rr.$(OBJEXT) \
-	rr_type.$(OBJEXT) soa.$(OBJEXT) sql.$(OBJEXT) status.$(OBJEXT) \
-	str.$(OBJEXT) support.$(OBJEXT) task.$(OBJEXT) \
-	unencode.$(OBJEXT) update.$(OBJEXT) util.$(OBJEXT)
+	listen.$(OBJEXT) message.$(OBJEXT) queue.$(OBJEXT) \
+	recursive.$(OBJEXT) reply.$(OBJEXT) resolve.$(OBJEXT) \
+	rr.$(OBJEXT) rr_type.$(OBJEXT) server.$(OBJEXT) soa.$(OBJEXT) \
+	sql.$(OBJEXT) status.$(OBJEXT) str.$(OBJEXT) support.$(OBJEXT) \
+	task.$(OBJEXT) unencode.$(OBJEXT) update.$(OBJEXT) \
+	util.$(OBJEXT)
 libmydns_a_OBJECTS = $(am_libmydns_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -239,10 +240,11 @@ libmydns_a_SOURCES = alias.c \
 				data.c db.c \
 				encode.c error.c export.c \
 				import.c ip.c \
+				listen.c \
 				message.c \
 				queue.c \
 				recursive.c reply.c resolve.c rr.c rr_type.c \
-				soa.c sql.c status.c str.c support.c \
+				server.c soa.c sql.c status.c str.c support.c \
 				task.c \
 				unencode.c update.c util.c
 
@@ -304,6 +306,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/export.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/import.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ip.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/listen.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/message.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/queue.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recursive.Po@am__quote@
@@ -311,6 +314,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/resolve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rr_type.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/server.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/soa.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sql.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/status.Po@am__quote@

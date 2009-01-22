@@ -9,10 +9,11 @@ libmydns_a_SOURCES	=	alias.c \
 				data.c db.c \
 				encode.c error.c export.c \
 				import.c ip.c \
+				listen.c \
 				message.c \
 				queue.c \
 				recursive.c reply.c resolve.c rr.c rr_type.c \
-				soa.c sql.c status.c str.c support.c \
+				server.c soa.c sql.c status.c str.c support.c \
 				task.c \
 				unencode.c update.c util.c
 

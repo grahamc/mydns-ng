@@ -1,7 +1,6 @@
 /**************************************************************************************************
-	$Id: task.h,v 1.18 2005/04/20 16:49:12 bboy Exp $
 
-	Copyright (C) 2002-2005  Don Moore <bboy@bboy.net>
+	Copyright (C) 2009- Howard Wilkinson <howard@cohtech.com>
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -21,6 +20,8 @@
 #ifndef _MYDNS_TASKOBJ_H
 #define _MYDNS_TASKOBJ_H
 
+#include "taskint.h"
+#include "mydns.h"
 #include "queue.h"
 
 /* If defined, DYNAMIC_NAMES causes dynamic allocation of the encoded names list.  It's slow. */
@@ -233,6 +234,25 @@ extern QUEUE		*TaskArray[PERIODIC_TASK+1][LOW_PRIORITY_TASK+1];
 
 extern uint32_t 	answer_then_quit;		/* Answer this many queries then quit */
 
+extern TASK 		*task_find_by_id(TASK *, QUEUE *, unsigned long);
+
+extern TASK		*_task_init(tasktype_t, taskpriority_t, taskstat_t, int, int, int, void *, const char *, int);
+#define			task_init(P,S,fd,p,f,a)	_task_init(NORMAL_TASK, (P), (S), (fd), (p), (f), (a), __FILE__, __LINE__)
+#define			IOtask_init(P,S,fd,p,f,a)	_task_init(IO_TASK, (P), (S), (fd), (p), (f), (a), __FILE__, __LINE__)
+#define			Ticktask_init(P,S,fd,p,f,a)	_task_init(PERIODIC_TASK, (P), (S), (fd), (p), (f), (a), __FILE__, __LINE__)
+
+extern void		_task_change_type(TASK *, tasktype_t, taskpriority_t);
+#define			task_change_type(t,T) _task_change_type((t), (T), (t)->priority)
+#define			task_change_priority(t,P) _task_change_type((t),(t)->type,(P))
+#define			task_change_type_and_priority(t,T,P) _task_change_type((t),(T),(P))
+
+extern void		_task_free(TASK *, const char *, int);
+#define			task_free(T)	if ((T)) _task_free((T), __FILE__, __LINE__), (T) = NULL
+
+extern void		task_add_extension(TASK*, void*, FreeExtension, RunExtension, TimeExtension);
+extern void		task_remove_extension(TASK *);
+
+extern void		task_output_info(TASK *, char *);
 extern char		*task_exec_name(taskexec_t);
 extern char		*task_type_name(int);
 extern char		*task_priority_name(int);
@@ -253,6 +273,8 @@ extern void		task_queue_stats();
 #define task_next(T)	((TASK*)((T)->queue_header.next))
 #define task_prev(T)	((TASK*)((T)->queue_header->prev))
 #define task_queue(T)	((T)->queue_header.Q)
+
+extern void		task_free_all();
 
 #endif /* !_MYDNS_TASK_H */
 /* vi:set ts=3: */

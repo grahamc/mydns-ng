@@ -1,7 +1,5 @@
 /**************************************************************************************************
-	$Id: task.h,v 1.18 2005/04/20 16:49:12 bboy Exp $
-
-	Copyright (C) 2002-2005  Don Moore <bboy@bboy.net>
+	Copyright (C) 2009-  Howard Wilkinson <howard@cohtech.com>
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -18,19 +16,29 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **************************************************************************************************/
 
-#ifndef _MYDNS_TASK_H
-#define _MYDNS_TASK_H
+#ifndef _MYDNS_LIB_QUEUE_H
+#define _MYDNS_LIB_QUEUE_H
 
-#include "taskobj.h"
+typedef struct __queue *QUEUEP;
 
-extern int		task_timedout(TASK *);
-extern taskexec_t	task_new(TASK *, unsigned char *, size_t);
-extern void		task_init_header(TASK *);
-extern int		task_process(TASK *, int, int, int);
-extern void		task_start();
-extern void		task_free_others(TASK *t, int closeallfds);
-extern void		task_schedule_all(struct pollfd *items[], int *timeoutWanted, int *numfds, int *maxnumfds);
-extern int		task_run_all(struct pollfd items[], int numfds);
+typedef struct __queue_entry {
+  QUEUEP		*Q;
+  struct __queue_entry	*next;
+  struct __queue_entry	*prev;
+} QueueEntry;
 
-#endif /* !_MYDNS_TASK_H */
-/* vi:set ts=3: */
+typedef struct __queue
+{
+  char		*queuename;
+  size_t	size;					/* Number of elements in queue */
+  size_t	max_size;
+  QueueEntry	*head;					/* Pointer to first element in list */
+  QueueEntry	*tail;					/* Pointer to last element in list */
+} QUEUE;
+
+extern QUEUE		*queue_init(char *, char *);
+extern void		queue_append(QUEUE **q, void *t);
+extern void		queue_remove(QUEUE **q, void *t);
+
+#endif
+
