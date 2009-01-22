@@ -8,9 +8,10 @@ noinst_LIBRARIES	=	libmydnsutil.a
 
 noinst_HEADERS		=	mydnsutil.h gettext.h getopt.h
 
-INCLUDES		=	@INTLINCLUDE@ @SQLINCLUDE@
+INCLUDES		=	@INTLINCLUDE@ @UTILINCLUDE@ @SQLINCLUDE@
 
 libmydnsutil_a_SOURCES	=	alloca.c \
+				array.c \
 				cidr.c \
 				conf.c \
 				error.c \

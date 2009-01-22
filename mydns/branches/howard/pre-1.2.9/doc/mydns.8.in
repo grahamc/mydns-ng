@@ -19,6 +19,7 @@ mydns \- SQL-based Internet name daemon.
 [\fB-v\fP, \fB--verbose\fP]
 [\fB--create-tables\fP]
 [\fB--dump-config\fP]
+[\fB--debug-<module>\fP[=\fI<debug_level>\fP]]
 [\fB--help\fP]
 [\fB--version\fP]
 
@@ -73,6 +74,9 @@ options to the standard output, with current values filled in.  For options
 not presently configured, the internal defaults will be used.  Output is in
 \fBmydns.conf\fP format, which is handy for creating a \fBmydns.conf\fP
 template.
+
+.IP "\fB--debug-<module>\fP[=\fI<debug-level>\fP"
+Switch on debug for a particular module and set the debug level if given.
 
 .IP "\fB--help\fP"
 Display program help and exit.

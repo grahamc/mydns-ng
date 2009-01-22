@@ -4,7 +4,7 @@
 
 noinst_LIBRARIES	=	libmydns.a
 INCLUDES		=	@MYDNSINCLUDE@ @INTLINCLUDE@ @UTILINCLUDE@ @SQLINCLUDE@
-libmydns_a_SOURCES	=	alias.c array.c \
+libmydns_a_SOURCES	=	alias.c \
 				cache.c conf.c check.c \
 				data.c db.c \
 				encode.c error.c export.c \

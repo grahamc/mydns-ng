@@ -31,11 +31,6 @@
 #define TASKVECSZ		(MAXTASKS/BITSPERBYTE)
 
 /* Cheat */
-#define TASKVEC_ZERO(TV)	memset((void*)(TV), 0, TASKVECSZ)
-#define TASKVEC_CLR(TI, TV)	FD_CLR((TI), (fd_set*)(TV))
-#define TASKVEC_SET(TI, TV)	FD_SET((TI), (fd_set*)(TV))
-#define TASKVEC_ISSET(TI, TV)	FD_ISSET((TI), (fd_set*)(TV))
-
 /* Task type select */
 typedef enum _taskpriority_t {
   HIGH_PRIORITY_TASK = 0,

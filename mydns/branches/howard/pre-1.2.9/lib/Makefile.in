@@ -58,8 +58,8 @@ AR = ar
 ARFLAGS = cru
 libmydnsutil_a_AR = $(AR) $(ARFLAGS)
 libmydnsutil_a_DEPENDENCIES = @ALLOCA@
-am_libmydnsutil_a_OBJECTS = alloca.$(OBJEXT) cidr.$(OBJEXT) \
-	conf.$(OBJEXT) error.$(OBJEXT) getopt.$(OBJEXT) \
+am_libmydnsutil_a_OBJECTS = alloca.$(OBJEXT) array.$(OBJEXT) \
+	cidr.$(OBJEXT) conf.$(OBJEXT) error.$(OBJEXT) getopt.$(OBJEXT) \
 	getopt1.$(OBJEXT) getoptstr.$(OBJEXT) inet_pton.$(OBJEXT) \
 	inet_ntop.$(OBJEXT) ip.$(OBJEXT) memoryman.$(OBJEXT) \
 	passinput.$(OBJEXT) string.$(OBJEXT) strsep.$(OBJEXT) \
@@ -236,8 +236,9 @@ top_srcdir = @top_srcdir@
 EXTRA_DIST = README
 noinst_LIBRARIES = libmydnsutil.a
 noinst_HEADERS = mydnsutil.h gettext.h getopt.h
-INCLUDES = @INTLINCLUDE@ @SQLINCLUDE@
+INCLUDES = @INTLINCLUDE@ @UTILINCLUDE@ @SQLINCLUDE@
 libmydnsutil_a_SOURCES = alloca.c \
+				array.c \
 				cidr.c \
 				conf.c \
 				error.c \
@@ -303,6 +304,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/alloca.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alloca.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/array.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cidr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/conf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/error.Po@am__quote@

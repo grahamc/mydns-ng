@@ -20336,7 +20336,7 @@ fi
 
 		## Include path and library for lib/ (libmydnsutil)
 		UTILDIR="\$(top_srcdir)/lib"
-		UTILINCLUDE="-I$UTILDIR"
+		UTILINCLUDE="-I\$(top_srcdir)/include"
 		LIBUTIL="$UTILDIR/libmydnsutil.a"
 
 

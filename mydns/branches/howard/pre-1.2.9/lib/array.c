@@ -18,7 +18,8 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **************************************************************************************************/
 
-#include "named.h"
+#include <unistd.h>
+#include "array.h"
 
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_ARRAY	1

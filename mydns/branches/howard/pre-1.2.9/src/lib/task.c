@@ -23,6 +23,11 @@
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_LIB_TASK	1
 
+#define TASKVEC_ZERO(TV)	memset((void*)(TV), 0, TASKVECSZ)
+#define TASKVEC_CLR(TI, TV)	FD_CLR((TI), (fd_set*)(TV))
+#define TASKVEC_SET(TI, TV)	FD_SET((TI), (fd_set*)(TV))
+#define TASKVEC_ISSET(TI, TV)	FD_ISSET((TI), (fd_set*)(TV))
+
 uint8_t		*taskvec = NULL;
 uint16_t	internal_id = 0;
 uint32_t 	answer_then_quit = 0;		/* Answer this many queries then quit */

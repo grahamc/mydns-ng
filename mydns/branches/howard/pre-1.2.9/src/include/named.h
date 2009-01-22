@@ -24,6 +24,8 @@
 typedef struct _named_queue *QUEUEP;
 
 #include "mydnsutil.h"
+#include 
+#include "array.h"
 #include "header.h"
 #include "mydns.h"
 #include "task.h"
@@ -40,7 +42,6 @@ typedef struct _named_queue *QUEUEP;
 #if HAVE_NETDB_H
 #	include <netdb.h>
 #endif
-
 
 /* The alarm function runs every ALARM_INTERVAL seconds */
 #define		ALARM_INTERVAL		15
@@ -71,13 +72,6 @@ typedef struct _named_queue *QUEUEP;
 #if DEBUG_ENABLED
 extern char *datasection_str[];			/* Strings describing data section types */
 #endif
-
-/* Structure for ARRAY objects */
-typedef struct _named_array {
-  size_t	size;
-  int		maxidx;
-  void		**objects;
-} ARRAY;
 
 /* Queue structure for TASK records (really not a queue, but a list) */
 typedef struct _named_queue
@@ -123,16 +117,6 @@ extern time_t	current_time;			/* Current time */
 /* lib/alias.c */
 extern int	 alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, char *label, MYDNS_RR *alias);
 #endif
-
-/* array.c */
-extern ARRAY		*array_init(size_t);
-extern void		array_free(ARRAY *, int);
-extern void		array_append(ARRAY *, void *);
-extern void		*array_remove(ARRAY *);
-#define array_fetch(A,I)	(((A)->maxidx>=(I))?((A)->objects[(I)]):NULL)
-#define array_store(A,I,O)	((A)->objects[(I)] = (O))
-#define array_max(A)		((A)->maxidx)
-#define array_numobjects(A)	(array_max((A))+1)
 
 /* axfr.c */
 extern void		axfr(TASK *);

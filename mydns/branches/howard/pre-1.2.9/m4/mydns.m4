@@ -878,7 +878,7 @@ AC_DEFUN([AC_MYDNS_VARS],
 
 		## Include path and library for lib/ (libmydnsutil)
 		UTILDIR="\$(top_srcdir)/lib"
-		UTILINCLUDE="-I$UTILDIR"
+		UTILINCLUDE="-I\$(top_srcdir)/include"
 		LIBUTIL="$UTILDIR/libmydnsutil.a"
 		AC_SUBST(UTILDIR)
 		AC_SUBST(UTILINCLUDE)
