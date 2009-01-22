@@ -20,7 +20,8 @@
 
 #include "named.h"
 
-int 	shutting_down = 0;		/* Shutdown in progress? */
+int	 	shutting_down = 0;		/* Shutdown in progress? */
+char		hostname[256];			/* Hostname of local machine */
 
 /**************************************************************************************************
 	NAMED_CLEANUP
@@ -30,6 +31,35 @@ void named_cleanup(int signo) {
   shutting_down = signo;
 
 }
+
+/**************************************************************************************************
+	SERVER_STATUS
+**************************************************************************************************/
+void server_status(void) {
+  char			buf[1024], *b = buf;
+  time_t		uptime = time(NULL) - Status.start_time;
+  unsigned long 	requests = Status.udp_requests + Status.tcp_requests;
+
+  b += snprintf(b, sizeof(buf)-(b-buf), "%s ", hostname);
+  b += snprintf(b, sizeof(buf)-(b-buf), "%s %s (%lus) ", _("up"), strsecs(uptime),
+		(unsigned long)uptime);
+  b += snprintf(b, sizeof(buf)-(b-buf), "%lu %s ", requests, _("questions"));
+  b += snprintf(b, sizeof(buf)-(b-buf), "(%.0f/s) ", requests ? AVG(requests, uptime) : 0.0);
+  b += snprintf(b, sizeof(buf)-(b-buf), "NOERROR=%u ", Status.results[DNS_RCODE_NOERROR]);
+  b += snprintf(b, sizeof(buf)-(b-buf), "SERVFAIL=%u ", Status.results[DNS_RCODE_SERVFAIL]);
+  b += snprintf(b, sizeof(buf)-(b-buf), "NXDOMAIN=%u ", Status.results[DNS_RCODE_NXDOMAIN]);
+  b += snprintf(b, sizeof(buf)-(b-buf), "NOTIMP=%u ", Status.results[DNS_RCODE_NOTIMP]);
+  b += snprintf(b, sizeof(buf)-(b-buf), "REFUSED=%u ", Status.results[DNS_RCODE_REFUSED]);
+
+  /* If the server is getting TCP queries, report on the percentage of TCP queries */
+  if (Status.tcp_requests)
+    b += snprintf(b, sizeof(buf)-(b-buf), "(%d%% TCP, %lu queries)",
+		  (int)PCT(requests, Status.tcp_requests),
+		  (unsigned long)Status.tcp_requests);
+
+  Notice("%s", buf);
+}
+/*--- server_status() ---------------------------------------------------------------------------*/
 
 /**************************************************************************************************
 	MYDNS_NAME_2_SHORTNAME

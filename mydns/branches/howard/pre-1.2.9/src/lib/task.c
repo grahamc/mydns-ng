@@ -23,13 +23,17 @@
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_LIB_TASK	1
 
+#define MAXTASKS		(USHRT_MAX + 1)
+#define TASKVECSZ		(MAXTASKS/BITSPERBYTE)
+
 #define TASKVEC_ZERO(TV)	memset((void*)(TV), 0, TASKVECSZ)
 #define TASKVEC_CLR(TI, TV)	FD_CLR((TI), (fd_set*)(TV))
 #define TASKVEC_SET(TI, TV)	FD_SET((TI), (fd_set*)(TV))
 #define TASKVEC_ISSET(TI, TV)	FD_ISSET((TI), (fd_set*)(TV))
 
-uint8_t		*taskvec = NULL;
-uint16_t	internal_id = 0;
+static uint8_t		*taskvec = NULL;
+static uint16_t		internal_id = 0;
+
 uint32_t 	answer_then_quit = 0;		/* Answer this many queries then quit */
 
 QUEUE 		*TaskArray[PERIODIC_TASK+1][LOW_PRIORITY_TASK+1];
@@ -37,11 +41,11 @@ QUEUE 		*TaskArray[PERIODIC_TASK+1][LOW_PRIORITY_TASK+1];
 TASK *task_find_by_id(TASK *t, QUEUE *TaskQ, unsigned long id) {
   TASK	*ThisT = NULL;
 
-  for (ThisT = TaskQ->head; ThisT ; ThisT = ThisT->next) {
+  for (ThisT = (TASK*)TaskQ->head; ThisT ; ThisT = task_next(ThisT)) {
     if (ThisT->internal_id == id) return ThisT;
   }
 #if DEBUG_ENABLED && DEBUG_LIB_TASK
-  DebugX("task", 1, _("%s: task_find_by_id(%s, %ld) cannot find task on queue"),
+  DebugX("lib-task", 1, _("%s: task_find_by_id(%s, %ld) cannot find task on queue"),
 	 desctask(t), TaskQ->queuename, id);
 #endif
   return NULL;
@@ -196,7 +200,7 @@ _task_free(TASK *t, const char *file, int line) {
   if (!t) return;
 
 #if DEBUG_ENABLED && DEBUG_TASK
-  DebugX("task", 1, _("%s: Freeing task at %s:%d"), desctask(t), file, line);
+  DebugX("lib-task", 1, _("%s: Freeing task at %s:%d"), desctask(t), file, line);
 #endif
 
   if (t->protocol == SOCK_STREAM && t->fd >= 0) {
@@ -413,6 +417,124 @@ task_output_info(TASK *t, char *update_desc) {
 }
 /*--- task_output_info() ------------------------------------------------------------------------*/
 
+/**************************************************************************************************
+	_TASK_ENQUEUE
+	Enqueues a TASK item, appending it to the end of the list.
+**************************************************************************************************/
+int _task_enqueue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
+
+  queue_append(q, t);
+
+  t->len = 0;							/* Reset TCP packet len */
+
+  if (t->protocol == SOCK_STREAM)
+    Status.tcp_requests++;
+  else if (t->protocol == SOCK_DGRAM)
+    Status.udp_requests++;
+
+#if DEBUG_ENABLED && DEBUG_TASK
+  DebugX("lib-task", 1,_("%s: enqueued (by %s:%u)"), desctask(t), file, line);
+#endif
+
+  return (0);
+}
+/*--- _enqueue() --------------------------------------------------------------------------------*/
+
+/**************************************************************************************************
+	_TASK_DEQUEUE
+	Removes the item specified from the queue.  Pass this a pointer to the actual element in the
+	queue.
+	For `error' pass 0 if the task was dequeued due to sucess, 1 if dequeued due to error.
+**************************************************************************************************/
+void _task_dequeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
+#if DEBUG_ENABLED && DEBUG_QUEUE
+  char *taskdesc = STRDUP(desctask(t));
+
+  DebugX("lib-task", 1,_("%s: dequeuing (by %s:%u)"), taskdesc, file, line);
+#endif
+
+  if (err_verbose)				/* Output task info if being verbose */
+    task_output_info(t, NULL);
+
+  if (t->hdr.rcode >= 0 && t->hdr.rcode < MAX_RESULTS)		/* Store results in stats */
+    Status.results[t->hdr.rcode]++;
+
+  queue_remove(q, t);
+
+  task_free(t);
+#if DEBUG_ENABLED && DEBUG_QUEUE
+  DebugX("lib-task", 1,_("%s: dequeued (by %s:%u)"), taskdesc, file, line);
+  RELEASE(taskdesc);
+#endif
+}
+/*--- _dequeue() --------------------------------------------------------------------------------*/
+
+void _task_requeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
+#if DEBUG_ENABLED && DEBUG_QUEUE
+  char *taskdesc = desctask(t);
+  DebugX("lib-task", 1,_("%s: requeuing (by %s:%u) called"), taskdesc, file, line);
+#endif
+
+  queue_remove(task_queue(t), t);
+  queue_append(q, t);
+
+}
+
+static void _task_1_queue_stats(QUEUE *q) {
+#if DEBUG_ENABLED && DEBUG_QUEUE
+  char		*msg = NULL;
+  int		msgsize = 512;
+  int		msglen = 0;
+  QueueEntry	*t = NULL;
+
+#if !DISABLE_DATE_LOGGING
+  struct timeval tv = { 0, 0 };
+  time_t tt = 0;
+  struct tm *tm = NULL;
+  char datebuf[80]; /* This is magic and needs rethinking - string should be ~ 23 characters */
+
+  gettimeofday(&tv, NULL);
+  tt = tv.tv_sec;
+  tm = localtime(&tt);
+
+  strftime(datebuf, sizeof(datebuf)-1, "%d-%b-%Y %H:%M:%S", tm);
+#endif
+
+  DebugX("queue", 1,_(
+#if !DISABLE_DATE_LOGGING
+		      "%s+%06lu "
+#endif
+		      "%s size=%u, max size=%u"),
+#if !DISABLE_DATE_LOGGING
+	 datebuf, tv.tv_usec,
+#endif
+	 q->queuename, (unsigned int)q->size, (unsigned int)q->max_size);
+	  
+  msg = ALLOCATE(msgsize, char[]);
+
+  msg[0] = '\0';
+  for (t = q->head; t; t = t->next) {
+    int idsize;
+    idsize = snprintf(&msg[msglen], msgsize - msglen, " %u", t->internal_id);
+    msglen += idsize;
+    if ((msglen + 2*idsize) >= msgsize) msg = REALLOCATE(msg, msgsize *= 2, char[]);
+  }
+  if (msglen)
+    DebugX("queue", 1,_("Queued tasks %s"), msg);
+
+  RELEASE(msg);
+#endif
+}
+
+void task_queue_stats() {
+  int i = 0, j = 0;
+
+  for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
+    for (j= HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
+      _task_1_queue_stats(TaskArray[j][i]);
+    }
+  }
+}
 
 /* vi:set ts=3: */
 /* NEED_PO */

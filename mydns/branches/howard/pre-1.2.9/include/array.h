@@ -19,6 +19,8 @@
 #ifndef _ARRAY_H
 # define _ARRAY_H
 
+#include <unistd.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

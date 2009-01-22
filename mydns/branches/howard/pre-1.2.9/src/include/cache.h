@@ -104,13 +104,15 @@ extern CACHE *ReplyCache;							/* Reply cache */
 extern CACHE *NegativeCache;						/* Negative zone cache */
 #endif
 
-extern void cache_status(CACHE *);
-extern void cache_init(void), cache_empty(CACHE *), cache_cleanup(CACHE *);
+#include "taskobj.h"
+
+extern void	cache_status(CACHE *);
+extern void	cache_init(void), cache_empty(CACHE *), cache_cleanup(CACHE *);
 extern void	cache_purge_zone(CACHE *, uint32_t);
-extern void *zone_cache_find(TASK *, uint32_t, char *, dns_qtype_t, char *, size_t, int *, MYDNS_SOA *);
+extern void	*zone_cache_find(TASK *, uint32_t, char *, dns_qtype_t, char *, size_t, int *, MYDNS_SOA *);
 
 extern int	reply_cache_find(TASK *);
-extern void add_reply_to_cache(TASK *);
+extern void	add_reply_to_cache(TASK *);
 
 
 #endif /* _CACHE_H */

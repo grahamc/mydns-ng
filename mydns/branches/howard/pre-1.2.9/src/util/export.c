@@ -21,6 +21,7 @@
 **********************************************************************************************/
 
 #include "util.h"
+#include "memoryman.h"
 
 char *zone = NULL;						/* Zone name to dump */
 unsigned int zones_out = 0;					/* Number of zones output */

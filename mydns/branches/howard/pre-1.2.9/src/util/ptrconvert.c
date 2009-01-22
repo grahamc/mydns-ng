@@ -21,6 +21,7 @@
 **************************************************************************************************/
 
 #include "util.h"
+#include "memoryman.h"
 #include "libptr.h"
 
 char	*thishostname = NULL;   	                        /* Hostname of local machine */

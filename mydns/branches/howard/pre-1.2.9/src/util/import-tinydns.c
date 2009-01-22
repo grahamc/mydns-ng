@@ -21,6 +21,7 @@
 **************************************************************************************************/
 
 #include "util.h"
+#include "memoryman.h"
 
 #define MAX_FIELDS		20					/* Max fields per line */
 #define TINYDNS_DEF_REFRESH	16384

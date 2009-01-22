@@ -20,66 +20,11 @@
 
 #include "named.h"
 
+#include "queue.h"
+
 /* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_QUEUE	1
+#define	DEBUG_LIB_QUEUE	1
 
-static void
-_queue_stats(QUEUE *q) {
-#if DEBUG_ENABLED && DEBUG_QUEUE
-  char		*msg = NULL;
-  int		msgsize = 512;
-  int		msglen = 0;
-  TASK		*t = NULL;
-
-#if !DISABLE_DATE_LOGGING
-  struct timeval tv = { 0, 0 };
-  time_t tt = 0;
-  struct tm *tm = NULL;
-  char datebuf[80]; /* This is magic and needs rethinking - string should be ~ 23 characters */
-
-  gettimeofday(&tv, NULL);
-  tt = tv.tv_sec;
-  tm = localtime(&tt);
-
-  strftime(datebuf, sizeof(datebuf)-1, "%d-%b-%Y %H:%M:%S", tm);
-#endif
-
-  DebugX("queue", 1,_(
-#if !DISABLE_DATE_LOGGING
-		      "%s+%06lu "
-#endif
-		      "%s size=%u, max size=%u"),
-#if !DISABLE_DATE_LOGGING
-	 datebuf, tv.tv_usec,
-#endif
-	 q->queuename, (unsigned int)q->size, (unsigned int)q->max_size);
-	  
-  msg = ALLOCATE(msgsize, char[]);
-
-  msg[0] = '\0';
-  for (t = q->head; t; t = t->next) {
-    int idsize;
-    idsize = snprintf(&msg[msglen], msgsize - msglen, " %u", t->internal_id);
-    msglen += idsize;
-    if ((msglen + 2*idsize) >= msgsize) msg = REALLOCATE(msg, msgsize *= 2, char[]);
-  }
-  if (msglen)
-    DebugX("queue", 1,_("Queued tasks %s"), msg);
-
-  RELEASE(msg);
-#endif
-}
-
-void
-queue_stats() {
-  int i = 0, j = 0;
-
-  for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
-    for (j= HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
-      _queue_stats(TaskArray[j][i]);
-    }
-  }
-}
 /**************************************************************************************************
 	QUEUE_INIT
 	Creates a new queue and returns a pointer to it.
@@ -94,120 +39,53 @@ queue_init(char *typename, char *priorityname) {
   q = ALLOCATE(sizeof(QUEUE), QUEUE);
   q->size = q->max_size = 0;
   q->queuename = queuename;
-  q->head = q->tail = (TASK *)NULL;
+  q->head = q->tail = NULL;
   return (q);
 }
 /*--- queue_init() ------------------------------------------------------------------------------*/
 
+void queue_append(QUEUE **q, void *t) {
+  QueueEntry *qe = (QueueEntry*)t;
 
-/**************************************************************************************************
-	_ENQUEUE
-	Enqueues a TASK item, appending it to the end of the list.
-**************************************************************************************************/
-static void
-__queue_append(QUEUE **q, TASK *t) {
-
-  t->next = t->prev = NULL;
+  qe->next = qe->prev = NULL;
 
   if ((*q)->head) {
-    (*q)->tail->next = t;
-    t->prev = (*q)->tail;
+    (*q)->tail->next = qe;
+    qe->prev = (*q)->tail;
   } else {
-    (*q)->head = t;
+    (*q)->head = qe;
   }
-  (*q)->tail = t;
+  (*q)->tail = qe;
 
   (*q)->size++;
 
   if ((*q)->max_size < (*q)->size) (*q)->max_size = (*q)->size;
 
-  t->TaskQ = q;
+  qe->Q = q;
 }
 
-int
-_enqueue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
+void queue_remove(QUEUE **q, void *t) {
+  QueueEntry *qe = (QueueEntry*)t;
 
-  __queue_append(q, t);
-
-  t->len = 0;							/* Reset TCP packet len */
-
-  if (t->protocol == SOCK_STREAM)
-    Status.tcp_requests++;
-  else if (t->protocol == SOCK_DGRAM)
-    Status.udp_requests++;
-
-#if DEBUG_ENABLED && DEBUG_QUEUE
-  DebugX("queue", 1,_("%s: enqueued (by %s:%u)"), desctask(t), file, line);
-#endif
-
-  return (0);
-}
-/*--- _enqueue() --------------------------------------------------------------------------------*/
-
-
-/**************************************************************************************************
-	_DEQUEUE
-	Removes the item specified from the queue.  Pass this a pointer to the actual element in the
-	queue.
-	For `error' pass 0 if the task was dequeued due to sucess, 1 if dequeued due to error.
-**************************************************************************************************/
-static void
-__queue_remove(QUEUE **q, TASK *t) {
-
-  if (t == (*q)->head) {
-    (*q)->head = t->next;
+  if (qe == (*q)->head) {
+    (*q)->head = qe->next;
     if ((*q)->head == NULL) {
       (*q)->tail = NULL;
     } else {
-      if (t->next) t->next->prev = NULL;
+      if (qe->next) ((QueueEntry*)qe->next)->prev = NULL;
     }
   } else {
-    if (t->prev) t->prev->next = t->next;
-    if (t->next == NULL) {
-      (*q)->tail = t->prev;
+    if (qe->prev) ((QueueEntry*)qe->prev)->next = qe->next;
+    if (qe->next == NULL) {
+      (*q)->tail = qe->prev;
     } else {
-      t->next->prev = t->prev;
+      ((QueueEntry*)qe->next)->prev = qe->prev;
     }
   }
   (*q)->size--;
 
-  t->next = t->prev = NULL;
-  t->TaskQ = NULL;
+  qe->next = qe->prev = NULL;
+  qe->Q = NULL;
 }
 
-void
-_dequeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
-#if DEBUG_ENABLED && DEBUG_QUEUE
-  char *taskdesc = STRDUP(desctask(t));
-
-  DebugX("queue", 1,_("%s: dequeuing (by %s:%u)"), taskdesc, file, line);
-#endif
-
-  if (err_verbose)				/* Output task info if being verbose */
-    task_output_info(t, NULL);
-
-  if (t->hdr.rcode >= 0 && t->hdr.rcode < MAX_RESULTS)		/* Store results in stats */
-    Status.results[t->hdr.rcode]++;
-
-  __queue_remove(q, t);
-
-  task_free(t);
-#if DEBUG_ENABLED && DEBUG_QUEUE
-  DebugX("queue", 1,_("%s: dequeued (by %s:%u)"), taskdesc, file, line);
-  RELEASE(taskdesc);
-#endif
-}
-/*--- _dequeue() --------------------------------------------------------------------------------*/
-
-void
-_requeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
-#if DEBUG_ENABLED && DEBUG_QUEUE
-  char *taskdesc = desctask(t);
-  DebugX("queue", 1,_("%s: requeuing (by %s:%u) called"), taskdesc, file, line);
-#endif
-
-  __queue_remove(t->TaskQ, t);
-  __queue_append(q, t);
-
-}
 /* vi:set ts=3: */

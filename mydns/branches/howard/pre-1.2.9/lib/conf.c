@@ -20,6 +20,7 @@
 **************************************************************************************************/
 
 #include "mydnsutil.h"
+#include "memoryman.h"
 
 CONF		*Conf = (CONF *)NULL;			/* Config options */
 

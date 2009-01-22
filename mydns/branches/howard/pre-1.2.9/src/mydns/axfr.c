@@ -415,7 +415,7 @@ axfr_fork(TASK *t) {
 #endif
 
     /* Clean up parents resources */
-    free_other_tasks(t, 1);
+    task_free_others(t, 1);
 
 #if DEBUG_ENABLED && DEBUG_AXFR
     DebugX("axfr", 1,_("%s: AXFR child built"), desctask(t));

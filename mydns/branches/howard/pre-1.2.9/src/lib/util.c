@@ -21,6 +21,7 @@
 **************************************************************************************************/
 
 #include "util.h"
+#include "memoryman.h"
 
 char *__mydns_expand_data(char *s, char *origin) {
   if (!(s[0]) || LASTCHAR(s) != '.') {

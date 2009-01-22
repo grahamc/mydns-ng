@@ -522,7 +522,7 @@ notify_running(TASK *t, MYDNS_SOA *soa) {
    */
 
   for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
-    for (checkt = TaskArray[PERIODIC_TASK][j]->head; checkt; checkt = checkt->next) {
+    for (checkt = (TASK*)(TaskArray[PERIODIC_TASK][j]->head); checkt; checkt = task_next(checkt)) {
       if (t->freeextension == notify_free) {
 	NOTIFYDATA *notify = t->extension;
 	if (notify->soa_id == soa->id) {

@@ -6,8 +6,6 @@ EXTRA_DIST		=	README
 
 noinst_LIBRARIES	=	libmydnsutil.a
 
-noinst_HEADERS		=	mydnsutil.h gettext.h getopt.h
-
 INCLUDES		=	@INTLINCLUDE@ @UTILINCLUDE@ @SQLINCLUDE@
 
 libmydnsutil_a_SOURCES	=	alloca.c \

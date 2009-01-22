@@ -21,15 +21,18 @@
 #ifndef _MYDNS_NAMED_H
 #define _MYDNS_NAMED_H
 
-typedef struct _named_queue *QUEUEP;
-
 #include "mydnsutil.h"
-#include 
+
+#include "memoryman.h"
 #include "array.h"
-#include "header.h"
+
 #include "mydns.h"
-#include "task.h"
+#include "taskobj.h"
+
 #include "cache.h"
+#include "header.h"
+#include "support.h"
+#include "task.h"
 
 #if HAVE_SYS_RESOURCE_H
 #	include <sys/resource.h>
@@ -73,17 +76,6 @@ typedef struct _named_queue *QUEUEP;
 extern char *datasection_str[];			/* Strings describing data section types */
 #endif
 
-/* Queue structure for TASK records (really not a queue, but a list) */
-typedef struct _named_queue
-{
-	char *queuename;
-	size_t	size;					/* Number of elements in queue */
-  	size_t	max_size;
-	TASK	*head;					/* Pointer to first element in list */
-	TASK	*tail;					/* Pointer to last element in list */
-} QUEUE;
-
-
 #define MAX_RESULTS	20
 typedef struct _serverstatus									/* Server status information */
 {
@@ -106,7 +98,6 @@ extern ARRAY	*Servers;
 
 
 /* Global variables */
-extern QUEUE	*TaskArray[PERIODIC_TASK+1][LOW_PRIORITY_TASK+1];
 
 extern int	max_used_fd;
 
@@ -284,17 +275,6 @@ extern void		notify_slaves(TASK *, MYDNS_SOA *);
 extern void		notify_start();
 extern int		name_servers2ip(TASK *, MYDNS_SOA *, ARRAY *, ARRAY *, ARRAY *);
 
-/* queue.c */
-extern QUEUE		*queue_init(char *, char *);
-extern void		queue_stats();
-extern int		_enqueue(QUEUE **, TASK *, const char *, unsigned int);
-extern void		_dequeue(QUEUE **, TASK *, const char *, unsigned int);
-extern void		_requeue(QUEUE **, TASK *, const char *, unsigned int);
-
-#define			enqueue(Q,T)	_enqueue((Q), (T), __FILE__, __LINE__)
-#define			dequeue(T)	_dequeue(((T)->TaskQ), (T), __FILE__, __LINE__)
-#define			requeue(Q, T)	_requeue((Q), (T), __FILE__, __LINE__)
-
 /* recursive.c */
 #if DEBUG_ENABLED
 extern char		*resolve_datasection_str[];
@@ -352,21 +332,6 @@ extern taskexec_t	remote_status(TASK *t);
 #endif
 
 /* support.c */
-extern int 	shutting_down;		/* Shutdown in progress? */
-extern void	named_cleanup(int signo);
-extern char	*mydns_name_2_shortname(char *name, char *origin, int empty_name_is_ok, int notrim);
-
-/* lib/task.c */
-extern uint8_t		*taskvec;
-extern uint16_t		internal_id;
-extern uint32_t 	answer_then_quit;		/* Answer this many queries then quit */
-
-extern char		*task_exec_name(taskexec_t);
-extern char		*task_type_name(int);
-extern char		*task_priority_name(int);
-extern char		*task_string_name(TASK *);
-extern const char	*clientaddr(TASK *);
-extern char		*desctask(TASK *);
 
 /* task.c */
 extern int		task_timedout(TASK *);

@@ -13,6 +13,7 @@
 
 /* To include macros and support definitions */
 #include "mydnsutil.h"
+#include "memoryman.h"
 
 #define DEBUG_MEMMAN 1
 

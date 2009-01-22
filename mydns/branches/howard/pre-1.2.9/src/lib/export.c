@@ -21,6 +21,7 @@
 **********************************************************************************************/
 
 #include "util.h"
+#include "memoryman.h"
 
 void __mydns_bind_dump_rr_default(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
 					 size_t datalen, int ttl, int aux, int maxlen) {
