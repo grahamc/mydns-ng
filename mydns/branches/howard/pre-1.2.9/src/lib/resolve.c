@@ -20,6 +20,11 @@
 
 #include "named.h"
 
+#include "data.h"
+#include "rr.h"
+#include "alias.h"
+
+
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_RESOLVE	1
 
@@ -163,7 +168,6 @@ process_rr(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn,
   /* Find RRs matching QTYPE */
   for (r = rr; r; r = r->next)
     if (r->type == qtype || qtype == DNS_QTYPE_ANY) {
-#if ALIAS_ENABLED
       /* If the RR is an ALIAS then follow it, otherwise just add it. */
       if (r->alias)
 	rv += alias_recurse(t, section, fqdn, soa, label, r);
@@ -171,10 +175,6 @@ process_rr(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn,
 	rrlist_add(t, section, DNS_RRTYPE_RR, (void *)r, fqdn);
 	rv++;
       }
-#else
-      rrlist_add(t, section, DNS_RRTYPE_RR, (void *)r, fqdn);
-      rv++;
-#endif
     }
   t->sort_level++;
 

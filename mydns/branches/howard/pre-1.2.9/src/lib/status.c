@@ -22,6 +22,8 @@
 
 #if STATUS_ENABLED
 
+#include "rr.h"
+
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_STATUS 1
 

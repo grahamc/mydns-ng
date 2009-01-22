@@ -20,6 +20,8 @@
 
 #include "named.h"
 
+#include "rr.h"
+
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_LIB_TASK	1
 

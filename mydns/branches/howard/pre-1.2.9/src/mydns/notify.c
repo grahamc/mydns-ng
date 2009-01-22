@@ -20,6 +20,8 @@
 
 #include "named.h"
 
+#include "data.h"
+
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_NOTIFY	1
 

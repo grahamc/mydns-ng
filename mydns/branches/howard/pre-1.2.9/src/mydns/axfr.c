@@ -20,6 +20,9 @@
 
 #include "named.h"
 
+#include "rr.h"
+#include "alias.h"
+
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_AXFR	1
 
@@ -258,15 +261,9 @@ axfr_zone(TASK *t, MYDNS_SOA *soa) {
 	  mydns_rr_name_append_origin(rr, soa->origin);
 	}
 
-#if ALIAS_ENABLED
-	/*
-	 * If we have been compiled with alias support
-	 * and the current record is an alias pass it to alias_recurse()
-	 */
 	if (rr->alias != 0)
 	  alias_recurse(t, ANSWER, MYDNS_RR_NAME(rr), soa, NULL, rr);
 	else
-#endif
 	  rrlist_add(t, ANSWER, DNS_RRTYPE_RR, (void *)rr, MYDNS_RR_NAME(rr));
 	/* Transmit this resource record */
 	axfr_reply(t);

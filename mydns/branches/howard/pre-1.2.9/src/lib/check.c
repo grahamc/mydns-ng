@@ -164,17 +164,12 @@ void __mydns_check_rr_a(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *da
 
   __mydns_check_name(soa, rr, name, data, name, strlen(name), "rr.name", 1, 0);
 
-#if ALIAS_ENABLED
   if (rr->alias == 1)
     __mydns_check_rr_cname(soa, rr, name, data, a_in, alen_in);
   else {
-#endif /* ALIAS_ENABLED */
     if (inet_pton(AF_INET, a_in, (void *)&addr) <= 0)
       __mydns_rrproblem(soa, rr, name, data, _("IPv4 address in `data' is invalid"));
-#if ALIAS_ENABLED
   }
-#endif /* ALIAS_ENABLED */
-
 }
 /*--- __mydns_check_rr_a() --------------------------------------------------------------------------*/
 

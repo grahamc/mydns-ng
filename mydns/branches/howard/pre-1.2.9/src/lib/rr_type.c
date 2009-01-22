@@ -60,21 +60,12 @@ DEFINE_RR_TYPE(AAAA, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
 	       __mydns_bind_dump_rr_default, __mydns_tinydns_dump_rr_unknown, \
 	       1, 0, NULL);
 
-#if ALIAS_ENABLED
 DEFINE_RR_TYPE(A, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
 	       __mydns_rr_duplicate_default, __mydns_rr_size_default,  \
 	       __mydns_reply_add_a, __mydns_update_get_rr_data_a, \
 	       __mydns_process_axfr_a, __mydns_check_rr_a,			  \
 	       __mydns_bind_dump_rr_default, __mydns_tinydns_dump_rr_a, \
 	       1, 0, " AND (type='A' OR type='ALIAS')");
-#else
-DEFINE_RR_TYPE(A, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
-	       __mydns_rr_duplicate_default, __mydns_rr_size_default,  \
-	       __mydns_reply_add_a, __mydns_update_get_rr_data_a, \
-	       __mydns_process_axfr_a, __mydns_check_rr_a,				\
-	       __mydns_bind_dump_rr_default, __mydns_tinydns_dump_rr_a, \
-	       1, 0, NULL);
-#endif
 
 DEFINE_RR_TYPE(AFSDB, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
 	       __mydns_rr_duplicate_default, __mydns_rr_size_default,  \
@@ -83,14 +74,12 @@ DEFINE_RR_TYPE(AFSDB, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
 	       __mydns_bind_dump_rr_unknown, __mydns_tinydns_dump_rr_unknown, \
 	       0, 0, NULL);
 
-#if ALIAS_ENABLED
 DEFINE_RR_TYPE(ALIAS, 1, __mydns_rr_parse_default, __mydns_rr_free_default, \
 	       __mydns_rr_duplicate_default, __mydns_rr_size_default,  \
 	       __mydns_reply_unexpected_type, __mydns_update_get_rr_data_unknown_type, \
 	       __mydns_process_axfr_default, __mydns_check_rr_unknown,				\
 	       __mydns_bind_dump_rr_unknown, __mydns_tinydns_dump_rr_unknown, \
 	       0, 0, NULL);
-#endif
 
 DEFINE_RR_TYPE(ANY, 0, __mydns_rr_parse_default, __mydns_rr_free_default, \
 	       __mydns_rr_duplicate_default, __mydns_rr_size_default,  \
@@ -609,9 +598,7 @@ static dns_qtype_map *__RR_TYPES_BY_NAME[] = {
   USE_RR_TYPE(AAAA),
   USE_RR_TYPE(A),
   USE_RR_TYPE(AFSDB),
-#if ALIAS_ENABLED
   USE_RR_TYPE(ALIAS),
-#endif
   USE_RR_TYPE(ANY),
   USE_RR_TYPE(APL),
   USE_RR_TYPE(ATMA),

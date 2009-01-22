@@ -84,7 +84,6 @@ PACKAGE_AUTHOR="Don Moore <bboy@bboy.net>  Howard Wilkinson <howard@cohtech.com>
 AC_CHECK_IPV6			#	Check IPv6 support
 AC_CHECK_SOCKADDR_SA_LEN	#	Check for sa_len in struct sockaddr_in
 AC_MYDNS_PKGINFO		#	Set some package-specific variables
-AC_ENABLE_ALIAS			#	Enable David Phillips aliasing?
 AC_CHECK_MYSQL			#	Check for MySQL support
 AC_CHECK_PGSQL			#	Check for PostgreSQL support
 AC_WITH_OPENSSL			#	Check if OpenSSL is desired

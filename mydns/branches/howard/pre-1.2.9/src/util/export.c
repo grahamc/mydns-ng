@@ -238,15 +238,7 @@ bind_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
   char *type_name;
   int ttl, aux;
 
-  map = mydns_rr_get_type_by_id(
-#if ALIAS_ENABLED
-			       (rr->alias == 0) ?
-#endif /* ALIAS_ENABLED */
-			       rr->type
-#if ALIAS_ENABLED
-			       : DNS_QTYPE_CNAME
-#endif /* ALIAS_ENABLED */
-			       );
+  map = mydns_rr_get_type_by_id((rr->alias == 0) ? rr->type : DNS_QTYPE_CNAME);
 
   type_name = map->rr_type_name;
 

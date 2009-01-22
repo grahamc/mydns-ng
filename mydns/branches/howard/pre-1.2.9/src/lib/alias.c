@@ -18,13 +18,16 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **************************************************************************************************/
 
-#include "named.h"
+#include "memoryman.h"
+
+#include "data.h"
+#include "rr.h"
+
+#include "alias.h"
 
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_ALIAS	1
 
-
-#if ALIAS_ENABLED
 /**************************************************************************************************
 	FIND_ALIAS
 	Find an ALIAS or A record for the alias.
@@ -239,7 +242,5 @@ alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, char *
   return (0);
 }
 /*--- alias_recurse() ---------------------------------------------------------------------------*/
-
-#endif /* ALIAS_ENABLED */
 
 /* vi:set ts=3: */

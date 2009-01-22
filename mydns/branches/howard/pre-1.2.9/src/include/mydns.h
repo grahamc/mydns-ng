@@ -123,9 +123,7 @@ typedef enum							/* Query types */
 	DNS_QTYPE_TA			= 32768,
 	DNS_QTYPE_DLV			= 32769,
 
-#if ALIAS_ENABLED
 	DNS_QTYPE_ALIAS			= 65280,		/* Extension - David Phillips, alias patch */
-#endif
 } dns_qtype_t;
 
 /* Size ranges for various bits of DNS data */
@@ -433,9 +431,7 @@ typedef struct _mydns_rr {				/* `rr' table data (resource records) */
   dns_class_t		class;
   uint32_t		aux;
   uint32_t		ttl;
-#if ALIAS_ENABLED
   int			alias;
-#endif
 
   char			*active;
 #if USE_PGSQL

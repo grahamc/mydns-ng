@@ -387,27 +387,6 @@ AC_DEFUN([AC_ENABLE_DEBUG],
 
 
 ##
-##	Make --enable-alias turn on alias patch
-##
-AC_DEFUN([AC_ENABLE_ALIAS],
-	[
-		AC_MSG_CHECKING([whether to enable alias patch])
-		AC_ARG_ENABLE(alias,
-			AC_HELP_STRING([--enable-alias], [enable alias patch (see contrib/README.alias)]),
-			[
-				if test "$enableval" = yes
-				then
-					AC_DEFINE(ALIAS_ENABLED, 1, [Compile with support for alias patch?])
-					AC_MSG_RESULT([yes])
-				else
-					AC_MSG_RESULT([no])
-				fi
-			], AC_MSG_RESULT([no]))
-	]
-)
-
-
-##
 ##	Make --enable-alt-names turn on alternate column names for DN
 ##
 AC_DEFUN([AC_ENABLE_ALT_NAMES],

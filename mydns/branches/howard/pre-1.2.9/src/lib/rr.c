@@ -460,13 +460,11 @@ mydns_rr_build(uint32_t id,
   rr->aux = aux;
   rr->ttl = ttl;
   rr->type = type;
-#if ALIAS_ENABLED
   if (rr->type == DNS_QTYPE_ALIAS) {
     rr->type = DNS_QTYPE_A;
     rr->alias = 1;
   } else
     rr->alias = 0;
-#endif
 
   /* Find a constant value so we do not have to allocate or free this one */
   if (active) {
@@ -621,9 +619,7 @@ mydns_rr_dup(MYDNS_RR *start, int recurse) {
     ((char*)__MYDNS_RR_DATA_VALUE(rr))[__MYDNS_RR_DATA_LENGTH(rr)] = '\0';
     rr->aux = s->aux;
     rr->ttl = s->ttl;
-#if ALIAS_ENABLED
     rr->alias = s->alias;
-#endif
 
     rr->active = s->active;
     if (s->stamp) {

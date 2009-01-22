@@ -52,9 +52,7 @@
 /* The alarm function runs every ALARM_INTERVAL seconds */
 #define		ALARM_INTERVAL		15
 #define		DNS_MAXPACKETLEN	DNS_MAXPACKETLEN_UDP
-#if ALIAS_ENABLED
-#	define	MAX_ALIAS_LEVEL	6
-#endif
+
 
 /* Maximum CNAME recursion depth */
 #define	DNS_MAX_CNAME_RECURSION	25
@@ -133,8 +131,6 @@ extern void		check_config_file_perms(void);
 
 
 /* data.c */
-extern MYDNS_SOA	*find_soa(TASK *, char *, char **);
-extern MYDNS_RR		*find_rr(TASK *, MYDNS_SOA *, dns_qtype_t, char *);
 
 
 /* lib/encode.c */
@@ -291,8 +287,6 @@ extern taskexec_t	resolve(TASK *, datasection_t, dns_qtype_t, char *, int);
 
 
 /* lib/rr.c */
-extern void		rrlist_add(TASK *, datasection_t, dns_rrtype_t, void *, char *);
-extern void		rrlist_free(RRLIST *);
 
 /* servercomms.c */
 extern TASK		*scomms_start(int);
