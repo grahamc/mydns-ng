@@ -28,6 +28,7 @@
 #include "rr.h"
 
 #include "axfr.h"
+#include "buildreply.h"
 
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_AXFR	1
@@ -153,7 +154,7 @@ static void
 axfr_reply(TASK *t) {
   char len[2] = { 0, 0 }, *l = len;
 
-  build_reply(t, 0);
+  buildreply(t, 0);
   DNS_PUT16(l, t->replylen);
   axfr_write(t, len, SIZE16);
   axfr_write(t, t->reply, t->replylen);
@@ -245,7 +246,7 @@ axfr_zone(TASK *t, MYDNS_SOA *soa) {
 
   /* Check optional "xfer" column and initialize reply */
   check_xfer(t, soa);
-  reply_init(t);
+  buildreply_init(t);
 
   /* Send opening SOA record */
   rrlist_add(t, ANSWER, DNS_RRTYPE_SOA, (void *)soa, soa->origin);

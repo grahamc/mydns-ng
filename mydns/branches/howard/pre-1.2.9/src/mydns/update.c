@@ -25,6 +25,7 @@
 
 #include "error.h"
 
+#include "buildreply.h"
 #include "notify.h"
 
 /* Make this nonzero to enable debugging for this source file */
@@ -1966,7 +1967,7 @@ dns_update(TASK *t) {
   }
 
   /* Construct reply and set task status */
-  build_reply(t, 0);
+  buildreply(t, 0);
   t->status = NEED_WRITE;
 
   /* Clean up and return */
@@ -1975,7 +1976,7 @@ dns_update(TASK *t) {
   return (TASK_EXECUTED);
 
 dns_update_error:
-  build_reply(t, 1);
+  buildreply(t, 1);
   free_uq(q);
   mydns_soa_free(soa);
   return (TASK_FAILED);

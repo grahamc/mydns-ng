@@ -38,29 +38,6 @@ char *reply_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL
 
 
 /**************************************************************************************************
-	REPLY_INIT
-	Examines the question data, storing the name offsets (from DNS_HEADERSIZE) for compression.
-**************************************************************************************************/
-int
-reply_init(TASK *t) {
-  register char *c = NULL;						/* Current character in name */
-
-  /* Examine question data, save labels found therein. The question data should begin with
-     the name we've already parsed into t->qname.  I believe it is safe to assume that no
-     compression will be possible in the question. */
-  for (c = t->qname; *c; c++)
-    if ((c == t->qname || *c == '.') && c[1])
-      if (name_remember(t, (c == t->qname) ? c : (c+1),
-			(((c == t->qname) ? c : (c+1)) - t->qname) + DNS_HEADERSIZE) < -1)
-	return (-1);
-  return (0);
-}
-/*--- reply_init() ------------------------------------------------------------------------------*/
-
-
-
-
-/**************************************************************************************************
 	REPLY_PROCESS_RRLIST
 	Adds each resource record found in `rrlist' to the reply.
 **************************************************************************************************/
@@ -127,7 +104,7 @@ truncate_rrlist(TASK *t, off_t maxpkt, RRLIST *rrlist, datasection_t ds) {
       t->rdlen += rr->length;
   }
 #if DEBUG_ENABLED && DEBUG_REPLY
-  DebugX("reply", 1, _("%s section truncated from %d records to %d records"),
+  DebugX("buildreply", 1, _("%s section truncated from %d records to %d records"),
 	 reply_datasection_str[ds], orig_recs, recs);
 #endif
   return (recs);
@@ -148,7 +125,7 @@ reply_check_truncation(TASK *t, int *ancount, int *nscount, int *arcount) {
     return;
 
 #if DEBUG_ENABLED && DEBUG_REPLY
-  DebugX("reply", 1, _("reply_check_truncation() needs to truncate reply (%u) to fit packet max (%u)"),
+  DebugX("buildreply", 1, _("reply_check_truncation() needs to truncate reply (%u) to fit packet max (%u)"),
 	 (unsigned int)t->rdlen, (unsigned int)maxrd);
 #endif
 
@@ -160,8 +137,29 @@ reply_check_truncation(TASK *t, int *ancount, int *nscount, int *arcount) {
 }
 /*--- reply_check_truncation() ------------------------------------------------------------------*/
 
-void
-abandon_reply(TASK *t) {
+/**************************************************************************************************
+	BUILDREPLY_INIT
+	Examines the question data, storing the name offsets (from DNS_HEADERSIZE) for compression.
+**************************************************************************************************/
+int buildreply_init(TASK *t) {
+  register char *c = NULL;						/* Current character in name */
+
+  /* Examine question data, save labels found therein. The question data should begin with
+     the name we've already parsed into t->qname.  I believe it is safe to assume that no
+     compression will be possible in the question. */
+  for (c = t->qname; *c; c++)
+    if ((c == t->qname || *c == '.') && c[1])
+      if (name_remember(t, (c == t->qname) ? c : (c+1),
+			(((c == t->qname) ? c : (c+1)) - t->qname) + DNS_HEADERSIZE) < -1)
+	return (-1);
+  return (0);
+}
+/*--- reply_init() ------------------------------------------------------------------------------*/
+
+
+
+
+void buildreply_abandon(TASK *t) {
   /* Empty RR lists */
   rrlist_free(&t->an);
   rrlist_free(&t->ns);
@@ -174,25 +172,23 @@ abandon_reply(TASK *t) {
 }
 
 /**************************************************************************************************
-	BUILD_CACHE_REPLY
+	BUILDREPLY_CACHE
 	Builds reply data from cached answer.
 **************************************************************************************************/
-void
-build_cache_reply(TASK *t) {
+void buildreply_cache(TASK *t) {
   char *dest = t->reply;
 
   DNS_PUT16(dest, t->id);							/* Query ID */
   DNS_PUT(dest, &t->hdr, SIZE16);						/* Header */
 }
-/*--- build_cache_reply() -----------------------------------------------------------------------*/
+/*--- buildreply_cache() -----------------------------------------------------------------------*/
 
 
 /**************************************************************************************************
-	BUILD_REPLY
+	BUILDREPLY
 	Given a task, constructs the reply data.
 **************************************************************************************************/
-void
-build_reply(TASK *t, int want_additional) {
+void buildreply(TASK *t, int want_additional) {
   char	*dest = NULL;
   int	ancount = 0, nscount = 0, arcount = 0;
 
@@ -217,7 +213,7 @@ build_reply(TASK *t, int want_additional) {
   if (reply_process_rrlist(t, &t->an)
       || reply_process_rrlist(t, &t->ns)
       || reply_process_rrlist(t, &t->ar)) {
-    abandon_reply(t);
+    buildreply_abandon(t);
   }
 
   ancount = t->an.size;
@@ -246,26 +242,26 @@ build_reply(TASK *t, int want_additional) {
   DNS_PUT(dest, t->rdata, t->rdlen);				/* Resource record data */
 
 #if DEBUG_ENABLED && DEBUG_REPLY
-  DebugX("reply", 1, _("%s: reply:     id = %u"), desctask(t),
+  DebugX("buildreply", 1, _("%s: reply:     id = %u"), desctask(t),
 	 t->id);
-  DebugX("reply", 1, _("%s: reply:     qr = %u (message is a %s)"), desctask(t),
+  DebugX("buildreply", 1, _("%s: reply:     qr = %u (message is a %s)"), desctask(t),
 	 t->hdr.qr, t->hdr.qr ? "response" : "query");
-  DebugX("reply", 1, _("%s: reply: opcode = %u (%s)"), desctask(t),
+  DebugX("buildreply", 1, _("%s: reply: opcode = %u (%s)"), desctask(t),
 	 t->hdr.opcode, mydns_opcode_str(t->hdr.opcode));
-  DebugX("reply", 1, _("%s: reply:     aa = %u (answer %s)"), desctask(t),
+  DebugX("buildreply", 1, _("%s: reply:     aa = %u (answer %s)"), desctask(t),
 	 t->hdr.aa, t->hdr.aa ? "is authoritative" : "not authoritative");
-  DebugX("reply", 1, _("%s: reply:     tc = %u (message %s)"), desctask(t),
+  DebugX("buildreply", 1, _("%s: reply:     tc = %u (message %s)"), desctask(t),
 	 t->hdr.tc, t->hdr.tc ? "truncated" : "not truncated");
-  DebugX("reply", 1, _("%s: reply:     rd = %u (%s)"), desctask(t),
+  DebugX("buildreply", 1, _("%s: reply:     rd = %u (%s)"), desctask(t),
 	 t->hdr.rd, t->hdr.rd ? "recursion desired" : "no recursion");
-  DebugX("reply", 1, _("%s: reply:     ra = %u (recursion %s)"), desctask(t),
+  DebugX("buildreply", 1, _("%s: reply:     ra = %u (recursion %s)"), desctask(t),
 	 t->hdr.ra, t->hdr.ra ? "available" : "unavailable");
-  DebugX("reply", 1, _("%s: reply:  rcode = %u (%s)"), desctask(t),
+  DebugX("buildreply", 1, _("%s: reply:  rcode = %u (%s)"), desctask(t),
 	 t->hdr.rcode, mydns_rcode_str(t->hdr.rcode));
   /* escdata(t->reply, t->replylen); */
 #endif
 }
-/*--- build_reply() -----------------------------------------------------------------------------*/
+/*--- buildreply() -----------------------------------------------------------------------------*/
 
 /* vi:set ts=3: */
 /* NEED_PO */

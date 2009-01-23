@@ -57,9 +57,9 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)"
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(sbin_PROGRAMS)
-am_mydns_OBJECTS = axfr.$(OBJEXT) db.$(OBJEXT) ixfr.$(OBJEXT) \
-	listen.$(OBJEXT) main.$(OBJEXT) notify.$(OBJEXT) \
-	reply.$(OBJEXT) servercomms.$(OBJEXT) sort.$(OBJEXT) \
+am_mydns_OBJECTS = axfr.$(OBJEXT) buildreply.$(OBJEXT) db.$(OBJEXT) \
+	ixfr.$(OBJEXT) listen.$(OBJEXT) main.$(OBJEXT) \
+	notify.$(OBJEXT) servercomms.$(OBJEXT) sort.$(OBJEXT) \
 	task.$(OBJEXT) tcp.$(OBJEXT) udp.$(OBJEXT) update.$(OBJEXT)
 mydns_OBJECTS = $(am_mydns_OBJECTS)
 mydns_LDADD = $(LDADD)
@@ -236,12 +236,12 @@ LDADD = @LIBMYDNS@ @LIBUTIL@ @LIBINTL@ @LIBSQL@ @LIBSSL@ @LIBSOCKET@ @LIBNSL@ @L
 mydns_DEPENDENCIES = @LIBMYDNS@ @LIBUTIL@
 noinst_HEADERS = 
 mydns_SOURCES = axfr.c \
+				buildreply.c \
 				db.c \
 				ixfr.c \
 				listen.c \
 				main.c  \
 				notify.c \
-				reply.c \
 				servercomms.c sort.c \
 				task.c tcp.c \
 				udp.c update.c
@@ -319,12 +319,12 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/axfr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buildreply.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/db.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ixfr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/listen.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/notify.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reply.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/servercomms.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sort.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/task.Po@am__quote@

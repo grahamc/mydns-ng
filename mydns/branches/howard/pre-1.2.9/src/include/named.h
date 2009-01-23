@@ -81,17 +81,6 @@ extern CACHE	*Cache;				/* Zone cache */
 extern time_t	current_time;			/* Current time */
 
 /* reply.c */
-extern int		reply_init(TASK *);
-extern void		abandon_reply(TASK *);
-extern void		build_cache_reply(TASK *);
-extern void		build_reply(TASK *, int);
-
-/* servercomms.c */
-/* sort.c */
-/* status.c */
-/* tcp.c */
-/* udp.c */
-
 /* update.c */
 extern taskexec_t	dns_update(TASK *);
 

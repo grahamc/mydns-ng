@@ -14,12 +14,12 @@ mydns_DEPENDENCIES	=	@LIBMYDNS@ @LIBUTIL@
 
 noinst_HEADERS		=	
 mydns_SOURCES		=	axfr.c \
+				buildreply.c \
 				db.c \
 				ixfr.c \
 				listen.c \
 				main.c  \
 				notify.c \
-				reply.c \
 				servercomms.c sort.c \
 				task.c tcp.c \
 				udp.c update.c

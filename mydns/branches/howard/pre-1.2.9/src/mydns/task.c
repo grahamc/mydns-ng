@@ -27,6 +27,7 @@
 #include "resolve.h"
 
 #include "axfr.h"
+#include "buildreply.h"
 #include "ixfr.h"
 #include "notify.h"
 #include "tcp.h"
@@ -115,7 +116,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
   RELEASE(qname);
 
   /* Now we have question data, so initialize encoding */
-  if (reply_init(t) < 0) {
+  if (buildreply_init(t) < 0) {
     Warnx("%s: %s", desctask(t), _("failed to initialize reply"));
     return (TASK_FAILED);
   }
@@ -350,11 +351,11 @@ task_process_query(TASK *t, int rfd, int wfd, int efd) {
 	DNS_PUT(dest, &t->hdr, SIZE16);
       } else {
 	if ((res = ixfr(t, ANSWER, t->qtype, t->qname, 0)) > TASK_FAILED) {
-	  build_reply(t, 0);
+	  buildreply(t, 0);
 	  if (t->hdr.tc) {
-	    abandon_reply(t);
+	    buildreply_abandon(t);
 	    if ((res = ixfr(t, ANSWER, t->qtype, t->qname, 1)) <= TASK_FAILED) goto IXFRFAILED;
-	    build_reply(t, 0);
+	    buildreply(t, 0);
 	  }
 	  if (t->reply_cache_ok) add_reply_to_cache(t);
 	}
@@ -377,7 +378,7 @@ task_process_query(TASK *t, int rfd, int wfd, int efd) {
 	if (TaskIsRecursive(t->status & Needs2Recurse)) {
 	  return TASK_CONTINUE;
 	} else {
-	  build_reply(t, 1);
+	  buildreply(t, 1);
 	  if (t->reply_cache_ok)
 	    add_reply_to_cache(t);
 	}
