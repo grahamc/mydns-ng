@@ -24,6 +24,8 @@
 #include "util.h"
 #include <netdb.h>
 
+#include "memoryman.h"
+
 static char *thishostname;			/* Hostname of remote host */
 
 /**************************************************************************************************

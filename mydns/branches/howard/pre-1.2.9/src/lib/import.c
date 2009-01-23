@@ -23,6 +23,9 @@
 #include "named.h"
 #include "util.h"
 
+#include "memoryman.h"
+#include "import.h"
+
 #define DEBUG_SQL	0
 
 uint32_t got_soa = 0;					/* Have we read the initial SOA record? */

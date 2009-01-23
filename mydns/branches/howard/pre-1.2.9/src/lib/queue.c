@@ -20,6 +20,7 @@
 
 #include "named.h"
 
+#include "memoryman.h"
 #include "queue.h"
 
 /* Make this nonzero to enable debugging for this source file */

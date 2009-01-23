@@ -20,6 +20,9 @@
 
 #include "named.h"
 
+#include "memoryman.h"
+#include "listen.h"
+
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_LISTEN	1
 

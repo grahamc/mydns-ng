@@ -21,6 +21,11 @@
 
 #include "named.h"
 
+#include "memoryman.h"
+
+#include "error.h"
+#include "update.h"
+
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_LIB_UPDATE	1
 

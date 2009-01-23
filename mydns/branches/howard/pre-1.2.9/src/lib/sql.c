@@ -20,6 +20,8 @@
 
 #include "named.h"
 
+#include "memoryman.h"
+
 SQL *sql;						/* Global SQL connection information */
 
 /* Saved connection information for reconnecting */

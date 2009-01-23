@@ -20,6 +20,9 @@
 
 #include "named.h"
 
+#include "listen.h"
+#include "udp.h"
+
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_UDP	1
 

@@ -20,6 +20,12 @@
 
 #include "named.h"
 
+#include "memoryman.h"
+
+#include "error.h"
+#include "message.h"
+#include "recursive.h"
+
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_RECURSIVE	1
 

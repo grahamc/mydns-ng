@@ -20,7 +20,13 @@
 
 #include "named.h"
 
+#include "memoryman.h"
+
+#include "encode.h"
+#include "reply.h"
 #include "rr.h"
+
+#include "sort.h"
 
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_REPLY	1

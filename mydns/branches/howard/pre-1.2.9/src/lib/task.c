@@ -20,6 +20,9 @@
 
 #include "named.h"
 
+#include "memoryman.h"
+
+#include "error.h"
 #include "rr.h"
 
 /* Make this nonzero to enable debugging for this source file */

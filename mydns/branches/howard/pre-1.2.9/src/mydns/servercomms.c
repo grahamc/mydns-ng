@@ -21,9 +21,10 @@
 
 #include "memoryman.h"
 
+#include "server.h"
 #include "support.h"
 
-#include "server.h"
+#include "servercomms.h"
 #include "task.h"
 
 /* Make this nonzero to enable debugging for this source file */

@@ -18,8 +18,8 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **************************************************************************************************/
 
-#ifndef _MYDNS_UTIL_DIR_H
-#define _MYDNS_UTIL_DIR_H
+#ifndef _MYDNS_LIB_UTIL_H
+#define _MYDNS_LIB_UTIL_H
 
 #include "mydnsutil.h"
 #include "mydns.h"
@@ -29,7 +29,7 @@ extern CONF *Conf;						/* Configuration data */
 extern void load_config(void);
 extern void db_connect(void);
 extern uint32_t sqlnum(const char *, ...) __printflike(1,2);
-extern char *__mydns_expand_data(char *s, char *origin);
+extern char *mydns_expand_data(char *s, char *origin);
 extern void meter(unsigned long, unsigned long);
 
 extern uint32_t got_soa;
@@ -49,7 +49,7 @@ extern int	soa_imported, rr_imported, ptr_imported;	/* Number of records importe
 extern int	syntax_errors, consistency_errors;		/* Number of errors found */
 
 #define TINYDNS_NAMEFIX(str) \
-  str = __mydns_expand_data((str), soa->origin);			\
+  str = mydns_expand_data((str), soa->origin);			\
   if (LASTCHAR((str)) == '.') LASTCHAR((str)) = '\0';
 
 #endif /* !_MYDNS_UTIL_DIR_H */

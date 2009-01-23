@@ -20,8 +20,14 @@
 
 #include "named.h"
 
-#include "rr.h"
+#include "memoryman.h"
+
 #include "alias.h"
+#include "encode.h"
+#include "error.h"
+#include "rr.h"
+
+#include "axfr.h"
 
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_AXFR	1

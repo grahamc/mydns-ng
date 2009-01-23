@@ -20,6 +20,16 @@
 
 #include "named.h"
 
+#include "memoryman.h"
+
+#include "conf.h"
+#include "listen.h"
+
+#include "ixfr.h"
+#include "notify.h"
+#include "servercomms.h"
+#include "tcp.h"
+#include "udp.h"
 
 static int	servers = 0;			/* Number of server processes to run */
 
@@ -325,8 +335,6 @@ static void
 become_daemon(void) {
   int pid = -1;
 
-  sql_close(sql);
-
   if ((pid = fork()) < 0)
     Err(_("fork"));
   if (pid)
@@ -338,7 +346,6 @@ become_daemon(void) {
 
   setsid();
 
-  db_connect();
 }
 /*--- become_daemon() ---------------------------------------------------------------------------*/
 

@@ -20,7 +20,13 @@
 
 #include "named.h"
 
+#include "memoryman.h"
+
+#include "error.h"
+#include "recursive.h"
 #include "rr.h"
+
+#include "ixfr.h"
 
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_IXFR	1

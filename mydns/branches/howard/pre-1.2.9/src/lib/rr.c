@@ -20,6 +20,8 @@
 
 #include "named.h"
 
+#include "memoryman.h"
+
 #define __MYDNS_RR_NAME(__rrp)			((__rrp)->_name)
 #define __MYDNS_RR_DATA(__rrp)			((__rrp)->_data)
 #define __MYDNS_RR_DATA_LENGTH(__rrp)		((__rrp)->_data.len)

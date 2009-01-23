@@ -20,6 +20,11 @@
 
 #include "named.h"
 
+#include "memoryman.h"
+
+#include "encode.h"
+#include "error.h"
+
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_LIB_ENCODE	1
 

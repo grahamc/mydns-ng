@@ -22,6 +22,9 @@
 
 #if STATUS_ENABLED
 
+#include "memoryman.h"
+
+#include "error.h"
 #include "rr.h"
 
 /* Make this nonzero to enable debugging for this source file */
@@ -132,7 +135,7 @@ taskexec_t status_get_rr(TASK *t) {
 
   return formerr(t, DNS_RCODE_NOTIMP, ERR_NO_CLASS, NULL);
 }
-/*--- remote_status() ---------------------------------------------------------------------------*/
+/*--- status_get_rr() ---------------------------------------------------------------------------*/
 
 void status_task_timedout(TASK *t) {
   Status.timedout++;

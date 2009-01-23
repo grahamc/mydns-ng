@@ -19,6 +19,8 @@
 #ifndef _MYDNS_LIB_LISTEN_H
 #define _MYDNS_LIB_LISTEN_H
 
+#include "mydnsutil.h"
+
 extern int	*tcp4_fd, *udp4_fd;		/* Listening FD's (IPv4) */
 extern int	num_tcp4_fd, num_udp4_fd;	/* Number of listening FD's (IPv4) */
 #if HAVE_IPV6

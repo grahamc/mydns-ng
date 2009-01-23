@@ -20,6 +20,18 @@
 
 #include "named.h"
 
+#include "memoryman.h"
+
+#include "error.h"
+#include "recursive.h"
+#include "resolve.h"
+
+#include "axfr.h"
+#include "ixfr.h"
+#include "notify.h"
+#include "tcp.h"
+#include "udp.h"
+
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_TASK	1
 

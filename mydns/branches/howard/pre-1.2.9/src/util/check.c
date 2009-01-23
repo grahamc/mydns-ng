@@ -23,6 +23,9 @@
 #include "named.h"
 #include "util.h"
 
+#include "memoryman.h"
+#include "check.h"
+
 MYDNS_SOA	*soa;					/* Current SOA record being scanned */
 MYDNS_RR	*rr;					/* Current RR record */
 char		*name = NULL;				/* Current expanded name */
@@ -181,18 +184,18 @@ check_soa(const char *zone) {
   /* SOA validation */
   name = REALLOCATE(name, strlen(soa->origin) + 1, char[]);
   strcpy(name, soa->origin);
-  __mydns_check_name(soa, rr, name, data, soa->ns, strlen(soa->ns), "soa.ns", 0, 0);
-  __mydns_check_name(soa, rr, name, data, soa->mbox, strlen(soa->mbox), "soa.mbox", 0, 0);
+  mydns_check_name(soa, rr, name, data, soa->ns, strlen(soa->ns), "soa.ns", 0, 0);
+  mydns_check_name(soa, rr, name, data, soa->mbox, strlen(soa->mbox), "soa.mbox", 0, 0);
 
   if (LASTCHAR(name) != '.')
-    __mydns_rrproblem(soa, rr, name, data, _("soa.origin is not a FQDN (no trailing dot)"));
+    mydns_rrproblem(soa, rr, name, data, _("soa.origin is not a FQDN (no trailing dot)"));
 
-  if (soa->refresh < 300) __mydns_rrproblem(soa, rr, name, data, _("soa.refresh is less than 300 seconds"));
-  if (soa->retry < 300) __mydns_rrproblem(soa, rr, name, data, _("soa.retry is less than 300 seconds"));
-  if (soa->expire < 300) __mydns_rrproblem(soa, rr, name, data, _("soa.expire is less than 300 seconds"));
-  if (soa->minimum < 300) __mydns_rrproblem(soa, rr, name, data, _("soa.minimum is less than 300 seconds"));
-  if (soa->ttl < 300) __mydns_rrproblem(soa, rr, name, data, _("soa.ttl is less than 300 seconds"));
-  if (soa->minimum < 300) __mydns_rrproblem(soa, rr, name, data, _("soa.minimum is less than 300 seconds"));
+  if (soa->refresh < 300) mydns_rrproblem(soa, rr, name, data, _("soa.refresh is less than 300 seconds"));
+  if (soa->retry < 300) mydns_rrproblem(soa, rr, name, data, _("soa.retry is less than 300 seconds"));
+  if (soa->expire < 300) mydns_rrproblem(soa, rr, name, data, _("soa.expire is less than 300 seconds"));
+  if (soa->minimum < 300) mydns_rrproblem(soa, rr, name, data, _("soa.minimum is less than 300 seconds"));
+  if (soa->ttl < 300) mydns_rrproblem(soa, rr, name, data, _("soa.ttl is less than 300 seconds"));
+  if (soa->minimum < 300) mydns_rrproblem(soa, rr, name, data, _("soa.minimum is less than 300 seconds"));
 
   return (soa);
 }
@@ -215,12 +218,12 @@ check_rr(void) {
   memset(data, 0, MYDNS_RR_DATA_LENGTH(rr)+1);
   strncpy(name, MYDNS_RR_NAME(rr), namelen);
   memcpy(data, MYDNS_RR_DATA_VALUE(rr), MYDNS_RR_DATA_LENGTH(rr));
-  name = __mydns_expand_data(name, soa->origin);
+  name = mydns_expand_data(name, soa->origin);
 
   map = mydns_rr_get_type_by_id(rr->type);
 
   if (!ignore_minimum && (rr->ttl < soa->minimum))
-    __mydns_rrproblem(soa, rr, name, data, _("TTL below zone minimum"));
+    mydns_rrproblem(soa, rr, name, data, _("TTL below zone minimum"));
 
   map->rr_check_rr(soa, rr, name, data, data, MYDNS_RR_DATA_LENGTH(rr));
 

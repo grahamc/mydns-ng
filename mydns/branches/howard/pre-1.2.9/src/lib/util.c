@@ -20,10 +20,11 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **************************************************************************************************/
 
+#include "named.h"
 #include "util.h"
 #include "memoryman.h"
 
-char *__mydns_expand_data(char *s, char *origin) {
+char *mydns_expand_data(char *s, char *origin) {
   if (!(s[0]) || LASTCHAR(s) != '.') {
     int slen = strlen(s);
 

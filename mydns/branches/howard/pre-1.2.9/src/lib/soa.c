@@ -20,6 +20,8 @@
 
 #include "named.h"
 
+#include "memoryman.h"
+
 char *mydns_soa_table_name = NULL;
 char *mydns_soa_where_clause = NULL;
 

@@ -17,7 +17,7 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **************************************************************************************************/
 
-#include "named.h"
+#include "listen.h"
 
 int *udp4_fd = (int *)NULL;					/* Listening socket: UDP, IPv4 */
 int *tcp4_fd = (int *)NULL;					/* Listening socket: TCP, IPv4 */

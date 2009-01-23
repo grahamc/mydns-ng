@@ -20,10 +20,14 @@
 
 #include "named.h"
 
-#include "data.h"
-#include "rr.h"
-#include "alias.h"
+#include "memoryman.h"
 
+#include "alias.h"
+#include "data.h"
+#include "error.h"
+#include "recursive.h"
+#include "resolve.h"
+#include "rr.h"
 
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_RESOLVE	1

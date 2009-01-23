@@ -20,6 +20,12 @@
 
 #include "named.h"
 
+#include "check.h"
+#include "export.h"
+#include "import.h"
+#include "reply.h"
+#include "update.h"
+
 #define DEFINE_RR_TYPE(__TYPENAME__, __PERSISTENT__, __PARSER__, __FREE__, __DUPLICATOR__, \
 		       __SIZOR__, __REPLY_ADD__, __UPDATE_GET_RR_DATA__, __PROCESS_AXFR__, \
 		       __CHECK_RR__, \

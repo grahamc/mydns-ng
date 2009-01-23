@@ -6,7 +6,7 @@ SHORT TERM:
 
 *	Add full checks for SRV, PTR, RP, and NAPTR to 'mydnscheck'.
 
-*  Reply cache should obey shortest TTL in the cached RRSET.
+*  	Reply cache should obey shortest TTL in the cached RRSET.
 
 
 

@@ -20,6 +20,10 @@
 
 #include "named.h"
 
+#include "memoryman.h"
+
+#include "error.h"
+
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_DATA	1
 

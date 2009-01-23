@@ -20,6 +20,14 @@
 
 #include "named.h"
 
+#include "memoryman.h"
+
+#include "encode.h"
+#include "error.h"
+#include "recursive.h"
+#include "resolve.h"
+#include "reply.h"
+
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_LIB_REPLY	1
 
