@@ -345,8 +345,6 @@ static void
 become_daemon(void) {
   int pid = -1;
 
-  sql_close(sql);
-
   if ((pid = fork()) < 0)
     Err(_("fork"));
   if (pid)
@@ -357,8 +355,6 @@ become_daemon(void) {
   close(STDERR_FILENO);
 
   setsid();
-
-  db_connect();
 }
 /*--- become_daemon() ---------------------------------------------------------------------------*/
 

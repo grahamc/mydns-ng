@@ -1,3 +1,6 @@
+23-Jan-2009	Howard Wilkinson	<howard@cohtech.com>	[1.2.8.18]
+	*	Fixed a problem where the connection to the Database is left
+		dangling on start up.
 21-Jan-2009	Howard Wilkinson	<howard@cohtech.com>	[1.2.8.18]
 	*	Fixes to scheduler code and various patches have been made since 1.2.8 release
 		These have not been recorded in the updates as I forgot.
