@@ -1,7 +1,5 @@
 /**************************************************************************************************
-	$Id: named.h,v 1.65 2005/04/20 16:49:12 bboy Exp $
-
-	Copyright (C) 2002-2005  Don Moore <bboy@bboy.net>
+	Copyright (C) 2009-  Howard Wilkinson <howard@cohtech.com>
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -18,23 +16,15 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **************************************************************************************************/
 
-#ifndef _MYDNS_NAMED_H
-#define _MYDNS_NAMED_H
+#ifndef _MYDNS_LIB_MESSAGE_H
+#define _MYDNS_LIB_MESSAGE_H
 
-#include "mydns.h"
+extern char		*dns_make_message(TASK *, uint16_t, uint8_t, dns_qtype_t,
+					  char *, int , size_t *);
 
-#if HAVE_SYS_RESOURCE_H
-#	include <sys/resource.h>
+#define dns_make_question(t,id,qtype,name,rd,length) \
+  dns_make_message((t),(id),DNS_OPCODE_QUERY,(qtype),(name),(rd),(length))
+#define dns_make_notify(t,id,qtype,name,rd,length) \
+  dns_make_message((t),(id),DNS_OPCODE_NOTIFY,(qtype),(name),(rd),(length))
+
 #endif
-
-#if HAVE_SYS_WAIT_H
-#	include <sys/wait.h>
-#endif
-
-#if HAVE_NETDB_H
-#	include <netdb.h>
-#endif
-
-#endif /* _MYDNS_NAMED_H */
-
-/* vi:set ts=3: */

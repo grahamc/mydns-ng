@@ -22,6 +22,7 @@
 
 #include "data.h"
 #include "rr.h"
+#include "taskobj.h"
 
 #include "alias.h"
 

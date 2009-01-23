@@ -23,6 +23,7 @@
 
 #include "server.h"
 #include "support.h"
+#include "taskobj.h"
 
 #include "servercomms.h"
 #include "task.h"

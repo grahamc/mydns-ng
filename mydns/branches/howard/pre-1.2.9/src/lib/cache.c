@@ -22,6 +22,12 @@
 
 #include "memoryman.h"
 
+#include "bits.h"
+#include "cache.h"
+#include "status.h"
+#include "support.h"
+#include "taskobj.h"
+
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_CACHE	1
 

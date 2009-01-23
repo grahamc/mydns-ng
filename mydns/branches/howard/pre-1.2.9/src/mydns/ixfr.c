@@ -22,9 +22,12 @@
 
 #include "memoryman.h"
 
+#include "bits.h"
 #include "error.h"
 #include "recursive.h"
 #include "rr.h"
+#include "support.h"
+#include "taskobj.h"
 
 #include "ixfr.h"
 

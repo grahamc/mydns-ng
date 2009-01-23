@@ -1,7 +1,5 @@
 /**************************************************************************************************
-	$Id: named.h,v 1.65 2005/04/20 16:49:12 bboy Exp $
-
-	Copyright (C) 2002-2005  Don Moore <bboy@bboy.net>
+	Copyright (C) 2009-  Howard Wilkinson <howard@cohtech.com>
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -18,23 +16,13 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **************************************************************************************************/
 
-#ifndef _MYDNS_NAMED_H
-#define _MYDNS_NAMED_H
+#ifndef _MYDNS_LIB_DATA_H
+#define _MYDNS_LIB_DATA_H
 
 #include "mydns.h"
+#include "taskobj.h"
 
-#if HAVE_SYS_RESOURCE_H
-#	include <sys/resource.h>
+extern MYDNS_SOA	*find_soa(TASK *, char *, char **);
+extern MYDNS_RR		*find_rr(TASK *, MYDNS_SOA *, dns_qtype_t, char *);
+
 #endif
-
-#if HAVE_SYS_WAIT_H
-#	include <sys/wait.h>
-#endif
-
-#if HAVE_NETDB_H
-#	include <netdb.h>
-#endif
-
-#endif /* _MYDNS_NAMED_H */
-
-/* vi:set ts=3: */

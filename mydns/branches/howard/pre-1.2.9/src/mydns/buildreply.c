@@ -22,9 +22,11 @@
 
 #include "memoryman.h"
 
+#include "bits.h"
 #include "encode.h"
 #include "reply.h"
 #include "rr.h"
+#include "taskobj.h"
 
 #include "sort.h"
 

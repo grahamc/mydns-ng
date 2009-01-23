@@ -23,9 +23,14 @@
 
 #include "memoryman.h"
 
+#include "bits.h"
+#include "cache.h"
 #include "error.h"
+#include "support.h"
+#include "taskobj.h"
 
 #include "buildreply.h"
+#include "dnsupdate.h"
 #include "notify.h"
 
 /* Make this nonzero to enable debugging for this source file */
@@ -1865,11 +1870,10 @@ are_we_master(TASK *t, MYDNS_SOA *soa) {
   return (res);
 }
 /**************************************************************************************************
-	DNS_UPDATE
+	DNSUPDATE
 	Process a DNS UPDATE query.
 **************************************************************************************************/
-taskexec_t
-dns_update(TASK *t) {
+taskexec_t dnsupdate(TASK *t) {
   MYDNS_SOA	*soa = NULL;						/* SOA record for zone */
   UQ		*q = NULL;						/* Update query data */
   int		n = 0;
@@ -1981,6 +1985,6 @@ dns_update_error:
   mydns_soa_free(soa);
   return (TASK_FAILED);
 }
-/*--- dns_update() ------------------------------------------------------------------------------*/
+/*--- dnsupdate() ------------------------------------------------------------------------------*/
 
 /* vi:set ts=3: */

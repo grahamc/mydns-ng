@@ -22,10 +22,14 @@
 
 #include "memoryman.h"
 
+#include "bits.h"
 #include "data.h"
 #include "message.h"
+#include "support.h"
+#include "taskobj.h"
 
 #include "notify.h"
+#include "task.h"
 
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_NOTIFY	1

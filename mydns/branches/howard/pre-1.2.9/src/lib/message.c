@@ -22,7 +22,9 @@
 
 #include "memoryman.h"
 
+#include "bits.h"
 #include "message.h"
+#include "taskobj.h"
 
 /* Set this to nonzero to enable debugging for this source file */
 #define	MESSAGE_DEBUG	1

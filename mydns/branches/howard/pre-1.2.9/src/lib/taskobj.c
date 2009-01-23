@@ -22,8 +22,12 @@
 
 #include "memoryman.h"
 
+#include "bits.h"
 #include "error.h"
 #include "rr.h"
+#include "status.h"
+#include "support.h"
+#include "taskobj.h"
 
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_LIB_TASK	1

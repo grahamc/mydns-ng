@@ -22,14 +22,21 @@
 
 #include "memoryman.h"
 
+#include "bits.h"
+#include "cache.h"
 #include "error.h"
 #include "recursive.h"
 #include "resolve.h"
+#include "status.h"
+#include "support.h"
+#include "taskobj.h"
 
 #include "axfr.h"
 #include "buildreply.h"
+#include "dnsupdate.h"
 #include "ixfr.h"
 #include "notify.h"
+#include "task.h"
 #include "tcp.h"
 #include "udp.h"
 
@@ -180,7 +187,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
 
   /* If DNS updates are enabled and the opcode is UPDATE, do the update */
   if (dns_update_enabled && t->hdr.opcode == DNS_OPCODE_UPDATE)
-    return (dns_update(t));
+    return (dnsupdate(t));
 
   /* Handle Notify messages - currently do nothing so return not implemented */
   if (t->hdr.opcode == DNS_OPCODE_NOTIFY) {

@@ -21,6 +21,10 @@
 #include "named.h"
 
 #include "listen.h"
+#include "support.h"
+#include "taskobj.h"
+
+#include "task.h"
 #include "udp.h"
 
 /* Make this nonzero to enable debugging for this source file */

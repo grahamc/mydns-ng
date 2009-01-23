@@ -23,12 +23,15 @@
 #include "memoryman.h"
 
 #include "alias.h"
+#include "bits.h"
 #include "encode.h"
 #include "error.h"
 #include "rr.h"
+#include "taskobj.h"
 
 #include "axfr.h"
 #include "buildreply.h"
+#include "task.h"
 
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_AXFR	1

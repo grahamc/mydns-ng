@@ -22,7 +22,9 @@
 
 #include "memoryman.h"
 
+#include "cache.h"
 #include "error.h"
+#include "taskobj.h"
 
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_DATA	1

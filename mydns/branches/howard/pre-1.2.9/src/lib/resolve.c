@@ -28,6 +28,8 @@
 #include "recursive.h"
 #include "resolve.h"
 #include "rr.h"
+#include "status.h"
+#include "taskobj.h"
 
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_RESOLVE	1

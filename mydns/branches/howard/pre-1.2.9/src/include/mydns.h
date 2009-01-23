@@ -24,8 +24,6 @@
 #define _MYDNS_H
 
 #include "mydnsutil.h"
-#include "bits.h"
-#include "header.h"
 
 /* The record types */
 typedef enum _dns_rrtype_t				/* DNS record types (for MyDNS) */

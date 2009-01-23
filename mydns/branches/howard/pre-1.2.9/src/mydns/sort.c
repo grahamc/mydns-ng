@@ -20,6 +20,9 @@
 
 #include "named.h"
 
+#include "taskobj.h"
+
+#include "buildreply.h"
 #include "sort.h"
 
 /* Make this nonzero to enable debugging for this source file */

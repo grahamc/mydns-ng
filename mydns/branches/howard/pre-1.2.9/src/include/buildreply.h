@@ -1,7 +1,5 @@
 /**************************************************************************************************
-	$Id: named.h,v 1.65 2005/04/20 16:49:12 bboy Exp $
-
-	Copyright (C) 2002-2005  Don Moore <bboy@bboy.net>
+	Copyright (C) 2009-  Howard Wilkinson <howard@cohtech.com>
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -18,23 +16,18 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **************************************************************************************************/
 
-#ifndef _MYDNS_NAMED_H
-#define _MYDNS_NAMED_H
+#ifndef _MYDNS_MYDNS_BUILDREPLY_H
+#define _MYDNS_MYDNS_BUILDREPLY_H
 
-#include "mydns.h"
+#include "taskobj.h"
 
-#if HAVE_SYS_RESOURCE_H
-#	include <sys/resource.h>
+#if DEBUG_ENABLED
+extern char *datasection_str[];			/* Strings describing data section types */
 #endif
 
-#if HAVE_SYS_WAIT_H
-#	include <sys/wait.h>
+extern int		buildreply_init(TASK *);
+extern void		buildreply_abandon(TASK *);
+extern void		buildreply_cache(TASK *);
+extern void		buildreply(TASK *, int);
+
 #endif
-
-#if HAVE_NETDB_H
-#	include <netdb.h>
-#endif
-
-#endif /* _MYDNS_NAMED_H */
-
-/* vi:set ts=3: */

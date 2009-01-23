@@ -24,7 +24,10 @@
 #include "util.h"
 
 #include "memoryman.h"
+
+#include "bits.h"
 #include "import.h"
+#include "support.h"
 
 #define DEBUG_SQL	0
 

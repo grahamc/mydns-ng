@@ -26,6 +26,8 @@
 
 #include "memoryman.h"
 
+#include "bits.h"
+
 static char *thishostname;			/* Hostname of remote host */
 
 /**************************************************************************************************

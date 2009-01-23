@@ -48,6 +48,8 @@ typedef struct {
 #endif
 } DNS_HEADER;
 
+/* Size of reply header data; that's id + DNS_HEADER + qdcount + ancount + nscount + arcount */
+#define	DNS_HEADERSIZE		(SIZE16 * 6)
 
 #endif /* _MYDNS_HEADER_H */
 

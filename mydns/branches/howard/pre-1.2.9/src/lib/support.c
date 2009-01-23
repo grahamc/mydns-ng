@@ -22,8 +22,11 @@
 #include "array.h"
 #include "memoryman.h"
 
+#include "cache.h"
 #include "data.h"
 #include "listen.h"
+#include "status.h"
+#include "support.h"
 
 #include "notify.h"
 

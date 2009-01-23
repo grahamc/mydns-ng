@@ -25,6 +25,7 @@
 
 #include "memoryman.h"
 #include "check.h"
+#include "support.h"
 
 int		syntax_errors, consistency_errors;	/* Number of errors found */
 

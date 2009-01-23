@@ -15,14 +15,14 @@ mydns_DEPENDENCIES	=	@LIBMYDNS@ @LIBUTIL@
 noinst_HEADERS		=	
 mydns_SOURCES		=	axfr.c \
 				buildreply.c \
-				db.c \
+				db.c dnsupdate.c \
 				ixfr.c \
 				listen.c \
 				main.c  \
 				notify.c \
 				servercomms.c sort.c \
 				task.c tcp.c \
-				udp.c update.c
+				udp.c
 
 CLEANFILES		=	malloc_trace gmon.out bb.out
 

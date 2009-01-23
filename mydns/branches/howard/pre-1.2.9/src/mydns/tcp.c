@@ -21,8 +21,13 @@
 #include "named.h"
 
 #include "memoryman.h"
-#include "listen.h"
 
+#include "bits.h"
+#include "listen.h"
+#include "support.h"
+#include "taskobj.h"
+
+#include "task.h"
 #include "tcp.h"
 
 /* Make this nonzero to enable debugging for this source file */

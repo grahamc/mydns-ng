@@ -22,6 +22,7 @@
 
 #include "taskint.h"
 #include "mydns.h"
+#include "header.h"
 #include "queue.h"
 
 /* If defined, DYNAMIC_NAMES causes dynamic allocation of the encoded names list.  It's slow. */

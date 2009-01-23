@@ -22,9 +22,13 @@
 
 #include "memoryman.h"
 
+#include "bits.h"
+#include "cache.h"
 #include "error.h"
 #include "message.h"
 #include "recursive.h"
+#include "support.h"
+#include "taskobj.h"
 
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_RECURSIVE	1

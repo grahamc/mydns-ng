@@ -23,7 +23,9 @@
 
 #include "memoryman.h"
 
+#include "bits.h"
 #include "error.h"
+#include "taskobj.h"
 #include "update.h"
 
 /* Make this nonzero to enable debugging for this source file */

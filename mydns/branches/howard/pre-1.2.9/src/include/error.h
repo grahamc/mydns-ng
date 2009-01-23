@@ -1,7 +1,5 @@
 /**************************************************************************************************
-	$Id: named.h,v 1.65 2005/04/20 16:49:12 bboy Exp $
-
-	Copyright (C) 2002-2005  Don Moore <bboy@bboy.net>
+	Copyright (C) 2009-  Howard Wilkinson <howard@cohtech.com>
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -18,23 +16,16 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **************************************************************************************************/
 
-#ifndef _MYDNS_NAMED_H
-#define _MYDNS_NAMED_H
+#ifndef _MYDNS_LIB_ERROR_H
+#define _MYDNS_LIB_ERROR_H
 
-#include "mydns.h"
+extern taskexec_t	_formerr_internal(TASK *, dns_rcode_t, task_error_t, char *, const char *, unsigned int);
+extern taskexec_t	_dnserror_internal(TASK *, dns_rcode_t, task_error_t, const char *, unsigned int);
+extern char		*err_reason_str(TASK *, task_error_t);
+extern int		rr_error_repeat(uint32_t);
+extern int		rr_error(uint32_t, const char *, ...) __printflike(2,3);
 
-#if HAVE_SYS_RESOURCE_H
-#	include <sys/resource.h>
+#define formerr(task,rcode,reason,xtra)	_formerr_internal((task),(rcode),(reason),(xtra),__FILE__,__LINE__)
+#define dnserror(task,rcode,reason)			_dnserror_internal((task),(rcode),(reason),__FILE__,__LINE__)
+
 #endif
-
-#if HAVE_SYS_WAIT_H
-#	include <sys/wait.h>
-#endif
-
-#if HAVE_NETDB_H
-#	include <netdb.h>
-#endif
-
-#endif /* _MYDNS_NAMED_H */
-
-/* vi:set ts=3: */

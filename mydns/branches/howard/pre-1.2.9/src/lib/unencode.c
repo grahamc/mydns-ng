@@ -24,6 +24,8 @@
 
 #include "memoryman.h"
 
+#include "bits.h"
+
 /**************************************************************************************************
 	NAME_UNENCODE
 	Get a name from a compressed question.

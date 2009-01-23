@@ -58,9 +58,9 @@ am__installdirs = "$(DESTDIR)$(sbindir)"
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(sbin_PROGRAMS)
 am_mydns_OBJECTS = axfr.$(OBJEXT) buildreply.$(OBJEXT) db.$(OBJEXT) \
-	ixfr.$(OBJEXT) listen.$(OBJEXT) main.$(OBJEXT) \
-	notify.$(OBJEXT) servercomms.$(OBJEXT) sort.$(OBJEXT) \
-	task.$(OBJEXT) tcp.$(OBJEXT) udp.$(OBJEXT) update.$(OBJEXT)
+	dnsupdate.$(OBJEXT) ixfr.$(OBJEXT) listen.$(OBJEXT) \
+	main.$(OBJEXT) notify.$(OBJEXT) servercomms.$(OBJEXT) \
+	sort.$(OBJEXT) task.$(OBJEXT) tcp.$(OBJEXT) udp.$(OBJEXT)
 mydns_OBJECTS = $(am_mydns_OBJECTS)
 mydns_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -237,14 +237,14 @@ mydns_DEPENDENCIES = @LIBMYDNS@ @LIBUTIL@
 noinst_HEADERS = 
 mydns_SOURCES = axfr.c \
 				buildreply.c \
-				db.c \
+				db.c dnsupdate.c \
 				ixfr.c \
 				listen.c \
 				main.c  \
 				notify.c \
 				servercomms.c sort.c \
 				task.c tcp.c \
-				udp.c update.c
+				udp.c
 
 CLEANFILES = malloc_trace gmon.out bb.out
 all: all-am
@@ -321,6 +321,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/axfr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buildreply.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/db.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dnsupdate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ixfr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/listen.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
@@ -330,7 +331,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/task.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tcp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/udp.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/update.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

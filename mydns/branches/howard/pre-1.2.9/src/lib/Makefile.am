@@ -14,7 +14,7 @@ libmydns_a_SOURCES	=	alias.c \
 				queue.c \
 				recursive.c reply.c resolve.c rr.c rr_type.c \
 				server.c soa.c sql.c status.c str.c support.c \
-				task.c \
+				taskobj.c \
 				unencode.c update.c util.c
 
 ctags:

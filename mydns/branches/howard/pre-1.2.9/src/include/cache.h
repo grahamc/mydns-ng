@@ -18,8 +18,10 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **************************************************************************************************/
 
-#ifndef _CACHE_H
-#define _CACHE_H
+#ifndef _MYDNS_LIB_CACHE_H
+#define _MYDNS_LIB_CACHE_H
+
+#include "taskobj.h"
 
 /* The actual number of slots specified for `nodes' is the limit multiplied by this number.
 	A higher value will yield greater speed (due to fewer collisions) but will use more memory. */
@@ -29,82 +31,81 @@
 #define	USE_NEGATIVE_CACHE	1
 
 /* Hash types */
-#define	ORIGINAL_HASH	0							/* Original hash */
-#define	ADDITIVE_HASH	1							/* Additive hash */
-#define	ROTATING_HASH	2							/* Rotating hash */
-#define	FNV_HASH			3							/* FNV hash (http://www.isthe.com/chongo/tech/comp/fnv/) */
+#define	ORIGINAL_HASH	0				/* Original hash */
+#define	ADDITIVE_HASH	1				/* Additive hash */
+#define	ROTATING_HASH	2				/* Rotating hash */
+#define	FNV_HASH			3		/* FNV hash (http://www.isthe.com/chongo/tech/comp/fnv/) */
 
 #ifndef	HASH_TYPE
-#define	HASH_TYPE	ADDITIVE_HASH				/* Default hash type */
+#define	HASH_TYPE	ADDITIVE_HASH			/* Default hash type */
 #endif
 
 #define	FNV_32_INIT		((uint32_t)2166136261U)
 #define	FNV_32_PRIME	((uint32_t)0x01000193)
 
 
-typedef struct _cnode								/* A cache node */
+typedef struct _cnode					/* A cache node */
 {
-	uint32_t			hash;								/* Hash value, for lookup when deleting nodes */
-	uint32_t			zone;								/* Zone for record */
+  uint32_t		hash;				/* Hash value, for lookup when deleting nodes */
+  uint32_t		zone;				/* Zone for record */
 
-	dns_qtype_t		type;								/* Record type */
-	int				protocol;						/* Protocol used (SOCK_DGRAM/SOCK_STREAM) */
+  dns_qtype_t		type;				/* Record type */
+  int			protocol;			/* Protocol used (SOCK_DGRAM/SOCK_STREAM) */
 
-	char				name[DNS_MAXNAMELEN + 1];	/* The name to look up */
-	size_t			namelen;							/* strlen(name) */
+  char			name[DNS_MAXNAMELEN + 1];	/* The name to look up */
+  size_t		namelen;			/* strlen(name) */
 
-	void				*data;							/* SOA or RR record or reply data (depending on `type') */
-	size_t			datalen;							/* Length of data */
+  void			*data;				/* SOA or RR record or reply data (depending on `type') */
+  size_t		datalen;			/* Length of data */
 
-	time_t			insert_time;					/* Time record was inserted */
-	time_t			expire;							/* Time after which this node should expire */
+  time_t		insert_time;			/* Time record was inserted */
+  time_t		expire;				/* Time after which this node should expire */
 
-	struct _cnode *next_node;						/* Pointer to next node in bucket */
-	struct _cnode *mruPrev, *mruNext;			/* Pointer to next/prev node in MRU/LRU list */
+  struct _cnode 	*next_node;			/* Pointer to next node in bucket */
+  struct _cnode		*mruPrev, *mruNext;		/* Pointer to next/prev node in MRU/LRU list */
 } CNODE;
 
 
-typedef struct _cache								/* A cache */
+typedef struct _cache					/* A cache */
 {
-	char			name[20];							/* Name of this cache */
+  char			name[20];			/* Name of this cache */
 
-	size_t		limit;								/* Max number of nodes allowed (via `cache-size') */
-	size_t		count;								/* Number of used nodes in the cache */
+  size_t		limit;				/* Max number of nodes allowed (via `cache-size') */
+  size_t		count;				/* Number of used nodes in the cache */
 
-	size_t		size;									/* Number of bytes used by this cache */
-															/* (not updated unless cache_size_update() is called) */
+  size_t		size;				/* Number of bytes used by this cache */
+							/* (not updated unless cache_size_update() is called) */
 
-	time_t		expire;								/* Expiration seconds for cached items */
+  time_t		expire;				/* Expiration seconds for cached items */
 
-	uint32_t		questions;							/* Total number of questions */
-	uint32_t		hits, misses;						/* Total number of hits/misses for the cache */
-	uint32_t		in, out;								/* Cache entries in and out */
-	uint32_t		expired, removed;					/* Cache entries expired and removed */
+  uint32_t		questions;			/* Total number of questions */
+  uint32_t		hits, misses;			/* Total number of hits/misses for the cache */
+  uint32_t		in, out;			/* Cache entries in and out */
+  uint32_t		expired, removed;		/* Cache entries expired and removed */
 
-	time_t		removed_secs;						/* Total lifetime seconds of removed entries */
+  time_t		removed_secs;			/* Total lifetime seconds of removed entries */
 
-	uint32_t		slots;								/* Number of slots in `nodes' array */
+  uint32_t		slots;				/* Number of slots in `nodes' array */
 #if (HASH_TYPE == ROTATING_HASH)
-	uint32_t		mask;									/* Hash mask */
+  uint32_t		mask;				/* Hash mask */
 #endif                                       
 #if (HASH_TYPE == FNV_HASH)
-	uint32_t		bits;									/* Bit length of hash table */
+  uint32_t		bits;				/* Bit length of hash table */
 #endif
 
-	CNODE			**nodes;								/* Array of nodes */
+  CNODE			**nodes;			/* Array of nodes */
                                              
-	CNODE			*mruHead, *mruTail;				/* Most/Least recently used (MRU/LRU) nodes (head/tail) */
+  CNODE			*mruHead, *mruTail;		/* Most/Least recently used (MRU/LRU) nodes (head/tail) */
 } CACHE;
 
 
-extern CACHE *ZoneCache;							/* Zone cache */
-extern CACHE *ReplyCache;							/* Reply cache */
+extern CACHE	*Cache;					/* Zone cache */
+extern CACHE	*ZoneCache;				/* Zone cache */
+extern CACHE	*ReplyCache;				/* Reply cache */
 
 #if USE_NEGATIVE_CACHE
-extern CACHE *NegativeCache;						/* Negative zone cache */
+extern CACHE	*NegativeCache;				/* Negative zone cache */
 #endif
-
-#include "taskobj.h"
 
 extern void	cache_status(CACHE *);
 extern void	cache_init(void), cache_empty(CACHE *), cache_cleanup(CACHE *);
@@ -113,7 +114,6 @@ extern void	*zone_cache_find(TASK *, uint32_t, char *, dns_qtype_t, char *, size
 
 extern int	reply_cache_find(TASK *);
 extern void	add_reply_to_cache(TASK *);
-
 
 #endif /* _CACHE_H */
 

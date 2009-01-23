@@ -63,7 +63,7 @@ am_libmydns_a_OBJECTS = alias.$(OBJEXT) cache.$(OBJEXT) conf.$(OBJEXT) \
 	recursive.$(OBJEXT) reply.$(OBJEXT) resolve.$(OBJEXT) \
 	rr.$(OBJEXT) rr_type.$(OBJEXT) server.$(OBJEXT) soa.$(OBJEXT) \
 	sql.$(OBJEXT) status.$(OBJEXT) str.$(OBJEXT) support.$(OBJEXT) \
-	task.$(OBJEXT) unencode.$(OBJEXT) update.$(OBJEXT) \
+	taskobj.$(OBJEXT) unencode.$(OBJEXT) update.$(OBJEXT) \
 	util.$(OBJEXT)
 libmydns_a_OBJECTS = $(am_libmydns_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -245,7 +245,7 @@ libmydns_a_SOURCES = alias.c \
 				queue.c \
 				recursive.c reply.c resolve.c rr.c rr_type.c \
 				server.c soa.c sql.c status.c str.c support.c \
-				task.c \
+				taskobj.c \
 				unencode.c update.c util.c
 
 all: all-am
@@ -320,7 +320,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/status.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/str.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/support.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/task.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/taskobj.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unencode.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/update.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/util.Po@am__quote@

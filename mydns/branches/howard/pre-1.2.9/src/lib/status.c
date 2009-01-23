@@ -26,6 +26,7 @@
 
 #include "error.h"
 #include "rr.h"
+#include "status.h"
 
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_STATUS 1

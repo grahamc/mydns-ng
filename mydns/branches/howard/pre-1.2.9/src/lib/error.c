@@ -22,6 +22,9 @@
 
 #include "memoryman.h"
 
+#include "bits.h"
+#include "taskobj.h"
+
 /* Make this nonzero to enable debugging for this source file */
 #define	DEBUG_LIB_ERROR	1
 

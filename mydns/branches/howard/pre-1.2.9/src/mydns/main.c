@@ -22,12 +22,18 @@
 
 #include "memoryman.h"
 
+#include "cache.h"
 #include "conf.h"
 #include "listen.h"
+#include "server.h"
+#include "status.h"
+#include "support.h"
+#include "taskobj.h"
 
 #include "ixfr.h"
 #include "notify.h"
 #include "servercomms.h"
+#include "task.h"
 #include "tcp.h"
 #include "udp.h"
 
