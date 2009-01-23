@@ -22,8 +22,6 @@
 
 #include "util.h"
 
-#define DEBUG_SQL	0
-
 extern void import_axfr(char *hostport, char *import_zone);
 extern void import_tinydns(char *datafile, char *import_zone);
 

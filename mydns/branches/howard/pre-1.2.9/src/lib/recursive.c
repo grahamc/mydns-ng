@@ -30,9 +30,6 @@
 #include "support.h"
 #include "taskobj.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_RECURSIVE	1
-
 static TASK *udp_recursive_master = NULL;
 static TASK *tcp_recursive_master = NULL;
 
@@ -183,7 +180,7 @@ static taskexec_t
 __recursive_fwd_read_timeout(TASK *t, void *data) {
 
   if (t->protocol == SOCK_STREAM) {
-#if DEBUG_ENABLED && DEBUG_RECURSIVE
+#if DEBUG_ENABLED
     DebugX("recursive", 1, _("%s: read_timeout with tcp_recursion_running = %d"),
 	   desctask(t), tcp_recursion_running);
 #endif
@@ -261,7 +258,7 @@ __recursive_fwd_write_udp(TASK *t) {
   recursive_fwd_write_t	*querypacket = NULL;
   taskexec_t		res = TASK_FAILED;
 
-#if DEBUG_ENABLED && DEBUG_RECURSIVE
+#if DEBUG_ENABLED
   DebugX("recursive", 1, _("%s: recursive_fwd_write() UDP"), desctask(t));
 #endif
 
@@ -318,7 +315,7 @@ __recursive_fwd_write_tcp(TASK *t) {
   recursive_fwd_write_t	*querypacket = NULL;
   taskexec_t		res = TASK_FAILED;
 
-#if DEBUG_ENABLED && DEBUG_RECURSIVE
+#if DEBUG_ENABLED
   DebugX("recursive", 1, _("%s: recursive_fwd_write() TCP"), desctask(t));
 #endif
 
@@ -354,7 +351,7 @@ __recursive_fwd_write_tcp(TASK *t) {
 #endif
 #endif
 	  ) {
-#if DEBUG_ENABLED && DEBUG_RECURSIVE
+#if DEBUG_ENABLED
 	DebugX("recursive", 1, _("%s: %s fd %d is not ready to write, will retry"),
 	       desctask(t), recursive_fwd_server, fd);
 #endif
@@ -386,7 +383,7 @@ __recursive_fwd_write_tcp(TASK *t) {
 #endif
 #endif
 	) {
-#if DEBUG_ENABLED && DEBUG_RECURSIVE
+#if DEBUG_ENABLED
       DebugX("recursive", 1, _("%s: %s fd %d not ready to write, will retry"),
 	     desctask(t), recursive_fwd_server, fd);
 #endif
@@ -521,7 +518,7 @@ __recursive_fwd_read_udp(TASK *t) {
   taskexec_t		res = TASK_FAILED;
   int			fd = -1;
 
-#if DEBUG_ENABLED && DEBUG_RECURSIVE
+#if DEBUG_ENABLED
   DebugX("recursive", 1, _("%s: recursive_fwd_read() UDP"), desctask(t));
 #endif
 
@@ -544,7 +541,7 @@ __recursive_fwd_read_udp(TASK *t) {
 #endif
 #endif
 	) {
-#if DEBUG_ENABLED && DEBUG_RECURSIVE
+#if DEBUG_ENABLED
       DebugX("recursive", 1, _("%s: %s fd %d is not ready to read, will retry"), desctask(t),
 	     recursive_fwd_server, fd);
 #endif
@@ -620,7 +617,7 @@ __recursive_fwd_read_tcp(TASK *t) {
   taskexec_t		res = TASK_FAILED;
   int			fd = -1;
 
-#if DEBUG_ENABLED && DEBUG_RECURSIVE
+#if DEBUG_ENABLED
   DebugX("recursive", 1, _("%s: recursive_fwd_read() TCP"), desctask(t));
 #endif
 
@@ -644,14 +641,14 @@ __recursive_fwd_read_tcp(TASK *t) {
 #endif
 #endif
 	    ) {
-#if DEBUG_ENABLED && DEBUG_RECURSIVE
+#if DEBUG_ENABLED
 	  DebugX("recursive", 1, _("%s: %s fd %d is not ready to read will retry"), desctask(t),
 		 recursive_fwd_server, fd);
 #endif
 	  return TASK_CONTINUE;
 	}
 	if (errno == ECONNRESET) {
-#if DEBUG_ENABLED && DEBUG_RECURSIVE
+#if DEBUG_ENABLED
 	  DebugX("recursive", 1, _("%s: connection reset by %s fd %d - reconnect and retry"), desctask(t),
 		 recursive_fwd_server, fd);
 #endif
@@ -689,14 +686,14 @@ __recursive_fwd_read_tcp(TASK *t) {
 #endif
 #endif
 	) {
-#if DEBUG_ENABLED && DEBUG_RECURSIVE
+#if DEBUG_ENABLED
       DebugX("recursive", 1, _("%s: %s fd %d is not ready to read, will retry"), desctask(t),
 	     recursive_fwd_server, fd);
 #endif
       return TASK_CONTINUE;
     }
     if (errno == ECONNRESET) {
-#if DEBUG_ENABLED && DEBUG_RECURSIVE
+#if DEBUG_ENABLED
       DebugX("recursive", 1, _("%s: connection reset by %s fd %d - reconnect and retry"), desctask(t),
 	     recursive_fwd_server, fd);
 #endif
@@ -778,7 +775,7 @@ __recursive_fwd_read_tcp(TASK *t) {
 static taskexec_t
 __recursive_fwd_udp(TASK *t) {
 
-#if DEBUG_ENABLED && DEBUG_RECURSIVE
+#if DEBUG_ENABLED
   DebugX("recursive", 1, _("%s: recursive_fwd() protocol = UDP"), desctask(t));
 #endif
 
@@ -813,7 +810,7 @@ __recursive_fwd_udp(TASK *t) {
 static taskexec_t
 __recursive_fwd_tcp(TASK *t) {
 
-#if DEBUG_ENABLED && DEBUG_RECURSIVE
+#if DEBUG_ENABLED
   DebugX("recursive", 1, _("%s: recursive_fwd() protocol = TCP"), desctask(t));
 #endif
 
@@ -871,7 +868,7 @@ __recursive_fwd_connect_udp(TASK *t) {
   struct sockaddr	*rsa = NULL;
   socklen_t		rsalen = get_serveraddr(&rsa);
   int			fd = -1;
-#if DEBUG_ENABLED && DEBUG_RECURSIVE
+#if DEBUG_ENABLED
   DebugX("recursive", 1, _("%s: recursive_fwd_connect() UDP"), desctask(t));
 #endif
 
@@ -900,7 +897,7 @@ __recursive_fwd_connect_tcp(TASK *t) {
   struct sockaddr	*rsa = NULL;
   socklen_t		rsalen = get_serveraddr(&rsa);
   int			fd = -1;
-#if DEBUG_ENABLED && DEBUG_RECURSIVE
+#if DEBUG_ENABLED
   DebugX("recursive", 1, _("%s: recursive_fwd_connect() TCP"), desctask(t));
 #endif
 
@@ -915,7 +912,7 @@ __recursive_fwd_connect_tcp(TASK *t) {
 
   if ((rv = connect(fd, rsa, rsalen)) < 0) {
     if (errno == EINPROGRESS) {
-#if DEBUG_ENABLED && DEBUG_RECURSIVE
+#if DEBUG_ENABLED
       DebugX("recursive", 1, _("%s: connect returns EINPROGRESS"), desctask(t));
 #endif
       /* Set up timeout so that reconnect is attempted */
@@ -940,7 +937,7 @@ __recursive_fwd_connecting_tcp(TASK *t) {
   int			errorcode = 0;
   socklen_t		errorlength = sizeof(errorcode);
 
-#if DEBUG_ENABLED && DEBUG_RECURSIVE
+#if DEBUG_ENABLED
   DebugX("recursive", 1, _("%s: connect completed"), desctask(t));
 #endif
   fd = recursive_tcp_fd;
@@ -953,7 +950,7 @@ __recursive_fwd_connecting_tcp(TASK *t) {
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_FWD_RECURSIVE);
   }
 
-#if DEBUG_ENABLED && DEBUG_RECURSIVE
+#if DEBUG_ENABLED
   DebugX("recursive", 1, _("%s: connect completion result = %s(%d)"), desctask(t), strerror(errorcode), errorcode);
 #endif
   if (errorcode) {

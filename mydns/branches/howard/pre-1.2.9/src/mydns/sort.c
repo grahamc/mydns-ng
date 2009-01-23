@@ -25,9 +25,6 @@
 #include "buildreply.h"
 #include "sort.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_SORT	1
-
 #define	RR_IS_RR(R)		((R)->rrtype == DNS_RRTYPE_RR)
 #define	RR_IS_ADDR(R)	 	(RR_IS_RR((R)) && (RR_IS_A((R)) || RR_IS_AAAA((R))))
 #define	RR_IS_A(R)		(RR_IS_RR((R)) && (((MYDNS_RR *)(R)->rr)->type == DNS_QTYPE_A))
@@ -140,7 +137,7 @@ load_balance(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
   register RR	*node = NULL;						/* Current node */
   register int order = 1;					/* Current order */
 
-#if DEBUG_ENABLED && DEBUG_SORT
+#if DEBUG_ENABLED
   DebugX("sort", 1, _("%s: Load balancing A records in %s section"), desctask(t), datasection_str[section]);
 #endif
 
@@ -208,7 +205,7 @@ _sort_a_recs(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
     load_balance(t, rrlist, section, sort_level);
   } else {
     /* Round robin - for address records, set 'sort' to a random number */
-#if DEBUG_ENABLED && DEBUG_SORT
+#if DEBUG_ENABLED
     DebugX("sort", 1, _("%s: Sorting A records in %s section (round robin)"),
 	   desctask(t), datasection_str[section]);
 #endif
@@ -251,7 +248,7 @@ void
 sort_mx_recs(TASK *t, RRLIST *rrlist, datasection_t section) {
   register RR *node = NULL;
 
-#if DEBUG_ENABLED && DEBUG_SORT
+#if DEBUG_ENABLED
   DebugX("sort", 1, _("%s: Sorting MX records in %s section"), desctask(t), datasection_str[section]);
 #endif
 
@@ -280,7 +277,7 @@ sort_srv_priority(TASK *t, RRLIST *rrlist, datasection_t section, uint32_t prior
   uint64_t	weights = 0;					/* Sum of weights */
   register uint32_t rweight = 0;				/* Random weight */
 
-#if DEBUG_ENABLED && DEBUG_SORT
+#if DEBUG_ENABLED
   DebugX("sort", 1, _("%s: Sorting SRV records in %s section with priority %u"),
 	 desctask(t), datasection_str[section], priority);
 #endif
@@ -323,7 +320,7 @@ _sort_srv_recs(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
   register RR	*node = NULL;						/* Current node */
   register int count = 0;						/* Number of SRV nodes on this level */
 
-#if DEBUG_ENABLED && DEBUG_SORT
+#if DEBUG_ENABLED
   DebugX("sort", 1, _("%s: Sorting SRV records in %s section"), desctask(t), datasection_str[section]);
 #endif
 

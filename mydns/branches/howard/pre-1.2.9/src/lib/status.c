@@ -20,16 +20,11 @@
 
 #include "named.h"
 
-#if STATUS_ENABLED
-
 #include "memoryman.h"
 
 #include "error.h"
 #include "rr.h"
 #include "status.h"
-
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_STATUS 1
 
 SERVERSTATUS	Status;				/* Server status information */
 
@@ -159,6 +154,4 @@ void status_result(TASK *t, int rcode) {
     Status.results[rcode]++;
   }
 }
-#endif	/* STATUS_ENABLED */
-
 /* vi:set ts=3: */

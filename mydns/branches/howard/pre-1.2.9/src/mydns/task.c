@@ -40,9 +40,6 @@
 #include "tcp.h"
 #include "udp.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_TASK	1
-
 /**************************************************************************************************
 	TASK_NEW
 	Given a request (TCP or UDP), populates task structure.
@@ -54,7 +51,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
   unsigned char *qname = NULL, *src = NULL, *qdtop = NULL;
   task_error_t errcode = TASK_FAILED;
 
-#if DEBUG_ENABLED && DEBUG_TASK
+#if DEBUG_ENABLED
   DebugX("task", 1, _("task_new(%p, %p, %u)"), t, data, (unsigned int)len);
 #endif
 
@@ -84,7 +81,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
    *  asking us to talk to ourselves
    */
   if (t->hdr.qr) {
-#if DEBUG_ENABLED && DEBUG_TASK
+#if DEBUG_ENABLED
     DebugX("task", 1, _("%s: task_new(): %s %s %s"),
 	   desctask(t), mydns_rcode_str(DNS_RCODE_FORMERR),
 	   err_reason_str(t, ERR_RESPONSE_BIT_SET),
@@ -93,7 +90,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
     return (TASK_ABANDONED);
   }
 
-#if DEBUG_ENABLED && DEBUG_TASK
+#if DEBUG_ENABLED
   DebugX("task", 1, _("%s: id=%u qr=%u opcode=%s aa=%u tc=%u rd=%u ra=%u z=%u rcode=%u"), desctask(t),
 	 t->id, t->hdr.qr, mydns_opcode_str(t->hdr.opcode),
 	 t->hdr.aa, t->hdr.tc, t->hdr.rd, t->hdr.ra, t->hdr.z, t->hdr.rcode);
@@ -290,8 +287,9 @@ static taskexec_t
 task_process_query(TASK *t, int rfd, int wfd, int efd) {
   taskexec_t	res = TASK_DID_NOT_EXECUTE;
 
-#if DEBUG_ENABLED && DEBUG_TASK
-  DebugX("task", 1, _("%s: task_process_query called rfd = %d, wfd = %d, efd = %d"), desctask(t), rfd, wfd, efd);
+#if DEBUG_ENABLED
+  DebugX("task", 1, _("%s: task_process_query called rfd = %d, wfd = %d, efd = %d"),
+	 desctask(t), rfd, wfd, efd);
 #endif
 
   switch (TASKIOTYPE(t->status)) {
@@ -407,8 +405,9 @@ task_process_query(TASK *t, int rfd, int wfd, int efd) {
       /*
       **  NEED_WRITE: Need to write reply
       */
-#if DEBUG_ENABLED &&DEBUG_TASK
-      DebugX("task", 1, _("%s: task_process_query processing write - wfd = %d, efd = %d"), desctask(t), wfd, efd);
+#if DEBUG_ENABLED
+      DebugX("task", 1, _("%s: task_process_query processing write - wfd = %d, efd = %d"),
+	     desctask(t), wfd, efd);
 #endif
 
       if (wfd || efd) {
@@ -464,7 +463,7 @@ static taskexec_t
 task_process_recursive(TASK *t, int rfd, int wfd, int efd) {
   taskexec_t	res = TASK_DID_NOT_EXECUTE;
 
-#if DEBUG_ENABLED && DEBUG_TASK
+#if DEBUG_ENABLED
   DebugX("task", 1, _("%s: task_process_recursive called rfd = %d, wfd = %d, efd = %d"),
 	 desctask(t), rfd, wfd, efd);
 #endif
@@ -557,8 +556,9 @@ static taskexec_t
 task_process_request(TASK *t, int rfd, int wfd, int efd) {
   taskexec_t	res = TASK_DID_NOT_EXECUTE;
 
-#if DEBUG_ENABLED && DEBUG_TASK
-  DebugX("task", 1, _("%s: task_process_request called rfd = %d, wfd = %d, efd = %d"), desctask(t), rfd, wfd, efd);
+#if DEBUG_ENABLED
+  DebugX("task", 1, _("%s: task_process_request called rfd = %d, wfd = %d, efd = %d"),
+	 desctask(t), rfd, wfd, efd);
 #endif
 
   switch (TASKIOTYPE(t->status)) {
@@ -619,7 +619,7 @@ task_process_request(TASK *t, int rfd, int wfd, int efd) {
 static taskexec_t
 task_process_ticktask(TASK *t, int rfd, int wfd, int efd) {
 
-#if DEBUG_ENABLED && DEBUG_TASK
+#if DEBUG_ENABLED
   DebugX("task", 1, _("%s: task_process_ticktask called rfd = %d, wfd = %d, efd = %d"),
 	 desctask(t), rfd, wfd, efd);
 #endif
@@ -673,8 +673,9 @@ static taskexec_t
 task_process_runtask(TASK *t, int rfd, int wfd, int efd) {
   taskexec_t	res = TASK_DID_NOT_EXECUTE;
 
-#if DEBUG_ENABLED && DEBUG_TASK
-  DebugX("task", 1, _("%s: task_process_runtask called rfd = %d, wfd = %d, efd = %d"), desctask(t), rfd, wfd, efd);
+#if DEBUG_ENABLED
+  DebugX("task", 1, _("%s: task_process_runtask called rfd = %d, wfd = %d, efd = %d"),
+	 desctask(t), rfd, wfd, efd);
 #endif
 
   switch (t->status) {
@@ -708,8 +709,9 @@ int
 task_process(TASK *t, int rfd, int wfd, int efd) {
   taskexec_t	res = TASK_DID_NOT_EXECUTE;
 
-#if DEBUG_ENABLED && DEBUG_TASK
-  DebugX("task", 1, _("%s: task_process called rfd = %d, wfd = %d, efd = %d"), desctask(t), rfd, wfd, efd);
+#if DEBUG_ENABLED
+  DebugX("task", 1, _("%s: task_process called rfd = %d, wfd = %d, efd = %d"),
+	 desctask(t), rfd, wfd, efd);
 #endif
   switch (TASKCLASS(t->status)) {
 
@@ -775,7 +777,7 @@ task_process(TASK *t, int rfd, int wfd, int efd) {
 
   DEQUEUETASK:
 
-#if DEBUG_ENABLED && DEBUG_TASK
+#if DEBUG_ENABLED
     DebugX("task", 1, _("%s: dequeuing task because %s"), desctask(t), task_exec_name(res));
 #endif
 
@@ -795,7 +797,7 @@ void task_free_others(TASK *t, int closeallfds) {
   int i = 0, j = 0;
 
 #if DEBUG_ENABLED
-  DebugX("enabled", 1, _("%s: Free up all other tasks closeallfds = %d, fd = %d"), desctask(t),
+  DebugX("task", 1, _("%s: Free up all other tasks closeallfds = %d, fd = %d"), desctask(t),
 	 closeallfds, t->fd);
 #endif
   for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
@@ -930,7 +932,7 @@ void task_purge_all_bad_tasks() {
   TASK *t = NULL, *next_task = NULL;
 
 #if DEBUG_ENABLED
-  DebugX("lib-task", 1, _("task_purge_all_bad_tasks() called"));
+  DebugX("task", 1, _("task_purge_all_bad_tasks() called"));
 #endif
 
   for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
@@ -989,7 +991,7 @@ void task_purge_all_bad_tasks() {
     }
   }
 #if DEBUG_ENABLED
-  DebugX("lib-task", 1, _("purge_bad_tasks() returned"));
+  DebugX("task", 1, _("purge_bad_tasks() returned"));
 #endif
 }
 
@@ -1015,7 +1017,8 @@ int task_run_all(struct pollfd items[], int numfds) {
 	      wfd |= item->revents & POLLOUT;
 	      efd |= item->revents & (POLLERR|POLLNVAL|POLLHUP);
 #if DEBUG_ENABLED
-	      DebugX("enabled", 1, _("%s: item fd = %d, events = %x, revents = %x, rfd = %d, wfd = %d, efd = %d"),
+	      DebugX("task", 1,
+		     _("%s: item fd = %d, events = %x, revents = %x, rfd = %d, wfd = %d, efd = %d"),
 		     desctask(t),
 		     item->fd, item->events, item->revents,
 		     rfd, wfd, efd);
@@ -1031,7 +1034,7 @@ int task_run_all(struct pollfd items[], int numfds) {
 	  }
 #if DEBUG_ENABLED
 	  if (!item) {
-	    DebugX("enabled", 1, _("%s: No matching item found for fd = %d"), desctask(t), t->fd);
+	    DebugX("task", 1, _("%s: No matching item found for fd = %d"), desctask(t), t->fd);
 	  }
 #endif
 	}

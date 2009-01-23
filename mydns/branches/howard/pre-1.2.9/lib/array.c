@@ -22,9 +22,6 @@
 
 #include "array.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_ARRAY	1
-
 /**************************************************************************************************
 	ARRAY_INIT
 	Creates a new array and returns a pointer to it.

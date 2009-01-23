@@ -24,9 +24,6 @@
 
 #include "conf.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_DB	1
-
 /**************************************************************************************************
 	DB_CONNECT
 	Connect to the database.

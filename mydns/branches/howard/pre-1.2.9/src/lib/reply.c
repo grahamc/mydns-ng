@@ -30,9 +30,6 @@
 #include "reply.h"
 #include "taskobj.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_LIB_REPLY	1
-
 /* This is the header offset at the start of most reply functions.
 	The extra SIZE16 at the end is the RDLENGTH field in the RR's header. */
 #define CUROFFSET(t) (DNS_HEADERSIZE + (t)->qdlen + (t)->rdlen + SIZE16)

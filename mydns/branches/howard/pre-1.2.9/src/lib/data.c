@@ -26,10 +26,6 @@
 #include "error.h"
 #include "taskobj.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_DATA	1
-
-
 /**************************************************************************************************
 	FIND_SOA
 	Determine the origin in `fqdn' and return the MYDNS_SOA structure for that zone.
@@ -47,7 +43,7 @@ find_soa(
   register char		*origin = NULL, *end = NULL;
   int			errflag = 0;
 
-#if DEBUG_ENABLED && DEBUG_DATA
+#if DEBUG_ENABLED
   DebugX("data", 1, _("%s: find_soa(%s, %s)"), desctask(t), fqdn, (label)?*label:_("<NULL>"));
 #endif
 

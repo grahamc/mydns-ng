@@ -27,9 +27,6 @@
 #include "error.h"
 #include "taskobj.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_LIB_ENCODE	1
-
 /* Set this to nonzero to disable encoding */
 #define	NO_ENCODING	0
 

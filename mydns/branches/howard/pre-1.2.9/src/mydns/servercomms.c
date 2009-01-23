@@ -28,9 +28,6 @@
 #include "servercomms.h"
 #include "task.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_SERVERCOMMS	1
-
 #define KEEPALIVE 30
 
 typedef struct _named_message {
@@ -356,7 +353,7 @@ comms_run(TASK *t, void * data) {
   comms = (COMMS*)data;
 
   rv = comms_recv(t, comms);
-#if DEBUG_ENABLED && DEBUG_SERVERCOMMS
+#if DEBUG_ENABLED
   DebugX("servercomms", 1, _("%s: Received command %s - result %s"), desctask(t),
 	 &comms->message->messagedata[0], task_exec_name(rv));
 #endif
@@ -379,7 +376,7 @@ comms_sendcommand(TASK *t, char *commandstring) {
   COMMS		*comms = NULL;
   taskexec_t	rv = TASK_FAILED;
 
-#if DEBUG_ENABLED && DEBUG_SERVERCOMMS
+#if DEBUG_ENABLED
   DebugX("servercomms", 1, _("%s: Sending commands %s"), desctask(t), commandstring);
 #endif
 
@@ -388,8 +385,9 @@ comms_sendcommand(TASK *t, char *commandstring) {
   comms->message = _message_allocate(commandstring);;
 
   rv = comms_send(t, comms);
-#if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-  DebugX("servercomms", 1, _("%s: Sent command %s - result %s"), desctask(t), commandstring, task_exec_name(rv));
+#if DEBUG_ENABLED
+  DebugX("servercomms", 1, _("%s: Sent command %s - result %s"),
+	 desctask(t), commandstring, task_exec_name(rv));
 #endif
   return rv;
 }
@@ -411,8 +409,9 @@ scomms_tick(TASK *t, void *data) {
 
   if (rv == TASK_FAILED) {
     /* Nothing from the master for 5 cycles assume one of us has gone AWOL */
-#if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-    DebugX("servercomms", 1, _("%s: Server comms tick - master has not pinged for %d seconds"), desctask(t),
+#if DEBUG_ENABLED
+    DebugX("servercomms", 1, _("%s: Server comms tick - master has not pinged for %d seconds"),
+	   desctask(t),
 	   lastseen);
 #endif
     named_shutdown(0);
@@ -439,8 +438,9 @@ mcomms_tick(TASK *t, void *data) {
   if (rv == TASK_FAILED) {
     /* Shutdown and restart server at other end of connection */
     SERVER *server = server_find_by_task(t);
-#if DEBUG_ENABLED && DEBUG_SERVERCOMMS
-    DebugX("servercomms", 1, _("%s: Master comms tick - connection to server has not pinged for %d seconds"),
+#if DEBUG_ENABLED
+    DebugX("servercomms", 1,
+	   _("%s: Master comms tick - connection to server has not pinged for %d seconds"),
 	   desctask(t), lastseen);
 #endif
     if (server) {

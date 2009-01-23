@@ -15,8 +15,6 @@
 #include "mydnsutil.h"
 #include "memoryman.h"
 
-#define DEBUG_MEMMAN 1
-
 static char *
 __mydns_arenaname(arena_t arena) {
   if (arena == ARENA_GLOBAL) { return "global"; }

@@ -20,11 +20,6 @@
 
 #include "named.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_DB	1
-
-
-
 /**************************************************************************************************
 	DB_CHECK_OPTIONAL
 	Check optional columns.

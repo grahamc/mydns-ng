@@ -30,10 +30,7 @@
 
 #include "sort.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_REPLY	1
-
-#if DEBUG_ENABLED && DEBUG_REPLY
+#if DEBUG_ENABLED
 /* Strings describing the datasections */
 char *reply_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
 #endif
@@ -87,7 +84,7 @@ static int
 truncate_rrlist(TASK *t, off_t maxpkt, RRLIST *rrlist, datasection_t ds) {
   register RR *rr = NULL;
   register int recs = 0;
-#if DEBUG_ENABLED && DEBUG_REPLY
+#if DEBUG_ENABLED
   int orig_recs = rrlist->size;
 #endif
 
@@ -105,7 +102,7 @@ truncate_rrlist(TASK *t, off_t maxpkt, RRLIST *rrlist, datasection_t ds) {
     } else
       t->rdlen += rr->length;
   }
-#if DEBUG_ENABLED && DEBUG_REPLY
+#if DEBUG_ENABLED
   DebugX("buildreply", 1, _("%s section truncated from %d records to %d records"),
 	 reply_datasection_str[ds], orig_recs, recs);
 #endif
@@ -126,7 +123,7 @@ reply_check_truncation(TASK *t, int *ancount, int *nscount, int *arcount) {
   if (t->rdlen <= maxrd)
     return;
 
-#if DEBUG_ENABLED && DEBUG_REPLY
+#if DEBUG_ENABLED
   DebugX("buildreply", 1, _("reply_check_truncation() needs to truncate reply (%u) to fit packet max (%u)"),
 	 (unsigned int)t->rdlen, (unsigned int)maxrd);
 #endif
@@ -243,7 +240,7 @@ void buildreply(TASK *t, int want_additional) {
     DNS_PUT(dest, t->qd, t->qdlen);				/* Data for QUESTION section */
   DNS_PUT(dest, t->rdata, t->rdlen);				/* Resource record data */
 
-#if DEBUG_ENABLED && DEBUG_REPLY
+#if DEBUG_ENABLED
   DebugX("buildreply", 1, _("%s: reply:     id = %u"), desctask(t),
 	 t->id);
   DebugX("buildreply", 1, _("%s: reply:     qr = %u (message is a %s)"), desctask(t),

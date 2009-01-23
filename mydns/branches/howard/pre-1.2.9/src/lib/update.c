@@ -28,10 +28,6 @@
 #include "taskobj.h"
 #include "update.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_LIB_UPDATE	1
-
-
 /**************************************************************************************************
 	TEXT_RETRIEVE
 	Retrieve a name from the source without end-dot encoding.

@@ -30,16 +30,6 @@
 #include "task.h"
 #include "tcp.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_TCP	1
-
-extern int	*tcp4_fd;			/* Listening FD's (IPv4) */
-extern int	num_tcp4_fd;			/* Number of listening FD's (IPv4) */
-#if HAVE_IPV6
-extern int	*tcp6_fd;			/* Listening FD's (IPv6) */
-extern int	num_tcp6_fd;			/* Number of listening FD's (IPv6) */
-#endif
-
 /**************************************************************************************************
 	ACCEPT_TCP_QUERY
 **************************************************************************************************/
@@ -233,7 +223,7 @@ read_tcp_query(TASK *t) {
     return (TASK_ABANDONED);				/* Client closed connection */
   }
 
-#if DEBUG_ENABLED && DEBUG_TCP
+#if DEBUG_ENABLED
   DebugX("tcp", 1, _("%s: 2+%d TCP octets in"), clientaddr(t), rv);
 #endif
 

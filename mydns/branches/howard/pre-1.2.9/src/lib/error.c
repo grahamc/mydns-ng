@@ -25,10 +25,6 @@
 #include "bits.h"
 #include "taskobj.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_LIB_ERROR	1
-
-
 /* The maximum number of resource record ID errors that we'll remember (and avoid repeating) */
 #define	MAX_RR_ERR_MEMORY	1024
 
@@ -108,7 +104,7 @@ _formerr_internal(
 ) {
   char	*dest = NULL;
 
-#if DEBUG_ENABLED && DEBUG_ERROR
+#if DEBUG_ENABLED
   DebugX("error", 1, _("%s: formerr(): %s %s from %s:%u: %s"),
 	 desctask(t), mydns_rcode_str(rcode), err_reason_str(t, reason), filename, lineno,
 	 xtra ?: _("no additional information"));
@@ -148,7 +144,7 @@ _dnserror_internal(
 	unsigned int lineno
 ) {
   if (t->hdr.rcode == DNS_RCODE_NOERROR) {
-#if DEBUG_ENABLED && DEBUG_ERROR
+#if DEBUG_ENABLED
     DebugX("error", 1, _("%s: dnserror(): %s %s from %s:%u"),
 	   desctask(t), mydns_rcode_str(rcode), err_reason_str(t, reason), filename, lineno);
 #endif

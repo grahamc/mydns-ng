@@ -24,10 +24,6 @@
 
 #include "conf.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_CONF	1
-
-
 #include <pwd.h>
 #include <grp.h>
 
@@ -419,7 +415,7 @@ conf_set_recursive(void) {
     recursive_sa6.sin6_family = AF_INET6;
     recursive_sa6.sin6_port = htons(port);
     forward_recursive = 1;
-#if DEBUG_ENABLED && DEBUG_CONF
+#if DEBUG_ENABLED
     DebugX("conf", 1,_("recursive forwarding service through %s:%u"),
 	  ipaddr(AF_INET6, &recursive_sa6.sin6_addr), port);
 #endif
@@ -438,7 +434,7 @@ conf_set_recursive(void) {
     }
     recursive_sa.sin_family = AF_INET;
     recursive_sa.sin_port = htons(port);
-#if DEBUG_ENABLED &&DEBUG_CONF
+#if DEBUG_ENABLED
     DebugX("conf", 1,_("recursive forwarding service through %s:%u"),
 	  ipaddr(AF_INET, &recursive_sa.sin_addr), port);
 #endif

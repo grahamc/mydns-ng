@@ -51,23 +51,20 @@ int mydns_rr_use_serial = 0;
 
 char *mydns_rr_active_types[] = { "Y", "N", "D" };
 
-/* Make this nonzero to enable debugging within this source file */
-#define	DEBUG_LIB_RR	1
-
-#if DEBUG_ENABLED && DEBUG_LIB_RR
+#if DEBUG_ENABLED
 /* Strings describing the datasections */
 char *datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
 #endif
 
 void *
 __mydns_rr_assert_pointer(void *ptr, char *fieldname, char *filename, int linenumber) {
-#if DEBUG_ENABLED && DEBUG_LIB_RR
-  DebugX("lib-rr", 1, _("mydns_rr_assert_pointer() called for field=%s from %s:%d"),
+#if DEBUG_ENABLED
+  DebugX("rr", 1, _("mydns_rr_assert_pointer() called for field=%s from %s:%d"),
 	 fieldname, filename, linenumber);
 #endif
   if (ptr != NULL) return ptr;
-#if DEBUG_ENABLED && DEBUG_LIB_RR
-  DebugX("lib-rr", 1, _("%s Pointer is NULL at %s:%d"),
+#if DEBUG_ENABLED
+  DebugX("rr", 1, _("%s Pointer is NULL at %s:%d"),
 	 fieldname, filename, linenumber);
   abort();
 #endif
@@ -433,8 +430,8 @@ mydns_rr_build(uint32_t id,
 
   type = map->rr_type;
 
-#if DEBUG_ENABLED && DEBUG_LIB_RR
-  DebugX("lib-rr", 1, _("mydns_rr_build(): called for id=%d, zone=%d, type=%d, class=%d, aux=%d, "
+#if DEBUG_ENABLED
+  DebugX("rr", 1, _("mydns_rr_build(): called for id=%d, zone=%d, type=%d, class=%d, aux=%d, "
 			"ttl=%d, active='%s', stamp=%p, serial=%d, name='%s', data=%p, datalen=%d, origin='%s'"),
 	 id, zone, type, class, aux, ttl, active, stamp, serial,
 	 (name)?name:_("<NULL>"), data, datalen, origin);
@@ -484,8 +481,8 @@ mydns_rr_build(uint32_t id,
   if (map->rr_parser(origin, rr) < 0)
     goto PARSEFAILED;
 
-#if DEBUG_ENABLED && DEBUG_LIB_RR
-  DebugX("lib-rr", 1, _("mydns_rr_build(): returning result=%p"), rr);
+#if DEBUG_ENABLED
+  DebugX("rr", 1, _("mydns_rr_build(): returning result=%p"), rr);
 #endif
   return (rr);
 
@@ -515,8 +512,8 @@ mydns_rr_parse(SQL_ROW row, unsigned long *lengths, const char *origin) {
   uint16_t	datalen;
   MYDNS_RR	*rr;
 
-#if DEBUG_ENABLED && DEBUG_LIB_RR
-  DebugX("lib-rr", 1, _("mydns_rr_parse(): called for origin %s"), origin);
+#if DEBUG_ENABLED
+  DebugX("rr", 1, _("mydns_rr_parse(): called for origin %s"), origin);
 #endif
 
   if (!(map = mydns_rr_get_type_by_name(row[6]))) {
@@ -732,8 +729,8 @@ mydns_rr_prepare_query(uint32_t zone, dns_qtype_t type, char *name, char *origin
     return NULL;
   }
 
-#if DEBUG_ENABLED && DEBUG_LIB_RR
-  DebugX("lib-rr", 1, _("mydns_rr_prepare_query(zone=%u, type='%s', name='%s', origin='%s')"),
+#if DEBUG_ENABLED
+  DebugX("rr", 1, _("mydns_rr_prepare_query(zone=%u, type='%s', name='%s', origin='%s')"),
 	 zone, map->rr_type_name, name ?: _("NULL"), origin ?: _("NULL"));
 #endif
 
@@ -849,8 +846,8 @@ int __mydns_rr_do_load(SQL *sqlConn, MYDNS_RR **rptr, char *query, char *origin)
   unsigned long *lengths;
 
 
-#if DEBUG_ENABLED && DEBUG_LIB_RR
-  DebugX("lib-rr", 1, _("mydns_rr_do_load(query='%s', origin='%s')"), query, origin ? origin : _("NULL"));
+#if DEBUG_ENABLED
+  DebugX("rr", 1, _("mydns_rr_do_load(query='%s', origin='%s')"), query, origin ? origin : _("NULL"));
 #endif
 
   if (rptr) *rptr = NULL;
@@ -865,11 +862,11 @@ int __mydns_rr_do_load(SQL *sqlConn, MYDNS_RR **rptr, char *query, char *origin)
   if (!(res = sql_query(sqlConn, query, strlen(query))))
     return (-1);
 
-#if DEBUG_ENABLED && DEBUG_LIB_RR
+#if DEBUG_ENABLED
   {
     int numresults = sql_num_rows(res);
 
-    DebugX("lib-rr", 1, _("RR query: %d row%s: %s"), numresults, S(numresults), query);
+    DebugX("rr", 1, _("RR query: %d row%s: %s"), numresults, S(numresults), query);
   }
 #endif
 
@@ -1141,7 +1138,7 @@ rrlist_add(
   }
 #endif
 
-#if DEBUG_ENABLED && DEBUG_LIB_RR
+#if DEBUG_ENABLED
   {
     switch (rrtype) {
     case DNS_RRTYPE_SOA:
@@ -1155,7 +1152,8 @@ rrlist_add(
     case DNS_RRTYPE_RR:
       {
 	MYDNS_RR *r = (MYDNS_RR *)rr;
-	DebugX("rr", 1, _("%s: RRLIST_ADD: %s (id=%u) (name='%s',qtype='%s',data='%s') (`%s')"), desctask(t),
+	DebugX("rr", 1, _("%s: RRLIST_ADD: %s (id=%u) (name='%s',qtype='%s',data='%s') (`%s')"),
+	       desctask(t),
 	       datasection_str[ds], r->id,
 	       (char *)(strlen(MYDNS_RR_NAME(r)) ? MYDNS_RR_NAME(r) : (char *)""),
 	       mydns_rr_get_type_by_id(r->type)->rr_type_name, (char*)MYDNS_RR_DATA_VALUE(r), name);
@@ -1181,7 +1179,7 @@ rrlist_add(
     list = &t->an;
     if (t->qtype == DNS_QTYPE_IXFR) break;
     if (rrdup(&t->an, rrtype, id)) {
-#if DEBUG_ENABLED && DEBUG_LIB_RR
+#if DEBUG_ENABLED
       DebugX("rr", 1, _("%s: Duplicate record, ignored"), desctask(t));
 #endif
       RELEASE(name);
@@ -1192,7 +1190,7 @@ rrlist_add(
   case AUTHORITY:
     list = &t->ns;
     if (rrdup(&t->ns, rrtype, id) || rrdup(&t->an, rrtype, id)) {
-#if DEBUG_ENABLED && DEBUG_LIB_RR
+#if DEBUG_ENABLED
       DebugX("rr", 1, _("%s: Duplicate record, ignored"), desctask(t));
 #endif
       RELEASE(name);
@@ -1203,7 +1201,7 @@ rrlist_add(
   case ADDITIONAL:
     list = &t->ar;
     if (rrdup(&t->ar, rrtype, id) || rrdup(&t->an, rrtype, id)) {
-#if DEBUG_ENABLED && DEBUG_LIB_RR
+#if DEBUG_ENABLED
       DebugX("rr", 1, _("%s: Duplicate record, ignored"), desctask(t));
 #endif
       RELEASE(name);

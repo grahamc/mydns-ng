@@ -27,16 +27,6 @@
 #include "task.h"
 #include "udp.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_UDP	1
-
-extern int	*udp4_fd;			/* Listening FD's (IPv4) */
-extern int	num_udp4_fd;			/* Number of listening FD's (IPv4) */
-#if HAVE_IPV6
-extern int	*udp6_fd;			/* Listening FD's (IPv6) */
-extern int	num_udp6_fd;			/* Number of listening FD's (IPv6) */
-#endif
-
 /**************************************************************************************************
 	READ_UDP_QUERY
 	Returns 0 on success (a task was added), -1 on failure.
@@ -83,7 +73,7 @@ read_udp_query(int fd, int family) {
   if (!(t = IOtask_init(HIGH_PRIORITY_TASK, NEED_ANSWER, fd, SOCK_DGRAM, family, &addr)))
     return (TASK_FAILED);
 
-#if DEBUG_ENABLED && DEBUG_UDP
+#if DEBUG_ENABLED
   DebugX("udp", 1, "%s: %d %s", clientaddr(t), len, _("UDP octets in"));
 #endif
   rv = task_new(t, (unsigned char*)in, len);
@@ -155,8 +145,9 @@ write_udp_reply(TASK *t) {
     Err(_("%s: Send to (UDP) returned %d when writing %u"), desctask(t), rv, (unsigned int)t->replylen);
   }
 
-#if DEBUG_ENABLED && DEBUG_UDP
-  DebugX("udp", 1, _("%s: WRITE %u UDP octets (id %u)"), desctask(t), (unsigned int)t->replylen, t->id);
+#if DEBUG_ENABLED
+  DebugX("udp", 1, _("%s: WRITE %u UDP octets (id %u)"),
+	 desctask(t), (unsigned int)t->replylen, t->id);
 #endif
   return (TASK_COMPLETED);
 }

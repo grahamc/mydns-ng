@@ -23,10 +23,6 @@
 #include "memoryman.h"
 #include "listen.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_LISTEN	1
-
-
 #if HAVE_NET_IF_H
 #  include <net/if.h>
 #endif
@@ -126,7 +122,7 @@ addrlist_add(int family, void *address, int port) {
 /*--- addrlist_add() ----------------------------------------------------------------------------*/
 
 
-#if DEBUG_ENABLED && DEBUG_LISTEN && HAVE_IPV6
+#if DEBUG_ENABLED && HAVE_IPV6
 /**************************************************************************************************
 	IP6_EXTRA
 **************************************************************************************************/
@@ -195,7 +191,7 @@ linux_load_ip6(int port) {
 	buf[(4 * n) + (n * 1) + 4] = ':';
       }
       buf[39] = '\0';
-#if DEBUG_ENABLED && DEBUG_LISTEN
+#if DEBUG_ENABLED
       {
 	uint16_t dn = 0, pl = 0, sv = 0, f = 0;
 	dn = (uint16_t)strtoul(device_number, NULL, 16);
@@ -211,7 +207,7 @@ linux_load_ip6(int port) {
 	   bind to..  LINKLOCAL for sure doesn't work if you try it */
 	if (IN6_IS_ADDR_LINKLOCAL(&addr))
 	  continue;
-#if DEBUG_ENABLED && DEBUG_LISTEN
+#if DEBUG_ENABLED
 	DebugX("listen", 1, _("  extra: %s"), ip6_extra(&addr));
 #endif
 	addrlist_add(AF_INET6, &addr, port);
@@ -527,7 +523,7 @@ ipv4_listener(struct sockaddr_in *sa, int protocol) {
     }
   }
 
-#if DEBUG_ENABLED && DEBUG_LISTEN
+#if DEBUG_ENABLED
   DebugX("listen", 1, _("listening on %s, %s port %d"), ipaddr(AF_INET, &sa->sin_addr),
 	 protocol == SOCK_STREAM ? "TCP" : "UDP", ntohs(sa->sin_port));
 #endif
@@ -575,7 +571,7 @@ ipv6_listener(struct sockaddr_in6 *sa, int protocol) {
     }
   }
 
-#if DEBUG_ENABLED && DEBUG_LISTEN
+#if DEBUG_ENABLED
   DebugX("listen", 1, _("listening on %s, %s port %d"), ipaddr(AF_INET6, &sa->sin6_addr), 
 	 protocol == SOCK_STREAM ? "TCP" : "UDP", ntohs(sa->sin6_port));
 #endif
@@ -604,7 +600,7 @@ create_listeners(void) {
 
   Addresses = addrlist_load(port);				/* Get available addresses */
 
-#if DEBUG_ENABLED && DEBUG_LISTEN
+#if DEBUG_ENABLED
   for (L = Addresses; L; L = L->next)
     if (L->family == AF_INET)
       DebugX("listen", 1, _("Address: %s (port %d)"), ipaddr(AF_INET, &L->addr4), L->port);
@@ -618,7 +614,7 @@ create_listeners(void) {
   Listen = get_opt_addrlist(Addresses, conf_get(&Conf, "listen", NULL), port, "listen");
   NoListen = get_opt_addrlist(Addresses, conf_get(&Conf, "no-listen", NULL), port, "no-listen");
 
-#if DEBUG_ENABLED && DEBUG_LISTEN
+#if DEBUG_ENABLED
   for (L = NoListen; L; L = L->next)
     if (L->family == AF_INET)
       DebugX("listen", 1, _("NoListen: %s (port %d)"), ipaddr(AF_INET, &L->addr4), L->port);
@@ -628,7 +624,7 @@ create_listeners(void) {
 #endif
 #endif
 
-#if DEBUG_ENABLED && DEBUG_LISTEN
+#if DEBUG_ENABLED
   for (L = Listen; L; L = L->next)
     if (L->family == AF_INET)
       DebugX("listen", 1, _("Listen: %s (port %d)"), ipaddr(AF_INET, &L->addr4), L->port);

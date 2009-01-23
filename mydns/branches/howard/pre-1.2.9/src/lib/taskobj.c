@@ -29,9 +29,6 @@
 #include "support.h"
 #include "taskobj.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_LIB_TASK	1
-
 #define MAXTASKS		(USHRT_MAX + 1)
 #define TASKVECSZ		(MAXTASKS/BITSPERBYTE)
 
@@ -53,8 +50,8 @@ TASK *task_find_by_id(TASK *t, QUEUE *TaskQ, unsigned long id) {
   for (ThisT = (TASK*)TaskQ->head; ThisT ; ThisT = task_next(ThisT)) {
     if (ThisT->internal_id == id) return ThisT;
   }
-#if DEBUG_ENABLED && DEBUG_LIB_TASK
-  DebugX("lib-task", 1, _("%s: task_find_by_id(%s, %ld) cannot find task on queue"),
+#if DEBUG_ENABLED
+  DebugX("taskobj", 1, _("%s: task_find_by_id(%s, %ld) cannot find task on queue"),
 	 desctask(t), TaskQ->queuename, id);
 #endif
   return NULL;
@@ -208,8 +205,8 @@ _task_free(TASK *t, const char *file, int line) {
 
   if (!t) return;
 
-#if DEBUG_ENABLED && DEBUG_TASK
-  DebugX("lib-task", 1, _("%s: Freeing task at %s:%d"), desctask(t), file, line);
+#if DEBUG_ENABLED
+  DebugX("taskobj", 1, _("%s: Freeing task at %s:%d"), desctask(t), file, line);
 #endif
 
   if (t->protocol == SOCK_STREAM && t->fd >= 0) {
@@ -441,8 +438,8 @@ int _task_enqueue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
   else if (t->protocol == SOCK_DGRAM)
     status_udp_request(t);
 
-#if DEBUG_ENABLED && DEBUG_TASK
-  DebugX("lib-task", 1,_("%s: enqueued (by %s:%u)"), desctask(t), file, line);
+#if DEBUG_ENABLED
+  DebugX("taskobj", 1,_("%s: enqueued (by %s:%u)"), desctask(t), file, line);
 #endif
 
   return (0);
@@ -456,10 +453,10 @@ int _task_enqueue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 	For `error' pass 0 if the task was dequeued due to sucess, 1 if dequeued due to error.
 **************************************************************************************************/
 void _task_dequeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
-#if DEBUG_ENABLED && DEBUG_QUEUE
+#if DEBUG_ENABLED
   char *taskdesc = STRDUP(desctask(t));
 
-  DebugX("lib-task", 1,_("%s: dequeuing (by %s:%u)"), taskdesc, file, line);
+  DebugX("taskobj", 1,_("%s: dequeuing (by %s:%u)"), taskdesc, file, line);
 #endif
 
   if (err_verbose)				/* Output task info if being verbose */
@@ -470,17 +467,17 @@ void _task_dequeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
   queue_remove(q, t);
 
   task_free(t);
-#if DEBUG_ENABLED && DEBUG_QUEUE
-  DebugX("lib-task", 1,_("%s: dequeued (by %s:%u)"), taskdesc, file, line);
+#if DEBUG_ENABLED
+  DebugX("taskobj", 1,_("%s: dequeued (by %s:%u)"), taskdesc, file, line);
   RELEASE(taskdesc);
 #endif
 }
 /*--- _dequeue() --------------------------------------------------------------------------------*/
 
 void _task_requeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
-#if DEBUG_ENABLED && DEBUG_QUEUE
+#if DEBUG_ENABLED
   char *taskdesc = desctask(t);
-  DebugX("lib-task", 1,_("%s: requeuing (by %s:%u) called"), taskdesc, file, line);
+  DebugX("taskobj", 1,_("%s: requeuing (by %s:%u) called"), taskdesc, file, line);
 #endif
 
   queue_remove(task_queue(t), t);
@@ -489,11 +486,11 @@ void _task_requeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 }
 
 static void _task_1_queue_stats(QUEUE *q) {
-#if DEBUG_ENABLED && DEBUG_QUEUE
+#if DEBUG_ENABLED
   char		*msg = NULL;
   int		msgsize = 512;
   int		msglen = 0;
-  QueueEntry	*t = NULL;
+  TASK		*t = NULL;
 
 #if !DISABLE_DATE_LOGGING
   struct timeval tv = { 0, 0 };
@@ -508,7 +505,7 @@ static void _task_1_queue_stats(QUEUE *q) {
   strftime(datebuf, sizeof(datebuf)-1, "%d-%b-%Y %H:%M:%S", tm);
 #endif
 
-  DebugX("queue", 1,_(
+  DebugX("task", 1,_(
 #if !DISABLE_DATE_LOGGING
 		      "%s+%06lu "
 #endif
@@ -521,14 +518,14 @@ static void _task_1_queue_stats(QUEUE *q) {
   msg = ALLOCATE(msgsize, char[]);
 
   msg[0] = '\0';
-  for (t = q->head; t; t = t->next) {
+  for (t = (TASK*)q->head; t; t = task_next(t)) {
     int idsize;
     idsize = snprintf(&msg[msglen], msgsize - msglen, " %u", t->internal_id);
     msglen += idsize;
     if ((msglen + 2*idsize) >= msgsize) msg = REALLOCATE(msg, msgsize *= 2, char[]);
   }
   if (msglen)
-    DebugX("queue", 1,_("Queued tasks %s"), msg);
+    DebugX("task", 1,_("Queued tasks %s"), msg);
 
   RELEASE(msg);
 #endif

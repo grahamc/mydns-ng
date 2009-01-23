@@ -28,12 +28,6 @@
 #include "support.h"
 #include "taskobj.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_CACHE	1
-
-/* Set this to nonzero to debug frequency of SQL queries */
-#define	DEBUG_SQL_QUERIES 1
-
 CACHE *ZoneCache = NULL;							/* Data cache */
 CACHE *ReplyCache = NULL;							/* Reply cache */
 
@@ -114,7 +108,7 @@ _cache_init(uint32_t limit, uint32_t expire, const char *desc) {
 
   C->nodes = ALLOCATE_N(C->slots, sizeof(CNODE *), CNODE *);
 
-#if DEBUG_ENABLED && DEBUG_CACHE
+#if DEBUG_ENABLED
 #if (HASH_TYPE == ORIGINAL_HASH)
   DebugX("cache", 1, _("%s cache initialized (%u nodes, %u elements max) (original hash)"),
 	 desc, C->slots, limit);
@@ -478,7 +472,7 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
   if (!name)
     return (NULL);
 
-#if DEBUG_ENABLED && DEBUG_CACHE
+#if DEBUG_ENABLED
   DebugX("cache", 1, _("%s: zone_cache_find(%d, %s, %s, %s, %d, %u, %p)"), desctask(t), zone, origin,
 	 mydns_rr_get_type_by_id(type)->rr_type_name, name, (unsigned int)namelen, *errflag, parent);
 #endif
@@ -544,8 +538,9 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
   /* Result not found in cache; Get answer from database */
   if (type == DNS_QTYPE_SOA) {
     /* Try to load from database */
-#if DEBUG_ENABLED && DEBUG_SQL_QUERIES
-    DebugX("cache", 1, _("%s: SQL query: table \"%s\", origin=\"%s\""), desctask(t), mydns_soa_table_name, name);
+#if DEBUG_ENABLED
+    DebugX("cache-sql", 1, _("%s: SQL query: table \"%s\", origin=\"%s\""),
+	   desctask(t), mydns_soa_table_name, name);
 #endif
     if (mydns_soa_load(sql, &soa, name) != 0) {
       sql_reopen();
@@ -572,8 +567,8 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
     if (soa && !soa->ttl)
       return ((void *)soa);
   } else {
-#if DEBUG_ENABLED && DEBUG_SQL_QUERIES
-    DebugX("cache", 1, _("%s: SQL query: table \"%s\", zone=%u,type=\"%s\",name=\"%s\""),
+#if DEBUG_ENABLED
+    DebugX("cache-sql", 1, _("%s: SQL query: table \"%s\", zone=%u,type=\"%s\",name=\"%s\""),
 	   desctask(t), mydns_rr_table_name, zone, mydns_rr_get_type_by_id(type)->rr_type_name, name);
 #endif
     if (mydns_rr_load_active(sql, &rr, zone, type, name, origin) != 0) {

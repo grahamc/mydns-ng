@@ -33,10 +33,6 @@
 #include "buildreply.h"
 #include "task.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_AXFR	1
-
-
 #define	AXFR_TIME_LIMIT		3600		/* AXFR may not take more than this long, overall */
 
 static size_t total_records, total_octets;
@@ -322,7 +318,7 @@ axfr_get_soa(TASK *t) {
 **************************************************************************************************/
 void
 axfr(TASK *t) {
-#if DEBUG_ENABLED && DEBUG_AXFR
+#if DEBUG_ENABLED
   struct timeval start = { 0, 0}, finish = { 0, 0 };	/* Time AXFR began and ended */
 #endif
   MYDNS_SOA *soa = NULL;				/* SOA record for zone (may be bogus!) */
@@ -333,7 +329,7 @@ axfr(TASK *t) {
   sql_close(sql);
   db_connect();
 
-#if DEBUG_ENABLED && DEBUG_AXFR
+#if DEBUG_ENABLED
   gettimeofday(&start, NULL);
   DebugX("axfr", 1,_("%s: Starting AXFR for task ID %u"), desctask(t), t->internal_id);
 #endif
@@ -348,7 +344,7 @@ axfr(TASK *t) {
     axfr_zone(t, soa);
   }
 
-#if DEBUG_ENABLED && DEBUG_AXFR
+#if DEBUG_ENABLED
   /* Report result */
   gettimeofday(&finish, NULL);
   DebugX("axfr", 1,_("AXFR: %u records, %u octets, %.3fs"), 
@@ -370,7 +366,7 @@ axfr_fork(TASK *t) {
   int pfd[2] = { -1, -1 };				/* Parent/child pipe descriptors */
   pid_t pid = -1, parent = -1;
 
-#if DEBUG_ENABLED && DEBUG_AXFR 
+#if DEBUG_ENABLED
   DebugX("axfr", 1,_("%s: axfr_fork called on fd %d"), desctask(t), t->fd);
 #endif
 
@@ -407,7 +403,7 @@ axfr_fork(TASK *t) {
 
     error_reinit();
 
-#if DEBUG_ENABLED && DEBUG_AXFR
+#if DEBUG_ENABLED
     DebugX("axfr", 1,_("%s: axfr_fork is in the child"), desctask(t));
 #endif
 
@@ -417,14 +413,14 @@ axfr_fork(TASK *t) {
       Warn(_("error writing startup notification"));
     close(pfd[1]);
 
-#if DEBUG_ENABLED && DEBUG_AXFR
+#if DEBUG_ENABLED
     DebugX("axfr", 1,_("%s: axfr_fork child has told parent I am running"), desctask(t));
 #endif
 
     /* Clean up parents resources */
     task_free_others(t, 1);
 
-#if DEBUG_ENABLED && DEBUG_AXFR
+#if DEBUG_ENABLED
     DebugX("axfr", 1,_("%s: AXFR child built"), desctask(t));
 #endif
     /* Do AXFR */
@@ -443,8 +439,9 @@ axfr_fork(TASK *t) {
     }
     close(pfd[0]);
 
-#if DEBUG_ENABLED && DEBUG_AXFR
-    DebugX("axfr", 1,_("AXFR: process started on pid %d for TCP fd %d, task ID %u"), pid, t->fd, t->internal_id);
+#if DEBUG_ENABLED
+    DebugX("axfr", 1,_("AXFR: process started on pid %d for TCP fd %d, task ID %u"),
+	   pid, t->fd, t->internal_id);
 #endif
   }
   /* NOTREACHED*/

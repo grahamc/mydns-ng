@@ -23,9 +23,6 @@
 #include "memoryman.h"
 #include "queue.h"
 
-/* Make this nonzero to enable debugging for this source file */
-#define	DEBUG_LIB_QUEUE	1
-
 /**************************************************************************************************
 	QUEUE_INIT
 	Creates a new queue and returns a pointer to it.
