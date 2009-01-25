@@ -111,8 +111,8 @@ cmdline(int argc, char **argv) {
     }
   }
 
-  thishostname = ALLOCATE(HOST_NAME_MAX +1, char[]);
-  gethostname(thishostname, HOST_NAME_MAX);
+  thishostname = ALLOCATE(DNS_MAXNAMELEN +1, char[]);
+  gethostname(thishostname, DNS_MAXNAMELEN);
 
   err_file = stdout;
   error_init(argv[0], LOG_USER);				/* Init output routines */
