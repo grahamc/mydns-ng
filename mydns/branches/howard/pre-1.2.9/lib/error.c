@@ -200,12 +200,15 @@ DebugX(const char *debugId, int debugLvl, const char *fmt, ...) {
   int allEnabled = atou(conf_get(&Conf, "debug-all", NULL));
   int levelEnabled = 0;
   char *level = (char*)ALLOCATE(strlen(debugId) + sizeof("debug-") + 1, (char*));
+  char *enableString;
 
   level[0] = '\0';
   strcpy(level, "debug-");
   strcat(level, debugId);
 
-  levelEnabled = atou(conf_get(&Conf, level, NULL));
+  enableString = conf_get(&Conf, level, NULL);
+
+  levelEnabled = (enableString) ? atou(enableString) : 0;
 
   RELEASE(level);
 
