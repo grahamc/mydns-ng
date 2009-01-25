@@ -27,7 +27,7 @@
 extern void server_status(void);
 extern void named_cleanup(int);
 
-static uint16_t		internal_id = 0;
+static uint32_t		internal_id = 0;
 static uint8_t		*taskvec = NULL;
 static int32_t		active_tasks = 0;
 
