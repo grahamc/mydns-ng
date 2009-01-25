@@ -38,7 +38,7 @@
 #define TASKVEC_ISSET(TI, TV)	FD_ISSET((TI), (fd_set*)(TV))
 
 static uint8_t		*taskvec = NULL;
-static uint16_t		internal_id = 0;
+static uint32_t		internal_id = 0;
 static int32_t		active_tasks = 0;
 
 uint32_t 	answer_then_quit = 0;		/* Answer this many queries then quit */
