@@ -29,6 +29,7 @@ extern void named_cleanup(int);
 
 static uint16_t		internal_id = 0;
 static uint8_t		*taskvec = NULL;
+static int32_t		active_tasks = 0;
 
 char *
 task_exec_name(taskexec_t rv) {
@@ -401,6 +402,12 @@ _task_init(
   QUEUE				**TaskQ = NULL;
   uint16_t			id = 0;
 
+  if (active_tasks++ >= MAXTASKS) {
+    active_tasks -= 1;
+    Notice(_("More than %d tasks running can't serverice this task"), MAXTASKS);
+    return NULL;
+  }
+  
   if (!taskvec) {
     taskvec = (uint8_t*)ALLOCATE(TASKVECSZ, uint8_t[]);
     TASKVEC_ZERO(taskvec);
@@ -423,7 +430,10 @@ _task_init(
   }
   new->type = type;
   new->priority = priority;
-  while(TASKVEC_ISSET(id = internal_id++, taskvec)) continue;
+  do {
+    id = internal_id++;
+    if (internal_id >= MAXTASKS) internal_id = 0;
+  } while (TASKVEC_ISSET(id, taskvec));
   TASKVEC_SET(id, taskvec);
   new->internal_id = id;
   new->timeout = current_time + task_timeout;
@@ -498,6 +508,10 @@ _task_free(TASK *t, const char *file, int line) {
   TASKVEC_CLR(t->id, taskvec);
 
   RELEASE(t);
+
+  if (--active_tasks < 0) {
+    Err(_("Less than zero tasks running ..."));
+  }
 
   if (answer_then_quit && (Status.udp_requests + Status.tcp_requests) >= answer_then_quit)
     named_cleanup(SIGQUIT);

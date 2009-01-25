@@ -100,8 +100,8 @@ cmdline(int argc, char **argv) {
   };
 
   /* Set default NS and MBOX based on this machine's hostname */
-  thishostname = ALLOCATE(HOST_NAME_MAX+1, char[]);
-  gethostname(thishostname, HOST_NAME_MAX);
+  thishostname = ALLOCATE(DNS_MAXNAMELEN+1, char[]);
+  gethostname(thishostname, DNS_MAXNAMELEN);
   ASPRINTF(&ns, "%s.", thishostname);
   ASPRINTF(&mbox, "hostmaster.%s.", thishostname);
 
