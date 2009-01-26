@@ -23,6 +23,7 @@
 #include "memoryman.h"
 
 #include "bits.h"
+#include "debug.h"
 #include "error.h"
 #include "rr.h"
 #include "status.h"
@@ -52,7 +53,7 @@ TASK *task_find_by_id(TASK *t, QUEUE *TaskQ, unsigned long id) {
     if (ThisT->internal_id == id) return ThisT;
   }
 #if DEBUG_ENABLED
-  DebugX("taskobj", 1, _("%s: task_find_by_id(%s, %ld) cannot find task on queue"),
+  Debug(taskobj, 1, _("%s: task_find_by_id(%s, %ld) cannot find task on queue"),
 	 desctask(t), TaskQ->queuename, id);
 #endif
   return NULL;
@@ -207,7 +208,7 @@ _task_free(TASK *t, const char *file, int line) {
   if (!t) return;
 
 #if DEBUG_ENABLED
-  DebugX("taskobj", 1, _("%s: Freeing task at %s:%d"), desctask(t), file, line);
+  Debug(taskobj, 1, _("%s: Freeing task at %s:%d"), desctask(t), file, line);
 #endif
 
   if (t->protocol == SOCK_STREAM && t->fd >= 0) {
@@ -453,7 +454,7 @@ int _task_enqueue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
     status_udp_request(t);
 
 #if DEBUG_ENABLED
-  DebugX("taskobj", 1,_("%s: enqueued (by %s:%u)"), desctask(t), file, line);
+  Debug(taskobj, 1,_("%s: enqueued (by %s:%u)"), desctask(t), file, line);
 #endif
 
   return (0);
@@ -470,7 +471,7 @@ void _task_dequeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 #if DEBUG_ENABLED
   char *taskdesc = STRDUP(desctask(t));
 
-  DebugX("taskobj", 1,_("%s: dequeuing (by %s:%u)"), taskdesc, file, line);
+  Debug(taskobj, 1,_("%s: dequeuing (by %s:%u)"), taskdesc, file, line);
 #endif
 
   if (err_verbose)				/* Output task info if being verbose */
@@ -482,7 +483,7 @@ void _task_dequeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 
   task_free(t);
 #if DEBUG_ENABLED
-  DebugX("taskobj", 1,_("%s: dequeued (by %s:%u)"), taskdesc, file, line);
+  Debug(taskobj, 1,_("%s: dequeued (by %s:%u)"), taskdesc, file, line);
   RELEASE(taskdesc);
 #endif
 }
@@ -491,7 +492,7 @@ void _task_dequeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 void _task_requeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 #if DEBUG_ENABLED
   char *taskdesc = desctask(t);
-  DebugX("taskobj", 1,_("%s: requeuing (by %s:%u) called"), taskdesc, file, line);
+  Debug(taskobj, 1,_("%s: requeuing (by %s:%u) called"), taskdesc, file, line);
 #endif
 
   queue_remove(task_queue(t), t);
@@ -519,7 +520,7 @@ static void _task_1_queue_stats(QUEUE *q) {
   strftime(datebuf, sizeof(datebuf)-1, "%d-%b-%Y %H:%M:%S", tm);
 #endif
 
-  DebugX("task", 1,_(
+  Debug(taskobj, 1,_(
 #if !DISABLE_DATE_LOGGING
 		      "%s+%06lu "
 #endif
@@ -539,7 +540,7 @@ static void _task_1_queue_stats(QUEUE *q) {
     if ((msglen + 2*idsize) >= msgsize) msg = REALLOCATE(msg, msgsize *= 2, char[]);
   }
   if (msglen)
-    DebugX("task", 1,_("Queued tasks %s"), msg);
+    Debug(task, 1,_("Queued tasks %s"), msg);
 
   RELEASE(msg);
 #endif

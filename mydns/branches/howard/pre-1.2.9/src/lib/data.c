@@ -23,6 +23,7 @@
 #include "memoryman.h"
 
 #include "cache.h"
+#include "debug.h"
 #include "error.h"
 #include "taskobj.h"
 
@@ -44,7 +45,7 @@ find_soa(
   int			errflag = 0;
 
 #if DEBUG_ENABLED
-  DebugX("data", 1, _("%s: find_soa(%s, %s)"), desctask(t), fqdn, (label)?*label:_("<NULL>"));
+  Debug(data, 1, _("%s: find_soa(%s, %s)"), desctask(t), fqdn, (label)?*label:_("<NULL>"));
 #endif
 
   end = fqdn + fqdnlen;

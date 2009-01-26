@@ -23,6 +23,7 @@
 #include "memoryman.h"
 
 #include "bits.h"
+#include "debug.h"
 #include "taskobj.h"
 
 /* The maximum number of resource record ID errors that we'll remember (and avoid repeating) */
@@ -105,7 +106,7 @@ _formerr_internal(
   char	*dest = NULL;
 
 #if DEBUG_ENABLED
-  DebugX("error", 1, _("%s: formerr(): %s %s from %s:%u: %s"),
+  Debug(error, 1, _("%s: formerr(): %s %s from %s:%u: %s"),
 	 desctask(t), mydns_rcode_str(rcode), err_reason_str(t, reason), filename, lineno,
 	 xtra ?: _("no additional information"));
 #endif
@@ -145,7 +146,7 @@ _dnserror_internal(
 ) {
   if (t->hdr.rcode == DNS_RCODE_NOERROR) {
 #if DEBUG_ENABLED
-    DebugX("error", 1, _("%s: dnserror(): %s %s from %s:%u"),
+    Debug(error, 1, _("%s: dnserror(): %s %s from %s:%u"),
 	   desctask(t), mydns_rcode_str(rcode), err_reason_str(t, reason), filename, lineno);
 #endif
     t->hdr.rcode = rcode;

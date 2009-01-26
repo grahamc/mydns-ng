@@ -43,10 +43,6 @@ getoptstr(struct option const longopts[]) {
 		    :0);
   }
 
-#if DEBUG_ENABLED
-  Debug(_("Optstring is %d in size with %d elements"), optsize, opts);
-#endif
-
   /* Allocate optstr */
   optstr = REALLOCATE(optstr, optsize + 1, char[]);
   memset(optstr, 0, optsize + 1);

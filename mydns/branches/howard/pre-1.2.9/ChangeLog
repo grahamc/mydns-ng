@@ -1,3 +1,6 @@
+26-Jan-2009	Howard Wilkinson	<howard@cohtech.com>	[1.2.9.0]
+	*	Rewrote debug code to use levels properly, made much more efficient if
+		switched off, and more effificent if switched.
 25-Jan-2009	Howard Wilkinson	<howard@cohtech.com>	[1.2.9.0]
 	*	Add a fix for a portability problem on FreeBSD with MAX_HOST_NAME not being defined
 	*	Add a fix for internal_id wrap around

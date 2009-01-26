@@ -225,11 +225,9 @@ conf_load(CONF **confp, const char *filename) {
       if (name) {
 	if (value)
 	  conf_set(&conf, name, value, 0);
-#if 0
 	else
 	  Warnx(_("%s: line %d: option \"%s\" given without a value - ignored"),
 		filename, lineno, name);
-#endif
 	RELEASE(name);
       }
       RELEASE(value);

@@ -428,8 +428,7 @@ extern FILE		*err_file;			/* Output to this file */
 extern void		error_reinit();
 extern void		error_init(const char *argv0, int facility);
 #if DEBUG_ENABLED
-extern void		Debug(const char *, ...) __printflike(1,2);
-extern void		DebugX(const char *, int, const char *, ...) __printflike(3,4);
+extern void		__Debug(const char *, ...) __printflike(1,2);
 #endif
 extern void		Verbose(const char *, ...) __printflike(1,2);
 extern void		Notice(const char *, ...) __printflike(1,2);

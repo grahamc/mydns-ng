@@ -23,6 +23,7 @@
 #include "memoryman.h"
 
 #include "bits.h"
+#include "debug.h"
 #include "listen.h"
 #include "support.h"
 #include "taskobj.h"
@@ -224,7 +225,7 @@ read_tcp_query(TASK *t) {
   }
 
 #if DEBUG_ENABLED
-  DebugX("tcp", 1, _("%s: 2+%d TCP octets in"), clientaddr(t), rv);
+  Debug(tcp, 1, _("%s: 2+%d TCP octets in"), clientaddr(t), rv);
 #endif
 
   t->offset += rv;

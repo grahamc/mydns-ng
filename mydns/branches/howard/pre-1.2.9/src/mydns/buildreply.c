@@ -23,6 +23,7 @@
 #include "memoryman.h"
 
 #include "bits.h"
+#include "debug.h"
 #include "encode.h"
 #include "reply.h"
 #include "rr.h"
@@ -103,7 +104,7 @@ truncate_rrlist(TASK *t, off_t maxpkt, RRLIST *rrlist, datasection_t ds) {
       t->rdlen += rr->length;
   }
 #if DEBUG_ENABLED
-  DebugX("buildreply", 1, _("%s section truncated from %d records to %d records"),
+  Debug(buildreply, 1, _("%s section truncated from %d records to %d records"),
 	 reply_datasection_str[ds], orig_recs, recs);
 #endif
   return (recs);
@@ -124,7 +125,7 @@ reply_check_truncation(TASK *t, int *ancount, int *nscount, int *arcount) {
     return;
 
 #if DEBUG_ENABLED
-  DebugX("buildreply", 1, _("reply_check_truncation() needs to truncate reply (%u) to fit packet max (%u)"),
+  Debug(buildreply, 1, _("reply_check_truncation() needs to truncate reply (%u) to fit packet max (%u)"),
 	 (unsigned int)t->rdlen, (unsigned int)maxrd);
 #endif
 
@@ -241,21 +242,21 @@ void buildreply(TASK *t, int want_additional) {
   DNS_PUT(dest, t->rdata, t->rdlen);				/* Resource record data */
 
 #if DEBUG_ENABLED
-  DebugX("buildreply", 1, _("%s: reply:     id = %u"), desctask(t),
+  Debug(buildreply, 1, _("%s: reply:     id = %u"), desctask(t),
 	 t->id);
-  DebugX("buildreply", 1, _("%s: reply:     qr = %u (message is a %s)"), desctask(t),
+  Debug(buildreply, 1, _("%s: reply:     qr = %u (message is a %s)"), desctask(t),
 	 t->hdr.qr, t->hdr.qr ? "response" : "query");
-  DebugX("buildreply", 1, _("%s: reply: opcode = %u (%s)"), desctask(t),
+  Debug(buildreply, 1, _("%s: reply: opcode = %u (%s)"), desctask(t),
 	 t->hdr.opcode, mydns_opcode_str(t->hdr.opcode));
-  DebugX("buildreply", 1, _("%s: reply:     aa = %u (answer %s)"), desctask(t),
+  Debug(buildreply, 1, _("%s: reply:     aa = %u (answer %s)"), desctask(t),
 	 t->hdr.aa, t->hdr.aa ? "is authoritative" : "not authoritative");
-  DebugX("buildreply", 1, _("%s: reply:     tc = %u (message %s)"), desctask(t),
+  Debug(buildreply, 1, _("%s: reply:     tc = %u (message %s)"), desctask(t),
 	 t->hdr.tc, t->hdr.tc ? "truncated" : "not truncated");
-  DebugX("buildreply", 1, _("%s: reply:     rd = %u (%s)"), desctask(t),
+  Debug(buildreply, 1, _("%s: reply:     rd = %u (%s)"), desctask(t),
 	 t->hdr.rd, t->hdr.rd ? "recursion desired" : "no recursion");
-  DebugX("buildreply", 1, _("%s: reply:     ra = %u (recursion %s)"), desctask(t),
+  Debug(buildreply, 1, _("%s: reply:     ra = %u (recursion %s)"), desctask(t),
 	 t->hdr.ra, t->hdr.ra ? "available" : "unavailable");
-  DebugX("buildreply", 1, _("%s: reply:  rcode = %u (%s)"), desctask(t),
+  Debug(buildreply, 1, _("%s: reply:  rcode = %u (%s)"), desctask(t),
 	 t->hdr.rcode, mydns_rcode_str(t->hdr.rcode));
   /* escdata(t->reply, t->replylen); */
 #endif

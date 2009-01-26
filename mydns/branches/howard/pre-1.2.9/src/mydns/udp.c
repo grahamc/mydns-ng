@@ -20,6 +20,7 @@
 
 #include "named.h"
 
+#include "debug.h"
 #include "listen.h"
 #include "support.h"
 #include "taskobj.h"
@@ -74,7 +75,7 @@ read_udp_query(int fd, int family) {
     return (TASK_FAILED);
 
 #if DEBUG_ENABLED
-  DebugX("udp", 1, "%s: %d %s", clientaddr(t), len, _("UDP octets in"));
+  Debug(udp, 1, "%s: %d %s", clientaddr(t), len, _("UDP octets in"));
 #endif
   rv = task_new(t, (unsigned char*)in, len);
   if (rv < TASK_FAILED) {
@@ -146,7 +147,7 @@ write_udp_reply(TASK *t) {
   }
 
 #if DEBUG_ENABLED
-  DebugX("udp", 1, _("%s: WRITE %u UDP octets (id %u)"),
+  Debug(udp, 1, _("%s: WRITE %u UDP octets (id %u)"),
 	 desctask(t), (unsigned int)t->replylen, t->id);
 #endif
   return (TASK_COMPLETED);

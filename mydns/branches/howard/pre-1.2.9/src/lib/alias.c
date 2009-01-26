@@ -18,8 +18,11 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **************************************************************************************************/
 
+#include "named.h"
+
 #include "memoryman.h"
 
+#include "debug.h"
 #include "data.h"
 #include "rr.h"
 #include "taskobj.h"
@@ -48,13 +51,13 @@ find_alias(TASK *t, char *fqdn) {
     if (label == name || *label == '.') {
       if (label[0] == '.' && label[1]) label++;		/* Advance past leading dot */
 #if DEBUG_ENABLED
-      DebugX("alias", 1, _("%s: label=`%s'"), desctask(t), label);
+      Debug(alias, 1, _("%s: label=`%s'"), desctask(t), label);
 #endif
 
       /* Do an exact match if the label is the first in the list */
       if (label == name) {
 #if DEBUG_ENABLED
-	DebugX("alias", 1, _("%s: trying exact match `%s'"), desctask(t), label);
+	Debug(alias, 1, _("%s: trying exact match `%s'"), desctask(t), label);
 #endif
 	if ((rr = find_rr(t, soa, DNS_QTYPE_A, label))) {
 	  RELEASE(name);
@@ -71,7 +74,7 @@ find_alias(TASK *t, char *fqdn) {
 	  char *zlabel = label;
 
 #if DEBUG_ENABLED
-	  DebugX("alias", 1, _("%s: alias(%s) -> trying zone look up on %s - %d"),
+	  Debug(alias, 1, _("%s: alias(%s) -> trying zone look up on %s - %d"),
 		 desctask(t), label, zlabel, recurs);
 #endif
 	  /* Strip one label element and replace with a '*' then test and repeat until we run out of labels */
@@ -85,11 +88,11 @@ find_alias(TASK *t, char *fqdn) {
 	      ASPRINTF(&wclabel, "*.%s", c);
 
 #if DEBUG_ENABLED
-	    DebugX("alias", 1, _("%s: alias(%s) trying wildcard `%s'"), desctask(t), label, wclabel);
+	    Debug(alias, 1, _("%s: alias(%s) trying wildcard `%s'"), desctask(t), label, wclabel);
 #endif
 	    rr = find_rr(t, zsoa, DNS_QTYPE_A, wclabel);
 #if DEBUG_ENABLED
-	    DebugX("alias", 1, _("%s: resolve(%s) tried wildcard `%s' got rr = %p"),
+	    Debug(alias, 1, _("%s: resolve(%s) tried wildcard `%s' got rr = %p"),
 		   desctask(t), label, wclabel, rr);
 #endif
 	    if(rr) {
@@ -102,12 +105,12 @@ find_alias(TASK *t, char *fqdn) {
 	  }
 
 #if DEBUG_ENABLED
-	  DebugX("alias", 1, _("%s: alias(%s) -> shall we try recursive look up on - %d"),
+	  Debug(alias, 1, _("%s: alias(%s) -> shall we try recursive look up on - %d"),
 		 desctask(t), label, recurs);
 #endif
 	  if (recurs--) {
 #if DEBUG_ENABLED
-	    DebugX("alias", 1, _("%s: alias(%s) -> trying recursive look up"), desctask(t), label);
+	    Debug(alias, 1, _("%s: alias(%s) -> trying recursive look up"), desctask(t), label);
 #endif
 	    char *zc;
 	    if((zc = strchr(zsoa->origin, '.'))) {
@@ -118,22 +121,22 @@ find_alias(TASK *t, char *fqdn) {
 	    if (*zc) {
 	      MYDNS_SOA *xsoa;
 #if DEBUG_ENABLED
-	      DebugX("alias", 1, _("%s: alias(%s) -> trying recursive look up in %s"), desctask(t), label, zc);
+	      Debug(alias, 1, _("%s: alias(%s) -> trying recursive look up in %s"), desctask(t), label, zc);
 #endif
 	      xsoa = find_soa(t, zc, NULL);
 #if DEBUG_ENABLED
-	      DebugX("alias", 1, _("%s: resolve(%s) -> got %s for recursive look up in %s"), desctask(t),
+	      Debug(alias, 1, _("%s: resolve(%s) -> got %s for recursive look up in %s"), desctask(t),
 		    label, ((xsoa)?xsoa->origin:"<no match>"), zc);
 #endif
 	      if (xsoa) {
 		/* Got a ancestor need to check that it is a parent for the last zone we checked */
 #if DEBUG_ENABLED
-		DebugX("alias", 1, _("%s: alias(%s) -> %s is an ancestor of %s"), desctask(t), label,
+		Debug(alias, 1, _("%s: alias(%s) -> %s is an ancestor of %s"), desctask(t), label,
 		      xsoa->origin, zsoa->origin);
 #endif
 		MYDNS_RR *xrr = find_rr(t, xsoa, DNS_QTYPE_NS, zsoa->origin);
 #if DEBUG_ENABLED
-		DebugX("alias", 1, _("%s: alias(%s) -> %s is%s a parent of %s"), desctask(t), label,
+		Debug(alias, 1, _("%s: alias(%s) -> %s is%s a parent of %s"), desctask(t), label,
 		       ((xrr) ? "" : " not"),
 		       xsoa->origin, zsoa->origin);
 #endif
@@ -188,7 +191,7 @@ alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, char *
 
   for (depth = 0; depth < MAX_ALIAS_LEVEL; depth++) {
 #if DEBUG_ENABLED
-    DebugX("alias", 1, _("%s: ALIAS -> `%s'"), desctask(t), name);
+    Debug(alias, 1, _("%s: ALIAS -> `%s'"), desctask(t), name);
 #endif
     /* Are there any alias records? */
     if ((rr = find_alias(t, name))) {

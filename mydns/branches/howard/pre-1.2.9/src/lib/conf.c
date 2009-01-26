@@ -23,6 +23,7 @@
 #include "memoryman.h"
 
 #include "conf.h"
+#include "debug.h"
 
 #include <pwd.h>
 #include <grp.h>
@@ -136,9 +137,6 @@ static CONF defConfig[] = {
 
 {	"soa-where",		"",				N_("Extra WHERE clause for SOA queries")},
 {	"rr-where",		"",				N_("Extra WHERE clause for RR queries")},
-
-#if DEBUG_ENABLED
-#endif
 
 {	NULL,			NULL,				NULL}
 };
@@ -341,7 +339,7 @@ conf_set_recursive(void) {
     recursive_sa6.sin6_port = htons(port);
     forward_recursive = 1;
 #if DEBUG_ENABLED
-    DebugX("conf", 1,_("recursive forwarding service through %s:%u"),
+    Debug(conf, 1,_("recursive forwarding service through %s:%u"),
 	  ipaddr(AF_INET6, &recursive_sa6.sin6_addr), port);
 #endif
     recursive_fwd_server = STRDUP(address);
@@ -360,7 +358,7 @@ conf_set_recursive(void) {
     recursive_sa.sin_family = AF_INET;
     recursive_sa.sin_port = htons(port);
 #if DEBUG_ENABLED
-    DebugX("conf", 1,_("recursive forwarding service through %s:%u"),
+    Debug(conf, 1,_("recursive forwarding service through %s:%u"),
 	  ipaddr(AF_INET, &recursive_sa.sin_addr), port);
 #endif
     forward_recursive = 1;
@@ -400,6 +398,10 @@ load_config(void) {
     if (!conf_get(&Conf, defConfig[n].name, NULL))
       conf_set(&Conf, defConfig[n].name, defConfig[n].value, 1);
   }
+
+#if DEBUG_ENABLED
+  debug_init(&Conf);
+#endif
 
   /* Support "mysql-user" etc. for backwards compatibility */
   if (conf_get(&Conf, "mysql-host", NULL))

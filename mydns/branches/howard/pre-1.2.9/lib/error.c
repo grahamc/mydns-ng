@@ -171,8 +171,7 @@ _error_assert_fail(const char *assertion) {
 /**************************************************************************************************
 	DEBUG
 **************************************************************************************************/
-void
-Debug(const char *fmt, ...) {
+void __Debug(const char *fmt, ...) {
   char *msg = NULL;
   va_list ap;
 
@@ -188,50 +187,7 @@ Debug(const char *fmt, ...) {
   RELEASE(msg);
 }
 /*--- Debug() -----------------------------------------------------------------------------------*/
-
-/**************************************************************************************************
-	DEBUGX
-**************************************************************************************************/
-void
-DebugX(const char *debugId, int debugLvl, const char *fmt, ...) {
-  char *msg = NULL;
-  va_list ap;
-  int debugEnabled;
- int allEnabled;
-  int levelEnabled = 0;
-  char *level = (char*)ALLOCATE(strlen(debugId) + sizeof("debug-") + 1, (char*));
-  char *enableString;
-
-  level[0] = '\0';
-  strcpy(level, "debug-");
-  strcat(level, debugId);
-
-  enableString = conf_get(&Conf, "debug-enabled", NULL);
-  debugEnabled = (enableString) ? atou(enableString) : 0;
-
-  enableString = conf_get(&Conf, "debug-all", NULL);
-  allEnabled = (enableString) ? atou(enableString) : 0;
-
-  enableString = conf_get(&Conf, level, NULL);
-  levelEnabled = (enableString) ? atou(enableString) : 0;
-
-  RELEASE(level);
-
-  if (debugEnabled <= 0) return;
-  if (levelEnabled < debugLvl && allEnabled == 0) return;
-
-  /* Construct output string */
-  va_start(ap, fmt);
-  VASPRINTF(&msg, fmt, ap);
-  va_end(ap);
-
-  _error_out(LOG_DEBUG, 0, 0, msg);
-
-  RELEASE(msg);
-}
-/*--- DebugX() -----------------------------------------------------------------------------------*/
 #endif
-
 
 /**************************************************************************************************
 	VERBOSE

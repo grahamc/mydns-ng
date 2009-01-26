@@ -20,6 +20,7 @@
 
 #include "named.h"
 
+#include "debug.h"
 #include "taskobj.h"
 
 #include "buildreply.h"
@@ -138,7 +139,7 @@ load_balance(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
   register int order = 1;					/* Current order */
 
 #if DEBUG_ENABLED
-  DebugX("sort", 1, _("%s: Load balancing A records in %s section"), desctask(t), datasection_str[section]);
+  Debug(sort, 1, _("%s: Load balancing A records in %s section"), desctask(t), datasection_str[section]);
 #endif
 
   /* Hosts with 'aux' values > 50000 are always listed last */
@@ -206,8 +207,8 @@ _sort_a_recs(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
   } else {
     /* Round robin - for address records, set 'sort' to a random number */
 #if DEBUG_ENABLED
-    DebugX("sort", 1, _("%s: Sorting A records in %s section (round robin)"),
-	   desctask(t), datasection_str[section]);
+    Debug(sort, 1, _("%s: Sorting A records in %s section (round robin)"),
+	  desctask(t), datasection_str[section]);
 #endif
 
     for (node = rrlist->head; node; node = node->next)
@@ -249,7 +250,7 @@ sort_mx_recs(TASK *t, RRLIST *rrlist, datasection_t section) {
   register RR *node = NULL;
 
 #if DEBUG_ENABLED
-  DebugX("sort", 1, _("%s: Sorting MX records in %s section"), desctask(t), datasection_str[section]);
+  Debug(sort, 1, _("%s: Sorting MX records in %s section"), desctask(t), datasection_str[section]);
 #endif
 
   /* Set 'sort' to a random number */
@@ -278,8 +279,8 @@ sort_srv_priority(TASK *t, RRLIST *rrlist, datasection_t section, uint32_t prior
   register uint32_t rweight = 0;				/* Random weight */
 
 #if DEBUG_ENABLED
-  DebugX("sort", 1, _("%s: Sorting SRV records in %s section with priority %u"),
-	 desctask(t), datasection_str[section], priority);
+  Debug(sort, 1, _("%s: Sorting SRV records in %s section with priority %u"),
+	desctask(t), datasection_str[section], priority);
 #endif
 
   /* Compute the sum of the weights for all nodes with this priority where 'sort2' == 0 */
@@ -321,7 +322,7 @@ _sort_srv_recs(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
   register int count = 0;						/* Number of SRV nodes on this level */
 
 #if DEBUG_ENABLED
-  DebugX("sort", 1, _("%s: Sorting SRV records in %s section"), desctask(t), datasection_str[section]);
+  Debug(sort, 1, _("%s: Sorting SRV records in %s section"), desctask(t), datasection_str[section]);
 #endif
 
   /* Assign 'sort1' to the priority (aux) and 'sort2' to 0 if there's a zero weight, else random */

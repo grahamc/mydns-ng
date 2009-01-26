@@ -21,6 +21,8 @@
 #include "named.h"
 
 #include "memoryman.h"
+
+#include "debug.h"
 #include "listen.h"
 
 #if HAVE_NET_IF_H
@@ -198,7 +200,7 @@ linux_load_ip6(int port) {
 	pl = (uint16_t)strtoul(prefix_length, NULL, 16);
 	sv = (uint16_t)strtoul(scope_value, NULL, 16);
 	f = (uint16_t)strtoul(if_flags, NULL, 16);
-	DebugX("listeners", 1, _("IPv6 %s: device_number=%u prefix_length=%u scope_value=%u if_flags=%u"),
+	Debug(listeners, 1, _("IPv6 %s: device_number=%u prefix_length=%u scope_value=%u if_flags=%u"),
 	       buf, dn, pl, sv, f);
       }
 #endif
@@ -208,7 +210,7 @@ linux_load_ip6(int port) {
 	if (IN6_IS_ADDR_LINKLOCAL(&addr))
 	  continue;
 #if DEBUG_ENABLED
-	DebugX("listeners", 1, _("  extra: %s"), ip6_extra(&addr));
+	Debug(listeners, 1, _("  extra: %s"), ip6_extra(&addr));
 #endif
 	addrlist_add(AF_INET6, &addr, port);
       }
@@ -524,7 +526,7 @@ ipv4_listener(struct sockaddr_in *sa, int protocol) {
   }
 
 #if DEBUG_ENABLED
-  DebugX("listeners", 1, _("listening on %s, %s port %d"), ipaddr(AF_INET, &sa->sin_addr),
+  Debug(listeners, 1, _("listening on %s, %s port %d"), ipaddr(AF_INET, &sa->sin_addr),
 	 protocol == SOCK_STREAM ? "TCP" : "UDP", ntohs(sa->sin_port));
 #endif
 
@@ -572,7 +574,7 @@ ipv6_listener(struct sockaddr_in6 *sa, int protocol) {
   }
 
 #if DEBUG_ENABLED
-  DebugX("listeners", 1, _("listening on %s, %s port %d"), ipaddr(AF_INET6, &sa->sin6_addr), 
+  Debug(listeners, 1, _("listening on %s, %s port %d"), ipaddr(AF_INET6, &sa->sin6_addr), 
 	 protocol == SOCK_STREAM ? "TCP" : "UDP", ntohs(sa->sin6_port));
 #endif
 
@@ -600,13 +602,16 @@ void listeners_create(void) {
   Addresses = addrlist_load(port);				/* Get available addresses */
 
 #if DEBUG_ENABLED
-  for (L = Addresses; L; L = L->next)
-    if (L->family == AF_INET)
-      DebugX("listeners", 1, _("Address: %s (port %d)"), ipaddr(AF_INET, &L->addr4), L->port);
+  for (L = Addresses; L; L = L->next) {
+    if (L->family == AF_INET) {
+      Debug(listeners, 1, _("Address: %s (port %d)"), ipaddr(AF_INET, &L->addr4), L->port);
+    }
 #if HAVE_IPV6
-    else if (L->family == AF_INET6)
-      DebugX("listeners", 1, _("Address: %s (port %d)"), ipaddr(AF_INET6, &L->addr6), L->port);
+    else if (L->family == AF_INET6) {
+      Debug(listeners, 1, _("Address: %s (port %d)"), ipaddr(AF_INET6, &L->addr6), L->port);
+    }
 #endif
+  }
 #endif
 
   /* Get addresses specified in 'listen' and 'no-listen' configuration variables */
@@ -614,34 +619,43 @@ void listeners_create(void) {
   NoListen = get_opt_addrlist(Addresses, conf_get(&Conf, "no-listen", NULL), port, "no-listen");
 
 #if DEBUG_ENABLED
-  for (L = NoListen; L; L = L->next)
-    if (L->family == AF_INET)
-      DebugX("listeners", 1, _("NoListen: %s (port %d)"), ipaddr(AF_INET, &L->addr4), L->port);
+  for (L = NoListen; L; L = L->next) {
+    if (L->family == AF_INET) {
+      Debug(listeners, 1, _("NoListen: %s (port %d)"), ipaddr(AF_INET, &L->addr4), L->port);
+    }
 #if HAVE_IPV6
-    else if (L->family == AF_INET6)
-      DebugX("listeners", 1, _("NoListen: %s (port %d)"), ipaddr(AF_INET6, &L->addr6), L->port);
+    else if (L->family == AF_INET6) {
+      Debug(listeners, 1, _("NoListen: %s (port %d)"), ipaddr(AF_INET6, &L->addr6), L->port);
+    }
 #endif
+  }
 #endif
 
 #if DEBUG_ENABLED
-  for (L = Listen; L; L = L->next)
-    if (L->family == AF_INET)
-      DebugX("listeners", 1, _("Listen: %s (port %d)"), ipaddr(AF_INET, &L->addr4), L->port);
+  for (L = Listen; L; L = L->next) {
+    if (L->family == AF_INET) {
+      Debug(listeners, 1, _("Listen: %s (port %d)"), ipaddr(AF_INET, &L->addr4), L->port);
+    }
 #if HAVE_IPV6
-    else if (L->family == AF_INET6)
-      DebugX("listeners", 1, _("Listen: %s (port %d)"), ipaddr(AF_INET6, &L->addr6), L->port);
+    else if (L->family == AF_INET6) {
+      Debug(listeners, 1, _("Listen: %s (port %d)"), ipaddr(AF_INET6, &L->addr6), L->port);
+    }
 #endif
+  }
 #endif
 
   /* Deactivate any 'NoListen' addresses found in 'Listen' */
-  for (N = NoListen; N; N = N->next)
-    for (L = Listen; L; L = L->next)
+  for (N = NoListen; N; N = N->next) {
+    for (L = Listen; L; L = L->next) {
       if (L->ok && (N->family == L->family) && (N->port == L->port)
 #if HAVE_IPV6
 	  && !memcmp(&N->addr6, &L->addr6, sizeof(struct in6_addr))
 #endif
-	  && !memcmp(&N->addr4, &L->addr4, sizeof(struct in_addr)))
+	  && !memcmp(&N->addr4, &L->addr4, sizeof(struct in_addr))) {
 	L->ok = 0;
+      }
+    }
+  }
 
   /* Free 'Addresses' and 'NoListen'; we're done with them */
   addrlist_free(Addresses);
