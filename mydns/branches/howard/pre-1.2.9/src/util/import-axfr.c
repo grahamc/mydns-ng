@@ -224,7 +224,7 @@ process_axfr_reply(char *reply, size_t replylen, char *origin) {
 	 mydns_rcode_str(hdr.rcode));
 
 #if DEBUG_ENABLED
-  Debug("%u byte REPLY: qr=%u opcode=%s aa=%u tc=%u rd=%u ra=%u z=%u rcode=%u qd=%u an=%u",
+  DebugX("mydnsimport", 1, "%u byte REPLY: qr=%u opcode=%s aa=%u tc=%u rd=%u ra=%u z=%u rcode=%u qd=%u an=%u",
 	(unsigned int)replylen, hdr.qr, mydns_opcode_str(hdr.opcode),
 	hdr.aa, hdr.tc, hdr.rd, hdr.ra, hdr.z, hdr.rcode, qdcount, ancount);
 #endif
@@ -258,7 +258,7 @@ import_axfr(char *hostport, char *import_zone) {
   char *zone;
 
 #if DEBUG_ENABLED
-  Debug("STARTING AXFR of \"%s\" from %s", import_zone, hostport);
+  DebugX("mydnsimport", 1, "STARTING AXFR of \"%s\" from %s", import_zone, hostport);
 #endif
 
   thishostname = zone = NULL;
@@ -270,7 +270,7 @@ import_axfr(char *hostport, char *import_zone) {
   if ((fd = axfr_connect(hostport, &thishostname, zone)) < 0)
     Errx("%s: %s", hostport, _("failed to connect"));
 #if DEBUG_ENABLED
-  Debug("connected to %s", hostport);
+  DebugX("mydnsimport", 1, "connected to %s", hostport);
 #endif
 
   /* Send AXFR request */
@@ -292,7 +292,7 @@ import_axfr(char *hostport, char *import_zone) {
   RELEASE(zone);
 
 #if DEBUG_ENABLED
-  Debug("COMPLETED AXFR of \"%s\" from %s", import_zone, hostport);
+  DebugX("mydnsimport", 1, "COMPLETED AXFR of \"%s\" from %s", import_zone, hostport);
 #endif
 }
 /*--- import_axfr() -----------------------------------------------------------------------------*/

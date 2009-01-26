@@ -539,7 +539,7 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
   if (type == DNS_QTYPE_SOA) {
     /* Try to load from database */
 #if DEBUG_ENABLED
-    DebugX("cache-sql", 1, _("%s: SQL query: table \"%s\", origin=\"%s\""),
+    DebugX("cache", 1, _("%s: SQL query: table \"%s\", origin=\"%s\""),
 	   desctask(t), mydns_soa_table_name, name);
 #endif
     if (mydns_soa_load(sql, &soa, name) != 0) {
@@ -568,7 +568,7 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
       return ((void *)soa);
   } else {
 #if DEBUG_ENABLED
-    DebugX("cache-sql", 1, _("%s: SQL query: table \"%s\", zone=%u,type=\"%s\",name=\"%s\""),
+    DebugX("cache", 1, _("%s: SQL query: table \"%s\", zone=%u,type=\"%s\",name=\"%s\""),
 	   desctask(t), mydns_rr_table_name, zone, mydns_rr_get_type_by_id(type)->rr_type_name, name);
 #endif
     if (mydns_rr_load_active(sql, &rr, zone, type, name, origin) != 0) {

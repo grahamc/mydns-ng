@@ -18,10 +18,10 @@ mydnsimport_DEPENDENCIES		=	$(LIBDEPS)
 mydnsptrconvert_DEPENDENCIES		=	$(LIBDEPS)
 mydns_conf_DEPENDENCIES			=	$(LIBDEPS)
 
-mydnscheck_SOURCES			=	check.c util.c
-mydnsexport_SOURCES			=	export.c util.c
-mydnsimport_SOURCES			=	import.c import-axfr.c import-tinydns.c util.c
-mydnsptrconvert_SOURCES			=	libptr.c libptr.h ptrconvert.c util.c
+mydnscheck_SOURCES			=	check.c
+mydnsexport_SOURCES			=	export.c
+mydnsimport_SOURCES			=	import.c import-axfr.c import-tinydns.c
+mydnsptrconvert_SOURCES			=	libptr.c libptr.h ptrconvert.c
 mydns_conf_SOURCES			=	conf.c
 
 ctags:

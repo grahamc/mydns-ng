@@ -23,6 +23,8 @@
 #include "util.h"
 #include "memoryman.h"
 
+#include "debug.h"
+
 char *zone = NULL;						/* Zone name to dump */
 unsigned int zones_out = 0;					/* Number of zones output */
 enum _output_format {						/* Output format types */
@@ -41,10 +43,11 @@ char *command_line = NULL;					/* Full command line */
 	Display program usage information.
 **********************************************************************************************/
 static void
-usage(status)
-	int status;
-{
+usage(int status, char *unrecognized_option) {
   if (status != EXIT_SUCCESS) {
+    if (unrecognized_option) {
+      fprintf(stderr, _("unrecognized option '%s'\n"), unrecognized_option);
+    }
     fprintf(stderr, _("Try `%s --help' for more information."), progname);
     fputs("\n", stderr);
   } else {
@@ -115,8 +118,12 @@ cmdline(int argc, char **argv) {
   gethostname(thishostname, DNS_MAXNAMELEN);
 
   err_file = stdout;
+
   error_init(argv[0], LOG_USER);				/* Init output routines */
+
   optstr = getoptstr(longopts);
+  opterr = 0;
+
   while ((optc = getopt_long(argc, argv, optstr, longopts, &optindex)) != -1) {
     switch (optc) {
     case 0:
@@ -130,7 +137,7 @@ cmdline(int argc, char **argv) {
 	  puts(_("warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."));
 	  exit(EXIT_SUCCESS);
 	} else if (!strcmp(opt, "help"))			/* --help */
-	  usage(EXIT_SUCCESS);
+	  usage(EXIT_SUCCESS, NULL);
       }
       break;
 
@@ -170,8 +177,15 @@ cmdline(int argc, char **argv) {
     case 'v':							/* -v, --verbose */
       err_verbose = 1;
       break;
+    case '?':
+#if DEBUG_ENABLED
+      if (debug_parse(argc, argv)) {
+	break;
+      }
+#endif
+
     default:
-      usage(EXIT_FAILURE);
+      usage(EXIT_FAILURE, argv[optind-1]);
     }
   }
   load_config();

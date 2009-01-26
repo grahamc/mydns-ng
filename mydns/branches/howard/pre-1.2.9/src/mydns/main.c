@@ -24,6 +24,7 @@
 
 #include "cache.h"
 #include "conf.h"
+#include "debug.h"
 #include "listen.h"
 #include "server.h"
 #include "status.h"
@@ -47,7 +48,7 @@ static int	got_sigusr1 = 0,
 
 int		run_as_root = 0;		/* Run as root user? */
 
-extern void	create_listeners(void);
+extern void	listeners_create(void);
 
 
 typedef void (*INITIALTASKSTART)();
@@ -80,10 +81,12 @@ static SERVER	*spawn_server(INITIALTASK *);
 	Display program usage information.
 **************************************************************************************************/
 static void
-usage(int status) {
+usage(int status, char *unrecognized_option) {
   if (status != EXIT_SUCCESS) {
-    fprintf(stderr, _("Try `%s --help' for more information."), progname);
-    fputs("\n", stderr);
+    if (unrecognized_option) {
+      fprintf(stderr, _("unrecognized option '%s'\n"), unrecognized_option);
+    }
+    fprintf(stderr, _("Try `%s --help' for more information.\n"), progname);
   } else {
     printf(_("Usage: %s [OPTION]..."), progname);
     puts("");
@@ -139,7 +142,9 @@ cmdline(int argc, char **argv) {
     {"password",		optional_argument,		NULL,	'p'},
     {"user",			required_argument,		NULL,	'u'},
 
+#if DEBUG_ENABLED
     {"debug",			no_argument,			NULL,	'd'},
+#endif
     {"verbose",			no_argument,			NULL,	'v'},
     {"help",			no_argument,			NULL,	0},
     {"version",			no_argument,			NULL,	0},
@@ -150,45 +155,13 @@ cmdline(int argc, char **argv) {
 
     {"no-data-errors",	no_argument,				NULL,	0},
 
-    {"debug-alias",		optional_argument,		NULL,	0},
-    {"debug-array",		optional_argument,		NULL,	0},
-    {"debug-axfr",		optional_argument,		NULL,	0},
-    {"debug-cache",		optional_argument,		NULL,	0},
-    {"debug-conf",		optional_argument,		NULL,	0},
-    {"debug-data",		optional_argument,		NULL,	0},
-    {"debug-db",		optional_argument,		NULL,	0},
-    {"debug-encode",		optional_argument,		NULL,	0},
-    {"debug-error",		optional_argument,		NULL,	0},
-    {"debug-ixfr",		optional_argument,		NULL,	0},
-    {"debug-ixfr-sql",		optional_argument,		NULL,	0},
-    {"debug-lib-rr",		optional_argument,		NULL,	0},
-    {"debug-lib-soa",		optional_argument,		NULL,	0},
-    {"debug-listen",		optional_argument,		NULL,	0},
-    {"debug-memman",		optional_argument,		NULL,	0},
-    {"debug-notify",		optional_argument,		NULL,	0},
-    {"debug-notify-sql",	optional_argument,		NULL,	0},
-    {"debug-queue",		optional_argument,		NULL,	0},
-    {"debug-recursive",		optional_argument,		NULL,	0},
-    {"debug-reply",		optional_argument,		NULL,	0},
-    {"debug-resolve",		optional_argument,		NULL,	0},
-    {"debug-rr",		optional_argument,		NULL,	0},
-    {"debug-servercomms",	optional_argument,		NULL,	0},
-    {"debug-sort",		optional_argument,		NULL,	0},
-    {"debug-sql",		optional_argument,		NULL,	0},
-    {"debug-sql-queries",	optional_argument,		NULL,	0},
-    {"debug-status",		optional_argument,		NULL,	0},
-    {"debug-task",		optional_argument,		NULL,	0},
-    {"debug-tcp",		optional_argument,		NULL,	0},
-    {"debug-udp",		optional_argument,		NULL,	0},
-    {"debug-update",		optional_argument,		NULL,	0},
-    {"debug-update-sql",	optional_argument,		NULL,	0},
-
     {NULL,			0,				NULL,	0}
   };
 
   error_init(argv[0], LOG_DAEMON);			/* Init output/logging routines */
 
   optstr = getoptstr(longopts);
+  opterr = 0;
 
   while ((optc = getopt_long(argc, argv, optstr, longopts, &optindex)) != -1) {
     switch (optc) {
@@ -203,7 +176,7 @@ cmdline(int argc, char **argv) {
 	  puts(_("warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."));
 	  exit(EXIT_SUCCESS);
 	} else if (!strcmp(opt, "help"))		/* --help */
-	  usage(EXIT_SUCCESS);
+	  usage(EXIT_SUCCESS, NULL);
 	else if (!strcmp(opt, "dump-config"))		/* --dump-config */
 	  want_dump_config++;
 	else if (!strcmp(opt, "create-tables"))		/* --create-tables */
@@ -214,16 +187,6 @@ cmdline(int argc, char **argv) {
 	  run_as_root = 1;
 	else if (!strcmp(opt, "no-data-errors"))	/* --no-data-errors */
 	  show_data_errors = 0;
-#if DEBUG_ENABLED
-	else if (!strncmp(opt, "debug-", 6)) { /* --debug-* */
-	  err_verbose = err_debug = 1;
-	  conf_set(&Conf, "debug-enabled", "1", 0);
-	  if (optarg)
-	    conf_set(&Conf, (char*)opt, optarg, 0);
-	  else
-	    conf_set(&Conf, (char*)opt, "1", 0);
-	}
-#endif
       }
       break;
 
@@ -267,8 +230,15 @@ cmdline(int argc, char **argv) {
       err_verbose = 1;
       break;
 
+    case '?':
+#if DEBUG_ENABLED
+      if (debug_parse(argc, argv)) {
+	break;
+      }
+#endif
+
     default:
-      usage(EXIT_FAILURE);
+      usage(EXIT_FAILURE, argv[optind-1]);
     }
   }
 
@@ -721,7 +691,7 @@ server_loop(INITIALTASK *initial_tasks, int serverfd) {
     if (numfds == 0 || items == NULL) {
       Err(_("No IO for process - something is wrong"));
     }
-    DebugX("enabled", 1, _("Scheduling Tasks - timeout = %d, numfds = %d"),
+    DebugX("mydns", 1, _("Scheduling Tasks - timeout = %d, numfds = %d"),
 	   timeoutWanted, numfds);
 #endif
     if (timeoutWanted > 0 && TaskArray[NORMAL_TASK][HIGH_PRIORITY_TASK]->head) {
@@ -740,7 +710,7 @@ server_loop(INITIALTASK *initial_tasks, int serverfd) {
 
 #if HAVE_POLL
 #if DEBUG_ENABLED
-      DebugX("enabled", 1, _("Selecting for IO numfds = %d, timeout = %s(%d)"), numfds,
+      DebugX("mydns", 1, _("Selecting for IO numfds = %d, timeout = %s(%d)"), numfds,
 	     (timeoutWanted<0)?"no"
 	     :(timeoutWanted==0)?"poll":"yes", timeoutWanted);
 #endif
@@ -783,7 +753,7 @@ server_loop(INITIALTASK *initial_tasks, int serverfd) {
 	FD_SET(fd, &efd);
       }
 #if DEBUG_ENABLED
-      DebugX("enabled", 1, _("Selecting for IO maxfd = %d, timeout = %s"), maxfd, (tvp)?"yes":"no");
+      DebugX("mydns", 1, _("Selecting for IO maxfd = %d, timeout = %s"), maxfd, (tvp)?"yes":"no");
 #endif
       rv = select(maxfd+1, &rfd, &wfd, &efd, tvp);
 
@@ -817,7 +787,7 @@ server_loop(INITIALTASK *initial_tasks, int serverfd) {
 	  item->revents |= POLLERR;
 	}
 #if DEBUG_ENABLED
-	DebugX("enabled", 1, _("Item fd = %d, events = %x, revents = %x"), fd, item->events, item->revents);
+	DebugX("mydns", 1, _("Item fd = %d, events = %x, revents = %x"), fd, item->events, item->revents);
 #endif
       }
     }
@@ -888,7 +858,7 @@ spawn_server(INITIALTASK *initial_tasks) {
     SERVER *server = array_remove(Servers);
     if (server) {
 #if DEBUG_ENABLED
-      DebugX("enabled", 1, _("closing fd %d"), server->serverfd);
+      DebugX("mydns", 1, _("closing fd %d"), server->serverfd);
 #endif
       close(server->serverfd);
       RELEASE(server);
@@ -903,7 +873,7 @@ spawn_server(INITIALTASK *initial_tasks) {
   /* Delete pre-existing tasks as they belong to master */
   task_free_all();
 #if DEBUG_ENABLED
-  DebugX("enabled", 1, _("Cleaned up master structures - starting work"));
+  DebugX("mydns", 1, _("Cleaned up master structures - starting work"));
 #endif
 
   sql_close(sql); /* Release the database connection held by the master */
@@ -953,7 +923,7 @@ master_loop(INITIALTASK *initial_tasks) {
     if (numfds == 0 || items == NULL) {
       Err(_("No IO for process - something is wrong"));
     }
-    DebugX("enabled", 1, _("Scheduling Tasks - timeout = %d, numfds = %d"),
+    DebugX("mydns", 1, _("Scheduling Tasks - timeout = %d, numfds = %d"),
 	   timeoutWanted, numfds);
 #endif
     if (TaskArray[NORMAL_TASK][HIGH_PRIORITY_TASK]->head) {
@@ -972,7 +942,7 @@ master_loop(INITIALTASK *initial_tasks) {
 
 #if HAVE_POLL
 #if DEBUG_ENABLED
-      DebugX("enabled", 1, _("Selecting for IO numfds = %d, timeout = %s(%d)"), numfds,
+      DebugX("mydns", 1, _("Selecting for IO numfds = %d, timeout = %s(%d)"), numfds,
 	     (timeoutWanted<0)?"no"
 	     :(timeoutWanted==0)?"poll":"yes", timeoutWanted);
 #endif
@@ -1015,7 +985,7 @@ master_loop(INITIALTASK *initial_tasks) {
 	FD_SET(fd, &efd);
       }
 #if DEBUG_ENABLED
-      DebugX("enabled", 1, _("Selecting for IO maxfd = %d, timeout = %s"), maxfd, (tvp)?"yes":"no");
+      DebugX("mydns", 1, _("Selecting for IO maxfd = %d, timeout = %s"), maxfd, (tvp)?"yes":"no");
 #endif
       rv = select(maxfd+1, &rfd, &wfd, &efd, tvp);
 
@@ -1043,7 +1013,7 @@ master_loop(INITIALTASK *initial_tasks) {
 	  item->revents |= POLLERR;
 	}
 #if DEBUG_ENABLED
-	DebugX("enabled", 1, _("Item fd = %d, events = %x, revents = %x"), fd, item->events, item->revents);
+	DebugX("mydns", 1, _("Item fd = %d, events = %x, revents = %x"), fd, item->events, item->revents);
 #endif
       }
     }
@@ -1121,7 +1091,7 @@ main(int argc, char **argv)
   cache_init();						/* Initialize cache */
 
   /* Start listening fd's */
-  create_listeners();
+  listeners_create();
 
   status_start_server();
 

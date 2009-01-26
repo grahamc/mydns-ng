@@ -15,9 +15,9 @@ mydns_DEPENDENCIES	=	@LIBMYDNS@ @LIBUTIL@
 noinst_HEADERS		=	
 mydns_SOURCES		=	axfr.c \
 				buildreply.c \
-				db.c dnsupdate.c \
+				dnsupdate.c \
 				ixfr.c \
-				listen.c \
+				listeners.c \
 				main.c  \
 				notify.c \
 				servercomms.c sort.c \

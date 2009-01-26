@@ -58,45 +58,6 @@ int		wildcard_recursion = 0;			/* Search ancestor zones for wildcard matches - c
 
 char		*mydns_dbengine = "MyISAM";
 
-#if DEBUG_ENABLED
-int		debug_enabled = 0;
-
-int		debug_all = 0;
-
-int		debug_alias = 0;
-int		debug_array = 0;
-int		debug_axfr = 0;
-int		debug_cache = 0;
-int		debug_conf = 0;
-int		debug_data = 0;
-int		debug_db = 0;
-int		debug_encode = 0;
-int		debug_error = 0;
-int		debug_ixfr = 0;
-int		debug_ixfr_sql = 0;
-int		debug_lib_rr = 0;
-int		debug_lib_soa = 0;
-int		debug_listen = 0;
-int		debug_memman = 0;
-int		debug_notify = 0;
-int		debug_notify_sql = 0;
-int		debug_queue = 0;
-int		debug_recursive = 0;
-int		debug_reply = 0;
-int		debug_resolve = 0;
-int		debug_rr = 0;
-int		debug_servercomms = 0;
-int		debug_sort = 0;
-int		debug_sql = 0;
-int		debug_sql_queries = 0;
-int		debug_status = 0;
-int		debug_task = 0;
-int		debug_tcp = 0;
-int		debug_udp = 0;
-int		debug_update = 0;
-int		debug_update_sql = 0;
-#endif
-
 #if HAVE_IPV6
 struct sockaddr_in6	recursive_sa6;			/* Recursive server (IPv6) */
 #endif
@@ -177,42 +138,6 @@ static CONF defConfig[] = {
 {	"rr-where",		"",				N_("Extra WHERE clause for RR queries")},
 
 #if DEBUG_ENABLED
-{	"debug-enabled",	"0",				N_("Enable debug output from the config")},
-
-{	"debug-all",		"0",				N_("Enable all debug output from the config")},
-
-{	"debug-alias",		"0",				N_("Enable ALIAS code debugging")},
-{	"debug-array",		"0",				N_("Enable ARRAY code debugging")},
-{	"debug-axfr",		"0",				N_("Enable AXFR code debugging")},
-{	"debug-cache",		"0",				N_("Enable CACHE code debugging")},
-{	"debug-conf",		"0",				N_("Enable CONF code debugging")},
-{	"debug-data",		"0",				N_("Enable DATA code debugging")},
-{	"debug-db",		"0",				N_("Enable DB code debugging")},
-{	"debug-encode",		"0",				N_("Enable ENCODE code debugging")},
-{	"debug-error",		"0",				N_("Enable ERROR code debugging")},
-{	"debug-ixfr",		"0",				N_("Enable IXFR code debugging")},
-{	"debug-ixfr-sql",	"0",				N_("Enable IXFR SQL code debugging")},
-{	"debug-lib-rr",		"0",				N_("Enable LIB/RR code debugging")},
-{	"debug-lib-soa",	"0",				N_("Enable LIB/SOA code debugging")},
-{	"debug-listen",		"0",				N_("Enable LISTEN code debugging")},
-{	"debug-memman",		"0",				N_("Enable MEMMAN code debugging")},
-{	"debug-notify",		"0",				N_("Enable NOTIFY code debugging")},
-{	"debug-notify-sql",	"0",				N_("Enable NOTIFY SQL code debugging")},
-{	"debug-queue",		"0",				N_("Enable QUEUE code debugging")},
-{	"debug-recursive",	"0",				N_("Enable RECURSIVE code debugging")},
-{	"debug-reply",		"0",				N_("Enable REPLY code debugging")},
-{	"debug-resolve",	"0",				N_("Enable RESOLVE code debugging")},
-{	"debug-rr",		"0",				N_("Enable RR code debugging")},
-{	"debug-servercomms",	"0",				N_("Enable SERVERCOMMS code debugging")},
-{	"debug-sort",		"0",				N_("Enable SORT code debugging")},
-{	"debug-sql",		"0",				N_("Enable SQL code debugging")},
-{	"debug-sql-sueries",	"0",				N_("Enable SQL QUERIES code debugging")},
-{	"debug-status",		"0",				N_("Enable STATUS code debugging")},
-{	"debug-task",		"0",				N_("Enable TASK code debugging")},
-{	"debug-tcp",		"0",				N_("Enable TCP code debugging")},
-{	"debug-udp",		"0",				N_("Enable UDP code debugging")},
-{	"debug-update",		"0",				N_("Enable UPDATE code debugging")},
-{	"debug-update-sql",	"0",				N_("Enable UPDATE SQL code debugging")},
 #endif
 
 {	NULL,			NULL,				NULL}

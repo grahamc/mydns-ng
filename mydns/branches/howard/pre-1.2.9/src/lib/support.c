@@ -160,14 +160,14 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
   int i = 0;
 
 #if DEBUG_ENABLED
-  DebugX("notify", 1, _("%s: name_servers2ip() called name_servers = %p"),
+  DebugX("support", 1, _("%s: name_servers2ip() called name_servers = %p"),
 	 desctask(t), name_servers);
 #endif
 
   if(!name_servers) return 0;
 
 #if DEBUG_ENABLED
-  DebugX("notify", 1, _("%s: name_servers2ip() called name_servers count = %d"),
+  DebugX("support", 1, _("%s: name_servers2ip() called name_servers count = %d"),
 	 desctask(t), array_numobjects(name_servers));
 #endif
 
@@ -180,7 +180,7 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
     MYDNS_RR *rr = NULL;
 
 #if DEBUG_ENABLED
-    DebugX("notify", 1, _("%s: name_servers2ip() processing name server %s"),
+    DebugX("support", 1, _("%s: name_servers2ip() processing name server %s"),
 	   desctask(t), name_server);
 #endif
 
@@ -190,7 +190,7 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
       MYDNS_RR *r = NULL;
 
 #if DEBUG_ENABLED
-      DebugX("notify", 1, _("%s: name_servers2ip() processing rr %s for name server %s"),
+      DebugX("support", 1, _("%s: name_servers2ip() processing rr %s for name server %s"),
 	     desctask(t), label, name_server);
 #endif
 
@@ -208,7 +208,7 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 	  if (!strncmp(MYDNS_RR_DATA_VALUE(r), ipa, MYDNS_RR_DATA_LENGTH(r))) goto NextA_RR;
 	}
 #if DEBUG_ENABLED
-	DebugX("notify", 1, _("%s: name_servers2ip() processing name server %s got ip address %s(%d)"),
+	DebugX("support", 1, _("%s: name_servers2ip() processing name server %s got ip address %s(%d)"),
 	       desctask(t), name_server, (char*)MYDNS_RR_DATA_VALUE(r), MYDNS_RR_DATA_LENGTH(r));
 #endif
 	slave = (NOTIFYSLAVE*)ALLOCATE(sizeof(NOTIFYSLAVE), NOTIFYSLAVE);
@@ -228,7 +228,8 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 	  continue;
 	}
 #if DEBUG_ENABLED
-	DebugX("notify", 1, _("%s: name_servers2ip() processing name server %s append IP address to saved vector"),
+	DebugX("support", 1,
+	       _("%s: name_servers2ip() processing name server %s append IP address to saved vector"),
 	       desctask(t), name_server);
 #endif
 	array_append(ipaddresses, STRNDUP(MYDNS_RR_DATA_VALUE(r), MYDNS_RR_DATA_LENGTH(r)));
@@ -254,7 +255,7 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 	  if (!strncmp(MYDNS_RR_DATA_VALUE(r), ipa, MYDNS_RR_DATA_LENGTH(r))) goto NextAAAA_RR;
 	}
 #if DEBUG_ENABLED
-	DebugX("notify", 1, _("%s: name_servers2ip() processing name server %s got ip address %s(%d)"),
+	DebugX("support", 1, _("%s: name_servers2ip() processing name server %s got ip address %s(%d)"),
 	       desctask(t), name_server, (char*)MYDNS_RR_DATA_VALUE(r), MYDNS_RR_DATA_LENGTH(r));
 #endif
 	slave = (NOTIFYSLAVE*)ALLOCATE(sizeof(NOTIFYSLAVE), NOTIFYSLAVE);
@@ -274,7 +275,8 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 	  continue;
 	}
 #if DEBUG_ENABLED
-	DebugX("notify", 1, _("%s: name_servers2ip() processing name server %s append IP address to saved vector"),
+	DebugX("support", 1,
+	       _("%s: name_servers2ip() processing name server %s append IP address to saved vector"),
 	       desctask(t), name_server);
 #endif
 	array_append(ipaddresses, STRNDUP(MYDNS_RR_DATA_VALUE(r), MYDNS_RR_DATA_LENGTH(r)));
@@ -295,7 +297,7 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
     if (resolved) { continue; }
 
 #if DEBUG_ENABLED
-    DebugX("notify", 1, _("%s: name_servers2ip() - done try local DNS - %d"), desctask(t), resolved);
+    DebugX("support", 1, _("%s: name_servers2ip() - done try local DNS - %d"), desctask(t), resolved);
 #endif
 
     /* This needs enhancing so that a recursive lookup is run before trying the local DNS */
@@ -418,7 +420,7 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
   }
 
 #if DEBUG_ENABLED
-  DebugX("notify", 1,
+  DebugX("support", 1,
 	 _("%s: name_servers2ip() - releasing data and then returning ipaddresses=%p, name_servers=%p"),
 	 desctask(t), ipaddresses, name_servers);
 #endif
@@ -427,7 +429,7 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
   array_free(name_servers, 1);
 
 #if DEBUG_ENABLED
-  DebugX("notify", 1, _("%s: name_servers2ip() - returning"), desctask(t));
+  DebugX("support", 1, _("%s: name_servers2ip() - returning"), desctask(t));
 #endif
 
   return array_numobjects(ips4)

@@ -79,13 +79,13 @@ uint32_t import_soa(const char *import_origin, const char *ns, const char *mbox,
     }
     /* Delete from "rr" table */
 #if DEBUG_ENABLED
-    DebugX("import-sql", 1, "DELETE FROM %s WHERE zone=%u;", mydns_rr_table_name, import_zone_id);
+    DebugX("import", 1, "DELETE FROM %s WHERE zone=%u;", mydns_rr_table_name, import_zone_id);
 #endif
     sql_queryf(sql, "DELETE FROM %s WHERE zone=%u;", mydns_rr_table_name, import_zone_id);
 
     /* Update "soa" table */
 #if DEBUG_ENABLED
-    DebugX("import-sql", 1,
+    DebugX("import", 1,
 	   "UPDATE %s SET origin='%s',ns='%s',mbox='%s',serial=%u,refresh=%u,retry=%u,"
 	   "expire=%u,minimum=%u,ttl=%u WHERE id=%u;", mydns_soa_table_name,
 	   esc_origin, esc_ns, esc_mbox, serial, refresh, retry, expire, minimum, ttl,
@@ -102,7 +102,7 @@ uint32_t import_soa(const char *import_origin, const char *ns, const char *mbox,
     Verbose("ns: [%s]", esc_ns);
     Verbose("mbox: [%s]", esc_mbox);
 #if DEBUG_ENABLED
-    DebugX("import-sql", 1, "INSERT INTO %s (origin,ns,mbox,serial,refresh,retry,expire,minimum,ttl)"
+    DebugX("import", 1, "INSERT INTO %s (origin,ns,mbox,serial,refresh,retry,expire,minimum,ttl)"
 	   " VALUES ('%s','%s','%s',%u,%u,%u,%u,%u,%u);",
 	   mydns_soa_table_name,
 	   esc_origin, esc_ns, esc_mbox, serial, refresh, retry, expire, minimum, ttl);
@@ -165,7 +165,7 @@ import_rr(char *name, char *type, char *data, int datalen, unsigned aux, unsigne
     querystr = "INSERT INTO %s (zone,name,type,data%s,aux,ttl,active,serial) "
       "VALUES (%u,'%s','%s','%s'%s%s%s,%u,%u,'%s',%u);";
 #if DEBUG_ENABLED
-    DebugX("import-sql", 1, querystr, mydns_rr_table_name, (edatalen)?",edata":"",
+    DebugX("import", 1, querystr, mydns_rr_table_name, (edatalen)?",edata":"",
 	   import_zone_id, esc_name, type, esc_data,
 	   (edatalen)?",'":"",
 	   (edatalen)?esc_edata:"",
@@ -183,7 +183,7 @@ import_rr(char *name, char *type, char *data, int datalen, unsigned aux, unsigne
     querystr = "INSERT INTO %s (zone,name,type,data%s,aux,ttl,active) "
       "VALUES (%u,'%s','%s','%s'%s%s%s,%u,%u,'%s');";
 #if DEBUG_ENABLED
-    DebugX("import-sql", 1, querystr, mydns_rr_table_name, (edatalen)?",edata":"",
+    DebugX("import", 1, querystr, mydns_rr_table_name, (edatalen)?",edata":"",
 	  import_zone_id, esc_name, type, esc_data,
 	  (edatalen)?",'":"",
 	  (edatalen)?esc_edata:"",
@@ -201,7 +201,7 @@ import_rr(char *name, char *type, char *data, int datalen, unsigned aux, unsigne
     querystr = "INSERT INTO %s (zone,name,type,data%s,aux,ttl) "
       "VALUES (%u,'%s','%s','%s'%s%s%s,%u,%u);";
 #if DEBUG_ENABLED
-    DebugX("import-sql", 1, querystr, mydns_rr_table_name, (edatalen)?",edata":"",
+    DebugX("import", 1, querystr, mydns_rr_table_name, (edatalen)?",edata":"",
 	  import_zone_id, esc_name, type, esc_data,
 	  (edatalen)?",'":"",
 	  (edatalen)?esc_edata:"",

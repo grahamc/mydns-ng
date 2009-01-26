@@ -196,8 +196,8 @@ void
 DebugX(const char *debugId, int debugLvl, const char *fmt, ...) {
   char *msg = NULL;
   va_list ap;
-  int debugEnabled = atou(conf_get(&Conf, "debug-enabled", NULL));
-  int allEnabled = atou(conf_get(&Conf, "debug-all", NULL));
+  int debugEnabled;
+ int allEnabled;
   int levelEnabled = 0;
   char *level = (char*)ALLOCATE(strlen(debugId) + sizeof("debug-") + 1, (char*));
   char *enableString;
@@ -206,8 +206,13 @@ DebugX(const char *debugId, int debugLvl, const char *fmt, ...) {
   strcpy(level, "debug-");
   strcat(level, debugId);
 
-  enableString = conf_get(&Conf, level, NULL);
+  enableString = conf_get(&Conf, "debug-enabled", NULL);
+  debugEnabled = (enableString) ? atou(enableString) : 0;
 
+  enableString = conf_get(&Conf, "debug-all", NULL);
+  allEnabled = (enableString) ? atou(enableString) : 0;
+
+  enableString = conf_get(&Conf, level, NULL);
   levelEnabled = (enableString) ? atou(enableString) : 0;
 
   RELEASE(level);

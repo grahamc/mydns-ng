@@ -22,6 +22,7 @@
 
 #include "util.h"
 #include "memoryman.h"
+#include "debug.h"
 #include "libptr.h"
 
 char	*thishostname = NULL;   	                        /* Hostname of local machine */
@@ -47,8 +48,11 @@ unsigned int rr_found = 0, rr_inserted = 0;			/* Total resource records found/in
 	Display program usage information.
 **************************************************************************************************/
 static void
-usage(int status) {
+usage(int status, char *unrecognized_option) {
   if (status != EXIT_SUCCESS) {
+    if (unrecognized_option) {
+      fprintf(stderr, _("unrecognized option '%s'\n"), unrecognized_option);
+    }
     fprintf(stderr, _("Try `%s --help' for more information."), progname);
     fputs("\n", stderr);
   } else {
@@ -107,8 +111,12 @@ cmdline(int argc, char **argv) {
   ASPRINTF(&mbox, "hostmaster.%s.", thishostname);
 
   err_file = stdout;
+
   error_init(argv[0], LOG_USER);					/* Init output routines */
+
   optstr = getoptstr(longopts);
+  opterr = 0;
+
   while ((optc = getopt_long(argc, argv, optstr, longopts, &optindex)) != -1) {
     switch (optc) {
     case 0:
@@ -122,7 +130,7 @@ cmdline(int argc, char **argv) {
 	  puts(_("warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."));
 	  exit(EXIT_SUCCESS);
 	} else if (!strcmp(opt, "help"))				/* --help */
-	  usage(EXIT_SUCCESS);
+	  usage(EXIT_SUCCESS, NULL);
       }
       break;
 
@@ -155,8 +163,14 @@ cmdline(int argc, char **argv) {
     case 'v':								/* -v, --verbose */
       err_verbose = 1;
       break;
+    case '?':
+#if DEBUG_ENABLED
+      if (debug_parse(argc, argv)) {
+	break;
+      }
+#endif
     default:
-      usage(EXIT_FAILURE);
+      usage(EXIT_FAILURE, argv[optind-1]);
     }
   }
 

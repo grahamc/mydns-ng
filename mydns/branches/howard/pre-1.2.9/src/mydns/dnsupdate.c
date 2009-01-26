@@ -177,7 +177,7 @@ check_update(TASK *t, MYDNS_SOA *soa) {
 			     (mydns_soa_use_active)? "'" : "");
 
 #if DEBUG_ENABLED
-  DebugX("dnsupdate-sql", 1, _("%s: DNS UPDATE: %s"), desctask(t), query);
+  DebugX("dnsupdate", 1, _("%s: DNS UPDATE: %s"), desctask(t), query);
 #endif
 
   res = sql_query(sql, query, querylen);
@@ -501,7 +501,7 @@ update_zone_has_name(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 			     "SELECT id FROM %s WHERE zone=%u AND (name='%s' OR name='%s') LIMIT 1",
 			     mydns_rr_table_name, soa->id, xhost, xname);
 #if DEBUG_ENABLED
-  DebugX("dnsupdate-sql", 1, _("%s: DNS UPDATE: %s"), desctask(t), query);
+  DebugX("dnsupdate", 1, _("%s: DNS UPDATE: %s"), desctask(t), query);
 #endif
 
   RELEASE(xname);
@@ -552,7 +552,7 @@ update_zone_has_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 			     " WHERE zone=%u AND (name='%s' OR name='%s') AND type='%s' LIMIT 1",
 			     mydns_rr_table_name, soa->id, xhost, xname, mydns_rr_get_type_by_id(rr->type)->rr_type_name);
 #if DEBUG_ENABLED
-  DebugX("dnsupdate-sql", 1, _("%s: DNS UPDATE: %s"), desctask(t), query);
+  DebugX("dnsupdate", 1, _("%s: DNS UPDATE: %s"), desctask(t), query);
 #endif
 
   RELEASE(xname);
@@ -953,7 +953,6 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 			       (edatalen)?"')":"");
 #if DEBUG_ENABLED
     DebugX("dnsupdate", 1, _("%s: DNS UPDATE: UPDATE_ADD_RR: %s"), desctask(t), query);
-    DebugX("dnsupdate-sql", 1, _("%s: DNS UPDATE: %s"), desctask(t), query);
 #endif
     res = sql_query(sql, query, querylen);
     RELEASE(query);
@@ -1023,7 +1022,6 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
   /* Execute the query */
 #if DEBUG_ENABLED
 	DebugX("dnsupdate", 1, _("%s: DNS UPDATE: ADD RR: %s"), desctask(t), query);
-	DebugX("dnsupdate-sql", 1, _("%s: DNS UPDATE: %s"), desctask(t), query);
 #endif
 
 	if (sql_nrquery(sql, query, querylen) != 0) {
@@ -1101,7 +1099,6 @@ update_delete_rrset_all(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_
 			       mydns_rr_active_types[0]);
 #if DEBUG_ENABLED
     DebugX("dnsupdate", 1, _("%s: DNS UPDATE: DELETE RR: %s"), desctask(t), query);
-    DebugX("dnsupdate-sql", 1, _("%s: DNS UPDATE: %s"), desctask(t), query);
 #endif
     res = sql_query(sql, query, querylen);
     RELEASE(query);
@@ -1155,7 +1152,6 @@ update_delete_rrset_all(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_
   }
 #if DEBUG_ENABLED
   DebugX("dnsupdate", 1, _("%s: DNS UPDATE: DELETE RRSET_ALL: %s"), desctask(t), query);
-  DebugX("dnsupdate", 1, _("%s: DNS UPDATE: %s"), desctask(t), query);
 #endif
   RELEASE(xname);
   RELEASE(xhost);
@@ -1246,7 +1242,6 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
 			       (edatalen)?"')":"");
 #if DEBUG_ENABLED
     DebugX("dnsupdate", 1, _("%s: DNS UPDATE: DELETE RR: %s"), desctask(t), query);
-    DebugX("dnsupdate-sql", 1, _("%s: DNS UPDATE: %s"), desctask(t), query);
 #endif
     res = sql_query(sql, query, querylen);
     RELEASE(query);
@@ -1272,7 +1267,6 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
 				 (edatalen)?"')":"");
 #if DEBUG_ENABLED
       DebugX("dnsupdate", 1, _("%s: DNS UPDATE: DELETE RR: %s"), desctask(t), query);
-      DebugX("dnsupdate-sql", 1, _("%s: DNS UPDATE: %s"), desctask(t), query);
 #endif
       res2 = sql_nrquery(sql, query, querylen);
       RELEASE(query);
@@ -1314,7 +1308,6 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
   }
 #if DEBUG_ENABLED
   DebugX("dnsupdate", 1, _("%s: DNS UPDATE: DELETE RR: %s"), desctask(t), query);
-  DebugX("dnsupdate-sql", 1, _("%s: DNS UPDATE: %s"), desctask(t), query);
 #endif
   RELEASE(xname);
   RELEASE(xhost);
@@ -1445,7 +1438,6 @@ update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_seri
   }
 #if DEBUG_ENABLED
   DebugX("dnsupdate", 1, _("%s: DNS UPDATE: DELETE RRSET: %s"), desctask(t), query);
-  DebugX("dnsupdate-sql", 1, _("%s: DNS UPDATE: %s"), desctask(t), query);
 #endif
   RELEASE(xname);
   RELEASE(xhost);
@@ -1782,7 +1774,6 @@ update_soa_serial(TASK *t, MYDNS_SOA *soa) {
 
 #if DEBUG_ENABLED
   DebugX("dnsupdate", 1, _("%s: DNS UPDATE: UPDATE SOA SERIAL: %s"), desctask(t), query);
-  DebugX("dnsupdate-sql", 1, "%s: DNS UPDATE: %s", desctask(t), query);
 #endif
   if(sql_nrquery(sql, query, querylen) != 0) {
     WarnSQL(sql, "%s: %s", desctask(t), _("error updating soa serial via DNS UPDATE"));

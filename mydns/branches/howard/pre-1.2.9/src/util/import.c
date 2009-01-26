@@ -22,6 +22,8 @@
 
 #include "util.h"
 
+#include "debug.h"
+
 extern void import_axfr(char *hostport, char *import_zone);
 extern void import_tinydns(char *datafile, char *import_zone);
 
@@ -39,8 +41,11 @@ char *tinydns_datafile = NULL;					/* Name of tinydns-data format file */
 	Display program usage information.
 **************************************************************************************************/
 static void
-usage(int status) {
+usage(int status, char *unrecognized_option) {
   if (status != EXIT_SUCCESS) {
+    if (unrecognized_option) {
+      fprintf(stderr, _("unrecognized option '%s'\n"), unrecognized_option);
+    }
     fprintf(stderr, _("Try `%s --help' for more information."), progname);
     fputs("\n", stderr);
   } else {
@@ -116,8 +121,12 @@ cmdline(int argc, char **argv) {
   };
 
   err_file = stdout;
+
   error_init(argv[0], LOG_USER);					/* Init output routines */
+
   optstr = getoptstr(longopts);
+  opterr = 0;
+
   while ((optc = getopt_long(argc, argv, optstr, longopts, &optindex)) != -1) {
     switch (optc) {
     case 0:
@@ -130,7 +139,7 @@ cmdline(int argc, char **argv) {
 	  puts(_("warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."));
 	  exit(EXIT_SUCCESS);
 	} else if (!strcmp(opt, "help"))				/* --help */
-	  usage(EXIT_SUCCESS);
+	  usage(EXIT_SUCCESS, NULL);
 	else if (!strcmp(opt, "notrim"))				/* --notrim */
 	  opt_notrim = 1;
       }
@@ -189,8 +198,16 @@ cmdline(int argc, char **argv) {
     case 'v':								/* -v, --verbose */
       err_verbose = 1;
       break;
+
+    case '?':
+#if DEBUG_ENABLED
+      if (debug_parse(argc, argv)) {
+	break;
+      }
+#endif
+
     default:
-      usage(EXIT_FAILURE);
+      usage(EXIT_FAILURE, argv[optind-1]);
     }
   }
 }
@@ -212,7 +229,7 @@ main(int argc, char **argv) {
 
   if (input_format == INPUT_UNKNOWN) {			/* No input format specified */
     Warnx(_("no input format specified"));
-    usage(EXIT_FAILURE);
+    usage(EXIT_FAILURE, NULL);
   }
 
   /* If we're inserting directly into the database, connect to the database */
@@ -223,7 +240,7 @@ main(int argc, char **argv) {
     switch (input_format) {
     case INPUT_AXFR:
       Warnx(_("using AXFR method; no zones specified"));
-      usage(EXIT_FAILURE);
+      usage(EXIT_FAILURE, NULL);
       break;
 
     case INPUT_TINYDNS:

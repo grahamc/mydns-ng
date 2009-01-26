@@ -580,7 +580,7 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
     querylen = sql_build_query(&query, "SELECT also_notify FROM %s WHERE id=%u;",
 			       mydns_soa_table_name, soa->id);
 #if DEBUG_ENABLED
-    DebugX("notify-sql", 1, _("%s: DNS NOTIFY: notify_get_server_list %s"), desctask(t), query);
+    DebugX("notify", 1, _("%s: DNS NOTIFY: notify_get_server_list %s"), desctask(t), query);
 #endif
     res = sql_query(sql, query, querylen);
     RELEASE(query);
