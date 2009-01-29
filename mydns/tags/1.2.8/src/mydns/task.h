@@ -27,15 +27,6 @@
 #define	MAX_CNAME_LEVEL	6
 
 
-#define MAXTASKS		(USHRT_MAX + 1)
-#define TASKVECSZ		(MAXTASKS/BITSPERBYTE)
-
-/* Cheat */
-#define TASKVEC_ZERO(TV)	memset((void*)(TV), 0, TASKVECSZ)
-#define TASKVEC_CLR(TI, TV)	FD_CLR((TI), (fd_set*)(TV))
-#define TASKVEC_SET(TI, TV)	FD_SET((TI), (fd_set*)(TV))
-#define TASKVEC_ISSET(TI, TV)	FD_ISSET((TI), (fd_set*)(TV))
-
 /* Task completion codes */
 typedef enum _task_execstatus_t {
   TASK_ABANDONED	=-2,		/* Task needs to be abandoned - release fd */
