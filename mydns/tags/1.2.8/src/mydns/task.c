@@ -457,23 +457,6 @@ _task_init(
     TASKVEC_ZERO(taskvec);
   }
 
-  new = ALLOCATE(sizeof(TASK), TASK);
-
-  new->status = status;
-  new->fd = fd;
-  new->protocol = protocol;
-  new->family = family;
-  if (addr) {
-    if (family == AF_INET) {
-      memcpy(&new->addr4, addr, sizeof(struct sockaddr_in));
-#if HAVE_IPV6
-    } else if (family == AF_INET6) {
-      memcpy(&new->addr6, addr, sizeof(struct sockaddr_in6));
-#endif
-    }
-  }
-  new->type = type;
-  new->priority = priority;
   while (1) {
     id = internal_id++;
     if (internal_id >= MAXTASKS) {
@@ -491,6 +474,23 @@ _task_init(
   }
   taskvec[taskvec_index] |= taskvec_mask;
 
+  new = ALLOCATE(sizeof(TASK), TASK);
+
+  new->status = status;
+  new->fd = fd;
+  new->protocol = protocol;
+  new->family = family;
+  if (addr) {
+    if (family == AF_INET) {
+      memcpy(&new->addr4, addr, sizeof(struct sockaddr_in));
+#if HAVE_IPV6
+    } else if (family == AF_INET6) {
+      memcpy(&new->addr6, addr, sizeof(struct sockaddr_in6));
+#endif
+    }
+  }
+  new->type = type;
+  new->priority = priority;
   new->internal_id = id;
   new->timeout = current_time + task_timeout;
   new->minimum_ttl = DNS_MINIMUM_TTL;
@@ -561,7 +561,7 @@ _task_free(TASK *t, const char *file, int line) {
   RELEASE(t->rdata);
   RELEASE(t->reply);
 
-  taskvec[t->id >> 5] &= ~taskvec_masks[t->id & 0x1ff];
+  taskvec[t->internal_id >> 5] &= ~taskvec_masks[t->internal_id & 0x1ff];
 
   RELEASE(t);
 
