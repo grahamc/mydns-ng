@@ -17688,9 +17688,9 @@ fi
 		do
 			if test "$ac_mydns_lib_found" != yes
 			then
-				as_ac_File=`echo "ac_cv_file_$dir/libpq.a" | $as_tr_sh`
-{ echo "$as_me:$LINENO: checking for $dir/libpq.a" >&5
-echo $ECHO_N "checking for $dir/libpq.a... $ECHO_C" >&6; }
+				as_ac_File=`echo "ac_cv_file_$dir/libpq.so" | $as_tr_sh`
+{ echo "$as_me:$LINENO: checking for $dir/libpq.so" >&5
+echo $ECHO_N "checking for $dir/libpq.so... $ECHO_C" >&6; }
 if { as_var=$as_ac_File; eval "test \"\${$as_var+set}\" = set"; }; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -17698,7 +17698,7 @@ else
   { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
 echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
    { (exit 1); exit 1; }; }
-if test -r "$dir/libpq.a"; then
+if test -r "$dir/libpq.so"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -17829,9 +17829,9 @@ fi
 		do
 			if test "$ac_mydns_lib_found" != yes
 			then
-				as_ac_File=`echo "ac_cv_file_$dir/libpq.a" | $as_tr_sh`
-{ echo "$as_me:$LINENO: checking for $dir/libpq.a" >&5
-echo $ECHO_N "checking for $dir/libpq.a... $ECHO_C" >&6; }
+				as_ac_File=`echo "ac_cv_file_$dir/libpq.so" | $as_tr_sh`
+{ echo "$as_me:$LINENO: checking for $dir/libpq.so" >&5
+echo $ECHO_N "checking for $dir/libpq.so... $ECHO_C" >&6; }
 if { as_var=$as_ac_File; eval "test \"\${$as_var+set}\" = set"; }; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -17839,7 +17839,7 @@ else
   { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
 echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
    { (exit 1); exit 1; }; }
-if test -r "$dir/libpq.a"; then
+if test -r "$dir/libpq.so"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -17980,9 +17980,9 @@ fi
 		do
 			if test "$ac_ssl_lib_found" != yes
 			then
-				as_ac_File=`echo "ac_cv_file_$dir/libssl.a" | $as_tr_sh`
-{ echo "$as_me:$LINENO: checking for $dir/libssl.a" >&5
-echo $ECHO_N "checking for $dir/libssl.a... $ECHO_C" >&6; }
+				as_ac_File=`echo "ac_cv_file_$dir/libssl.so" | $as_tr_sh`
+{ echo "$as_me:$LINENO: checking for $dir/libssl.so" >&5
+echo $ECHO_N "checking for $dir/libssl.so... $ECHO_C" >&6; }
 if { as_var=$as_ac_File; eval "test \"\${$as_var+set}\" = set"; }; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -17990,7 +17990,7 @@ else
   { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
 echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
    { (exit 1); exit 1; }; }
-if test -r "$dir/libssl.a"; then
+if test -r "$dir/libssl.so"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -18016,7 +18016,7 @@ fi
 			{ { echo "$as_me:$LINENO: error:
 
   ###
-  ###  OpenSSL libraries (libssl.a/libcrypto.a) not found!
+  ###  OpenSSL libraries (libssl.so/libcrypto.so) not found!
   ###
   ###  If your OpenSSL libraries are in an unusual location,
   ###  specify the directory where they are located with:
@@ -18034,7 +18034,7 @@ fi
 echo "$as_me: error:
 
   ###
-  ###  OpenSSL libraries (libssl.a/libcrypto.a) not found!
+  ###  OpenSSL libraries (libssl.so/libcrypto.so) not found!
   ###
   ###  If your OpenSSL libraries are in an unusual location,
   ###  specify the directory where they are located with:

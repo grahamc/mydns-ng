@@ -47,7 +47,7 @@ AC_DEFUN([AC_WITH_OPENSSL_LIB],
 		do
 			if test "$ac_ssl_lib_found" != yes
 			then
-				AC_CHECK_FILE($dir/libssl.a, ac_ssl_lib_found=yes, ac_ssl_lib_found=no)
+				AC_CHECK_FILE($dir/libssl.so, ac_ssl_lib_found=yes, ac_ssl_lib_found=no)
 				if test "$ac_ssl_lib_found" = yes
 				then
 					LIBSSL="-L$dir -lssl -lcrypto"
@@ -59,7 +59,7 @@ AC_DEFUN([AC_WITH_OPENSSL_LIB],
 			AC_MSG_ERROR([
 
 ][  ###
-][  ###  OpenSSL libraries (libssl.a/libcrypto.a) not found!
+][  ###  OpenSSL libraries (libssl.so/libcrypto.so) not found!
 ][  ###
 ][  ###  If your OpenSSL libraries are in an unusual location,
 ][  ###  specify the directory where they are located with:
@@ -662,7 +662,7 @@ AC_DEFUN([AC_LIB_PQ],
 		do
 			if test "$ac_mydns_lib_found" != yes
 			then
-				AC_CHECK_FILE($dir/libpq.a, ac_mydns_lib_found=yes, ac_mydns_lib_found=no)
+				AC_CHECK_FILE($dir/libpq.so, ac_mydns_lib_found=yes, ac_mydns_lib_found=no)
 				if test "$ac_mydns_lib_found" = "yes"; then
 					LIBPQ="-L$dir -lpq"
 

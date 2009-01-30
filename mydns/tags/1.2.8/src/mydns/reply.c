@@ -537,7 +537,7 @@ reply_add_srv(TASK *t, RR *r) {
 static inline int
 reply_add_txt(TASK *t, RR *r) {
   char		*dest = NULL;
-  uint8_t	size = 0;
+  size_t	size = 0;
   size_t	len = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
 
