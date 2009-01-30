@@ -1,3 +1,6 @@
+30-Jan-2009	Howard Wilkinson	<howard@cohtech.com>	[1.2.8.21]
+	*	Bug fix for taskvec code - fixes use of internal_id rather than query id.
+	*	Publishing change to stop multiple runs of the configuration utility
 29-Jan-2009	Howard Wilkinson	<howard@cohtech.com>	[1.2.8.20]
 	*	Rewrite internal id allocation code to use local facilities.
 25-Jan-2009	Howard Wilkinson	<howard@cohtech.com>	[1.2.8.19]
