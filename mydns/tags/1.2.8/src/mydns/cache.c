@@ -181,7 +181,7 @@ cache_init(void) {
 **************************************************************************************************/
 static void
 cache_size_update(CACHE *C) {
-  register int n = 0;
+  register uint n = 0;
   register CNODE *N = NULL;
 
   C->size = 0;
@@ -213,7 +213,7 @@ cache_size_update(CACHE *C) {
 void
 cache_status(CACHE *C) {
   if (C) {
-    register int ct = 0, collisions = 0;
+    register uint ct = 0, collisions = 0;
     register CNODE *n = NULL;
 
     /* Update cache size (bytes) */
@@ -229,10 +229,10 @@ cache_status(CACHE *C) {
 	     " %u collisions (%.0f%%), %.0f%% full (%u records), %u bytes, avg life %u sec"),
 	   C->name, PCT(C->questions, C->hits), C->hits, C->misses,
 	   collisions, PCT(C->slots, collisions),
-	   PCT(C->limit, C->count), (unsigned int)C->count, (unsigned int)C->size,
-	   (unsigned int)(C->removed
-			  ? C->removed_secs / C->removed
-			  : (time(NULL) - Status.start_time))
+	   PCT(C->limit, C->count), (uint)C->count, (uint)C->size,
+	   (uint)(C->removed
+		  ? (uint)C->removed_secs / C->removed
+		  : (uint)(time(NULL) - Status.start_time))
 	   );
   }
 }
@@ -338,7 +338,7 @@ cache_free_node(CACHE *ThisCache, uint32_t hash, CNODE *n) {
 **************************************************************************************************/
 void
 cache_empty(CACHE *ThisCache) {
-  register int		ct = 0;
+  register uint		ct = 0;
   register CNODE	*n = NULL, *tmp = NULL;
 
   if (!ThisCache) return;
@@ -358,7 +358,7 @@ cache_empty(CACHE *ThisCache) {
 **************************************************************************************************/
 void
 cache_cleanup(CACHE *ThisCache) {
-  register int		ct = 0;
+  register uint		ct = 0;
   register CNODE	*n = NULL, *tmp = NULL;
 
   if (!ThisCache)
@@ -381,7 +381,7 @@ cache_cleanup(CACHE *ThisCache) {
 **************************************************************************************************/
 void
 cache_purge_zone(CACHE *ThisCache, uint32_t zone) {
-  register int		ct = 0;
+  register uint		ct = 0;
   register CNODE	*n = NULL, *tmp = NULL;
 
   if (!ThisCache)
@@ -402,12 +402,13 @@ cache_purge_zone(CACHE *ThisCache, uint32_t zone) {
 **************************************************************************************************/
 static inline uint32_t
 cache_hash(CACHE *ThisCache, uint32_t initval, void *buf, register size_t buflen) {
+  unsigned char *bufp = buf;
 #if (HASH_TYPE == ORIGINAL_HASH)
   register uint32_t	hash = 0;
   register unsigned char *p = NULL;
 
   /* Generate hash value */
-  for (hash = initval, p = (unsigned char *)buf; p < (unsigned char *)(buf + buflen); p++) {
+  for (hash = initval, p = bufp; p < (bufp + buflen); p++) {
     register int tmp = 0;
     hash = (hash << 4) + (*p);
     if ((tmp = (hash & 0xf0000000))) {
@@ -420,19 +421,19 @@ cache_hash(CACHE *ThisCache, uint32_t initval, void *buf, register size_t buflen
   register uint32_t	hash = 0;
   register unsigned char *p = NULL;
 
-  for (hash = initval, p = (unsigned char *)buf; p < (unsigned char *)(buf + buflen); p++)
+  for (hash = initval, p = bufp; p < (bufp + buflen); p++)
     hash += *p;
   return (hash % ThisCache->slots);
 #elif (HASH_TYPE == ROTATING_HASH)
   register uint32_t	hash = 0;
   register unsigned char *p = NULL;
 
-  for (hash = initval, p = (unsigned char *)buf; p < (unsigned char *)(buf + buflen); p++)
+  for (hash = initval, p = buf; p < (buf + buflen); p++)
     hash = (hash << 4) ^ (hash >> 28) ^ (*p);
   return ((hash ^ (hash>>10) ^ (hash>>20)) & ThisCache->mask);
 #elif (HASH_TYPE == FNV_HASH)
   register uint32_t	hash = FNV_32_INIT;
-  unsigned char *bp = (unsigned char *)buf;
+  unsigned char *bp = bufp;
   unsigned char *be = bp + buflen;
 
   while (bp < be) {
@@ -459,7 +460,7 @@ cache_hash(CACHE *ThisCache, uint32_t initval, void *buf, register size_t buflen
 **************************************************************************************************/
 void *
 zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
-		char *name, size_t namelen, int *errflag, MYDNS_SOA *parent) {
+		const char *name, size_t namelen, int *errflag, MYDNS_SOA *parent) {
   register uint32_t	hash = 0;
   register CNODE	*n = NULL;
   MYDNS_SOA		*soa = NULL;
@@ -477,7 +478,7 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
 #endif
 
   if (ZoneCache) {
-    hash = cache_hash(ZoneCache, zone + type, name, namelen);
+    hash = cache_hash(ZoneCache, zone + type, (void*)name, namelen);
 #if USE_NEGATIVE_CACHE
     /* Check negative reply cache */
     if (NegativeCache) {
@@ -623,7 +624,7 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
     if (C == ZoneCache)
       n->data = mydns_soa_dup(soa, 1);
 
-    if (soa && (soa->ttl < C->expire))
+    if (soa && (soa->ttl < (uint32_t)C->expire))
       n->expire = current_time + soa->ttl;
     else if (C->expire)
       n->expire = current_time + C->expire;
@@ -631,7 +632,7 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
     if (C == ZoneCache)
       n->data = mydns_rr_dup(rr, 1);
 
-    if (rr && (rr->ttl < C->expire))
+    if (rr && (rr->ttl < (uint32_t)C->expire))
       n->expire = current_time + rr->ttl;
     else if (C->expire)
       n->expire = current_time + C->expire;
@@ -671,7 +672,7 @@ reply_cache_find(TASK *t) {
     return (0);
 #endif
 
-  hash = cache_hash(ReplyCache, t->qtype, t->qd, t->qdlen);
+  hash = cache_hash(ReplyCache, t->qtype, (void*)t->qd, t->qdlen);
   ReplyCache->questions++;
 
   /* Look at the appropriate node.  Descend list and find match. */
@@ -697,11 +698,11 @@ reply_cache_find(TASK *t) {
 
 	/* Copy DNS header */
 	memcpy(&t->hdr, p, sizeof(DNS_HEADER));
-	p += sizeof(DNS_HEADER);
+	p = (void*)((unsigned char *)p + sizeof(DNS_HEADER));
 
 	/* Copy reason */
 	memcpy(&t->reason, p, sizeof(task_error_t));
-	p += sizeof(task_error_t);
+	p = (void*)((unsigned char *)p + sizeof(task_error_t));
 
 	/* Copy reply data */
 	memcpy(t->reply, p, t->replylen);
@@ -755,7 +756,7 @@ add_reply_to_cache(TASK *t) {
   if (forward_recursive && t->hdr.rcode != DNS_RCODE_NOERROR)
     return;
 
-  hash = cache_hash(ReplyCache, t->qtype, t->qd, t->qdlen);
+  hash = cache_hash(ReplyCache, t->qtype, (void*)t->qd, t->qdlen);
 
   /* Look at the appropriate node.  Descend list and find match. */
   for (n = ReplyCache->nodes[hash]; n; n = n->next_node) {
@@ -806,11 +807,11 @@ add_reply_to_cache(TASK *t) {
 
   /* Save DNS header */
   memcpy(p, &t->hdr, sizeof(DNS_HEADER));
-  p += sizeof(DNS_HEADER);
+  p = (void*)((unsigned char *)p + sizeof(DNS_HEADER));
 
   /* Save reason for error, if any */
   memcpy(p, &t->reason, sizeof(task_error_t));
-  p += sizeof(task_error_t);
+  p = (void*)((unsigned char *)p + sizeof(task_error_t));
 
   /* Save reply data */
   memcpy(p, t->reply, t->replylen);

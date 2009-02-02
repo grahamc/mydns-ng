@@ -29,13 +29,13 @@
 	Returns the new location of src, or NULL if an error occurred.
 	If an error occurs, puts a descriptive message in `dest'.
 **************************************************************************************************/
-char *
-name_unencode(char *start, size_t slen, char *current, char *dest, size_t destsize) {
-  register char	*s = current;				/* Current pointer into input */
-  register char *d = dest;				/* Current pointer into destination */
-  register char n;
-  register char len;
-  register char *rp = NULL;
+uchar *
+name_unencode(uchar *start, size_t slen, uchar *current, uchar *dest, size_t destsize) {
+  register uchar *s = current;				/* Current pointer into input */
+  register uchar *d = dest;				/* Current pointer into destination */
+  register uchar n;
+  register uchar len;
+  register uchar *rp = NULL;
 
 #define CHECK_DEST_SPACE(n)  \
   if (d >= dest+(destsize-(n))) {		 \
@@ -51,7 +51,7 @@ name_unencode(char *start, size_t slen, char *current, char *dest, size_t destsi
   }
 
   while ((len = *s)) {						/* Get length octet */
-    register unsigned char mask = len & 0xC0;
+    register uchar mask = len & 0xC0;
 
     if (mask == 0xC0) {
       uint16_t current_offset, new_offset;
@@ -101,15 +101,15 @@ name_unencode(char *start, size_t slen, char *current, char *dest, size_t destsi
 	Returns the new location of src, or NULL if an error occurred.
 	If an error occurs, puts a descriptive message in `dest'.
 **************************************************************************************************/
-char *
-name_unencode2(char *start, size_t slen, char **current, task_error_t *errcode) {
-  char		*dest = NULL;
+uchar *
+name_unencode2(uchar *start, size_t slen, uchar **current, task_error_t *errcode) {
+  uchar		*dest = NULL;
   int		destlen = 16;
-  register char	*s = *current;				/* Current pointer into input */
-  register char *d;					/* Current pointer into destination */
-  register char n;
-  register char len;
-  register char *rp = NULL;
+  register uchar *s = *current;				/* Current pointer into input */
+  register uchar *d;					/* Current pointer into destination */
+  register uchar n;
+  register uchar len;
+  register uchar *rp = NULL;
 
 #define CHECK_DEST_SPACE2(n)  \
   if (d >= dest+(destlen-(n))) {		 	\
@@ -134,7 +134,7 @@ name_unencode2(char *start, size_t slen, char **current, task_error_t *errcode) 
   }
 
   while ((len = *s)) {						/* Get length octet */
-    register unsigned char mask = len & 0xC0;
+    register uchar mask = len & 0xC0;
 
     if (mask == 0xC0) {
       uint16_t current_offset, new_offset;

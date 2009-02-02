@@ -134,7 +134,7 @@ find_rr(
 	TASK *t,
 	MYDNS_SOA *soa,		/* The SOA record for this zone */
 	dns_qtype_t type,	/* The type of record to look for */
-	char *name		/* The name to look for in `zone' */
+	const char *name		/* The name to look for in `zone' */
 ) {
   int errflag = 0;
   MYDNS_RR *rr = NULL;

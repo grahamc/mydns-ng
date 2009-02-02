@@ -153,9 +153,11 @@ typedef struct _named_rrlist {
   RR	       		*tail;			/* Tail of list */
 } RRLIST;
 
-typedef void (*FreeExtension)(/* TASK*, void* */);
-typedef taskexec_t (*RunExtension)(/* TASK*, void* */);
-typedef taskexec_t (*TimeExtension)(/* TASK*, void* */);
+typedef struct _named_task *TASKP;
+
+typedef void (*FreeExtension)(TASKP, void*);
+typedef taskexec_t (*RunExtension)(TASKP, void*);
+typedef taskexec_t (*TimeExtension)(TASKP, void*);
 
 /* TASK: DNS query task */
 typedef struct _named_task {

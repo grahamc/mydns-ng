@@ -31,42 +31,42 @@
 #define	MYDNS_SOA_TABLE	"soa"
 #define	MYDNS_RR_TABLE		"rr"
 
-extern int	opt_daemon;
-extern char	*opt_conf;
-extern uid_t	perms_uid;
-extern gid_t	perms_gid;
+extern int		opt_daemon;
+extern const char	*opt_conf;
+extern uid_t		perms_uid;
+extern gid_t		perms_gid;
 
-extern time_t	task_timeout;			/* Task timeout */
+extern time_t		task_timeout;			/* Task timeout */
 
-extern int	axfr_enabled;			/* Allow AXFR? */
-extern int	tcp_enabled;			/* Enable TCP? */
-extern int	dns_update_enabled;		/* Enable DNS UPDATE? */
-extern int	dns_notify_enabled;		/* Enable DNS NOTIFY? */
-extern int	notify_timeout;
-extern int	notify_retries;
-extern char	*notify_algorithm;
+extern int		axfr_enabled;			/* Allow AXFR? */
+extern int		tcp_enabled;			/* Enable TCP? */
+extern int		dns_update_enabled;		/* Enable DNS UPDATE? */
+extern int		dns_notify_enabled;		/* Enable DNS NOTIFY? */
+extern int		notify_timeout;
+extern int		notify_retries;
+extern const char	*notify_algorithm;
 
-extern int	dns_ixfr_enabled;		/* Enable IXFR functionality */
-extern int	ixfr_gc_enabled;		/* Enable IXFR GC Processing */
-extern uint32_t	ixfr_gc_interval;		/* Run the IXFR GC this often */
-extern uint32_t	ixfr_gc_delay;			/* Delay before running first IXFR GC */
-extern int	ignore_minimum;			/* Ignore minimum TTL? */
-extern char	hostname[256];			/* This machine's hostname */
+extern int		dns_ixfr_enabled;		/* Enable IXFR functionality */
+extern int		ixfr_gc_enabled;		/* Enable IXFR GC Processing */
+extern uint32_t		ixfr_gc_interval;		/* Run the IXFR GC this often */
+extern uint32_t		ixfr_gc_delay;			/* Delay before running first IXFR GC */
+extern int		ignore_minimum;			/* Ignore minimum TTL? */
+extern char		hostname[256];			/* This machine's hostname */
 
-extern int	wildcard_recursion;		/* Number of levels of ancestor to search for wildcards */
+extern int		wildcard_recursion;		/* Number of levels of ancestor to search for wildcards */
 
-extern char	*mydns_dbengine;		/* The db engine to use when creating tables - MySQL only */
+extern const char	*mydns_dbengine;		/* The db engine to use when creating tables - MySQL only */
 
-extern uint32_t answer_then_quit;		/* Answer this many queries then quit */
-extern int	show_data_errors;		/* Output data errors? */
+extern uint32_t 	answer_then_quit;		/* Answer this many queries then quit */
+extern int		show_data_errors;		/* Output data errors? */
 
-extern int	forward_recursive;		/* Forward recursive queries? */
-extern int	recursion_timeout;
-extern int	recursion_connect_timeout;
-extern int	recursion_retries;
-extern char	*recursion_algorithm;
-extern char	*recursive_fwd_server;		/* Name of server for recursive forwarding */
-extern int	recursive_family;		/* Protocol family for recursion */
+extern int		forward_recursive;		/* Forward recursive queries? */
+extern int		recursion_timeout;
+extern int		recursion_connect_timeout;
+extern int		recursion_retries;
+extern const char	*recursion_algorithm;
+extern char		*recursive_fwd_server;		/* Name of server for recursive forwarding */
+extern int		recursive_family;		/* Protocol family for recursion */
 
 #if DEBUG_ENABLED
 extern int		debug_enabled;
@@ -572,7 +572,7 @@ extern MYDNS_RR		*mydns_rr_build(uint32_t, uint32_t, dns_qtype_t, dns_class_t, u
 #endif
 					uint32_t, char *, char *,  uint16_t, const char *);
 extern MYDNS_RR		*mydns_rr_parse(SQL_ROW, unsigned long *, const char *);
-extern char		*mydns_rr_columns();
+extern char		*mydns_rr_columns(void);
 extern char		*mydns_rr_prepare_query(uint32_t, dns_qtype_t, char *,
 						char *, char *, char *, char *);
 extern int		mydns_rr_load_all(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, char *, char *);
@@ -599,7 +599,7 @@ extern long		mydns_soa_count(SQL *);
 extern void		mydns_soa_get_active_types(SQL *);
 extern void		mydns_set_soa_table_name(char *);
 extern void		mydns_set_soa_where_clause(char *);
-extern int		mydns_soa_load(SQL *, MYDNS_SOA **, char *);
+extern int		mydns_soa_load(SQL *, MYDNS_SOA **, const char *);
 extern int		mydns_soa_make(SQL *, MYDNS_SOA **, unsigned char *, unsigned char *);
 extern MYDNS_SOA	*mydns_soa_dup(MYDNS_SOA *, int);
 extern size_t		mydns_soa_size(MYDNS_SOA *);
@@ -630,17 +630,24 @@ extern int		sql_build_query(char **, const char *, ...) __printflike(2,3);
 
 
 /* str.c */
-extern char		*mydns_qtype_str(dns_qtype_t);
-extern char		*mydns_class_str(dns_class_t);
-extern char		*mydns_opcode_str(dns_opcode_t);
-extern char		*mydns_rcode_str(dns_rcode_t);
-extern char		*mydns_section_str(datasection_t);
+extern const char	*mydns_qtype_str(dns_qtype_t);
+extern const char	*mydns_class_str(dns_class_t);
+extern const char	*mydns_opcode_str(dns_opcode_t);
+extern const char	*mydns_rcode_str(dns_rcode_t);
+extern const char	*mydns_section_str(datasection_t);
 extern int		hinfo_parse(char *, char *, char *, size_t);
 
 
 /* unencode.c */
-extern char		*name_unencode(char *, size_t, char *, char *, size_t);
-extern char		*name_unencode2(char *, size_t, char **, task_error_t *);
+extern uchar		*name_unencode(uchar *, size_t, uchar *, uchar *, size_t);
+extern uchar		*name_unencode2(uchar *, size_t, uchar **, task_error_t *);
+
+/* conf.c */
+extern void		load_config(void);
+extern void		dump_config(void);
+extern void		conf_set_logging(void);
+extern void		check_config_file_perms(void);
+
 
 /* db.c */
 extern void		db_connect(void);

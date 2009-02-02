@@ -39,7 +39,7 @@ err_reason_str(TASK *t, task_error_t reason) {
   static char *buf = NULL;
 
   switch (reason) {
-  case ERR_NONE:			return ("-");
+  case ERR_NONE:			return ((char *)"-");
   case ERR_INTERNAL: 			return ((char *)_("Internal_error"));
   case ERR_ZONE_NOT_FOUND: 		return ((char *)_("Zone_not_found"));
   case ERR_NO_MATCHING_RECORDS: 	return ((char *)_("No_matching_resource_records"));

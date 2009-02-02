@@ -47,7 +47,7 @@ strsep_quotes(char **stringp, char *dest, size_t destlen) {
     quote = *begin++;
 
     /* We need to be sure to ignore back-quoted quotation marks in here */
-    for (end = begin; *end && ((d - dest) < destlen - 1); end++) {
+    for (end = begin; *end && ((size_t)(d - dest) < destlen - 1); end++) {
       if (*end == quote)
 	break;
       if ((*end == '\\') && (end > begin) && (end[1] == quote))
@@ -55,7 +55,7 @@ strsep_quotes(char **stringp, char *dest, size_t destlen) {
       *d++ = *end;
     }
   } else {
-    for (end = begin; *end && !isspace(*end) && ((d - dest) < destlen - 1); end++)
+    for (end = begin; *end && !isspace(*end) && ((size_t)(d - dest) < destlen - 1); end++)
       *d++ = *end;
   }
 
@@ -80,7 +80,6 @@ int
 strsep_quotes2(char **stringp, char **dest) {
   register char *end;
   char		*begin = *stringp;
-  char		*d = *dest;
   char		quote = '\0';					/* Quote character found */
   size_t	destlen = 0;
 

@@ -16,7 +16,7 @@
 
 #define DEBUG_MEMMAN 1
 
-static char *
+static const char *
 __mydns_arenaname(arena_t arena) {
   if (arena == ARENA_GLOBAL) { return "global"; }
   if (arena == ARENA_LOCAL) { return "local"; }
@@ -49,7 +49,7 @@ _mydns_vasprintf(char **strp, const char *fmt, va_list ap) {
 }
 
 char *
-_mydns_strdup(const char *s, arena_t arena, char *file, int line) {
+_mydns_strdup(const char *s, arena_t arena, const char *file, int line) {
   char *news = NULL;
 
 #if HAVE_STRDUP
@@ -67,7 +67,7 @@ _mydns_strdup(const char *s, arena_t arena, char *file, int line) {
 }
 
 char *
-_mydns_strndup(const char *s, size_t size, arena_t arena, char *file, int line) {
+_mydns_strndup(const char *s, size_t size, arena_t arena, const char *file, int line) {
   char *news = NULL;
 
 #if HAVE_STRNDUP
@@ -84,7 +84,7 @@ _mydns_strndup(const char *s, size_t size, arena_t arena, char *file, int line) 
 }
 
 void *
-_mydns_allocate(size_t size, size_t count, arena_t arena, char *type, char *file, int line) {
+_mydns_allocate(size_t size, size_t count, arena_t arena, const char *type, const char *file, int line) {
 
   void *newobject = NULL;
   /* We currently ignore arena which is there to allow shared memory or local allocation */
@@ -97,7 +97,7 @@ _mydns_allocate(size_t size, size_t count, arena_t arena, char *type, char *file
 }
 
 void *
-_mydns_reallocate(void *oldobject, size_t size, size_t count, arena_t arena, char *type, char *file, int line) {
+_mydns_reallocate(void *oldobject, size_t size, size_t count, arena_t arena, const char *type, const char *file, int line) {
   void *newobject = NULL;
 
   /* We currently ignore arena which is there to allow shared memory or local allocation */
@@ -110,7 +110,7 @@ _mydns_reallocate(void *oldobject, size_t size, size_t count, arena_t arena, cha
 }
 
 void
-_mydns_release(void *object, size_t count, arena_t arena, char *file, int line) {
+_mydns_release(void *object, size_t count, arena_t arena, const char *file, int line) {
 
   /* We currently ignore arena which is there to allow shared memory or local allocation */
 

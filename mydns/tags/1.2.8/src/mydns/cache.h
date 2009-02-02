@@ -44,23 +44,23 @@
 
 typedef struct _cnode								/* A cache node */
 {
-	uint32_t			hash;								/* Hash value, for lookup when deleting nodes */
-	uint32_t			zone;								/* Zone for record */
+	uint32_t		hash;						/* Hash value, for lookup when deleting nodes */
+	uint32_t		zone;						/* Zone for record */
 
-	dns_qtype_t		type;								/* Record type */
-	int				protocol;						/* Protocol used (SOCK_DGRAM/SOCK_STREAM) */
+	dns_qtype_t		type;						/* Record type */
+	int			protocol;					/* Protocol used (SOCK_DGRAM/SOCK_STREAM) */
 
-	char				name[DNS_MAXNAMELEN + 1];	/* The name to look up */
-	size_t			namelen;							/* strlen(name) */
+	char			name[DNS_MAXNAMELEN + 1];			/* The name to look up */
+	size_t			namelen;					/* strlen(name) */
 
-	void				*data;							/* SOA or RR record or reply data (depending on `type') */
-	size_t			datalen;							/* Length of data */
+	void			*data;						/* SOA or RR record or reply data (depending on `type') */
+	size_t			datalen;					/* Length of data */
 
 	time_t			insert_time;					/* Time record was inserted */
-	time_t			expire;							/* Time after which this node should expire */
+	time_t			expire;						/* Time after which this node should expire */
 
 	struct _cnode *next_node;						/* Pointer to next node in bucket */
-	struct _cnode *mruPrev, *mruNext;			/* Pointer to next/prev node in MRU/LRU list */
+	struct _cnode *mruPrev, *mruNext;					/* Pointer to next/prev node in MRU/LRU list */
 } CNODE;
 
 
@@ -106,10 +106,10 @@ extern CACHE *NegativeCache;						/* Negative zone cache */
 
 extern void cache_status(CACHE *);
 extern void cache_init(void), cache_empty(CACHE *), cache_cleanup(CACHE *);
-extern void	cache_purge_zone(CACHE *, uint32_t);
-extern void *zone_cache_find(TASK *, uint32_t, char *, dns_qtype_t, char *, size_t, int *, MYDNS_SOA *);
+extern void cache_purge_zone(CACHE *, uint32_t);
+extern void *zone_cache_find(TASK *, uint32_t, char *, dns_qtype_t, const char *, size_t, int *, MYDNS_SOA *);
 
-extern int	reply_cache_find(TASK *);
+extern int  reply_cache_find(TASK *);
 extern void add_reply_to_cache(TASK *);
 
 

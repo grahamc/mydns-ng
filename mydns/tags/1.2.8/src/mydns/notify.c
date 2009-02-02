@@ -68,7 +68,7 @@ notify_free(TASK *t, void *data) {
 
 }
 
-typedef time_t (*NotifyAlgorithm)(/* TASK *, NOTIFYSLAVE * */);
+typedef time_t (*NotifyAlgorithm)(TASK *, NOTIFYSLAVE *);
  
 static time_t
 _notify_linear(TASK *t, NOTIFYSLAVE *slave) {
@@ -319,7 +319,7 @@ notify_read(TASK *t) {
 
   do {
     char		*msg = NULL;
-    char		in[DNS_MAXPACKETLEN_UDP];
+    uchar		in[DNS_MAXPACKETLEN_UDP];
     struct sockaddr	from;
     socklen_t 		fromlen = 0;
     TASK		*readT = NULL;
@@ -328,7 +328,7 @@ notify_read(TASK *t) {
 #if DEBUG_ENABLED && DEBUG_NOTIFY
     uint16_t		qdcount = 0, ancount = 0, nscount = 0, arcount = 0;
 #endif
-    char		*src = NULL;
+    uchar		*src = NULL;
     int			port = 0;
 
     memset(&from, 0, sizeof(from));
@@ -370,7 +370,7 @@ notify_read(TASK *t) {
       goto CLEANUP;
     }
 
-    if (rv < DNS_HEADERSIZE) {
+    if (rv < (int)DNS_HEADERSIZE) {
       Warn(_("recvfrom (UDP) for slave %s(%d) too short %dbytes should be > %d"), msg, port, rv, (int)DNS_HEADERSIZE);
       RELEASE(msg);
       continue;
@@ -456,7 +456,6 @@ notify_read(TASK *t) {
       dequeue(readT);
     }
     {
-      int rv = 0;
       struct pollfd item;
 
       item.fd = t->fd;
@@ -584,7 +583,7 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
       if ((row = sql_getrow(res, NULL))) {
 	char *also_notify_servers = row[0];
 	char *also_notify_server = NULL;
-	int scanned = 0;
+	uint scanned = 0;
 
 	if (also_notify_servers) {
 	  while (scanned < strlen(also_notify_servers)) {
@@ -632,7 +631,7 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
 }
 
 int
-name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
+name_servers2ip(TASK *t, ARRAY *name_servers,
 		ARRAY *ips4,
 		ARRAY *ips6
 		) {
@@ -803,7 +802,7 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
       int rv = getaddrinfo(name_server, NULL, NULL, &hostdata);
 
       if (!rv) {
-	int j, k;
+	int k;
 
 	for (hostentry = hostdata; hostentry; hostentry = hostentry->ai_next) {
 	  const char *ipaddress = NULL;
@@ -1060,7 +1059,7 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
 #if HAVE_IPV6
     ARRAY *slavesipv6 = array_init(8);
 #endif
-    int slavecount = name_servers2ip(t, soa, name_servers, slavesipv4,
+    int slavecount = name_servers2ip(t, name_servers, slavesipv4,
 #if HAVE_IPV6
 				     slavesipv6
 #else

@@ -43,7 +43,8 @@
 	(n) = ((uint16_t)t_src[0] << 8) \
 	    | ((uint16_t)t_src[1]) \
 	    ; \
-	(src) += SIZE16; \
+	t_src += SIZE16; \
+	(src) = t_src;	 \
 }
 
 /* Copy value of uint32_t `n' into `dest'; Move `dest' forward to next offset */
@@ -54,7 +55,8 @@
 	    | ((uint32_t)t_src[2] << 8) \
 	    | ((uint32_t)t_src[3]) \
 	    ; \
-	(src) += SIZE32; \
+	t_src += SIZE32; \
+	(src) = t_src; \
 }
 
 /* Copy value of uint16_t `n' into `dest'; Move `dest' forward to next offset */

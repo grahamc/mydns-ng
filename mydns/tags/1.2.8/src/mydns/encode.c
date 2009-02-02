@@ -31,7 +31,7 @@
 	NAME_REMEMBER
 	Adds the specified name + offset to the `Labels' array within the specified task.
 **************************************************************************************************/
-inline int
+int
 name_remember(TASK *t, char *name, unsigned int offset) {
   if (!name || strlen(name) > 64)			/* Don't store labels > 64 bytes in length */
     return (0);

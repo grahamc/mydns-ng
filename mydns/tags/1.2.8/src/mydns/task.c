@@ -65,9 +65,6 @@ static uint32_t		taskvec_masks[] = {
   0x80000000				/* 2^31 */
 };
 
-extern void server_status(void);
-extern void named_cleanup(int);
-
 static uint32_t		internal_id = 0;
 static uint32_t		*taskvec = NULL;
 static int32_t		active_tasks = 0;
@@ -257,7 +254,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
   qdtop = src;
 
   /* Get query name */
-  if (!(qname = (unsigned char*)name_unencode2((char*)t->qd, t->qdlen, (char**)&src, &errcode))) {
+  if (!(qname = name_unencode2((uchar*)t->qd, t->qdlen, (uchar**)&src, &errcode))) {
     Warnx(_("%s: FORMERR in query decoding name"), desctask(t));
     return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
   }

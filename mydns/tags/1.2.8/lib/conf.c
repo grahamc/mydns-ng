@@ -113,7 +113,7 @@ conf_get_option(char *str, char **namep, char **valuep) {
 	Overwrite a value if defaulted.
 **************************************************************************************************/
 void
-conf_clobber(CONF **confp, char *name, char *value) {
+conf_clobber(CONF **confp, const char *name, char *value) {
   CONF *conf = *confp, *c;				/* Start of list/found item */
 
   if (!name || !value)
@@ -133,7 +133,7 @@ conf_clobber(CONF **confp, char *name, char *value) {
 	Sets a configuration value.
 **************************************************************************************************/
 void
-conf_set(CONF **confp, char *name, char *value, int defaulted) {
+conf_set(CONF **confp, const char *name, char *value, int defaulted) {
   CONF *conf = *confp;								/* Start of list */
   CONF *new;									/* New item to add */
   register CONF *c;
@@ -153,7 +153,7 @@ conf_set(CONF **confp, char *name, char *value, int defaulted) {
 	} else {
 	  c->value = REALLOCATE(c->value, strlen(c->value) + strlen(value) + 2, char[]);
 	}
-	strcpy(c->value + strlen(c->value) + 1, value);
+	strcpy((char*)(c->value + strlen(c->value) + 1), (const char*)value);
 	c->value[strlen(c->value)] = CONF_FS_CHAR;
       }
       return;
@@ -177,7 +177,7 @@ conf_set(CONF **confp, char *name, char *value, int defaulted) {
 	Returns the value associated with the specified name.
 **************************************************************************************************/
 char *
-conf_get(CONF **confp, char *name, int *defaulted) {
+conf_get(CONF **confp, const char *name, int *defaulted) {
   CONF *conf = *confp;							/* Start of list */
   register CONF *c;
 
@@ -189,7 +189,7 @@ conf_get(CONF **confp, char *name, int *defaulted) {
 	|| (c->altname && !memcmp(c->altname, name, strlen(c->name)))) {
       if (defaulted)
 	*defaulted = c->defaulted;
-      return (c->value);
+      return ((char*)(c->value));
     }
   return (NULL);
 }

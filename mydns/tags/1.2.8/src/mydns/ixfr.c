@@ -26,12 +26,12 @@
 #define DEBUG_IXFR_SQL 1
 
 typedef struct _ixfr_authority_rr {
-  char			*name;
+  uchar			*name;
   dns_qtype_t		type;
   dns_class_t		class;
   uint32_t		ttl;
-  char			*mname;
-  char			*rname;
+  uchar			*mname;
+  uchar			*rname;
   uint32_t		serial;
   uint32_t		refresh;
   uint32_t		retry;
@@ -45,7 +45,7 @@ typedef struct _ixfr_authority_rr {
 
 typedef struct _ixfr_query {
   /* Zone section */
-  char			*name;				/* The zone name */
+  uchar			*name;				/* The zone name */
   dns_qtype_t		type;				/* Must be DNS_QTYPE_SOA */
   dns_class_t		class;				/* The zone's class */
 
@@ -55,7 +55,7 @@ typedef struct _ixfr_query {
 #define IQ_NAME(__iqp)			((__iqp)->name)
 
 static IQ *
-allocate_iq() {
+allocate_iq(void) {
   IQ *q = ALLOCATE(sizeof(IQ), IQ);
 
   memset(q, 0, sizeof(IQ));
@@ -79,9 +79,9 @@ free_iq(IQ *q) {
   RELEASE(q);
 }
 
-static char *
-ixfr_gobble_authority_rr(TASK *t, MYDNS_SOA *soa, char *query, size_t querylen, char *current, IARR *rr){
-  char * src = current;
+static uchar *
+ixfr_gobble_authority_rr(TASK *t, uchar *query, size_t querylen, uchar *current, IARR *rr){
+  uchar * src = current;
   int rdlength = 0;
   task_error_t errcode = TASK_FAILED;
 
@@ -116,9 +116,9 @@ ixfr_gobble_authority_rr(TASK *t, MYDNS_SOA *soa, char *query, size_t querylen, 
 taskexec_t
 ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncateonly) {
   MYDNS_SOA	*soa = NULL;
-  char		*query = t->query;
+  uchar		*query = (uchar*)t->query;
   int		querylen = t->len;
-  char		*src = query + DNS_HEADERSIZE;
+  uchar		*src = query + DNS_HEADERSIZE;
   IQ		*q = NULL;
   task_error_t	errcode = 0;
 
@@ -184,7 +184,7 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
   DNS_GET16(q->type, src);
   DNS_GET16(q->class, src);
 
-  if (!(src = ixfr_gobble_authority_rr(t, soa, query, querylen, src, &q->IR))) {
+  if (!(src = ixfr_gobble_authority_rr(t, query, querylen, src, &q->IR))) {
     free_iq(q);
     return (TASK_FAILED);
   }
@@ -360,10 +360,10 @@ ixfr_purge_all_soas(TASK *t, void *data) {
   SQL_ROW	row = NULL;
 
   size_t	querylen;
-  char		*QUERY0 =	"SELECT DISTINCT zone FROM %s WHERE active='%s'";
-  char		*QUERY1 = 	"SELECT origin FROM %s "
+  const char	*QUERY0 =	"SELECT DISTINCT zone FROM %s WHERE active='%s'";
+  const char	*QUERY1 = 	"SELECT origin FROM %s "
 				"WHERE id=%u;";
-  char		*QUERY2 =	"DELETE FROM %s WHERE zone=%u AND active='%s' "
+  const char	*QUERY2 =	"DELETE FROM %s WHERE zone=%u AND active='%s' "
 				" AND stamp < DATE_SUB(NOW(),INTERVAL %u SECOND);";
   char		*query = NULL;
 

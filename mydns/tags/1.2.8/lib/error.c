@@ -82,7 +82,7 @@ error_init(const char *argv0, int facility) {
 	Always returns -1.
 **************************************************************************************************/
 static void
-__error_out(int priority, const char *out, int len, char **err_last) {
+__error_out(int priority, const char *out, char **err_last) {
   static int  repeat = 0;
 
   if (err_last) {
@@ -119,26 +119,25 @@ _error_out(
   /* The last error message output, so we don't repeat ourselves */
   static char *err_last = NULL;
   char *out = NULL;
-  int len;
 
   /* Construct 'out' - the output */
 #if SHOW_PID_IN_ERRORS
   if (err_file && errappend)
-    len = ASPRINTF(&out, "%s [%d]: %s: %s", progname, getpid(), msg, strerror(errno));
+    ASPRINTF(&out, "%s [%d]: %s: %s", progname, getpid(), msg, strerror(errno));
   else if (err_file)
-    len = ASPRINTF(&out, "%s [%d]: %s", progname, getpid(), msg);
+    ASPRINTF(&out, "%s [%d]: %s", progname, getpid(), msg);
 #else
   if (err_file && errappend)
-    len = ASPRINTF(&out, "%s: %s: %s", progname, msg, strerror(errno));
+    ASPRINTF(&out, "%s: %s: %s", progname, msg, strerror(errno));
   else if (err_file)
-    len = ASPRINTF(&out, "%s: %s", progname, msg);
+    ASPRINTF(&out, "%s: %s", progname, msg);
 #endif
   else if (errappend)
-    len = ASPRINTF(&out, "%s: %s", msg, strerror(errno));
+    ASPRINTF(&out, "%s: %s", msg, strerror(errno));
   else
-    len = ASPRINTF(&out, "%s", msg);
+    ASPRINTF(&out, "%s", msg);
 
-  __error_out(priority, out, len, &err_last);
+  __error_out(priority, out, &err_last);
 
   RELEASE(out);
 
@@ -147,23 +146,6 @@ _error_out(
     exit(EXIT_FAILURE);
 }
 /*--- _error_out() ------------------------------------------------------------------------------*/
-
-
-/**************************************************************************************************
-   _ERROR_ASSERT_FAIL
-   This is called by the macro "Assert" if an assertion fails.
-**************************************************************************************************/
-void
-_error_assert_fail(const char *assertion) {
-  char *msg = NULL;
-
-  ASPRINTF(&msg, "assertion failed: %s", assertion);
-
-  _error_out(LOG_ERR, 0, 1, msg);
-
-  RELEASE(msg);
-}
-/*--- _error_assert_fail() ----------------------------------------------------------------------*/
 
 
 #if DEBUG_ENABLED
@@ -331,7 +313,7 @@ Err(const char *fmt, ...) {
 
 void
 Out_Of_Memory() {
-  __error_out(LOG_ERR, _("out of memory"), strlen(_("out of memory")), NULL);
+  __error_out(LOG_ERR, _("out of memory"), NULL);
   abort();
 }
 

@@ -71,7 +71,7 @@ array_free(ARRAY *a, int release_contents) {
 void
 array_append(ARRAY *a, void *o) {
 
-  int idx = a->maxidx + 1;
+  size_t idx = a->maxidx + 1;
 
   if (idx >= a->size) {
     a->objects = (void**)REALLOCATE(a->objects, (a->size*2)*sizeof(void*), void*);

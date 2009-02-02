@@ -258,7 +258,6 @@ AC_DEFUN([AC_ENABLE_PROFILING],
 					PROFILE_ENABLED=yes
 					AC_SUBST(PROFILE_ENABLED)
 					AC_C_CFLAGS(-fno-inline-functions)
-					AC_C_CFLAGS(-ffast-math)
 				else
 					AC_MSG_RESULT([no])
 				fi
@@ -284,7 +283,6 @@ AC_DEFUN([AC_ENABLE_VALGRIND],
 					AC_MSG_RESULT([yes])
 					CFLAGS="-O -g"
 					AC_C_CFLAGS(-fno-inline)
-					AC_C_CFLAGS(-ffast-math)
 					AC_C_CFLAGS(-funsigned-char)
 				else
 					AC_MSG_RESULT([no])
@@ -326,7 +324,6 @@ AC_DEFUN([AC_ENABLE_STRICT],
 #					AC_C_CFLAGS(-std=c89)
 #					AC_C_CFLAGS(-pedantic)
 #					AC_C_CFLAGS(-Werror)
-					AC_C_CFLAGS(-ffast-math)
 					AC_C_CFLAGS(-funsigned-char)
 				else
 					AC_MSG_RESULT([no])
@@ -353,16 +350,13 @@ AC_DEFUN([AC_ENABLE_DEBUG],
 					AC_DEFINE(DEBUG_ENABLED, 1, [Compile with support for debugging options?])
 					AC_MSG_RESULT([yes])
 					AC_C_CFLAGS(-fno-inline)
-					AC_C_CFLAGS(-ffast-math)
 					AC_C_CFLAGS(-Wall)
 					AC_C_CFLAGS(-Wno-unused)
 					AC_C_CFLAGS(-Werror)
 				else
 					AC_MSG_RESULT([no])
 					if test -z "$PROFILE_ENABLED"; then
-						AC_C_CFLAGS(-fomit-frame-pointer)
 						AC_C_CFLAGS(-finline-functions)
-						AC_C_CFLAGS(-ffast-math)
 					else
 						LDFLAGS="$LDFLAGS -static"
 					fi
@@ -370,9 +364,7 @@ AC_DEFUN([AC_ENABLE_DEBUG],
 			], [
 				AC_MSG_RESULT([no])
 				if test -z "$PROFILE_ENABLED"; then
-					AC_C_CFLAGS(-fomit-frame-pointer)
 					AC_C_CFLAGS(-finline-functions)
-					AC_C_CFLAGS(-ffast-math)
 				else
 					LDFLAGS="$LDFLAGS -static"
 				fi

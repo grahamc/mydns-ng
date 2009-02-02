@@ -62,7 +62,7 @@ get_serveraddr(struct sockaddr **rsa) {
   return rsalen;
 }
 
-typedef time_t (*RecursionAlgorithm)(/* TASK *, recursive_fwd_write_t * */);
+typedef time_t (*RecursionAlgorithm)(TASK *, recursive_fwd_write_t *);
 
 static time_t
 _recursive_linear(TASK *t, recursive_fwd_write_t *querypacket) {
@@ -244,7 +244,7 @@ __recursive_fwd_setup_query(TASK *t, recursive_fwd_write_t **querypacket) {
 }
 
 static taskexec_t
-__recursive_fwd_write_udp(TASK *t) {
+__recursive_fwd_write_udp(TASK *t, void *data) {
   char			*query = NULL;					/* Query message */
   size_t		querylen = 0;					/* Length of 'query' */
   int			rv = 0, fd = -1;
@@ -301,7 +301,7 @@ __recursive_fwd_write_udp(TASK *t) {
 }
 
 static taskexec_t
-__recursive_fwd_write_tcp(TASK *t) {
+__recursive_fwd_write_tcp(TASK *t, void *data) {
   char			*query = NULL;					/* Query message */
   size_t		querylen = 0;					/* Length of 'query' */
   int			rv = 0, fd = -1;
@@ -409,7 +409,7 @@ __recursive_fwd_write_tcp(TASK *t) {
 
 static int
 __recursive_fwd_read(TASK *t, char *reply, int replylen) {
-  char		*r = NULL;
+  uchar		*r = NULL;
   uint16_t	qdcount = 0, ancount = 0, nscount = 0, arcount = 0;
   DNS_HEADER	hdr;
 
@@ -419,7 +419,7 @@ __recursive_fwd_read(TASK *t, char *reply, int replylen) {
   t->reply = ALLOCATE(replylen, char[]);
 
   /* Preserve incoming id rather than the recursive one */
-  r = t->reply;
+  r = (uchar*)t->reply;
   DNS_PUT16(r, t->id);
 
   /* Copy rest of message across */
@@ -499,12 +499,12 @@ __recursive_fwd_setup_reply(TASK *t, recursive_fwd_read_t **replypacket) {
 }
 
 static taskexec_t
-__recursive_fwd_read_udp(TASK *t) {
+__recursive_fwd_read_udp(TASK *t, void *data) {
   char			*reply = NULL;
   uint16_t		replylen = 0;
   int			rv = 0;
   int			i = 0;
-  char			*src = NULL;
+  uchar			*src = NULL;
   uint16_t		id = 0;
   TASK			*realT = NULL;
   recursive_fwd_read_t	*replypacket = NULL;
@@ -566,7 +566,7 @@ __recursive_fwd_read_udp(TASK *t) {
   }
 
   /* Find the corresponding task on the PERIODIC queue for this operation */
-  src = reply;
+  src = (uchar*)reply;
   DNS_GET16(id, src);
 
   for (i = HIGH_PRIORITY_TASK; i <= LOW_PRIORITY_TASK; i++) {
@@ -598,12 +598,12 @@ __recursive_fwd_read_udp(TASK *t) {
 }
 
 static taskexec_t
-__recursive_fwd_read_tcp(TASK *t) {
+__recursive_fwd_read_tcp(TASK *t, void *data) {
   char			*reply = NULL;
   uint16_t		replylen = 0;
   int			rv = 0;
   int			i = 0;
-  char			*src = NULL;
+  uchar			*src = NULL;
   uint16_t		id = 0;
   TASK			*realT = NULL;
   recursive_fwd_read_t	*replypacket = NULL;
@@ -734,7 +734,7 @@ __recursive_fwd_read_tcp(TASK *t) {
   }
 
   /* Find the corresponding task on the PERIODIC queue for this operation */
-  src = reply;
+  src = (uchar*)reply;
   DNS_GET16(id, src);
 
   for (i = HIGH_PRIORITY_TASK; i <= LOW_PRIORITY_TASK; i++) {
@@ -884,7 +884,7 @@ __recursive_fwd_connect_udp(TASK *t) {
   return TASK_CONTINUE;
 }
 
-taskexec_t
+static taskexec_t
 __recursive_fwd_connect_tcp(TASK *t) {
   int			rv = 0;
   struct sockaddr	*rsa = NULL;
@@ -910,7 +910,7 @@ __recursive_fwd_connect_tcp(TASK *t) {
 #endif
       /* Set up timeout so that reconnect is attempted */
       t->timeout = current_time + recursion_connect_timeout;
-      t->status == NEED_RECURSIVE_FWD_CONNECTING;
+      t->status = NEED_RECURSIVE_FWD_CONNECTING;
       return TASK_CONTINUE;
     }
     Warn("%s: %s %s", desctask(t), _("error connecting to recursive forwarder"),
@@ -923,7 +923,7 @@ __recursive_fwd_connect_tcp(TASK *t) {
   return TASK_CONTINUE;
 }
 
-taskexec_t
+static taskexec_t
 __recursive_fwd_connecting_tcp(TASK *t) {
   int			rv = 0;
   int			fd = -1;
@@ -995,8 +995,8 @@ recursive_fwd_write(TASK *t) {
 
   switch (t->protocol) {
 
-  case SOCK_DGRAM:		return __recursive_fwd_write_udp(t);
-  case SOCK_STREAM:		return __recursive_fwd_write_tcp(t);
+  case SOCK_DGRAM:		return __recursive_fwd_write_udp(t, NULL);
+  case SOCK_STREAM:		return __recursive_fwd_write_tcp(t, NULL);
 
   default:			return dnserror(t, DNS_RCODE_SERVFAIL, ERR_INTERNAL);
 
@@ -1015,8 +1015,8 @@ recursive_fwd_read(TASK *t) {
 
   switch (t->protocol) {
 
-  case SOCK_DGRAM:		return __recursive_fwd_read_udp(t);
-  case SOCK_STREAM:		return __recursive_fwd_read_tcp(t);
+  case SOCK_DGRAM:		return __recursive_fwd_read_udp(t, NULL);
+  case SOCK_STREAM:		return __recursive_fwd_read_tcp(t, NULL);
 
   default:			return dnserror(t, DNS_RCODE_SERVFAIL, ERR_INTERNAL);
 

@@ -42,9 +42,6 @@ int num_udp6_fd = 0;						/* Number of items in 'udp6_fd' */
 int num_tcp6_fd = 0;						/* Number of items in 'tcp6_fd' */
 #endif
 
-extern char	*opt_conf;
-extern uint32_t answer_then_quit;
-
 static void server_greeting(void);
 
 
@@ -252,7 +249,7 @@ addAllInterfaceAddress(const char *address) {
         Clean up the storage held to list all of the local interface addresses
 **************************************************************************************************/
 static void
-freeAllInterfaceAddresses() {
+freeAllInterfaceAddresses(void) {
         while (AllInterfaceAddressesCount--) {
 	  RELEASE(AllInterfaceAddresses[AllInterfaceAddressesCount]);
 	}
@@ -266,7 +263,7 @@ freeAllInterfaceAddresses() {
 	ALL_INTERFACE_ADDRESSES
 **************************************************************************************************/
 char **
-all_interface_addresses() {
+all_interface_addresses(void) {
   return AllInterfaceAddresses;
 }
 /*--- all_interface_addresses() -----------------------------------------------------------------*/
@@ -280,7 +277,9 @@ static ADDRLIST *
 addrlist_load(int port) {
   struct ifconf ifc;
   struct ifreq *ifr = NULL;
-  int sockfd = -1, buflen = 8192, n = 0;
+  int sockfd = -1;
+  uint buflen = 8192;
+  int n = 0;
   char *buf = NULL;
 
   memset(&ifc, 0, sizeof(ifc));
@@ -370,7 +369,7 @@ addrlist_load(int port) {
 /**************************************************************************************************
 	ADDRLIST_FREE
 **************************************************************************************************/
-void
+static void
 addrlist_free(ADDRLIST *Addresses) {
   ADDRLIST *A = NULL, *tmp = NULL;
 
@@ -387,7 +386,7 @@ addrlist_free(ADDRLIST *Addresses) {
 	the addresses.
 **************************************************************************************************/
 static ADDRLIST *
-get_opt_addrlist(ADDRLIST *Addresses, const char *opt, int default_port, char *desc) {
+get_opt_addrlist(ADDRLIST *Addresses, const char *opt, int default_port, const char *desc) {
   int family = -1;					/* Protocol family (AF_INET/AF_INET6) */
   struct in_addr addr4;					/* IPv4 address buffer */
 #if HAVE_IPV6

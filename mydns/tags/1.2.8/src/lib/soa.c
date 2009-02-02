@@ -23,7 +23,7 @@
 char *mydns_soa_table_name = NULL;
 char *mydns_soa_where_clause = NULL;
 
-char *mydns_soa_active_types[] = { "Y", "N" };
+char *mydns_soa_active_types[] = { (char*)"Y", (char*)"N" };
 
 /* Optional columns */
 int mydns_soa_use_active = 0;
@@ -41,8 +41,8 @@ mydns_soa_get_active_types(SQL *sqlConn) {
   int		querylen;
   char 		*query;
 
-  char		*YES = "Y";
-  char		*NO = "N";
+  char		*YES = (char*)"Y";
+  char		*NO = (char*)"N";
 
   querylen = sql_build_query(&query, "SELECT DISTINCT(active) FROM %s LIMIT 1", mydns_soa_table_name);
 
@@ -262,13 +262,13 @@ _mydns_soa_free(MYDNS_SOA *first) {
 	Returns 0 on success or nonzero if an error occurred.
 **************************************************************************************************/
 int
-mydns_soa_load(SQL *sqlConn, MYDNS_SOA **rptr, char *origin) {
+mydns_soa_load(SQL *sqlConn, MYDNS_SOA **rptr, const char *origin) {
   MYDNS_SOA		*first = NULL, *last = NULL;
   size_t		querylen;
   char			*query;
   SQL_RES		*res;
   SQL_ROW		row;
-  char			*c;
+  const char		*c;
 #ifdef DN_COLUMN_NAMES
   int			originlen = strlen(origin);
 #endif

@@ -137,24 +137,16 @@ extern void		*array_remove(ARRAY *);
 extern void		axfr(TASK *);
 extern void		axfr_fork(TASK *);
 
-/* conf.c */
-extern void		load_config(void);
-extern void		dump_config(void);
-extern void		conf_set_logging(void);
-extern void		check_config_file_perms(void);
-
-
 /* data.c */
 extern MYDNS_SOA	*find_soa(TASK *, char *, char *);
 extern MYDNS_SOA	*find_soa2(TASK *, char *, char **);
-extern MYDNS_RR		*find_rr(TASK *, MYDNS_SOA *, dns_qtype_t, char *);
+extern MYDNS_RR		*find_rr(TASK *, MYDNS_SOA *, dns_qtype_t, const char *);
 
 
 /* encode.c */
 extern int		name_remember(TASK *, char *, unsigned int);
 extern void		name_forget(TASK *);
 extern unsigned int	name_find(TASK *, char *);
-extern char		*name_unencode(char *, size_t, char *, char *, size_t);
 extern int		name_encode(TASK *, char *, char *, unsigned int, int);
 extern int		name_encode2(TASK *, char **, char *, unsigned int, int);
 
@@ -171,15 +163,21 @@ extern int		rr_error(uint32_t, const char *, ...) __printflike(2,3);
 
 /* ixfr.c */
 extern taskexec_t	ixfr(TASK *, datasection_t, dns_qtype_t, char *, int);
-extern void		ixfr_start();
+extern void		ixfr_start(void);
+
+/* listen.c */
+extern char 		**all_interface_addresses(void);
+extern void		create_listeners(void);
 
 /* main.c */
-extern struct timeval	*gettick();
+extern struct timeval	*gettick(void);
 extern int		Max_FDs;
 extern void		named_shutdown(int);
 extern void		free_other_tasks(TASK *, int);
 extern SERVER		*find_server_for_task(TASK*);
 extern void		kill_server(SERVER *, int);
+extern void		server_status(void);
+extern void		named_cleanup(int);
 
 /* message.c */
 extern char		*dns_make_message(TASK *, uint16_t, uint8_t, dns_qtype_t,
@@ -202,12 +200,12 @@ typedef struct _notify_slave {
 extern taskexec_t	notify_write(TASK *);
 extern taskexec_t	notify_read(TASK*);
 extern void		notify_slaves(TASK *, MYDNS_SOA *);
-extern void		notify_start();
-extern int		name_servers2ip(TASK *, MYDNS_SOA *, ARRAY *, ARRAY *, ARRAY *);
+extern void		notify_start(void);
+extern int		name_servers2ip(TASK *, ARRAY *, ARRAY *, ARRAY *);
 
 /* queue.c */
 extern QUEUE		*queue_init(char *, char *);
-extern void		queue_stats();
+extern void		queue_stats(void);
 extern int		_enqueue(QUEUE **, TASK *, const char *, unsigned int);
 extern void		_dequeue(QUEUE **, TASK *, const char *, unsigned int);
 extern void		_requeue(QUEUE **, TASK *, const char *, unsigned int);
@@ -286,19 +284,19 @@ extern void		task_remove_extension(TASK *);
 extern void		task_build_reply(TASK *);
 extern void		task_output_info(TASK *, char *);
 extern int		task_process(TASK *, int, int, int);
-extern void		task_start();
+extern void		task_start(void);
 
 
 /* tcp.c */
 extern int		accept_tcp_query(int, int);
 extern taskexec_t	read_tcp_query(TASK *);
 extern taskexec_t	write_tcp_reply(TASK *);
-extern void		tcp_start();
+extern void		tcp_start(void);
 
 /* udp.c */
 extern taskexec_t	read_udp_query(int, int);
 extern taskexec_t	write_udp_reply(TASK *);
-extern void		udp_start();
+extern void		udp_start(void);
 
 /* update.c */
 extern taskexec_t	dns_update(TASK *);

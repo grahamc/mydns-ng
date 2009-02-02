@@ -28,7 +28,7 @@
 #include <grp.h>
 
 int		opt_daemon = 0;				/* Run in background? (-d, --daemon) */
-char		*opt_conf = MYDNS_CONF;			/* Location of config file (-c, --conf) */
+const char	*opt_conf = MYDNS_CONF;			/* Location of config file (-c, --conf) */
 uid_t		perms_uid = 0;				/* User permissions */
 gid_t		perms_gid = 0;				/* Group permissions */
 time_t		task_timeout;				/* Task timeout */
@@ -38,7 +38,7 @@ int		dns_update_enabled = 0;			/* Enable DNS UPDATE? */
 int		dns_notify_enabled = 0;			/* Enable notify */
 int		notify_timeout = 60;
 int		notify_retries = 5;
-char		*notify_algorithm = "linear";
+const char	*notify_algorithm = "linear";
 
 int		dns_ixfr_enabled = 0;			/* Enable IXFR functionality */
 int		ixfr_gc_enabled = 0;			/* Enable IXFR GC */
@@ -50,13 +50,13 @@ int		forward_recursive = 0;			/* Forward recursive queries? */
 int		recursion_timeout = 1;
 int		recursion_connect_timeout = 1;
 int		recursion_retries = 5;
-char		*recursion_algorithm = "linear";
+const char	*recursion_algorithm = "linear";
 char		*recursive_fwd_server = NULL;		/* Name of server for recursive forwarding */
 int		recursive_family = AF_INET;		/* Protocol family for recursion */
 
 int		wildcard_recursion = 0;			/* Search ancestor zones for wildcard matches - count give levels -1 means infinite */
 
-char		*mydns_dbengine = "MyISAM";
+const char	*mydns_dbengine = "MyISAM";
 
 #if DEBUG_ENABLED
 int		debug_enabled = 0;
@@ -106,116 +106,117 @@ struct sockaddr_in	recursive_sa;			/* Recursive server (IPv4) */
 char		*dn_default_ns = NULL;			/* Default NS for directNIC */
 #endif
 
+#define	V_(String)	((char*)(String))
 /*
 **  Default config values
 **
 **  If the 'name' is "-", the --dump-config option treats 'desc' as a header field.
 */
 static CONF defConfig[] = {
-/* name				value				desc	*/
-{	"-",			NULL,				N_("DATABASE INFORMATION")},
-{	"db-host",		"localhost",			N_("SQL server hostname")},
-{	"db-user",		"username",			N_("SQL server username")},
-{	"db-password",		"password",			N_("SQL server password")},
-{	"database",		PACKAGE_NAME,			N_("MyDNS database name")},
+/* name				value					desc										altname		defaulted	next	*/
+  {	"-",			NULL,					N_("DATABASE INFORMATION"),							NULL,		0,		NULL	},
+  {	"db-host",		V_("localhost"),			N_("SQL server hostname"),							NULL,		0,		NULL	},
+  {	"db-user",		V_("username"),				N_("SQL server username"),							NULL,		0,		NULL	},
+  {	"db-password",		V_("password"),				N_("SQL server password"),							NULL,		0,		NULL	},
+  {	"database",		V_(PACKAGE_NAME),			N_("MyDNS database name"),							NULL,		0,		NULL	},
 
-{	"-",			NULL,				N_("GENERAL OPTIONS")},
+  {	"-",			NULL,					N_("GENERAL OPTIONS"),								NULL,		0,		NULL	},
 
-{	"user",			"nobody",			N_("Run with the permissions of this user")},
-{	"group",		"nobody",			N_("Run with the permissions of this group")},
-{	"listen",		"*",				N_("Listen on these addresses ('*' for all)"),	"bind"},
-{	"no-listen",		"",				N_("Do not listen on these addresses")},
+  {	"user",			V_("nobody"),				N_("Run with the permissions of this user"),					NULL,		0,		NULL	},
+  {	"group",		V_("nobody"),				N_("Run with the permissions of this group"),					NULL,		0,		NULL	},
+  {	"listen",		V_("*"),				N_("Listen on these addresses ('*' for all)"),					"bind",		0,		NULL	},
+  {	"no-listen",		V_(""),					N_("Do not listen on these addresses"),						NULL,		0,		NULL	},
 
-{	"-",			NULL,				N_("CACHE OPTIONS")},
+  {	"-",			NULL,					N_("CACHE OPTIONS"),								NULL,		0,		NULL	},
 
-{	"cache-size",		"1024",				N_("Maximum number of elements stored in the data/reply cache")},
-{	"cache-expire",		"60",				N_("Number of seconds after which cached data/replies expire")},
+  {	"cache-size",		V_("1024"),				N_("Maximum number of elements stored in the data/reply cache"),		NULL,		0,		NULL	},
+  {	"cache-expire",		V_("60"),				N_("Number of seconds after which cached data/replies expire"),			NULL,		0,		NULL	},
 
-{	"zone-cache-size",	"1024",				N_("Maximum number of elements stored in the zone cache")},
-{	"zone-cache-expire",	"60",				N_("Number of seconds after which cached zones expires")},
+  {	"zone-cache-size",	V_("1024"),				N_("Maximum number of elements stored in the zone cache"),			NULL,		0,		NULL	},
+  {	"zone-cache-expire",	V_("60"),				N_("Number of seconds after which cached zones expires"),			NULL,		0,		NULL	},
 
-{	"reply-cache-size",	"1024",				N_("Maximum number of elements stored in the reply cache")},
-{	"reply-cache-expire",	"30",				N_("Number of seconds after which cached replies expire")},
+  {	"reply-cache-size",	V_("1024"),				N_("Maximum number of elements stored in the reply cache"),			NULL,		0,		NULL	},
+  {	"reply-cache-expire",	V_("30"),				N_("Number of seconds after which cached replies expire"),			NULL,		0,		NULL	},
 
-{	"-",			NULL,				N_("ESOTERICA")},
-{	"log",			"LOG_DAEMON",			N_("Facility to use for program output (LOG_*/stdout/stderr)")},
-{	"pidfile",		"/var/run/"PACKAGE_NAME".pid",	N_("Path to PID file")},
-{	"timeout",		"120",				N_("Number of seconds after which queries time out")},
-{	"multicpu",		"-1",				N_("Number of CPUs installed on your system - (deprecated)")},
-{	"servers",		"1",				N_("Number of servers to run")},
-{	"recursive",		"",				N_("Location of recursive resolver")},
-{	"recursive-timeout",	"1",				N_("Number of seconds before first retry")},
-{	"recursive-retries",	"5",				N_("Number of retries before abandoning recursion")},
-{	"recursive-algorithm",	"linear",			N_("Recursion retry algorithm one of: linear, exponential, progressive")},
-{	"allow-axfr",		"no",				N_("Should AXFR be enabled?")},
-{	"allow-tcp",		"no",				N_("Should TCP be enabled?")},
-{	"allow-update",		"no",				N_("Should DNS UPDATE be enabled?")},
-{	"ignore-minimum",	"no",				N_("Ignore minimum TTL for zone?")},
-{	"soa-table",		MYDNS_SOA_TABLE,		N_("Name of table containing SOA records")},
-{	"rr-table",		MYDNS_RR_TABLE,			N_("Name of table containing RR data")},
-{	"use-soa-active",	"no",				N_("Use the soa active attribute if provided")},
-{	"use-rr-active",	"no",				N_("Use the rr active attribute if provided")},
-{	"notify-enabled",	"no",				N_("Enable notify from updates")},
-{	"notify-source",	"0.0.0.0",			N_("Source address for ipv4 notify messages")},
-{	"notify-source6",	"::",				N_("Source address for ipv6 notify messages")},
-{	"notify-timeout",	"60",				N_("Number of seconds before first retry")},
-{	"notify-retries",	"5",				N_("Number of retries before abandoning notify")},
-{	"notify-algorithm",	"linear",			N_("Notify retry algorithm one of: linear, exponential, progressive")},
-{	"ixfr-enabled",		"no",				N_("Enable IXFR functionality")},
-{	"ixfr-gc-enabled",	"no",				N_("Enable IXFR GC functionality")},
-{	"ixfr-gc-interval",	"86400",			N_("How often to run GC for IXFR")},
-{	"ixfr-gc-delay",	"600",				N_("Delay until first IXFR GC runs")},
-{	"extended-data-support","no",				N_("Support extended data fields for large TXT records")},
-{	"dbengine",		"MyISAM",			N_("Support different database engines")},
-{	"wildcard-recursion",	"0",				N_("Wildcard ancestor search levels")},
+  {	"-",			NULL,					N_("ESOTERICA"),								NULL,		0,		NULL	},
+  {	"log",			V_("LOG_DAEMON"),			N_("Facility to use for program output (LOG_*/stdout/stderr)"),			NULL,		0,		NULL	},
+  {	"pidfile",		V_("/var/run/"PACKAGE_NAME".pid"),	N_("Path to PID file"),								NULL,		0,		NULL	},
+  {	"timeout",		V_("120"),				N_("Number of seconds after which queries time out"),				NULL,		0,		NULL	},
+  {	"multicpu",		V_("-1"),				N_("Number of CPUs installed on your system - (deprecated)"),			NULL,		0,		NULL	},
+  {	"servers",		V_("1"),				N_("Number of servers to run"),							NULL,		0,		NULL	},
+  {	"recursive",		V_(""),					N_("Location of recursive resolver"),						NULL,		0,		NULL	},
+  {	"recursive-timeout",	V_("1"),				N_("Number of seconds before first retry"),					NULL,		0,		NULL	},
+  {	"recursive-retries",	V_("5"),				N_("Number of retries before abandoning recursion"),				NULL,		0,		NULL	},
+  {	"recursive-algorithm",	V_("linear"),				N_("Recursion retry algorithm one of: linear, exponential, progressive"),	NULL,		0,		NULL	},
+  {	"allow-axfr",		V_("no"),				N_("Should AXFR be enabled?"),							NULL,		0,		NULL	},
+  {	"allow-tcp",		V_("no"),				N_("Should TCP be enabled?"),							NULL,		0,		NULL	},
+  {	"allow-update",		V_("no"),				N_("Should DNS UPDATE be enabled?"),						NULL,		0,		NULL	},
+  {	"ignore-minimum",	V_("no"),				N_("Ignore minimum TTL for zone?"),						NULL,		0,		NULL	},
+  {	"soa-table",		V_(MYDNS_SOA_TABLE),			N_("Name of table containing SOA records"),					NULL,		0,		NULL	},
+  {	"rr-table",		V_(MYDNS_RR_TABLE),			N_("Name of table containing RR data"),						NULL,		0,		NULL	},
+  {	"use-soa-active",	V_("no"),				N_("Use the soa active attribute if provided"),					NULL,		0,		NULL	},
+  {	"use-rr-active",	V_("no"),				N_("Use the rr active attribute if provided"),					NULL,		0,		NULL	},
+  {	"notify-enabled",	V_("no"),				N_("Enable notify from updates"),						NULL,		0,		NULL	},
+  {	"notify-source",	V_("0.0.0.0"),				N_("Source address for ipv4 notify messages"),					NULL,		0,		NULL	},
+  {	"notify-source6",	V_("::"),				N_("Source address for ipv6 notify messages"),					NULL,		0,		NULL	},
+  {	"notify-timeout",	V_("60"),				N_("Number of seconds before first retry"),					NULL,		0,		NULL	},
+  {	"notify-retries",	V_("5"),				N_("Number of retries before abandoning notify"),				NULL,		0,		NULL	},
+  {	"notify-algorithm",	V_("linear"),				N_("Notify retry algorithm one of: linear, exponential, progressive"),		NULL,		0,		NULL	},
+  {	"ixfr-enabled",		V_("no"),				N_("Enable IXFR functionality"),						NULL,		0,		NULL	},
+  {	"ixfr-gc-enabled",	V_("no"),				N_("Enable IXFR GC functionality"),						NULL,		0,		NULL	},
+  {	"ixfr-gc-interval",	V_("86400"),				N_("How often to run GC for IXFR"),						NULL,		0,		NULL	},
+  {	"ixfr-gc-delay",	V_("600"),				N_("Delay until first IXFR GC runs"),						NULL,		0,		NULL	},
+  {	"extended-data-support",V_("no"),				N_("Support extended data fields for large TXT records"),			NULL,		0,		NULL	},
+  {	"dbengine",		V_("MyISAM"),				N_("Support different database engines"),					NULL,		0,		NULL	},
+  {	"wildcard-recursion",	V_("0"),				N_("Wildcard ancestor search levels"),						NULL,		0,		NULL	},
 
 #ifdef DN_COLUMN_NAMES
-{	"default-ns",		"ns0.example.com.",		N_("Default nameserver for all zones")},
+  {	"default-ns",		V_("ns0.example.com."),			N_("Default nameserver for all zones"),						NULL,		0,		NULL	},
 #endif
 
-{	"soa-where",		"",				N_("Extra WHERE clause for SOA queries")},
-{	"rr-where",		"",				N_("Extra WHERE clause for RR queries")},
+  {	"soa-where",		V_(""),					N_("Extra WHERE clause for SOA queries"),					NULL,		0,		NULL	},
+  {	"rr-where",		V_(""),					N_("Extra WHERE clause for RR queries"),					NULL,		0,		NULL	},
 
 #if DEBUG_ENABLED
-{	"debug-enabled",	"0",				N_("Enable debug output from the config")},
+  {	"debug-enabled",	V_("0"),				N_("Enable debug output from the config"),					NULL,		0,		NULL	},
 
-{	"debug-all",		"0",				N_("Enable all debug output from the config")},
+  {	"debug-all",		V_("0"),				N_("Enable all debug output from the config"),					NULL,		0,		NULL	},
 
-{	"debug-alias",		"0",				N_("Enable ALIAS code debugging")},
-{	"debug-array",		"0",				N_("Enable ARRAY code debugging")},
-{	"debug-axfr",		"0",				N_("Enable AXFR code debugging")},
-{	"debug-cache",		"0",				N_("Enable CACHE code debugging")},
-{	"debug-conf",		"0",				N_("Enable CONF code debugging")},
-{	"debug-data",		"0",				N_("Enable DATA code debugging")},
-{	"debug-db",		"0",				N_("Enable DB code debugging")},
-{	"debug-encode",		"0",				N_("Enable ENCODE code debugging")},
-{	"debug-error",		"0",				N_("Enable ERROR code debugging")},
-{	"debug-ixfr",		"0",				N_("Enable IXFR code debugging")},
-{	"debug-ixfr-sql",	"0",				N_("Enable IXFR SQL code debugging")},
-{	"debug-lib-rr",		"0",				N_("Enable LIB/RR code debugging")},
-{	"debug-lib-soa",	"0",				N_("Enable LIB/SOA code debugging")},
-{	"debug-listen",		"0",				N_("Enable LISTEN code debugging")},
-{	"debug-memman",		"0",				N_("Enable MEMMAN code debugging")},
-{	"debug-notify",		"0",				N_("Enable NOTIFY code debugging")},
-{	"debug-notify-sql",	"0",				N_("Enable NOTIFY SQL code debugging")},
-{	"debug-queue",		"0",				N_("Enable QUEUE code debugging")},
-{	"debug-recursive",	"0",				N_("Enable RECURSIVE code debugging")},
-{	"debug-reply",		"0",				N_("Enable REPLY code debugging")},
-{	"debug-resolve",	"0",				N_("Enable RESOLVE code debugging")},
-{	"debug-rr",		"0",				N_("Enable RR code debugging")},
-{	"debug-servercomms",	"0",				N_("Enable SERVERCOMMS code debugging")},
-{	"debug-sort",		"0",				N_("Enable SORT code debugging")},
-{	"debug-sql",		"0",				N_("Enable SQL code debugging")},
-{	"debug-sql-sueries",	"0",				N_("Enable SQL QUERIES code debugging")},
-{	"debug-status",		"0",				N_("Enable STATUS code debugging")},
-{	"debug-task",		"0",				N_("Enable TASK code debugging")},
-{	"debug-tcp",		"0",				N_("Enable TCP code debugging")},
-{	"debug-udp",		"0",				N_("Enable UDP code debugging")},
-{	"debug-update",		"0",				N_("Enable UPDATE code debugging")},
-{	"debug-update-sql",	"0",				N_("Enable UPDATE SQL code debugging")},
+  {	"debug-alias",		V_("0"),				N_("Enable ALIAS code debugging"),						NULL,		0,		NULL	},
+  {	"debug-array",		V_("0"),				N_("Enable ARRAY code debugging"),						NULL,		0,		NULL	},
+  {	"debug-axfr",		V_("0"),				N_("Enable AXFR code debugging"),						NULL,		0,		NULL	},
+  {	"debug-cache",		V_("0"),				N_("Enable CACHE code debugging"),						NULL,		0,		NULL	},
+  {	"debug-conf",		V_("0"),				N_("Enable CONF code debugging"),						NULL,		0,		NULL	},
+  {	"debug-data",		V_("0"),				N_("Enable DATA code debugging"),						NULL,		0,		NULL	},
+  {	"debug-db",		V_("0"),				N_("Enable DB code debugging"),							NULL,		0,		NULL	},
+  {	"debug-encode",		V_("0"),				N_("Enable ENCODE code debugging"),						NULL,		0,		NULL	},
+  {	"debug-error",		V_("0"),				N_("Enable ERROR code debugging"),						NULL,		0,		NULL	},
+  {	"debug-ixfr",		V_("0"),				N_("Enable IXFR code debugging"),						NULL,		0,		NULL	},
+  {	"debug-ixfr-sql",	V_("0"),				N_("Enable IXFR SQL code debugging"),						NULL,		0,		NULL	},
+  {	"debug-lib-rr",		V_("0"),				N_("Enable LIB/RR code debugging"),						NULL,		0,		NULL	},
+  {	"debug-lib-soa",	V_("0"),				N_("Enable LIB/SOA code debugging"),						NULL,		0,		NULL	},
+  {	"debug-listen",		V_("0"),				N_("Enable LISTEN code debugging"),						NULL,		0,		NULL	},
+  {	"debug-memman",		V_("0"),				N_("Enable MEMMAN code debugging"),						NULL,		0,		NULL	},
+  {	"debug-notify",		V_("0"),				N_("Enable NOTIFY code debugging"),						NULL,		0,		NULL	},
+  {	"debug-notify-sql",	V_("0"),				N_("Enable NOTIFY SQL code debugging"),						NULL,		0,		NULL	},
+  {	"debug-queue",		V_("0"),				N_("Enable QUEUE code debugging"),						NULL,		0,		NULL	},
+  {	"debug-recursive",	V_("0"),				N_("Enable RECURSIVE code debugging"),						NULL,		0,		NULL	},
+  {	"debug-reply",		V_("0"),				N_("Enable REPLY code debugging"),						NULL,		0,		NULL	},
+  {	"debug-resolve",	V_("0"),				N_("Enable RESOLVE code debugging"),						NULL,		0,		NULL	},
+  {	"debug-rr",		V_("0"),				N_("Enable RR code debugging"),							NULL,		0,		NULL	},
+  {	"debug-servercomms",	V_("0"),				N_("Enable SERVERCOMMS code debugging"),					NULL,		0,		NULL	},
+  {	"debug-sort",		V_("0"),				N_("Enable SORT code debugging"),						NULL,		0,		NULL	},
+  {	"debug-sql",		V_("0"),				N_("Enable SQL code debugging"),						NULL,		0,		NULL	},
+  {	"debug-sql-sueries",	V_("0"),				N_("Enable SQL QUERIES code debugging"),					NULL,		0,		NULL	},
+  {	"debug-status",		V_("0"),				N_("Enable STATUS code debugging"),						NULL,		0,		NULL	},
+  {	"debug-task",		V_("0"),				N_("Enable TASK code debugging"),						NULL,		0,		NULL	},
+  {	"debug-tcp",		V_("0"),				N_("Enable TCP code debugging"),						NULL,		0,		NULL	},
+  {	"debug-udp",		V_("0"),				N_("Enable UDP code debugging"),						NULL,		0,		NULL	},
+  {	"debug-update",		V_("0"),				N_("Enable UPDATE code debugging"),						NULL,		0,		NULL	},
+  {	"debug-update-sql",	V_("0"),				N_("Enable UPDATE SQL code debugging"),						NULL,		0,		NULL	},
 #endif
 
-{	NULL,			NULL,				NULL}
+  {	NULL,			NULL,				NULL,										NULL,		0,		NULL	}
 };
 
 
@@ -288,7 +289,7 @@ dump_config(void) {
 
     /* Pick between "nobody" and "nogroup" for default group */
     if (!strcasecmp(c->name, "group") && getgrnam("nogroup"))
-      c->value = "nogroup";
+      c->value = V_("nogroup");
 
     /* If cache-size/cache-expire are set, copy values into data/reply-cache-size */
     if (!strcasecmp(c->name, "cache-size")) {
@@ -391,7 +392,7 @@ check_config_file_perms(void) {
 	CONF_SET_RECURSIVE
 	If the 'recursive' configuration option was specified, set the recursive server.
 **************************************************************************************************/
-void
+static void
 conf_set_recursive(void) {
   char	*c, *address = conf_get(&Conf, "recursive", NULL), addr[512];
   int	port = 53;

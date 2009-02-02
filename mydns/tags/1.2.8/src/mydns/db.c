@@ -240,7 +240,7 @@ db_sql_numrows(const char *fmt, ...) {
 	Fatal if the column does not exist.
 **************************************************************************************************/
 static void
-db_check_column(char *database, char *table, char *name) {
+db_check_column(const char *database, const char *table, const char *name) {
   if (!sql_iscolumn(sql, table, name)) {
     Warnx(_("Required column `%s' in table `%s' (database `%s') not found or inaccessible"),
 	  name, table, database);
@@ -251,9 +251,9 @@ db_check_column(char *database, char *table, char *name) {
 }
 /*--- db_check_column() -------------------------------------------------------------------------*/
 
-static int
-db_get_column_width(char *database, char *table, char *name) {
-  int width = sql_get_column_width(sql, table, name);
+static uint
+db_get_column_width(const char *table, const char *name) {
+  uint width = sql_get_column_width(sql, table, name);
 
   return width;
 }
@@ -263,7 +263,7 @@ db_get_column_width(char *database, char *table, char *name) {
 	Verifies each column in a comma-separated list.
 **************************************************************************************************/
 static void
-db_verify_table(char *database, char *table, char *columns) {
+db_verify_table(const char *database, const char *table, const char *columns) {
   char *fields = NULL, *f = NULL, *name = NULL;
 
   /* Check that the table itself exists */
@@ -290,7 +290,7 @@ db_verify_table(char *database, char *table, char *columns) {
 **************************************************************************************************/
 static void
 db_check_ptr_table(const char *database) {
-  char *table = conf_get(&Conf, "ptr-table", NULL);
+  const char *table = conf_get(&Conf, "ptr-table", NULL);
 
   if (!table)
     table = "ptr";
@@ -327,7 +327,7 @@ db_verify_tables(void) {
   db_check_ptr_table(database);
 
   {
-    int width = db_get_column_width(database, mydns_rr_table_name, "data");
+    uint width = db_get_column_width(mydns_rr_table_name, "data");
     mydns_rr_data_length = (width)?width:mydns_rr_data_length;
   }
 

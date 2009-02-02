@@ -45,11 +45,12 @@ int mydns_rr_use_active = 0;
 int mydns_rr_use_stamp = 0;
 int mydns_rr_use_serial = 0;
 
-char *mydns_rr_active_types[] = { "Y", "N", "D" };
+char *mydns_rr_active_types[] = { (char*)"Y", (char*)"N", (char*)"D" };
 
 /* Make this nonzero to enable debugging within this source file */
 #define	DEBUG_LIB_RR	1
 
+#if DEBUG_ENABLED
 void *
 __mydns_rr_assert_pointer(void *ptr, char *fieldname, char *filename, int linenumber) {
 #if DEBUG_ENABLED && DEBUG_LIB_RR
@@ -57,13 +58,12 @@ __mydns_rr_assert_pointer(void *ptr, char *fieldname, char *filename, int linenu
 	 fieldname, filename, linenumber);
 #endif
   if (ptr != NULL) return ptr;
-#if DEBUG_ENABLED
   DebugX("lib-rr", 1, _("%s Pointer is NULL at %s:%d"),
 	 fieldname, filename, linenumber);
   abort();
-#endif
   return ptr;
 }
+#endif
 
 void
 mydns_rr_get_active_types(SQL *sqlConn) {
@@ -72,9 +72,9 @@ mydns_rr_get_active_types(SQL *sqlConn) {
   int 		querylen;
   char		*query;
 
-  char		*YES = "Y";
-  char		*NO = "N";
-  char		*DELETED = "D";
+  char		*YES = (char*)"Y";
+  char		*NO = (char*)"N";
+  char		*DELETED = (char*)"D";
 
   querylen = sql_build_query(&query, "SELECT DISTINCT(active) FROM %s", mydns_rr_table_name);
 
@@ -384,7 +384,7 @@ mydns_rr_data_append_origin(MYDNS_RR *rr, char *origin) {
 	_MYDNS_RR_FREE
 	Frees the pointed-to structure.	Don't call this function directly, call the macro.
 **************************************************************************************************/
-inline void
+void
 _mydns_rr_free(MYDNS_RR *first) {
   register MYDNS_RR *p, *tmp;
 
@@ -767,7 +767,7 @@ mydns_rr_prepare_query(uint32_t zone, dns_qtype_t type, char *name, char *origin
   size_t	querylen;
   char		*query = NULL;
   char		*namequery = NULL;
-  char		*wheretype;
+  const char	*wheretype;
   char		*cp;
 #ifdef DN_COLUMN_NAMES
   int		originlen = origin ? strlen(origin) : 0;
@@ -899,7 +899,7 @@ mydns_rr_prepare_query(uint32_t zone, dns_qtype_t type, char *name, char *origin
   return (query);
 }
 			 
-int __mydns_rr_do_load(SQL *sqlConn, MYDNS_RR **rptr, char *query, char *origin) {
+static int __mydns_rr_do_load(SQL *sqlConn, MYDNS_RR **rptr, char *query, char *origin) {
   MYDNS_RR	*first = NULL, *last = NULL;
   char		*cp;
   SQL_RES	*res;
@@ -956,7 +956,7 @@ int __mydns_rr_do_load(SQL *sqlConn, MYDNS_RR **rptr, char *query, char *origin)
   return (0);
 }
 
-int
+static int
 __mydns_rr_count(SQL *sqlConn, uint32_t zone,
 		 dns_qtype_t type, char *name, char *origin, char *active, char *filter) {
   char		*query = NULL;
@@ -965,7 +965,7 @@ __mydns_rr_count(SQL *sqlConn, uint32_t zone,
   SQL_RES	*res;
   SQL_ROW	row;
 
-  query = mydns_rr_prepare_query(zone, type, name, origin, active, "COUNT(*)", filter);
+  query = mydns_rr_prepare_query(zone, type, name, origin, active, (char*)"COUNT(*)", filter);
 
   if (!query || !(res = sql_query(sqlConn, query, strlen(query)))) {
     WarnSQL(sqlConn, _("error processing count with filter %s"), filter);
@@ -984,7 +984,7 @@ __mydns_rr_count(SQL *sqlConn, uint32_t zone,
   return result;
 }
 
-int 
+static int 
 __mydns_rr_load(SQL *sqlConn, MYDNS_RR **rptr, uint32_t zone,
 		dns_qtype_t type, char *name, char *origin, char *active, char *filter) {
   char		*query = NULL;

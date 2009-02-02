@@ -391,22 +391,21 @@ extern int in_cidr(char *cidr, struct in_addr ip);
 **  Routines to load the configuration file
 */
 /* Generic structure for holding name/value pairs */
-typedef struct _conflist
-{
-	char	*name;		/* Name of option */
-	char	*value;		/* Value for this option */
-	char	*desc;		/* Description of this option */
-	char	*altname;	/* Alternate name for this option */
-	int	defaulted;	/* This variable was defaulted; not actually in config file */
-	struct _conflist *next;
+typedef struct _conflist {
+  const char	*name;		/* Name of option */
+  char		*value;		/* Value for this option */
+  const char	*desc;		/* Description of this option */
+  const char	*altname;	/* Alternate name for this option */
+  int		defaulted;	/* This variable was defaulted; not actually in config file */
+  struct _conflist *next;
 } CONF;
 
 #define	CONF_FS_CHAR	'\034'
 #define	CONF_FS_STR		"\034"
 
-extern void	conf_clobber(CONF **, char *, char *);
-extern void	conf_set(CONF **, char *, char *, int);
-extern char	*conf_get(CONF **, char *, int *);
+extern void	conf_clobber(CONF **, const char *, char *);
+extern void	conf_set(CONF **, const char *, char *, int);
+extern char	*conf_get(CONF **, const char *, int *);
 extern void	conf_load(CONF **, const char *);
 
 #define MEMMAN 1
@@ -423,9 +422,9 @@ extern void	conf_load(CONF **, const char *);
 #define __ALLOCATE__(SIZE, THING, COUNT, ARENA)	\
   _mydns_allocate(SIZE, COUNT, ARENA, "##THING##", __FILE__, __LINE__)
 #define __REALLOCATE__(OBJECT, SIZE, THING, COUNT, ARENA) \
-  _mydns_reallocate(OBJECT, SIZE, COUNT, ARENA, "##THING##", __FILE__, __LINE__)
+  _mydns_reallocate((void*)(OBJECT), SIZE, COUNT, ARENA, "##THING##", __FILE__, __LINE__)
 #define __RELEASE__(OBJECT, COUNT, ARENA) \
-  _mydns_release(OBJECT, COUNT, ARENA, __FILE__, __LINE__), (OBJECT) = NULL
+  _mydns_release((void*)(OBJECT), COUNT, ARENA, __FILE__, __LINE__), (OBJECT) = NULL
 
 #define STRDUP(__STRING__)		_mydns_strdup(__STRING__, ARENA_GLOBAL, __FILE__, __LINE__)
 #define STRNDUP(__STRING__, __LENGTH__) _mydns_strndup(__STRING__, __LENGTH__, ARENA_GLOBAL, __FILE__, __LINE__)
@@ -446,11 +445,11 @@ typedef enum _arena_t {
 
 extern int	_mydns_asprintf(char **strp, const char *fmt, ...);
 extern int	_mydns_vasprintf(char **strp, const char *fmt, va_list ap);
-extern char *	_mydns_strdup(const char *, arena_t, char *, int);
-extern char *	_mydns_strndup(const char *, size_t, arena_t, char *, int);
-extern void *	_mydns_allocate(size_t, size_t, arena_t, char *, char *, int);
-extern void *	_mydns_reallocate(void *, size_t, size_t, arena_t, char *, char *, int);
-extern void	_mydns_release(void *, size_t, arena_t, char *, int);
+extern char *	_mydns_strdup(const char *, arena_t, const char *, int);
+extern char *	_mydns_strndup(const char *, size_t, arena_t, const char *, int);
+extern void *	_mydns_allocate(size_t, size_t, arena_t, const char *, const char *, int);
+extern void *	_mydns_reallocate(void *, size_t, size_t, arena_t, const char *, const char *, int);
+extern void	_mydns_release(void *, size_t, arena_t, const char *, int);
 
 #define ALLOCATE_GLOBAL(SIZE, THING) \
   __ALLOCATE__(SIZE, THING, 1, ARENA_GLOBAL)
@@ -507,7 +506,7 @@ extern int		err_debug;			/* Should ERR_DEBUG output anything? */
 #endif
 extern FILE		*err_file;			/* Output to this file */
 
-extern void		error_reinit();
+extern void		error_reinit(void);
 extern void		error_init(const char *argv0, int facility);
 #if DEBUG_ENABLED
 extern void		Debug(const char *, ...) __printflike(1,2);
@@ -519,7 +518,7 @@ extern int		Warn(const char *, ...) __printflike(1,2);
 extern int		Warnx(const char *, ...) __printflike(1,2);
 extern void		Err(const char *, ...) __printflike(1,2);
 extern void		Errx(const char *, ...) __printflike(1,2);
-extern void		Out_Of_Memory();
+extern void		Out_Of_Memory(void);
 
 #if USE_PGSQL
 extern int		WarnSQL(PGconn *, const char *, ...) __printflike(2,3);

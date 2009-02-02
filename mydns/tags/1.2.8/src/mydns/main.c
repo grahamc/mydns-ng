@@ -51,14 +51,12 @@ int		show_data_errors = 1;		/* Output data errors? */
 
 SERVERSTATUS	Status;				/* Server status information */
 
-extern void	create_listeners(void);
 
-
-typedef void (*INITIALTASKSTART)();
+typedef void (*INITIALTASKSTART)(void);
 
 typedef struct {
   INITIALTASKSTART start;
-  char *subsystem;
+  const char *subsystem;
 } INITIALTASK;
 
 INITIALTASK	master_initial_tasks[] = {
@@ -418,7 +416,7 @@ kill_server(SERVER *server, int sig) {
 	SIGUSR1
 	Outputs server stats.
 **************************************************************************************************/
-void
+static void
 master_sigusr1(int dummy) {
   int n = 0;
   for (n = 0; n < array_numobjects(Servers); n++)
@@ -426,7 +424,7 @@ master_sigusr1(int dummy) {
   got_sigusr1 = 0;
 }
 
-void
+static void
 sigusr1(int dummy) {
   server_status();
   got_sigusr1 = 0;
@@ -438,7 +436,7 @@ sigusr1(int dummy) {
 	SIGUSR2
 	Outputs cache stats.
 **************************************************************************************************/
-void
+static void
 master_sigusr2(int dummy) {
   int n = 0;
   for (n = 0; n < array_numobjects(Servers); n++)
@@ -446,7 +444,7 @@ master_sigusr2(int dummy) {
   got_sigusr2 = 0;
 }
 
-void
+static void
 sigusr2(int dummy) {
   cache_status(ZoneCache);
 #if USE_NEGATIVE_CACHE
@@ -461,7 +459,7 @@ sigusr2(int dummy) {
 /**************************************************************************************************
 	SIGHUP
 **************************************************************************************************/
-void
+static void
 master_sighup(int dummy) {
   int n = 0;
   for (n = 0; n < array_numobjects(Servers); n++)
@@ -469,7 +467,7 @@ master_sighup(int dummy) {
   got_sighup = 0;
 }
 
-void
+static void
 sighup(int dummy) {
 
   cache_empty(ZoneCache);
@@ -487,7 +485,7 @@ sighup(int dummy) {
 /**************************************************************************************************
 	SIGNAL_HANDLER
 **************************************************************************************************/
-void
+static void
 signal_handler(int signo) {
   switch (signo) {
   case SIGHUP:
@@ -525,7 +523,7 @@ close_task_queue(QUEUE *TaskP) {
 }
 
 static void
-free_all_tasks() {
+free_all_tasks(void) {
   int i = 0, j = 0;
 
   for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
@@ -620,7 +618,7 @@ named_shutdown(int signo) {
 
 }
 
-void
+static void
 master_shutdown(int signo) {
   int i = 0, m = 0, n = 0, status = 0, running_procs = 0;
 
@@ -694,7 +692,7 @@ master_shutdown(int signo) {
 	CHILD_CLEANUP
 **************************************************************************************************/
 static int
-reap_child() {
+reap_child(void) {
   int status = 0;
   int pid = -1;
 
@@ -1030,7 +1028,7 @@ run_tasks(struct pollfd items[], int numfds) {
 }
 
 static void
-purge_bad_tasks() {
+purge_bad_tasks(void) {
   /* Find out which task has an invalid fd and kill it */
   int i = 0, j = 0;
   TASK *t = NULL, *next_task = NULL;
