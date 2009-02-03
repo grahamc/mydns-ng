@@ -24,17 +24,11 @@
 #include <netdb.h>
 
 static char *thishostname, *zone;			/* Hostname of remote host and zone */
-static char *origin = NULL;				/* The origin name reported by the peer */
+static uchar *origin = NULL;				/* The origin name reported by the peer */
 static uint32_t got_soa = 0;				/* Have we read the initial SOA record? */
 
 extern int opt_notrim;					/* Don't remove trailing origin */
 extern int opt_output;					/* Output instead of insert */
-
-extern uint32_t import_soa(const char *import_origin, const char *ns, const char *mbox,
-	unsigned serial, unsigned refresh, unsigned retry, unsigned expire,
-	unsigned minimum, unsigned ttl);
-extern void import_rr(char *name, char *type, char *data, int datalen, unsigned aux, unsigned ttl);
-
 
 /**************************************************************************************************
 	AXFR_CONNECT
@@ -98,7 +92,7 @@ axfr_connect(char *hostportp, char **hostnamep) {
 	Creates a question.  Returns the packet and stores the length of the packet in `packetlen'.
 	The packet is dynamically allocated and should be free()'d.
 **************************************************************************************************/
-char *
+static char *
 make_question(uint16_t id, dns_qtype_t qtype, char *name, size_t *packetlen) {
   char req[1024], *dest = req, *c;
   DNS_HEADER	header;
@@ -152,12 +146,13 @@ make_question(uint16_t id, dns_qtype_t qtype, char *name, size_t *packetlen) {
 	Constructs and sends the AXFR request packet.
 **************************************************************************************************/
 static void
-request_axfr(int fd, char *rem_hostname, char *zone) {
+request_axfr(int fd, char *rem_hostname, char *local_zone) {
   char		*qb, *q, *p;
   size_t	qlen;
-  int		rv, off = 0;
+  int		rv;
+  size_t	off = 0;
 
-  if (!(qb = make_question(getpid(), DNS_QTYPE_AXFR, zone, &qlen)))
+  if (!(qb = make_question(getpid(), DNS_QTYPE_AXFR, local_zone, &qlen)))
     exit(EXIT_FAILURE);
   p = q = ALLOCATE(qlen + SIZE16, char[]);
   DNS_PUT16(p, qlen);
@@ -179,8 +174,8 @@ request_axfr(int fd, char *rem_hostname, char *zone) {
 	Find the SOA.  Insert it, and return the SOA record.
 **************************************************************************************************/
 static void
-process_axfr_soa(char *name, char *reply, size_t replylen, char *src, uint32_t ttl) {
-  char *ns, *mbox;
+process_axfr_soa(uchar *name, uchar *reply, size_t replylen, uchar *src, uint32_t ttl) {
+  uchar *ns, *mbox;
   task_error_t errcode;
   uint32_t serial, refresh, retry, expire, minimum;
 
@@ -199,7 +194,7 @@ process_axfr_soa(char *name, char *reply, size_t replylen, char *src, uint32_t t
   if (ttl < minimum)
     ttl = minimum;
   if (origin) RELEASE(origin);
-  origin = STRDUP(name);
+  origin = (uchar*)STRDUP((char*)name);
   got_soa = import_soa(origin, ns, mbox, serial, refresh, retry, expire, minimum, ttl);
   RELEASE(ns);
   RELEASE(mbox);
@@ -211,21 +206,21 @@ process_axfr_soa(char *name, char *reply, size_t replylen, char *src, uint32_t t
 	SHORTNAME
 	Removes the origin from a name if it is present.
 **************************************************************************************************/
-static char *
-shortname(char *name, int empty_name_is_ok) {
-  size_t nlen = strlen(name), olen = strlen(origin);
+static uchar *
+shortname(uchar *name, int empty_name_is_ok) {
+  size_t nlen = strlen((char*)name), olen = strlen((char*)origin);
 
   if (opt_notrim)
     return (name);
   if (nlen < olen)
     return (name);
-  if (!strcasecmp(origin, name)) {
+  if (!strcasecmp((char*)origin, (char*)name)) {
     if (empty_name_is_ok)
-      return ("");
+      return ((uchar*)"");
     else
       return (name);
   }
-  if (!strcasecmp(name + nlen - olen, origin))
+  if (!strcasecmp((char*)(name + nlen - olen), (char*)origin))
     name[nlen - olen - 1] = '\0';
   return (name);
 }
@@ -237,9 +232,9 @@ shortname(char *name, int empty_name_is_ok) {
 	Processes a single answer.  If it's a SOA record, it is inserted, loaded, and the SOA record
 	is returned.
 **************************************************************************************************/
-static char *
-process_axfr_answer(char *reply, size_t replylen, char *src) {
-  char *name, *data, *rv;
+static uchar *
+process_axfr_answer(uchar *reply, size_t replylen, uchar *src) {
+  uchar *name, *data, *rv;
   task_error_t errcode;
   uint16_t type, class, rdlen;
   uint32_t ttl;
@@ -267,8 +262,8 @@ process_axfr_answer(char *reply, size_t replylen, char *src) {
     {
       struct in_addr addr;
       memcpy(&addr.s_addr, src, SIZE32);
-      data = (char*)ipaddr(AF_INET, &addr);
-      import_rr(shortname(name, 1), "A", data, strlen(data), 0, ttl);
+      data = (uchar*)ipaddr(AF_INET, &addr);
+      import_rr(shortname(name, 1), (uchar*)"A", data, strlen((char*)data), 0, ttl);
     }
     break;
 
@@ -279,8 +274,8 @@ process_axfr_answer(char *reply, size_t replylen, char *src) {
 			** but we can't be sure it will exist */
 
       memcpy(&addr, src, sizeof(addr));
-      if ((data = (char*)ipaddr(AF_INET6, &addr))) {
-	import_rr(shortname(name, 1), "AAAA", data, strlen(data), 0, ttl);
+      if ((data = (uchar*)ipaddr(AF_INET6, &addr))) {
+	import_rr(shortname(name, 1), (uchar*)"AAAA", data, strlen((char*)data), 0, ttl);
       } else
 	Notice("%s IN AAAA: %s", name, strerror(errno));
     }
@@ -289,7 +284,7 @@ process_axfr_answer(char *reply, size_t replylen, char *src) {
   case DNS_QTYPE_CNAME:
     if (!(data = name_unencode2(reply, replylen, &src, &errcode)))
       Errx("%s CNAME: %s: %s", name, _("error reading data"), data);
-    import_rr(shortname(name, 1), "CNAME", shortname(data, 0), strlen(shortname(data, 0)), 0, ttl);
+    import_rr(shortname(name, 1), (uchar*)"CNAME", shortname(data, 0), strlen((char*)shortname(data, 0)), 0, ttl);
     RELEASE(data);
     break;
 
@@ -297,7 +292,7 @@ process_axfr_answer(char *reply, size_t replylen, char *src) {
     {
       size_t len;
       int	quote1, quote2;
-      char	*c, *data2;
+      uchar	*c, *data2;
       char	*insdata;
 
       len = *src++;
@@ -323,7 +318,7 @@ process_axfr_answer(char *reply, size_t replylen, char *src) {
 	       quote2 ? "\"" : "", data2, quote2 ? "\"" : "");
       RELEASE(data);
       RELEASE(data2);
-      import_rr(shortname(name, 1), "HINFO", insdata, strlen(insdata), 0, ttl);
+      import_rr(shortname(name, 1), (uchar*)"HINFO", (uchar*)insdata, strlen(insdata), 0, ttl);
       RELEASE(insdata);
     }
     break;
@@ -334,7 +329,7 @@ process_axfr_answer(char *reply, size_t replylen, char *src) {
       DNS_GET16(pref, src);
       if (!(data = name_unencode2(reply, replylen, &src, &errcode)))
 	Errx("%s MX: %s: %s", name, _("error reading data"), data);
-      import_rr(shortname(name, 1), "MX", shortname(data, 0), strlen(shortname(data, 0)), pref, ttl);
+      import_rr(shortname(name, 1), (uchar*)"MX", shortname(data, 0), strlen((char*)shortname(data, 0)), pref, ttl);
       RELEASE(data);
     }
     break;
@@ -342,7 +337,7 @@ process_axfr_answer(char *reply, size_t replylen, char *src) {
   case DNS_QTYPE_NS:
     if (!(data = name_unencode2(reply, replylen, &src, &errcode)))
       Errx("%s NS: %s: %s", name, _("error reading data"), data);
-    import_rr(shortname(name, 1), "NS", shortname(data, 0), strlen(shortname(data, 0)), 0, ttl);
+    import_rr(shortname(name, 1), (uchar*)"NS", shortname(data, 0), strlen((char*)shortname(data, 0)), 0, ttl);
     RELEASE(data);
     break;
 
@@ -352,14 +347,14 @@ process_axfr_answer(char *reply, size_t replylen, char *src) {
       addr.s_addr = mydns_revstr_ip4(name);
       if (!(data = name_unencode2(reply, replylen, &src, &errcode)))
 	Errx("%s PTR: %s: %s", name, _("error reading data"), data);
-      import_rr(shortname(name, 1), "PTR", shortname(data, 0), strlen(shortname(data, 0)), 0, ttl);
+      import_rr(shortname(name, 1), (uchar*)"PTR", shortname(data, 0), strlen((char*)shortname(data, 0)), 0, ttl);
       RELEASE(data);
     }
     break;
 
   case DNS_QTYPE_RP:
     {
-      char *txtref;
+      uchar *txtref;
       char *insdata;
       
       /* Get mbox in 'data' */
@@ -374,7 +369,7 @@ process_axfr_answer(char *reply, size_t replylen, char *src) {
       ASPRINTF(&insdata, "%s %s", shortname(data, 0), shortname(txtref, 0));
       RELEASE(data);
       RELEASE(txtref);
-      import_rr(shortname(name, 1), "RP", insdata, strlen(insdata), 0, ttl);
+      import_rr(shortname(name, 1), (uchar*)"RP", (uchar*)insdata, strlen(insdata), 0, ttl);
       RELEASE(insdata);
     }
     break;
@@ -391,7 +386,7 @@ process_axfr_answer(char *reply, size_t replylen, char *src) {
 	Errx("%s SRV: %s: %s", name, _("error reading data"), data);
       ASPRINTF(&databuf, "%u %u %s", weight, port, shortname(data, 0));
       RELEASE(data);
-      import_rr(shortname(name, 1), "SRV", databuf, strlen(databuf), priority, ttl);
+      import_rr(shortname(name, 1), (uchar*)"SRV", (uchar*)databuf, strlen(databuf), priority, ttl);
       RELEASE(databuf);
     }
     break;
@@ -404,7 +399,7 @@ process_axfr_answer(char *reply, size_t replylen, char *src) {
       memcpy(data, src, len);
       data[len] = '\0';
       src += len;
-      import_rr(shortname(name, 1), "TXT", data, len, 0, ttl);
+      import_rr(shortname(name, 1), (uchar*)"TXT", data, len, 0, ttl);
       RELEASE(data);
     }
     break;
@@ -423,8 +418,8 @@ process_axfr_answer(char *reply, size_t replylen, char *src) {
 	PROCESS_AXFR_REPLY
 **************************************************************************************************/
 static int
-process_axfr_reply(char *reply, size_t replylen) {
-  char *src = reply, *name;
+process_axfr_reply(uchar *reply, size_t replylen) {
+  uchar *src = reply, *name;
   task_error_t errcode;
   uint16_t n, qdcount, ancount;
   DNS_HEADER	hdr;
@@ -468,9 +463,9 @@ process_axfr_reply(char *reply, size_t replylen) {
 **************************************************************************************************/
 void
 import_axfr(char *hostport, char *import_zone) {
-  unsigned char *reply, len[2];
+  uchar *reply, len[2];
   int fd;
-  size_t replylen;
+  ssize_t replylen;
 
 #if DEBUG_ENABLED
   Debug("STARTING AXFR of \"%s\" from %s", import_zone, hostport);
@@ -498,7 +493,7 @@ import_axfr(char *hostport, char *import_zone) {
     reply = ALLOCATE(replylen, char[]);
     if (recv(fd, reply, replylen, MSG_WAITALL) != replylen)
       Errx(_("short message from server"));
-    if (process_axfr_reply((char*)reply, replylen))
+    if (process_axfr_reply(reply, replylen))
       break;
     RELEASE(reply);
   }

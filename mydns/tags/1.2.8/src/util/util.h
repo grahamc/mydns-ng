@@ -33,8 +33,17 @@ extern CONF *Conf;												/* Configuration data */
 extern void load_config(void);
 extern void db_connect(void);
 extern uint32_t sqlnum(const char *, ...) __printflike(1,2);
-extern inline void meter(unsigned long, unsigned long);
+extern void meter(unsigned long, unsigned long);
 
+extern uint32_t import_soa(const uchar *origin, const uchar *ns, const uchar *mbox,
+			   unsigned serial, unsigned refresh, unsigned retry, unsigned expire,
+			   unsigned minimum, unsigned ttl);
+extern void import_rr(const uchar *name, const uchar *type, const uchar *data, size_t datalen, unsigned aux, unsigned ttl);
+
+extern void import_axfr(char *hostport, char *import_zone);
+#ifdef TINYDNS_IMPORT
+extern void import_tinydns(char *datafile, char *import_zone);
+#endif
 
 #endif /* !_MYDNS_UTIL_DIR_H */
 

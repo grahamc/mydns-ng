@@ -40,9 +40,7 @@ char *command_line = NULL;					/* Full command line */
 	Display program usage information.
 **********************************************************************************************/
 static void
-usage(status)
-	int status;
-{
+usage(int status) {
   if (status != EXIT_SUCCESS) {
     fprintf(stderr, _("Try `%s --help' for more information."), progname);
     fputs("\n", stderr);
@@ -234,7 +232,7 @@ bind_dump_soa(MYDNS_SOA *soa) {
 **************************************************************************************************/
 static void
 bind_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
-  char *type = mydns_qtype_str(
+  const char *type = mydns_qtype_str(
 #if ALIAS_ENABLED
 			       (rr->alias == 0) ?
 #endif /* ALIAS_ENABLED */
@@ -330,7 +328,7 @@ tinydns_dump_soa(MYDNS_SOA *soa) {
 	Output resource record, BIND format.
 **************************************************************************************************/
 static void
-tinydns_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
+tinydns_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr) {
   char *name = NULL, *data = NULL;
 
   name = STRDUP(MYDNS_RR_NAME(rr));
@@ -443,7 +441,7 @@ dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
     bind_dump_rr(soa, rr, maxlen);
     break;
   case OUTPUT_TINYDNS:
-    tinydns_dump_rr(soa, rr, maxlen);
+    tinydns_dump_rr(soa, rr);
     break;
   }
 }
@@ -457,7 +455,6 @@ static void
 dump_rr_long(MYDNS_SOA *soa) {
   int maxlen = 0;
   char *query;
-  size_t querylen;
   SQL_RES *res;
   SQL_ROW row;
   unsigned long *lengths;

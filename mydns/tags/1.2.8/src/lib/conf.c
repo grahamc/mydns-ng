@@ -244,7 +244,7 @@ dump_config(void) {
   ** Get longest words
   */
   for (n = 0; defConfig[n].name; n++) {
-    char *value = conf_get(&Conf, defConfig[n].name, &defaulted);
+    const char *value = conf_get(&Conf, defConfig[n].name, &defaulted);
 
     c = &defConfig[n];
     if (!c->value || !c->value[0])
@@ -271,7 +271,7 @@ dump_config(void) {
   **	Output name/value pairs
   */
   for (n = 0; defConfig[n].name; n++) {
-    char	*value = conf_get(&Conf, defConfig[n].name, &defaulted);
+    const char	*value = conf_get(&Conf, defConfig[n].name, &defaulted);
 
     c = &defConfig[n];
 
@@ -394,8 +394,10 @@ check_config_file_perms(void) {
 **************************************************************************************************/
 static void
 conf_set_recursive(void) {
-  char	*c, *address = conf_get(&Conf, "recursive", NULL), addr[512];
-  int	port = 53;
+  char		*c;
+  const char	*address = conf_get(&Conf, "recursive", NULL);
+  char		addr[512];
+  int		port = 53;
 
   if (!address || !address[0])
     return;

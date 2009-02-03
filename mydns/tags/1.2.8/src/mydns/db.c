@@ -29,10 +29,10 @@
 **************************************************************************************************/
 void
 db_connect(void) {
-  char *host = conf_get(&Conf, "db-host", NULL);
-  char *password = conf_get(&Conf, "db-password", NULL);
-  char *user = conf_get(&Conf, "db-user", NULL);
-  char *database = conf_get(&Conf, "database", NULL);
+  const char *host = conf_get(&Conf, "db-host", NULL);
+  const char *password = conf_get(&Conf, "db-password", NULL);
+  const char *user = conf_get(&Conf, "db-user", NULL);
+  const char *database = conf_get(&Conf, "database", NULL);
 
   sql_open(user, password, host, database);
 }
@@ -312,10 +312,10 @@ db_check_ptr_table(const char *database) {
 **************************************************************************************************/
 void
 db_verify_tables(void) {
-  char *host = conf_get(&Conf, "db-host", NULL);
-  char *database = conf_get(&Conf, "database", NULL);
-  char *password = conf_get(&Conf, "db-password", NULL);
-  char *user = conf_get(&Conf, "db-user", NULL);
+  const char *host = conf_get(&Conf, "db-host", NULL);
+  const char *database = conf_get(&Conf, "database", NULL);
+  const char *password = conf_get(&Conf, "db-password", NULL);
+  const char *user = conf_get(&Conf, "db-user", NULL);
 
   sql_open(user, password, host, database);
 

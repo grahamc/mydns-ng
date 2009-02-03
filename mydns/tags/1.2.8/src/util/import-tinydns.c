@@ -44,16 +44,12 @@ static int		numZones = 0;					/* Number of zones found */
 static uint32_t		default_serial;					/* Default serial */
 static unsigned int	lineno;						/* Current line number */
 static char		*filename;					/* Input file name */
-static char		*field[MAX_FIELDS];				/* Fields parsed from line */
+static uchar		*field[MAX_FIELDS];				/* Fields parsed from line */
 
 static char		tinydns_zone[DNS_MAXNAMELEN+1];			/* Zone to import (only this zone) */
 
 extern uint32_t		import_zone_id;					/* ID of current zone */
 
-extern uint32_t import_soa(const char *origin, const char *ns, const char *mbox,
-  unsigned serial, unsigned refresh, unsigned retry, unsigned expire,
-  unsigned minimum, unsigned ttl);
-extern void import_rr(char *name, char *type, char *data, size_t datalen, unsigned aux, unsigned ttl);
 
 
 /**************************************************************************************************
@@ -80,15 +76,15 @@ twarn(const char *fmt, ...) {
 	Given an fqdn, is this a zone we want to process?
 **************************************************************************************************/
 static inline int
-zone_ok(const char *fqdn) {
+zone_ok(const uchar *fqdn) {
   if (!tinydns_zone[0])							/* Processing all zones */
     return 1;
-  if (!strcasecmp(fqdn, tinydns_zone))					/* Exact match on zone */
+  if (!strcasecmp((char*)fqdn, tinydns_zone))					/* Exact match on zone */
     return 1;
 
   /* Does FQDN at least end with the zone? */
-  if (strlen(fqdn) > strlen(tinydns_zone)
-      && !strcasecmp(fqdn + strlen(fqdn) - strlen(tinydns_zone), tinydns_zone))
+  if (strlen((char*)fqdn) > strlen(tinydns_zone)
+      && !strcasecmp((char*)(fqdn + strlen((char*)fqdn) - strlen(tinydns_zone)), tinydns_zone))
     return 1;
 
   return 0;
@@ -112,12 +108,12 @@ zonecmp(const void *p1, const void *p2) {
 	FIND_ZONE
 	Looks for the specified zone.  Returns it if found, else NULL.
 **************************************************************************************************/
-static inline ZONE *
-find_zone(const char *origin) {
+static ZONE *
+find_zone(const uchar *origin) {
   register int n;
 
   for (n = 0; n < numZones; n++)
-    if (!strcasecmp(Zones[n]->origin, origin))
+    if (!strcasecmp(Zones[n]->origin, (char*)origin))
       return Zones[n];
   return NULL;
 }
@@ -129,12 +125,12 @@ find_zone(const char *origin) {
 	Looks for the zone matching the provided FQDN.  Returns it if found, else NULL.  Also sets
 	the hostname part of 'fqdn' in 'hostname'.
 **************************************************************************************************/
-static inline ZONE *
-find_host_zone(char *fqdn, char **hostname) {
-  char *c;
+static ZONE *
+find_host_zone(uchar *fqdn, uchar **local_hostname) {
+  uchar *c;
   ZONE *z;
 
-  *hostname = STRDUP("");
+  *local_hostname = (uchar*)STRDUP("");
 
   if ((z = find_zone(fqdn)))				/* See if 'fqdn' is a plain zone origin */
     return (z);
@@ -142,13 +138,13 @@ find_host_zone(char *fqdn, char **hostname) {
   for (c = fqdn; *c; c++)
     if (*c == '.')
       if ((z = find_zone(c + 1))) {
-	REALLOCATE(*hostname, c - fqdn + 1, char[]);
-	memcpy(*hostname, fqdn, c - fqdn);
-	(*hostname)[c - fqdn] = '\0';
+	REALLOCATE(*local_hostname, c - fqdn + 1, char[]);
+	memcpy(*local_hostname, fqdn, c - fqdn);
+	(*local_hostname)[c - fqdn] = '\0';
 	return (z);
       }
 
-  RELEASE(*hostname);
+  RELEASE(*local_hostname);
   return NULL;
 }
 /*--- find_host_zone() --------------------------------------------------------------------------*/
@@ -160,42 +156,42 @@ find_host_zone(char *fqdn, char **hostname) {
 	NULL if not found.
 **************************************************************************************************/
 static inline ZONE *
-find_arpa_zone(const char *ip, char **hostname) {
-  char *zone = NULL, *buf = NULL, *p, *a, *b, *c, *d;
+find_arpa_zone(const uchar *ip, uchar **local_hostname) {
+  uchar *zone = NULL, *buf = NULL, *p, *a, *b, *c, *d;
   ZONE *z;
 
-  *hostname = NULL;
+  *local_hostname = NULL;
 
-  buf = STRDUP(ip);
+  buf = (uchar*)STRDUP((char*)ip);
 
   p = buf;
-  if (!(a = strsep(&p, ".")) || !(b = strsep(&p, "."))
-      || !(c = strsep(&p, ".")) || !(d = strsep(&p, "."))) {
+  if (!(a = (uchar*)strsep((char**)&p, ".")) || !(b = (uchar*)strsep((char**)&p, "."))
+      || !(c = (uchar*)strsep((char**)&p, ".")) || !(d = (uchar*)strsep((char**)&p, "."))) {
     RELEASE(buf);
     return NULL;
   }
 
-  ASPRINTF(&zone, "%s.in-addr.arpa", a);
+  ASPRINTF((char**)&zone, "%s.in-addr.arpa", a);
   z = find_zone(zone);
   RELEASE(zone);
   if (z) {
-    ASPRINTF(hostname, "%s.%s.%s", d, c, b);
+    ASPRINTF((char**)local_hostname, "%s.%s.%s", d, c, b);
     return z;
   }
 
-  ASPRINTF(&zone, "%s.%s.in-addr.arpa", b, a);
+  ASPRINTF((char**)&zone, "%s.%s.in-addr.arpa", b, a);
   z = find_zone(zone);
   RELEASE(zone);
   if (z) {
-    ASPRINTF(hostname, "%s.%s", d, c);
+    ASPRINTF((char**)local_hostname, "%s.%s", d, c);
     return z;
   }
 
-  ASPRINTF(&zone, "%s.%s.%s.in-addr.arpa", c, b, a);
+  ASPRINTF((char**)&zone, "%s.%s.%s.in-addr.arpa", c, b, a);
   z = find_zone(zone);
   RELEASE(zone);
   if (z) {
-    *hostname = STRDUP(d);
+    *local_hostname = (uchar*)STRDUP((char*)d);
     return z;
   }
 
@@ -209,24 +205,24 @@ find_arpa_zone(const char *ip, char **hostname) {
 	Adds a new zone.  Returns the zone.
 **************************************************************************************************/
 static ZONE *
-new_zone(const char *originp) {
+new_zone(const uchar *originp) {
   ZONE *z;
-  char *origin = NULL;
+  uchar *origin = NULL;
 
   /* If this is an 'in-addr.arpa' zone, knock off the first quad if present */
-  if (strlen(originp) > 12 && !strcasecmp(originp + strlen(originp) - 13, ".in-addr.arpa")) {
-    char *buf = NULL, *p, *a, *b, *c, *d;
+  if (strlen((char*)originp) > 12 && !strcasecmp((char*)(originp + strlen((char*)originp) - 13), ".in-addr.arpa")) {
+    uchar *buf = NULL, *p, *a, *b, *c, *d;
 
-    buf = STRDUP(originp);
+    buf = (uchar*)STRDUP((char*)originp);
     p = buf;
-    if ((d = strsep(&p, ".")) && (c = strsep(&p, "."))
-	&& (b = strsep(&p, ".")) && (a = strsep(&p, ".")))
-      ASPRINTF(&origin, "%s.%s.%s.in-addr.arpa", c, b, a);
+    if ((d = (uchar*)strsep((char**)&p, ".")) && (c = (uchar*)strsep((char**)&p, "."))
+	&& (b = (uchar*)strsep((char**)&p, ".")) && (a = (uchar*)strsep((char**)&p, ".")))
+      ASPRINTF((char**)&origin, "%s.%s.%s.in-addr.arpa", c, b, a);
     else
-      origin = STRDUP(originp);
+      origin = (uchar*)STRDUP((char*)originp);
     RELEASE(buf);
   } else
-    origin = STRDUP(originp);
+    origin = (uchar*)STRDUP((char*)originp);
 
   if ((z = find_zone(origin))) {
     RELEASE(origin);
@@ -236,7 +232,7 @@ new_zone(const char *originp) {
   z = ALLOCATE(sizeof(ZONE), ZONE);
 
   z->id = 0;
-  z->origin = origin;
+  z->origin = (char*)origin;
   z->ns = NULL;
   z->mbox = NULL;
   z->serial = default_serial;
@@ -261,35 +257,36 @@ new_zone(const char *originp) {
 	TINYDNS_ADD_SOA
 	Adds a zone to 'Zones' due to a '.' or 'Z' line.
 **************************************************************************************************/
-void
+static void
 tinydns_add_soa(char *line) {
   char	*l = line + 1;
   ZONE	*z;
 
   if (line[0] == '.') {							/* '.' (NS) line */
-    char *fqdn = NULL, *ip = NULL, *x = NULL, *ttl = NULL, *timestamp = NULL, *lo = NULL;
+    uchar *fqdn = NULL, *ip = NULL, *x = NULL, *ttl = NULL, *timestamp = NULL, *lo = NULL;
 
-    if (!(fqdn = strsep(&l, ":")) || !strlen(fqdn))
+    if (!(fqdn = (uchar*)strsep(&l, ":")) || !strlen((char*)fqdn))
       return twarn("'.' line has no fqdn");
 
     if (!zone_ok(fqdn))
       return;
 
-    if (!(ip = strsep(&l, ":")))
+    if (!(ip = (uchar*)strsep(&l, ":")))
       return twarn("'.' line has no ip");
 
-    if ((x = strsep(&l, ":")) && (ttl = strsep(&l, ":")) && (timestamp = strsep(&l, ":"))
-	&& (lo = strsep(&l, ":")))
+    if ((x = (uchar*)strsep(&l, ":")) && (ttl = (uchar*)strsep(&l, ":")) && (timestamp = (uchar*)strsep(&l, ":"))
+	&& (lo = (uchar*)strsep(&l, ":"))) {
       /* DONOTHING */;
+    }
 
     z = new_zone(fqdn);
 
     /* Assign 'ns' */
     if (!z->ns) {
-      if (!x || !strlen(x))
+      if (!x || !strlen((char*)x))
 	sdprintf(&z->ns, "ns.%s", fqdn);
-      else if (strchr(x, '.')) {
-	z->ns = STRDUP(x);
+      else if (strchr((char*)x, '.')) {
+	z->ns = STRDUP((char*)x);
       } else
 	sdprintf(&z->ns, "%s.ns.%s", x, fqdn);
     }
@@ -298,39 +295,40 @@ tinydns_add_soa(char *line) {
     if (!z->mbox)
       sdprintf(&z->mbox, "hostmaster.%s", fqdn);
   } else if (line[0] == 'Z') {						/* 'Z' (SOA) line */
-    char *fqdn = NULL, *ns = NULL, *mbox = NULL, *serial = NULL, *refresh = NULL,
+    uchar *fqdn = NULL, *ns = NULL, *mbox = NULL, *serial = NULL, *refresh = NULL,
       *retry = NULL, *expire = NULL, *minimum = NULL, *ttl = NULL, *timestamp = NULL,
       *lo = NULL;
 
-    if (!(fqdn = strsep(&l, ":")) || !strlen(fqdn))
+    if (!(fqdn = (uchar*)strsep((char**)&l, ":")) || !strlen((char*)fqdn))
       return twarn("'Z' line has no fqdn");
 
     if (!zone_ok(fqdn))
       return;
 
-    if (!(ns = strsep(&l, ":")) || !strlen(ns))
+    if (!(ns = (uchar*)strsep((char**)&l, ":")) || !strlen((char*)ns))
       return twarn("'Z' line has no ns");
-    if (!(mbox = strsep(&l, ":")) || !strlen(mbox))
+    if (!(mbox = (uchar*)strsep((char**)&l, ":")) || !strlen((char*)mbox))
       return twarn("'Z' line has no mbox");
 
-    if ((serial = strsep(&l, ":")) && (refresh = strsep(&l, ":")) && (retry = strsep(&l, ":"))
-	&& (expire = strsep(&l, ":")) && (minimum = strsep(&l, ":")) && (ttl = strsep(&l, ":"))
-	&& (timestamp = strsep(&l, ":")) && (lo = strsep(&l, ":")))
+    if ((serial = (uchar*)strsep((char**)&l, ":")) && (refresh = (uchar*)strsep((char**)&l, ":")) && (retry = (uchar*)strsep((char**)&l, ":"))
+	&& (expire = (uchar*)strsep((char**)&l, ":")) && (minimum = (uchar*)strsep((char**)&l, ":")) && (ttl = (uchar*)strsep((char**)&l, ":"))
+	&& (timestamp = (uchar*)strsep((char**)&l, ":")) && (lo = (uchar*)strsep((char**)&l, ":"))) {
       /* DONOTHING */;
+    }
 
     z = new_zone(fqdn);
     if (!z->ns) {
-      z->ns = STRDUP(ns);
+      z->ns = STRDUP((char*)ns);
     }
     if (!z->mbox) {
-      z->mbox = STRDUP(mbox);
+      z->mbox = STRDUP((char*)mbox);
     }
-    if (serial) z->serial = atol(serial);
-    if (refresh) z->refresh = atol(refresh);
-    if (retry) z->retry = atol(retry);
-    if (expire) z->expire = atol(expire);
-    if (minimum) z->minimum = atol(minimum);
-    if (ttl) z->ttl = atol(ttl);
+    if (serial) z->serial = atol((char*)serial);
+    if (refresh) z->refresh = atol((char*)refresh);
+    if (retry) z->retry = atol((char*)retry);
+    if (expire) z->expire = atol((char*)expire);
+    if (minimum) z->minimum = atol((char*)minimum);
+    if (ttl) z->ttl = atol((char*)ttl);
   }
 }
 /*--- tinydns_add_soa() -------------------------------------------------------------------------*/
@@ -342,16 +340,16 @@ tinydns_add_soa(char *line) {
 **************************************************************************************************/
 static void
 create_zone(ZONE *z) {
-  char *origin = NULL, *ns = NULL, *mbox = NULL;
+  uchar *origin = NULL, *ns = NULL, *mbox = NULL;
 
   if (!z->ns)
     sdprintf(&z->ns, "ns.%s", z->origin);
   if (!z->mbox)
     sdprintf(&z->mbox, "hostmaster.%s", z->origin);
 
-  ASPRINTF(&origin, "%s.", z->origin);
-  ASPRINTF(&ns, "%s.", z->ns);
-  ASPRINTF(&mbox, "%s.", z->mbox);
+  ASPRINTF((char**)&origin, "%s.", z->origin);
+  ASPRINTF((char**)&ns, "%s.", z->ns);
+  ASPRINTF((char**)&mbox, "%s.", z->mbox);
 
   z->id = import_soa(origin, ns, mbox,
 		     z->serial, z->refresh, z->retry, z->expire, z->minimum, z->ttl);
@@ -374,22 +372,22 @@ create_zone(ZONE *z) {
 static void
 tinydns_plus(void) {
   ZONE	*z;
-  char	*fqdn = field[0], *ip = field[1], *ttl = field[2];
-  char	*hostname = NULL;
+  uchar	*fqdn = field[0], *ip = field[1], *ttl = field[2];
+  uchar	*local_hostname = NULL;
 
-  if (!fqdn || !strlen(fqdn))
+  if (!fqdn || !strlen((char*)fqdn))
     return (void)Warnx("%s:%u: %s", filename, lineno, _("fqdn field empty"));
   if (!zone_ok(fqdn))
     return;
-  if (!(z = find_host_zone(fqdn, &hostname)))
+  if (!(z = find_host_zone(fqdn, &local_hostname)))
     return (void)Warnx("%s:%u: %s: %s", filename, lineno, fqdn, _("fqdn does not match any zones"));
 
   /* Set import_zone_id and import the record */
-  if (ip && strlen(ip)) {
+  if (ip && strlen((char*)ip)) {
     import_zone_id = z->id;
-    import_rr(hostname, "A", ip, strlen(ip), 0, ttl ? atol(ttl) : z->ttl);
+    import_rr(local_hostname, (uchar*)"A", ip, strlen((char*)ip), 0, ttl ? atol((char*)ttl) : (long)z->ttl);
   }
-  RELEASE(hostname);
+  RELEASE(local_hostname);
 }
 /*--- tinydns_plus() ----------------------------------------------------------------------------*/
 
@@ -405,39 +403,39 @@ tinydns_plus(void) {
 static void
 tinydns_dot(void) {
   ZONE	*z;
-  char	*fqdn = field[0], *ip = field[1], *x = field[2], *ttl = field[3];
-  char	*hostname = NULL, *buf = NULL;
+  uchar	*fqdn = field[0], *ip = field[1], *x = field[2], *ttl = field[3];
+  uchar	*local_hostname = NULL, *buf = NULL;
 
-  if (!fqdn || !strlen(fqdn))
+  if (!fqdn || !strlen((char*)fqdn))
     return (void)Warnx("%s:%u: %s", filename, lineno, _("fqdn field empty"));
   if (!zone_ok(fqdn))
     return;
 
-  if (!(z = find_host_zone(fqdn, &hostname)))
+  if (!(z = find_host_zone(fqdn, &local_hostname)))
     return (void)Warnx("%s:%u: %s: %s", filename, lineno, fqdn, _("fqdn does not match any zones"));
   import_zone_id = z->id;
 
   /* Create NS record */
-  if (x && strlen(x)) {
-    if (strchr(x, '.')) {
-      if (LASTCHAR(x) != '.') {
-	ASPRINTF(&buf, "%s.", x);
+  if (x && strlen((char*)x)) {
+    if (strchr((char*)x, '.')) {
+      if (LASTCHAR((char*)x) != '.') {
+	ASPRINTF((char**)&buf, "%s.", x);
       } else {
-	buf = STRDUP(x);
+	buf = (uchar*)STRDUP((char*)x);
       }
     } else {
-      ASPRINTF(&buf, "%s.ns.", x);
+      ASPRINTF((char**)&buf, "%s.ns.", x);
     }
   } else {
-    buf = STRDUP("ns");
+    buf = (uchar*)STRDUP("ns");
   }
-  import_rr(hostname, "NS", buf, strlen(buf), 0, ttl ? atol(ttl) : z->ttl);
+  import_rr(local_hostname, (uchar*)"NS", buf, strlen((char*)buf), 0, ttl ? atol((char*)ttl) : (long)z->ttl);
 
-  RELEASE(hostname);
+  RELEASE(local_hostname);
 
   /* Create A record if 'ip' is present */
-  if (ip && strlen(ip))
-    import_rr(buf, "A", ip, strlen(ip), 0, ttl ? atol(ttl) : z->ttl);
+  if (ip && strlen((char*)ip))
+    import_rr(buf, (uchar*)"A", ip, strlen((char*)ip), 0, ttl ? atol((char*)ttl) : (long)z->ttl);
 
   RELEASE(buf);
 }
@@ -457,40 +455,40 @@ tinydns_dot(void) {
 static void
 tinydns_amp(void) {
   ZONE	*z;
-  char	*fqdn = field[0], *ip = field[1], *x = field[2], *ttl = field[3];
-  char	*hostname = NULL, *buf = NULL;
+  uchar	*fqdn = field[0], *ip = field[1], *x = field[2], *ttl = field[3];
+  uchar	*local_hostname = NULL, *buf = NULL;
 
-  if (!fqdn || !strlen(fqdn))
+  if (!fqdn || !strlen((char*)fqdn))
     return (void)Warnx("%s:%u: %s", filename, lineno, _("fqdn field empty"));
   if (!zone_ok(fqdn))
     return;
 
-  if (!(z = find_host_zone(fqdn, &hostname)))
+  if (!(z = find_host_zone(fqdn, &local_hostname)))
     return (void)Warnx("%s:%u: %s: %s", filename, lineno, fqdn, _("fqdn does not match any zones"));
   import_zone_id = z->id;
 
   /* Create NS record */
-  if (x && strlen(x)) {
-    if (strchr(x, '.')) {
-      if (LASTCHAR(x) != '.') {
-	ASPRINTF(&buf, "%s.", x);
+  if (x && strlen((char*)x)) {
+    if (strchr((char*)x, '.')) {
+      if (LASTCHAR((char*)x) != '.') {
+	ASPRINTF((char**)&buf, "%s.", x);
       } else {
-	buf = STRDUP(x);
+	buf = (uchar*)STRDUP((char*)x);
       }
     } else {
-      ASPRINTF(&buf, "%s.ns", x);
+      ASPRINTF((char**)&buf, "%s.ns", x);
     }
   } else {
-    buf = STRDUP("ns");
+    buf = (uchar*)STRDUP("ns");
   }
 
-  import_rr(hostname, "NS", buf, strlen(buf), 0, ttl ? atol(ttl) : z->ttl);
+  import_rr(local_hostname, (uchar*)"NS", buf, strlen((char*)buf), 0, ttl ? atol((char*)ttl) : (long)z->ttl);
 
-  RELEASE(hostname);
+  RELEASE(local_hostname);
 
   /* Create A record if 'ip' is present */
-  if (ip && strlen(ip))
-    import_rr(buf, "A", ip, strlen(ip), 0, ttl ? atol(ttl) : z->ttl);
+  if (ip && strlen((char*)ip))
+    import_rr(buf, (uchar*)"A", ip, strlen((char*)ip), 0, ttl ? atol((char*)ttl) : (long)z->ttl);
 
   RELEASE(buf);
 }
@@ -522,34 +520,34 @@ tinydns_amp(void) {
 static void
 tinydns_equal(void) {
   ZONE	*z;
-  char	*fqdn = field[0], *ip = field[1], *ttl = field[2];
-  char	*hostname = NULL;
+  uchar	*fqdn = field[0], *ip = field[1], *ttl = field[2];
+  uchar	*local_hostname = NULL;
 
-  if (!fqdn || !strlen(fqdn))
+  if (!fqdn || !strlen((char*)fqdn))
     return (void)Warnx("%s:%u: %s", filename, lineno, _("fqdn field empty"));
   if (!zone_ok(fqdn))
     return;
 
-  if (!(z = find_host_zone(fqdn, &hostname)))
+  if (!(z = find_host_zone(fqdn, &local_hostname)))
     return (void)Warnx("%s:%u: %s: %s", filename, lineno, fqdn, _("fqdn does not match any zones"));
   import_zone_id = z->id;
 
-  RELEASE(hostname);
+  RELEASE(local_hostname);
 
   /* Create A record showing 'ip' as the IP address of 'fqdn' */
-  import_rr(fqdn, "A", ip, strlen(ip), 0, ttl ? atol(ttl) : z->ttl);
+  import_rr(fqdn, (uchar*)"A", ip, strlen((char*)ip), 0, ttl ? atol((char*)ttl) : (long)z->ttl);
 
   /* Create PTR record if we can find an appropriate in-addr.arpa zone */
-  if ((z = find_arpa_zone(ip, &hostname))) {
+  if ((z = find_arpa_zone(ip, &local_hostname))) {
     import_zone_id = z->id;
-    import_rr(hostname, "PTR", fqdn, strlen(fqdn), 0, ttl ? atol(ttl) : z->ttl);
+    import_rr(local_hostname, (uchar*)"PTR", fqdn, strlen((char*)fqdn), 0, ttl ? atol((char*)ttl) : (long)z->ttl);
   } else {
-    char *buf = NULL, *p, *a, *b, *c, *d;
+    uchar *buf = NULL, *p, *a, *b, *c, *d;
 
-    buf = STRDUP(ip);
+    buf = (uchar*)STRDUP((char*)ip);
     p = buf;
-    if (!(a = strsep(&p, ".")) || !(b = strsep(&p, "."))
-	|| !(c = strsep(&p, ".")) || !(d = strsep(&p, "."))) {
+    if (!(a = (uchar*)strsep((char**)&p, ".")) || !(b = (uchar*)strsep((char**)&p, "."))
+	|| !(c = (uchar*)strsep((char**)&p, ".")) || !(d = (uchar*)strsep((char**)&p, "."))) {
       RELEASE(buf);
       return;
     }
@@ -557,7 +555,7 @@ tinydns_equal(void) {
 	  d, c, b, a, _("no matching zone for PTR record"));
     RELEASE(buf);
   }
-  RELEASE(hostname);
+  RELEASE(local_hostname);
 }
 /*--- tinydns_equal() ---------------------------------------------------------------------------*/
 
@@ -589,46 +587,46 @@ tinydns_equal(void) {
 static void
 tinydns_at(void) {
   ZONE	*z;
-  char	*fqdn = field[0], *ip = field[1], *x = field[2], *dist = field[3], *ttl = field[4];
-  char	*hostname = NULL, *mx = NULL;
+  uchar	*fqdn = field[0], *ip = field[1], *x = field[2], *dist = field[3], *ttl = field[4];
+  uchar	*local_hostname = NULL, *mx = NULL;
 
-  if (!fqdn || !strlen(fqdn))
+  if (!fqdn || !strlen((char*)fqdn))
     return (void)Warnx("%s:%u: %s", filename, lineno, _("fqdn field empty"));
   if (!zone_ok(fqdn))
     return;
 
-  if (!x || !strlen(x))
+  if (!x || !strlen((char*)x))
     return (void)Warnx("%s:%u: %s", filename, lineno, _("no mail exchanger specified"));
 
-  if (!(z = find_host_zone(fqdn, &hostname)))
+  if (!(z = find_host_zone(fqdn, &local_hostname)))
     return (void)Warnx("%s:%u: %s: %s", filename, lineno, fqdn, _("fqdn does not match any zones"));
   import_zone_id = z->id;
 
   /* Create MX record showing 'x'.mx.fqdn as MX for 'fqdn' */
-  if (strchr(x, '.')) {
-    if (LASTCHAR(x) != '.') {
-      ASPRINTF(&mx, "%s.", x);
+  if (strchr((char*)x, '.')) {
+    if (LASTCHAR((char*)x) != '.') {
+      ASPRINTF((char**)&mx, "%s.", x);
     } else {
-      mx = STRDUP(x);
+      mx = (uchar*)STRDUP((char*)x);
     }
   } else {
     /* Assumes origin terminate by '.' */
-    ASPRINTF(&mx, "%s.mx.%s", x, z->origin);
+    ASPRINTF((char**)&mx, "%s.mx.%s", x, z->origin);
   }
 
-  import_rr(hostname, "MX", mx, strlen(mx), dist ? atol(dist) : 0, ttl ? atol(ttl) : z->ttl);
+  import_rr(local_hostname, (uchar*)"MX", mx, strlen((char*)mx), dist ? atol((char*)dist) : 0, ttl ? atol((char*)ttl) : (long)z->ttl);
 
   /* Create A record for 'mx' */
-  if (ip && strlen(ip)) {
-    RELEASE(hostname);
-    if (!(z = find_host_zone(mx, &hostname))) {
+  if (ip && strlen((char*)ip)) {
+    RELEASE(local_hostname);
+    if (!(z = find_host_zone(mx, &local_hostname))) {
       RELEASE(mx);
       return (void)Warnx("%s:%u: %s: %s", filename, lineno, fqdn, _("fqdn does not match any zones"));
     }
     import_zone_id = z->id;
-    import_rr(mx, "A", ip, strlen(ip), 0, ttl ? atol(ttl) : z->ttl);
+    import_rr(mx, (uchar*)"A", ip, strlen((char*)ip), 0, ttl ? atol((char*)ttl) : (long)z->ttl);
   }
-  RELEASE(hostname);
+  RELEASE(local_hostname);
   RELEASE(mx);
 }
 /*--- tinydns_at() ------------------------------------------------------------------------------*/
@@ -645,36 +643,36 @@ tinydns_at(void) {
 static void
 tinydns_apos(void) {
   ZONE	*z;
-  char	*fqdn = field[0], *str = field[1], *ttl = field[2], *txt;
-  char	*hostname = NULL;
-  register char *s, *d;
+  uchar	*fqdn = field[0], *str = field[1], *ttl = field[2], *txt;
+  uchar	*local_hostname = NULL;
+  register uchar *s, *d;
 
-  if (!fqdn || !strlen(fqdn))
+  if (!fqdn || !strlen((char*)fqdn))
     return (void)Warnx("%s:%u: %s", filename, lineno, _("fqdn field empty"));
   if (!zone_ok(fqdn))
     return;
 
-  if (!str || !strlen(str))
+  if (!str || !strlen((char*)str))
     return (void)Warnx("%s:%u: %s", filename, lineno, _("no text data specified"));
 
-  if (!(z = find_host_zone(fqdn, &hostname)))
+  if (!(z = find_host_zone(fqdn, &local_hostname)))
     return (void)Warnx("%s:%u: %s: %s", filename, lineno, fqdn, _("fqdn does not match any zones"));
   import_zone_id = z->id;
 
   /* Unescape octal chars */
-  txt = ALLOCATE(strlen(str) + 1, char[]);
+  txt = ALLOCATE(strlen((char*)str) + 1, char[]);
   for (s = str, d = txt; *s; s++) {
     if (s[0] == '\\' && (s[1] >= '0' && s[1] <= '7')
 	&& (s[2] >= '0' && s[2] <= '7') && (s[3] >= '0' && s[3] <= '7')) {
-      *d++ = strtol(s + 1, NULL, 8);
+      *d++ = strtol((char*)(s + 1), NULL, 8);
       s += 3;
     } else
       *d++ = *s;
   }
   *d = '\0';
-  import_rr(hostname, "TXT", txt, strlen(txt), 0, ttl ? atol(ttl) : z->ttl);
+  import_rr(local_hostname, (uchar*)"TXT", txt, strlen((char*)txt), 0, ttl ? atol((char*)ttl) : (long)z->ttl);
   RELEASE(txt);
-  RELEASE(hostname);
+  RELEASE(local_hostname);
 }
 /*--- tinydns_apos() ----------------------------------------------------------------------------*/
 
@@ -689,28 +687,28 @@ tinydns_apos(void) {
 static void
 tinydns_caret(void) {
   ZONE	*z;
-  char	*fqdn = field[0], *p = field[1], *ttl = field[2];
-  char	*hostname = NULL, *ptr = NULL;
+  uchar	*fqdn = field[0], *p = field[1], *ttl = field[2];
+  uchar	*local_hostname = NULL, *ptr = NULL;
 
-  if (!fqdn || !strlen(fqdn))
+  if (!fqdn || !strlen((char*)fqdn))
     return (void)Warnx("%s:%u: %s", filename, lineno, _("fqdn field empty"));
   if (!zone_ok(fqdn))
     return;
 
-  if (!p || !strlen(p))
+  if (!p || !strlen((char*)p))
     return (void)Warnx("%s:%u: %s", filename, lineno, _("no PTR data specified"));
-  ptr = STRDUP(p);
-  if (strchr(ptr, '.') && LASTCHAR(ptr) != '.')
-    strcat(ptr, ".");
+  ptr = (uchar*)STRDUP((char*)p);
+  if (strchr((char*)ptr, '.') && LASTCHAR((char*)ptr) != '.')
+    strcat((char*)ptr, ".");
 
-  if (!(z = find_host_zone(fqdn, &hostname))) {
+  if (!(z = find_host_zone(fqdn, &local_hostname))) {
     RELEASE(ptr);
     return (void)Warnx("%s:%u: %s: %s", filename, lineno, fqdn, _("fqdn does not match any zones"));
   }
   import_zone_id = z->id;
-  import_rr(hostname, "PTR", ptr, strlen(ptr), 0, ttl ? atol(ttl) : z->ttl);
+  import_rr(local_hostname, (uchar*)"PTR", ptr, strlen((char*)ptr), 0, ttl ? atol((char*)ttl) : (long)z->ttl);
   RELEASE(ptr);
-  RELEASE(hostname);
+  RELEASE(local_hostname);
 }
 /*--- tinydns_caret() ---------------------------------------------------------------------------*/
 
@@ -725,28 +723,28 @@ tinydns_caret(void) {
 static void
 tinydns_C(void) {
   ZONE	*z;
-  char	*fqdn = field[0], *p = field[1], *ttl = field[2];
-  char	*hostname = NULL, *cname = NULL;
+  uchar	*fqdn = field[0], *p = field[1], *ttl = field[2];
+  uchar	*local_hostname = NULL, *cname = NULL;
 
-  if (!fqdn || !strlen(fqdn))
+  if (!fqdn || !strlen((char*)fqdn))
     return (void)Warnx("%s:%u: %s", filename, lineno, _("fqdn field empty"));
   if (!zone_ok(fqdn))
     return;
 
-  if (!p || !strlen(p))
+  if (!p || !strlen((char*)p))
     return (void)Warnx("%s:%u: %s", filename, lineno, _("no PTR data specified"));
-  cname = STRDUP(p);
-  if (strchr(cname, '.') && LASTCHAR(cname) != '.')
-    strcat(cname, ".");
+  cname = (uchar*)STRDUP((char*)p);
+  if (strchr((char*)cname, '.') && LASTCHAR((char*)cname) != '.')
+    strcat((char*)cname, ".");
 
-  if (!(z = find_host_zone(fqdn, &hostname))) {
+  if (!(z = find_host_zone(fqdn, &local_hostname))) {
     RELEASE(cname);
     return (void)Warnx("%s:%u: %s: %s", filename, lineno, fqdn, _("fqdn does not match any zones"));
   }
   import_zone_id = z->id;
-  import_rr(hostname, "CNAME", cname, strlen(cname), 0, ttl ? atol(ttl) : z->ttl);
+  import_rr(local_hostname, (uchar*)"CNAME", cname, strlen((char*)cname), 0, ttl ? atol((char*)ttl) : (long)z->ttl);
   RELEASE(cname);
-  RELEASE(hostname);
+  RELEASE(local_hostname);
 }
 /*--- tinydns_C() -------------------------------------------------------------------------------*/
 
@@ -764,18 +762,18 @@ tinydns_C(void) {
 static void
 tinydns_colon(void) {
   ZONE	*z;
-  char	*fqdn = field[0]; /* *n = field[1], *rdata = field[2], *ttl = field[3]; */
-  char	*hostname = NULL;
+  uchar	*fqdn = field[0]; /* *n = field[1], *rdata = field[2], *ttl = field[3]; */
+  uchar	*local_hostname = NULL;
 
-  if (!fqdn || !strlen(fqdn))
+  if (!fqdn || !strlen((char*)fqdn))
     return (void)Warnx("%s:%u: %s", filename, lineno, _("fqdn field empty"));
   if (!zone_ok(fqdn))
     return;
 
-  if (!(z = find_host_zone(fqdn, &hostname)))
+  if (!(z = find_host_zone(fqdn, &local_hostname)))
     return (void)Warnx("%s:%u: %s: %s", filename, lineno, fqdn, _("fqdn does not match any zones"));
 
-  RELEASE(hostname);
+  RELEASE(local_hostname);
 
   Warnx("%s:%u: %s: %s", filename, lineno, fqdn, _("generic record type not supported"));
 }
@@ -858,9 +856,9 @@ import_tinydns(char *datafile, char *import_zone) {
       continue;
     buf[0] = toupper(buf[0]);
     for (n = 0; n < MAX_FIELDS; n++)						/* Reset fields */
-      field[n] = (char *)NULL;
+      field[n] = (uchar *)NULL;
     for (n = 0, b = buf + 1; n < MAX_FIELDS; n++)	/* Load fields */
-      if (!(field[n] = strsep(&b, ":")))
+      if (!(field[n] = (uchar*)strsep(&b, ":")))
 	break;
     switch (buf[0]) {
     case '.':

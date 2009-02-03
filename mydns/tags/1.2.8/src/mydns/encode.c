@@ -32,7 +32,7 @@
 	Adds the specified name + offset to the `Labels' array within the specified task.
 **************************************************************************************************/
 int
-name_remember(TASK *t, char *name, unsigned int offset) {
+name_remember(TASK *t, const char *name, unsigned int offset) {
   if (!name || strlen(name) > 64)			/* Don't store labels > 64 bytes in length */
     return (0);
 
@@ -78,7 +78,7 @@ name_forget(TASK *t) {
 	Returns the offset within the reply if found, or 0 if not found.
 **************************************************************************************************/
 unsigned int
-name_find(TASK *t, char *name) {
+name_find(TASK *t, const char *name) {
   register unsigned int n = 0;
 
   for (n = 0; n < t->numNames; n++)
@@ -96,9 +96,12 @@ name_find(TASK *t, char *name) {
 	If `name' is not NULL, it should be DNS_MAXNAMELEN bytes or bigger.
 **************************************************************************************************/
 int
-name_encode(TASK *t, char *dest, char *name, unsigned int dest_offset, int compression) {
+name_encode(TASK *t, char *dest, const char *name, unsigned int dest_offset, int compression) {
   char			namebuf[DNS_MAXNAMELEN+1];;
-  register char		*c = NULL, *d = NULL, *this_name = NULL, *cp = NULL;
+  register char		*c = NULL;
+  char			*d = NULL;
+  char			*this_name = NULL;
+  char			*cp = NULL;
   register int		len = 0;
   register unsigned int	offset = 0;
 
@@ -157,7 +160,7 @@ name_encode(TASK *t, char *dest, char *name, unsigned int dest_offset, int compr
 }
 
 int
-name_encode2(TASK *t, char **dest, char *name, unsigned int dest_offset, int compression) {
+name_encode2(TASK *t, char **dest, const char *name, unsigned int dest_offset, int compression) {
   char			*namebuf = NULL;
   register char		*c = NULL, *d = NULL, *this_name = NULL, *cp = NULL;
   register int		len = 0;

@@ -38,17 +38,17 @@ typedef struct _named_comms {
   void		*data;
 } COMMS;
 
-typedef int (*CommandProcessor)(/* TASK *, char * */);
+typedef int (*CommandProcessor)(TASK *, COMMS *, char *);
 
 typedef struct _command {
-  char			*commandname;
+  const char		*commandname;
   CommandProcessor	commandproc;
 } COMMAND;
 
 static int messageid = 0;
 
-static int comms_sendping(TASK *, char *);
-static int comms_sendpong(TASK *, char *);
+static int comms_sendping(TASK *, COMMS *, char *);
+static int comms_sendpong(TASK *, COMMS *, char *);
 
 /* Commands from the master to the server */
 static COMMAND servercommands[] = { { "STOP AXFR",	NULL },
@@ -76,7 +76,7 @@ static COMMAND mastercommands[] = { { "STATS",		NULL },
 				    { NULL,		NULL } };
 
 static COMMS *
-__comms_allocate() {
+__comms_allocate(void) {
   COMMS		*comms = NULL;
 
   comms = (COMMS*)ALLOCATE(sizeof(COMMS), COMMS);
@@ -101,7 +101,7 @@ __message_allocate(size_t messagelength) {
 }
 
 static COMMSMESSAGE *
-_message_allocate(char *commandstring) {
+_message_allocate(const char *commandstring) {
   COMMSMESSAGE	*message = NULL;
 
   message = __message_allocate(strlen(commandstring));
@@ -265,7 +265,7 @@ comms_send(TASK *t, COMMS *comms) {
 
   if (!comms->donesofar) {
     newt = IOtask_init(NORMAL_PRIORITY_TASK, NEED_COMMAND_WRITE, t->fd, t->protocol, t->family, NULL);
-    task_add_extension(newt, comms, __comms_free, comms_send, NULL);
+    task_add_extension(newt, comms, __comms_free, (RunExtension)comms_send, NULL);
     newt->timeout = current_time + task_timeout;
   } else {
     newt = t;
@@ -354,7 +354,7 @@ comms_run(TASK *t, void * data) {
 #endif
   if ((rv == TASK_FAILED) || (rv == TASK_CONTINUE)) return TASK_CONTINUE;
 
-  /* Got a message from the master dispatch it. */
+  /* Got a message dispatch it. */
   action = comms_find_command(t, comms, servercommands, &args);
 
   __comms_free(t, comms);
@@ -367,8 +367,7 @@ comms_run(TASK *t, void * data) {
 }
 
 static taskexec_t
-comms_sendcommand(TASK *t, char *commandstring) {
-  COMMS		*comms = NULL;
+comms_sendcommand(TASK *t, COMMS *comms, const char *commandstring) {
   taskexec_t	rv = TASK_FAILED;
 
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
@@ -377,7 +376,7 @@ comms_sendcommand(TASK *t, char *commandstring) {
 
   comms = __comms_allocate();
   /* Send a command/response */
-  comms->message = _message_allocate(commandstring);;
+  comms->message = _message_allocate(commandstring);
 
   rv = comms_send(t, comms);
 #if DEBUG_ENABLED && DEBUG_SERVERCOMMS
@@ -397,7 +396,7 @@ scomms_tick(TASK *t, void *data) {
   if (lastseen <= KEEPALIVE) return TASK_CONTINUE;
 
   if (lastseen  <= (5*KEEPALIVE))
-    rv = comms_sendping(t, NULL);
+    rv = comms_sendping(t, comms, NULL);
   else
     rv = TASK_FAILED;
 
@@ -424,7 +423,7 @@ mcomms_tick(TASK *t, void *data) {
   if (lastseen <= KEEPALIVE) return TASK_CONTINUE;
 
   if (lastseen <= (5*KEEPALIVE))
-    rv = comms_sendping(t, NULL);
+    rv = comms_sendping(t, comms, NULL);
   else
     rv = TASK_FAILED;
 
@@ -462,19 +461,19 @@ mcomms_start(int fd) {
 
 
 static taskexec_t
-comms_sendping(TASK *t, char *args) {
+comms_sendping(TASK *t, COMMS *comms, char *args) {
   int		rv;
 
-  rv = comms_sendcommand(t, "PING");
+  rv = comms_sendcommand(t, comms, "PING");
 
   return rv;
 }
 
 static taskexec_t
-comms_sendpong(TASK *t, char *args) {
+comms_sendpong(TASK *t, COMMS *comms, char *args) {
   int		rv;
 
-  rv = comms_sendcommand(t, "PONG");
+  rv = comms_sendcommand(t, comms, "PONG");
 
   return rv;
 }

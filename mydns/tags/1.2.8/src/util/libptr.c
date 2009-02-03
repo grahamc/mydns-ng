@@ -47,7 +47,7 @@ mydns_ptr_count(SQL *sqlConn)
 	MYDNS_SET_PTR_TABLE_NAME
 **************************************************************************************************/
 void
-mydns_set_ptr_table_name(char *name)
+mydns_set_ptr_table_name(const char *name)
 {
 	if (!name)
 		strncpy(mydns_ptr_table_name, MYDNS_PTR_TABLE, sizeof(mydns_ptr_table_name)-1);
@@ -64,7 +64,7 @@ inline MYDNS_PTR *
 mydns_parse_ptr(row)
 	SQL_ROW row; {
   MYDNS_PTR *rv;
-  register int len;
+  register uint len;
 
   rv = (MYDNS_PTR *)ALLOCATE(sizeof(MYDNS_PTR), MYDNS_PTR);
 

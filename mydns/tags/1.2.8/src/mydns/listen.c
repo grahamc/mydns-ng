@@ -136,7 +136,7 @@ addrlist_add(int family, void *address, int port) {
 /**************************************************************************************************
 	IP6_EXTRA
 **************************************************************************************************/
-char *
+static char *
 ip6_extra(const struct in6_addr *a){ 
   static char buf[2048];
   char *b = &buf[0];
@@ -603,7 +603,7 @@ create_listeners(void) {
   ADDRLIST	*Listen = NULL;					/* Listen on these addresses */
   ADDRLIST	*NoListen = NULL;				/* Don't listen on these addresses */
   ADDRLIST	*L = NULL, *N = NULL;				/* Current address */
-  char		*port_opt = conf_get(&Conf, "port", 0);		/* "port" config option */
+  const char	*port_opt = conf_get(&Conf, "port", 0);		/* "port" config option */
   int		port = 53;					/* Listen on this port number */
 
   /* Set default port number */

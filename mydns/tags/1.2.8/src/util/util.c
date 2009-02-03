@@ -32,19 +32,19 @@ CONF *Conf;															/* Configuration data */
 void
 db_connect(void)
 {
-	char *user = conf_get(&Conf, "db-user", NULL);
-	char *host = conf_get(&Conf, "db-host", NULL);
-	char *database = conf_get(&Conf, "database", NULL);
-	char *password = conf_get(&Conf, "db-password", NULL);
+  const char *user = conf_get(&Conf, "db-user", NULL);
+  const char *host = conf_get(&Conf, "db-host", NULL);
+  const char *database = conf_get(&Conf, "database", NULL);
+  const char *password = conf_get(&Conf, "db-password", NULL);
 
-	/* If db- vars aren't present, try mysql- for backwards compatibility */
-	if (!user) user = conf_get(&Conf, "mysql-user", NULL);
-	if (!host) host = conf_get(&Conf, "mysql-host", NULL);
-	if (!password) password = conf_get(&Conf, "mysql-password", NULL);
-	if (!password) password = conf_get(&Conf, "mysql-pass", NULL);
+  /* If db- vars aren't present, try mysql- for backwards compatibility */
+  if (!user) user = conf_get(&Conf, "mysql-user", NULL);
+  if (!host) host = conf_get(&Conf, "mysql-host", NULL);
+  if (!password) password = conf_get(&Conf, "mysql-password", NULL);
+  if (!password) password = conf_get(&Conf, "mysql-pass", NULL);
 
-	sql_open(user, password, host, database);
-	Verbose(_("connected to %s, database \"%s\""), host, database);
+  sql_open(user, password, host, database);
+  Verbose(_("connected to %s, database \"%s\""), host, database);
 }
 /*--- db_connect() ------------------------------------------------------------------------------*/
 
@@ -54,7 +54,7 @@ db_connect(void)
 	Outputs a very simple progress meter - only used if stderr is a terminal.
 	If "total" is zero, the meter is erased.
 **************************************************************************************************/
-inline void
+void
 meter(unsigned long current, unsigned long total) {
   static char *m = NULL;
   int num;

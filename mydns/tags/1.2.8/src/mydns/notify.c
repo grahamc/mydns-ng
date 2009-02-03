@@ -401,8 +401,8 @@ notify_read(TASK *t) {
 #if DEBUG_ENABLED && DEBUG_NOTIFY
       DebugX("notify", 1, _("%s: DNS NOTIFY notify_read got a non-notify response from %s"), desctask(t), msg);
       if ((hdr.opcode == DNS_OPCODE_QUERY) && !hdr.qr) {
-	char *current = src;
-	char *msg2 = NULL;
+	uchar *current = src;
+	uchar *msg2 = NULL;
 	task_error_t errcode = TASK_FAILED;
 	DebugX("notify", 1, _("%s: DNS NOTIFY notify_read response is a query"), desctask(t));
 	msg2 = name_unencode2(src, rv - DNS_HEADERSIZE, &current, &errcode);
@@ -959,7 +959,7 @@ notify_allocate_fd(int family, struct sockaddr *sourceaddr)
 }
 
 static struct sockaddr *
-notify_get_source(int family, char *sourceaddr)
+notify_get_source(int family, const char *sourceaddr)
 {
   struct sockaddr *res = NULL;
 

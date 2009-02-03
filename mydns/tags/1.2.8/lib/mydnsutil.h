@@ -403,10 +403,10 @@ typedef struct _conflist {
 #define	CONF_FS_CHAR	'\034'
 #define	CONF_FS_STR		"\034"
 
-extern void	conf_clobber(CONF **, const char *, char *);
-extern void	conf_set(CONF **, const char *, char *, int);
-extern char	*conf_get(CONF **, const char *, int *);
-extern void	conf_load(CONF **, const char *);
+extern void		conf_clobber(CONF **, const char *, const char *);
+extern void		conf_set(CONF **, const char *, const char *, int);
+extern const char	*conf_get(CONF **, const char *, int *);
+extern void		conf_load(CONF **, const char *);
 
 #define MEMMAN 1
 
@@ -499,7 +499,7 @@ extern CONF	*Conf;				/* Config file data */
 **  error.c
 **  Error reporting functions.
 */
-extern char		*progname;			/* The name of this program */
+extern const char	*progname;			/* The name of this program */
 extern int		err_verbose;			/* Should ERR_VERBOSE output anything? */
 #if DEBUG_ENABLED
 extern int		err_debug;			/* Should ERR_DEBUG output anything? */

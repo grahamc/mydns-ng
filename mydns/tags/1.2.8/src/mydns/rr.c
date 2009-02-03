@@ -25,7 +25,7 @@
 
 #if DEBUG_ENABLED && DEBUG_RR
 /* Strings describing the datasections */
-char *datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
+const char *datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
 #endif
 
 

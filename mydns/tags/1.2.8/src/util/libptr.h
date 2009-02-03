@@ -51,13 +51,13 @@ typedef struct _mydns_ptr							/* `ptr' (ip-to-name mappings) */
 
 
 /* libptr.c */
-extern long			mydns_ptr_count(SQL *);
-extern void			mydns_set_ptr_table_name(char *);
+extern long		mydns_ptr_count(SQL *);
+extern void		mydns_set_ptr_table_name(const char *);
 extern MYDNS_PTR	*mydns_parse_ptr(SQL_ROW);
-extern int			mydns_ptr_load(SQL *, MYDNS_PTR **, struct in_addr *);
+extern int		mydns_ptr_load(SQL *, MYDNS_PTR **, struct in_addr *);
 extern MYDNS_PTR	*mydns_ptr_dup(MYDNS_PTR *, int);
 extern size_t		mydns_ptr_size(MYDNS_PTR *);
-extern void			_mydns_ptr_free(MYDNS_PTR *);
+extern void		_mydns_ptr_free(MYDNS_PTR *);
 #define mydns_ptr_free(p) if (p) _mydns_ptr_free(p), p = NULL
 
 #endif /* !_LIBPTR_H */

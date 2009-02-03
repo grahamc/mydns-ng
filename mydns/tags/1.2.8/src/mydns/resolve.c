@@ -25,7 +25,7 @@
 
 #if DEBUG_ENABLED
 /* Strings describing the datasections */
-char *resolve_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
+const char *resolve_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
 #endif
 
 /**************************************************************************************************
@@ -95,7 +95,7 @@ resolve_soa(TASK *t, datasection_t section, char *fqdn, int level) {
 **************************************************************************************************/
 static taskexec_t
 cname_recurse(TASK *t, datasection_t section, dns_qtype_t qtype,
-	      char *fqdn, MYDNS_SOA *soa, char *label, MYDNS_RR *cname, int level) {
+	      char *fqdn, MYDNS_RR *cname, int level) {
   register int n = 0;
 
   if (level >= MAX_CNAME_LEVEL)
@@ -158,7 +158,7 @@ process_rr(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn,
   /* If the RR list returned contains a CNAME record, follow the CNAME. */
   for (r = rr; r; r = r->next)
     if (r->type == DNS_QTYPE_CNAME)
-      return cname_recurse(t, section, qtype, fqdn, soa, label, r, level);
+      return cname_recurse(t, section, qtype, fqdn, r, level);
 
   /* Find RRs matching QTYPE */
   for (r = rr; r; r = r->next)
@@ -240,7 +240,7 @@ process_rr(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn,
 	ADD_AUTHORITY_NS
 	Adds AUTHORITY records for any NS records that match the request.
 **************************************************************************************************/
-static inline void
+static void
 add_authority_ns(TASK *t, datasection_t section, MYDNS_SOA *soa, char *match_label) {
   if (!t->ns.size && section == ANSWER)	{
     register MYDNS_RR *rr = NULL, *r = NULL;
@@ -448,7 +448,6 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
   char			*name = NULL;
   register MYDNS_SOA	*soa = NULL;
   taskexec_t		rv = TASK_COMPLETED;
-  register char		*label = NULL;
 
 #if DEBUG_ENABLED && DEBUG_RESOLVE
   DebugX("resolve", 1, _("%s: resolve(%s, %s, \"%s\", %d)"),
@@ -485,7 +484,7 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
       DebugX("resolve", 1, _("%s: Checking for recursion soa = %p, soa->recursive = %d, "
 			     "forward_recursive = %d, t->hdr.rd = %d, section = %d, level = %d"),
 	     desctask(t),
-	     soa, (soa)?soa->recursive:-1,
+	     soa, (soa) ? (int)soa->recursive : -1,
 	     forward_recursive, t->hdr.aa, section, level);
 #endif
       if (forward_recursive && t->hdr.rd) {

@@ -25,7 +25,7 @@
 #define ERROR_MAXMSGLEN	1024
 
 /* The name of the currently running program */
-char	*progname = (char *)PACKAGE;
+char	const *progname = (char *)PACKAGE;
 int	mypid = -1;
 
 /* Should ERR_VERBOSE cause output? */

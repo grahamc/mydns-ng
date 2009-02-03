@@ -496,7 +496,7 @@ typedef struct _mydns_rr {				/* `rr' table data (resource records) */
 } MYDNS_RR;
 
 #if DEBUG_ENABLED
-extern void *__mydns_rr_assert_pointer(void *, char *, char *, int);
+extern void *__mydns_rr_assert_pointer(void *, const char *, const char *, int);
 #define MYDNS_RR_NAME(__rrp)		  ((char*)__mydns_rr_assert_pointer((__rrp)->_name, \
 									    "name", __FILE__, __LINE__))
 #define MYDNS_RR_DATA_VALUE(__rrp)	  (__mydns_rr_assert_pointer((__rrp)->_data.value, \
@@ -548,15 +548,15 @@ typedef MYSQL_ROW SQL_ROW;
 
 
 /* ip.c */
-extern uint32_t		mydns_revstr_ip4(char *);
-extern int		mydns_extract_arpa(char *, uint8_t ip[]);
+extern uint32_t		mydns_revstr_ip4(const uchar *);
+extern int		mydns_extract_arpa(const uchar *, uint8_t ip[]);
 
 
 /* rr.c */
 extern long		mydns_rr_count(SQL *);
 extern void		mydns_rr_get_active_types(SQL *);
-extern void		mydns_set_rr_table_name(char *);
-extern void		mydns_set_rr_where_clause(char *);
+extern void		mydns_set_rr_table_name(const char *);
+extern void		mydns_set_rr_where_clause(const char *);
 extern dns_qtype_t	mydns_rr_get_type(char *);
 extern char *		mydns_rr_append_origin(char *, char *);
 extern void		mydns_rr_name_append_origin(MYDNS_RR *, char *);
@@ -573,32 +573,32 @@ extern MYDNS_RR		*mydns_rr_build(uint32_t, uint32_t, dns_qtype_t, dns_class_t, u
 					uint32_t, char *, char *,  uint16_t, const char *);
 extern MYDNS_RR		*mydns_rr_parse(SQL_ROW, unsigned long *, const char *);
 extern char		*mydns_rr_columns(void);
-extern char		*mydns_rr_prepare_query(uint32_t, dns_qtype_t, char *,
-						char *, char *, char *, char *);
-extern int		mydns_rr_load_all(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, char *, char *);
-extern int		mydns_rr_load_active(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, char *, char *);
-extern int		mydns_rr_load_inactive(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, char *, char *);
-extern int		mydns_rr_load_deleted(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, char *, char *);
-extern int		mydns_rr_count_all(SQL *, uint32_t, dns_qtype_t, char *, char *);
-extern int		mydns_rr_count_active(SQL *, uint32_t, dns_qtype_t, char *, char *);
-extern int		mydns_rr_count_inactive(SQL *, uint32_t, dns_qtype_t, char *, char *);
-extern int		mydns_rr_count_deleted(SQL *, uint32_t, dns_qtype_t, char *, char *);
-extern int		mydns_rr_load_all_filtered(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, char *, char *, char *);
-extern int		mydns_rr_load_active_filtered(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, char *, char *, char *);
-extern int		mydns_rr_load_inactive_filtered(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, char *, char *, char *);
-extern int		mydns_rr_load_deleted_filtered(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, char *, char *, char *);
-extern int		mydns_rr_count_all_filtered(SQL *, uint32_t, dns_qtype_t, char *, char *, char *);
-extern int		mydns_rr_count_active_filtered(SQL *, uint32_t, dns_qtype_t, char *, char *, char *);
-extern int		mydns_rr_count_inactive_filtered(SQL *, uint32_t, dns_qtype_t, char *, char *, char *);
-extern int		mydns_rr_count_deleted_filtered(SQL *, uint32_t, dns_qtype_t, char *, char *, char *);
+extern char		*mydns_rr_prepare_query(uint32_t, dns_qtype_t, const char *,
+						const char *, const char *, const char *, const char *);
+extern int		mydns_rr_load_all(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, const char *, const char *);
+extern int		mydns_rr_load_active(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, const char *, const char *);
+extern int		mydns_rr_load_inactive(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, const char *, const char *);
+extern int		mydns_rr_load_deleted(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, const char *, const char *);
+extern int		mydns_rr_count_all(SQL *, uint32_t, dns_qtype_t, const char *, const char *);
+extern int		mydns_rr_count_active(SQL *, uint32_t, dns_qtype_t, const char *, const char *);
+extern int		mydns_rr_count_inactive(SQL *, uint32_t, dns_qtype_t, const char *, const char *);
+extern int		mydns_rr_count_deleted(SQL *, uint32_t, dns_qtype_t, const char *, const char *);
+extern int		mydns_rr_load_all_filtered(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, const char *, const char *, const char *);
+extern int		mydns_rr_load_active_filtered(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, const char *, const char *, const char *);
+extern int		mydns_rr_load_inactive_filtered(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, const char *, const char *, const char *);
+extern int		mydns_rr_load_deleted_filtered(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, const char *, const char *, const char *);
+extern int		mydns_rr_count_all_filtered(SQL *, uint32_t, dns_qtype_t, const char *, const char *, const char *);
+extern int		mydns_rr_count_active_filtered(SQL *, uint32_t, dns_qtype_t, const char *, const char *, const char *);
+extern int		mydns_rr_count_inactive_filtered(SQL *, uint32_t, dns_qtype_t, const char *, const char *, const char *);
+extern int		mydns_rr_count_deleted_filtered(SQL *, uint32_t, dns_qtype_t, const char *, const char *, const char *);
 extern MYDNS_RR		*mydns_rr_dup(MYDNS_RR *, int);
 extern size_t		mydns_rr_size(MYDNS_RR *);
 
 /* soa.c */
 extern long		mydns_soa_count(SQL *);
 extern void		mydns_soa_get_active_types(SQL *);
-extern void		mydns_set_soa_table_name(char *);
-extern void		mydns_set_soa_where_clause(char *);
+extern void		mydns_set_soa_table_name(const char *);
+extern void		mydns_set_soa_where_clause(const char *);
 extern int		mydns_soa_load(SQL *, MYDNS_SOA **, const char *);
 extern int		mydns_soa_make(SQL *, MYDNS_SOA **, unsigned char *, unsigned char *);
 extern MYDNS_SOA	*mydns_soa_dup(MYDNS_SOA *, int);
@@ -609,7 +609,7 @@ extern void		_mydns_soa_free(MYDNS_SOA *);
 
 /* sql.c */
 extern SQL		*sql;
-extern void		sql_open(char *user, char *password, char *host, char *database);
+extern void		sql_open(const char *user, const char *password, const char *host, const char *database);
 extern void		sql_reopen(void);
 extern void		_sql_close(SQL *);
 #define			sql_close(p) if ((p)) _sql_close((p)), (p) = NULL

@@ -38,7 +38,13 @@
 #endif
 #endif
 
-extern int strncmp();
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+
+#if !defined(HAVE_DECL_STRNCMP) || !HAVE_DECL_STRNCMP
+extern int strncmp(const char *, const char *, size_t);
+#endif
 
 #include <stdio.h>
 

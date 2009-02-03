@@ -131,7 +131,7 @@ task_priority_name(int priority) {
   /*NOTREACHED*/
 }
 
-char *
+static char *
 task_status_name(TASK *t) {
 
   switch (t->status) {
@@ -412,7 +412,7 @@ desctask(TASK *t) {
 	   clientaddr(t), mydns_qtype_str(t->qtype),
 	   t->qname ? (char *)t->qname : _("<NONE>"),
 	   t->internal_id, task_status_name(t), task_priority_name(t->priority),
-	   task_type_name(t->type)) < 0;
+	   task_type_name(t->type));
 
   return (desc);
 }

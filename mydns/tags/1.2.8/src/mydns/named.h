@@ -69,7 +69,7 @@ typedef struct _named_queue *QUEUEP;
 
 
 #if DEBUG_ENABLED
-extern char *datasection_str[];			/* Strings describing data section types */
+extern const char *datasection_str[];			/* Strings describing data section types */
 #endif
 
 /* Structure for ARRAY objects */
@@ -144,11 +144,11 @@ extern MYDNS_RR		*find_rr(TASK *, MYDNS_SOA *, dns_qtype_t, const char *);
 
 
 /* encode.c */
-extern int		name_remember(TASK *, char *, unsigned int);
+extern int		name_remember(TASK *, const char *, unsigned int);
 extern void		name_forget(TASK *);
-extern unsigned int	name_find(TASK *, char *);
-extern int		name_encode(TASK *, char *, char *, unsigned int, int);
-extern int		name_encode2(TASK *, char **, char *, unsigned int, int);
+extern unsigned int	name_find(TASK *, const char *);
+extern int		name_encode(TASK *, char *, const char *, unsigned int, int);
+extern int		name_encode2(TASK *, char **, const char *, unsigned int, int);
 
 
 /* error.c */
@@ -216,7 +216,7 @@ extern void		_requeue(QUEUE **, TASK *, const char *, unsigned int);
 
 /* recursive.c */
 #if DEBUG_ENABLED
-extern char		*resolve_datasection_str[];
+extern const char	*resolve_datasection_str[];
 #endif
 extern taskexec_t	recursive_fwd(TASK *);
 extern taskexec_t	recursive_fwd_connect(TASK *);

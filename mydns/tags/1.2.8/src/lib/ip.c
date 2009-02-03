@@ -27,23 +27,21 @@
 	Provided with a string like "4.3.2.1", returns the numeric equivalent (of "1.2.3.4") as an
 	IPv4 address, in host byte order.
 **************************************************************************************************/
-uint32_t
-mydns_revstr_ip4(char *s)
-{
-	register char *c, n;
-	uint8_t	ip[4];
-	uint32_t	rv;
+uint32_t mydns_revstr_ip4(const uchar *s) {
+  register const uchar	*c;
+  register int		n;
+  uint8_t		ip[4];
+  uint32_t		rv;
 
-	ip[0] = ip[1] = ip[2] = ip[3] = 0;
-	for (c = s, n = 0; *c && n < 4; c++)
-		if (c == s || *c == '.')
-		{
-			if (*c == '.') c++;
-			ip[3-n] = (uint8_t)atoi(c);
-			n++;
-		}
-	memcpy(&rv, ip, sizeof(rv));
-	return (rv);
+  ip[0] = ip[1] = ip[2] = ip[3] = 0;
+  for (c = s, n = 0; *c && n < 4; c++)
+    if (c == s || *c == '.') {
+      if (*c == '.') c++;
+      ip[3-n] = (uint8_t)atoi((char*)c);
+      n++;
+    }
+  memcpy(&rv, ip, sizeof(rv));
+  return (rv);
 }
 /*--- mydns_revstr_ip4() ------------------------------------------------------------------------*/
 
@@ -53,22 +51,19 @@ mydns_revstr_ip4(char *s)
 	Given an "in-addr.arpa" address, loads the specified octets and returns the number of octets
 	found.
 **************************************************************************************************/
-int
-mydns_extract_arpa(char *s, uint8_t ip[])
-{
-	register char	*c;
-	register int	n;
+int mydns_extract_arpa(const uchar *s, uint8_t ip[]) {
+  register const uchar	*c;
+  register int	n;
 
-	ip[0] = ip[1] = ip[2] = ip[3] = 0;
-	for (c = s, n = 0; *c && n < 4; c++)
-		if (c == s || *c == '.')
-		{
-			if (*c == '.') c++;
-			if (!isdigit(*c))
-				return (n);
-			ip[n++] = (uint8_t)atoi(c);
-		}
+  ip[0] = ip[1] = ip[2] = ip[3] = 0;
+  for (c = s, n = 0; *c && n < 4; c++)
+    if (c == s || *c == '.') {
+      if (*c == '.') c++;
+      if (!isdigit(*c))
 	return (n);
+      ip[n++] = (uint8_t)atoi((char*)c);
+    }
+  return (n);
 }
 /*--- mydns_extract_arpa() ----------------------------------------------------------------------*/
 

@@ -363,7 +363,7 @@ become_daemon(void) {
 **************************************************************************************************/
 static void
 create_pidfile(void) {
-  char *name = conf_get(&Conf, "pidfile", NULL);
+  const char *name = conf_get(&Conf, "pidfile", NULL);
   FILE *fp = NULL;
 
   if (!(fp = fopen(name, "w")))

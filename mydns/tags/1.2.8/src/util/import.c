@@ -28,12 +28,7 @@ int opt_output = 0;						/* Output instead of insert */
 int opt_notrim = 0;						/* Don't remove trailing origin */
 int opt_replace = 0;						/* Replace current zone */
 int IXFR = 0;							/* Serial number on the rr records */
-char *ACTIVE = NULL;						/* ACTIVE String to use */
-
-extern void import_axfr(char *hostport, char *import_zone);
-#ifdef TINYDNS_IMPORT
-extern void import_tinydns(char *datafile, char *import_zone);
-#endif
+const char *ACTIVE = NULL;						/* ACTIVE String to use */
 
 enum _input_format {						/* Import format types */
 	INPUT_UNKNOWN,
@@ -227,7 +222,7 @@ cmdline(int argc, char **argv) {
 	Update, replace, or output SOA.  Returns the zone ID or 1 if not working with database.
 **************************************************************************************************/
 uint32_t
-import_soa(const char *import_origin, const char *ns, const char *mbox,
+import_soa(const uchar *import_origin, const uchar *ns, const uchar *mbox,
 	   unsigned serial, unsigned refresh, unsigned retry, unsigned expire,
 	   unsigned minimum, unsigned ttl) {
   char *esc_origin, *esc_ns, *esc_mbox;
@@ -311,16 +306,16 @@ import_soa(const char *import_origin, const char *ns, const char *mbox,
 	Update/output results for an RR record.
 **************************************************************************************************/
 void
-import_rr(char *name, char *type, char *data, int datalen, unsigned aux, unsigned ttl) {
+import_rr(const uchar *name, const uchar *type, const uchar *data, uint datalen, unsigned aux, unsigned ttl) {
   char *esc_name, *esc_data, *esc_edata = NULL;
-  char *querystr = NULL;
-  char *edata = NULL;
+  const char *querystr = NULL;
+  const uchar *edata = NULL;
   size_t edatalen = 0;
 
 
   if (!name || !type || !data)
     Errx(_("Invalid resource record name=%s, type=%s, data=%p"),
-	 (name)?name:"<undef>", (type)?type:"<undef>", data);
+	 (name) ? (char*)name : "<undef>", (type) ? (char*)type : "<undef>", data);
 
   rr_imported++;
   Verbose("import rr \"%s\" %s \"%s\"", name, type, data);
@@ -333,14 +328,14 @@ import_rr(char *name, char *type, char *data, int datalen, unsigned aux, unsigne
     Errx(_("got rr record without soa"));
 
   /* s = shortname(name); */
-  esc_name = sql_escstr(sql, name);
+  esc_name = sql_escstr(sql, (char*)name);
   if (mydns_rr_extended_data && datalen > mydns_rr_data_length) {
     edatalen = datalen - mydns_rr_data_length;
     edata = &data[mydns_rr_data_length];
     datalen = mydns_rr_data_length;
-    esc_edata = sql_escstr2(sql, edata, edatalen);
+    esc_edata = sql_escstr2(sql, (char*)edata, edatalen);
   }
-  esc_data = sql_escstr2(sql, data, datalen);
+  esc_data = sql_escstr2(sql, (char*)data, datalen);
   if (IXFR) {
     querystr = "INSERT INTO %s (zone,name,type,data%s,aux,ttl,active,serial) "
       "VALUES (%u,'%s','%s','%s'%s%s%s,%u,%u,'%s',%u);";

@@ -34,7 +34,7 @@ static char *_sql_database = NULL;
 	Connect to the database.  Errors fatal.
 **************************************************************************************************/
 void
-sql_open(char *user, char *password, char *host, char *database) {
+sql_open(const char *user, const char *password, const char *host, const char *database) {
   char *portp = NULL;
   unsigned int port = 0;
 

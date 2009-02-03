@@ -101,7 +101,7 @@ mydns_soa_count(SQL *sqlConn) {
 	MYDNS_SET_SOA_TABLE_NAME
 **************************************************************************************************/
 void
-mydns_set_soa_table_name(char *name) {
+mydns_set_soa_table_name(const char *name) {
   RELEASE(mydns_soa_table_name);
   if (!name)
     mydns_soa_table_name = STRDUP(MYDNS_SOA_TABLE);
@@ -115,7 +115,7 @@ mydns_set_soa_table_name(char *name) {
 	MYDNS_SET_SOA_WHERE_CLAUSE
 **************************************************************************************************/
 void
-mydns_set_soa_where_clause(char *where) {
+mydns_set_soa_where_clause(const char *where) {
   if (where && strlen(where)) {
     mydns_soa_where_clause = STRDUP(where);
   }

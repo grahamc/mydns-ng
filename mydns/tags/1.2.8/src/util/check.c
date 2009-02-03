@@ -261,12 +261,12 @@ shortname(char *name_to_shorten, int empty_name_is_ok) {
     return (name_to_shorten);
   if (!strcasecmp(soa->origin, name_to_shorten)) {
     if (empty_name_is_ok) 
-      return ("");
+      return ((char*)"");
     else 
       return (name_to_shorten);
   }
   if (!strcasecmp(name_to_shorten + nlen - olen, soa->origin))
-    name[nlen - olen - 1] = '\0';
+    name_to_shorten[nlen - olen - 1] = '\0';
   return (name_to_shorten);
 }
 /*--- shortname() ---------------------------------------------------------------------------*/
@@ -281,7 +281,6 @@ check_name(const char *name_in, const char *col, int is_rr, int allow_underscore
   char		*buf, *b, *label;
   char		*fqdn;
   int		fqdnlen;
-  int		buflen;
   
   fqdnlen = strlen(name_in);
   if (is_rr && *name_in && LASTCHAR(name_in) != '.') fqdnlen += strlen(soa->origin) + 1;
@@ -610,7 +609,6 @@ check_rr(void) {
 static void
 check_zone(void) {
   char *query;
-  int querylen;
   unsigned int rrct = 0;
   SQL_RES *res;
   SQL_ROW row;

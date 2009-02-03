@@ -25,7 +25,7 @@
 
 #if DEBUG_ENABLED && DEBUG_REPLY
 /* Strings describing the datasections */
-char *reply_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
+const char *reply_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
 #endif
 
 
@@ -55,7 +55,7 @@ reply_init(TASK *t) {
 	Add ADDITIONAL for each item in the provided list.
 **************************************************************************************************/
 static void
-reply_add_additional(TASK *t, RRLIST *rrlist, datasection_t section) {
+reply_add_additional(TASK *t, RRLIST *rrlist) {
   register RR *p = NULL;
 
   if (!rrlist)
@@ -82,7 +82,7 @@ reply_add_additional(TASK *t, RRLIST *rrlist, datasection_t section) {
 	RDATA_ENLARGE
 	Expands t->rdata by `size' bytes.  Returns a pointer to the destination.
 **************************************************************************************************/
-static inline char *
+static char *
 rdata_enlarge(TASK *t, size_t size) {
   if (!size)
     return (NULL);
@@ -99,8 +99,8 @@ rdata_enlarge(TASK *t, size_t size) {
 	Begins an RR.  Appends to t->rdata all the header fields prior to rdlength.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-static inline int
-reply_start_rr(TASK *t, RR *r, char *name, dns_qtype_t type, uint32_t ttl, char *desc) {
+static int
+reply_start_rr(TASK *t, RR *r, const char *name, dns_qtype_t type, uint32_t ttl, const char *desc) {
   char	*enc = NULL;
   char	*dest = NULL;
   int	enclen = 0;
@@ -142,7 +142,7 @@ reply_start_rr(TASK *t, RR *r, char *name, dns_qtype_t type, uint32_t ttl, char 
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
 static inline int
-reply_add_generic_rr(TASK *t, RR *r, char *desc) {
+reply_add_generic_rr(TASK *t, RR *r, const char *desc) {
   char		*enc = NULL, *dest = NULL;
   int		size = 0, enclen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
@@ -253,7 +253,7 @@ reply_add_aaaa(TASK *t, RR *r) {
 	Adds an HINFO record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-static inline int
+static int
 reply_add_hinfo(TASK *t, RR *r) {
   char		*dest = NULL;
   size_t	oslen = 0, cpulen = 0;
@@ -964,7 +964,7 @@ truncate_rrlist(TASK *t, off_t maxpkt, RRLIST *rrlist, datasection_t ds) {
 
   recs = rrlist->size;
   for (rr = rrlist->head; rr; rr = rr->next) {
-    if (rr->offset + rr->length >= maxpkt) {
+    if ((off_t)(rr->offset + rr->length) >= maxpkt) {
       recs--;
       if (ds != ADDITIONAL)
 	t->hdr.tc = 1;
@@ -1043,8 +1043,8 @@ build_reply(TASK *t, int want_additional) {
 
   /* Add data to ADDITIONAL section */
   if (want_additional) {
-    reply_add_additional(t, &t->an, ANSWER);
-    reply_add_additional(t, &t->ns, AUTHORITY);
+    reply_add_additional(t, &t->an);
+    reply_add_additional(t, &t->ns);
   }
 
   /* Sort records where necessary */

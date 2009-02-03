@@ -260,7 +260,7 @@ check_update(TASK *t, MYDNS_SOA *soa) {
 	UPDATE_RRDUMP
 **************************************************************************************************/
 static void
-update_rrdump(TASK *t, char *section, int which, UQRR *rr) {
+update_rrdump(TASK *t, const char *section, int which, UQRR *rr) {
   char		*buf = NULL;
   char		*b = NULL;
   int		n = 0;
