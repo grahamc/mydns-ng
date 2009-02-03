@@ -306,7 +306,8 @@ import_soa(const uchar *import_origin, const uchar *ns, const uchar *mbox,
 	Update/output results for an RR record.
 **************************************************************************************************/
 void
-import_rr(const uchar *name, const uchar *type, const uchar *data, uint datalen, unsigned aux, unsigned ttl) {
+import_rr(const uchar *name, const uchar *type, const uchar *data,
+	  size_t datalen, unsigned aux, unsigned ttl) {
   char *esc_name, *esc_data, *esc_edata = NULL;
   const char *querystr = NULL;
   const uchar *edata = NULL;

@@ -38,7 +38,8 @@ extern void meter(unsigned long, unsigned long);
 extern uint32_t import_soa(const uchar *origin, const uchar *ns, const uchar *mbox,
 			   unsigned serial, unsigned refresh, unsigned retry, unsigned expire,
 			   unsigned minimum, unsigned ttl);
-extern void import_rr(const uchar *name, const uchar *type, const uchar *data, size_t datalen, unsigned aux, unsigned ttl);
+extern void import_rr(const uchar *name, const uchar *type, const uchar *data,
+		      size_t datalen, unsigned aux, unsigned ttl);
 
 extern void import_axfr(char *hostport, char *import_zone);
 #ifdef TINYDNS_IMPORT
