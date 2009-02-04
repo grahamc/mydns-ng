@@ -735,7 +735,7 @@ server_greeting(void) {
 #endif
 
   if (answer_then_quit)
-    asprintf(&answer, _(" (quit after %u requests)"), answer_then_quit);
+    ASPRINTF(&answer, _(" (quit after %u requests)"), answer_then_quit);
 
   ASPRINTF(&g,
 	   "%s %s %s %.24s (%s %d %s)%s%s",

@@ -501,7 +501,6 @@ mydns_rr_build(uint32_t id,
 inline MYDNS_RR *
 mydns_rr_parse(SQL_ROW row, unsigned long *lengths, const char *origin) {
   dns_qtype_map *map;
-  dns_qtype_t	type;
   char		*active = NULL;
 #if USE_PGSQL
   timestamp	*stamp = NULL;

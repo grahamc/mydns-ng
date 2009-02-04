@@ -253,7 +253,7 @@ AC_DEFUN([AC_ENABLE_PROFILING],
 				then
 					AC_DEFINE(PROFILING, 1, [Compile with support for profiling?])
 					AC_MSG_RESULT([yes])
-					CFLAGS="-O -g -pg"
+					CFLAGS="-O2 -g -pg -Wp,-D_FORTIFY_SOURCE=2"
 					LDFLAGS="$LDFLAGS -pg"
 					PROFILE_ENABLED=yes
 					AC_SUBST(PROFILE_ENABLED)
@@ -281,7 +281,7 @@ AC_DEFUN([AC_ENABLE_VALGRIND],
 				if test "$enableval" = yes
 				then
 					AC_MSG_RESULT([yes])
-					CFLAGS="-O -g"
+					CFLAGS="-O2 -g -Wp,-D_FORTIFY_SOURCE=2"
 					AC_C_CFLAGS(-fno-inline)
 					AC_C_CFLAGS(-funsigned-char)
 				else
@@ -307,9 +307,10 @@ AC_DEFUN([AC_ENABLE_STRICT],
 				if test "$enableval" = yes
 				then
 					AC_MSG_RESULT([yes])
-					CFLAGS="-O -g"
+					CFLAGS="-O2 -g -Wp,-D_FORTIFY_SOURCE=2"
 					AC_C_CFLAGS(-W)
 					AC_C_CFLAGS(-Wall)
+					AC_C_CFLAGS(-Wno-unused-parameter)
 #					AC_C_CFLAGS(-Wundef)
 					AC_C_CFLAGS(-Wendif-labels)
 					AC_C_CFLAGS(-Wshadow)
@@ -346,7 +347,7 @@ AC_DEFUN([AC_ENABLE_DEBUG],
 			[
 				if test "$enableval" = yes
 				then
-					CFLAGS="-O -g"
+					CFLAGS="-O2 -g -Wp,-D_FORTIFY_SOURCE=2"
 					AC_DEFINE(DEBUG_ENABLED, 1, [Compile with support for debugging options?])
 					AC_MSG_RESULT([yes])
 					AC_C_CFLAGS(-fno-inline)

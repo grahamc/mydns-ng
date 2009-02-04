@@ -48,6 +48,7 @@ void meter(unsigned long current, unsigned long total) {
   int num;
   time_t now;
   static time_t last_update = 0;
+  size_t res;
 
   if (!isatty(STDERR_FILENO))
     return;
@@ -57,7 +58,7 @@ void meter(unsigned long current, unsigned long total) {
   if (!total || current > total) {						/* Erase meter */
     memset(m, ' ', 73);
     m[72] = '\r';
-    fwrite(m, 73, 1, stderr);
+    res = fwrite(m, 73, 1, stderr);
     fflush(stderr);
     last_update = 0;
     return;

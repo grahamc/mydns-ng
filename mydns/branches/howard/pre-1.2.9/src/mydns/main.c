@@ -341,7 +341,9 @@ create_pidfile(void) {
   fclose(fp);
 
   /* Change ownership so we can delete it later */
-  chown(name, perms_uid, perms_gid);
+  if(chown(name, perms_uid, perms_gid)) {
+    Err(_("cannot change ownership of %s to %d:%d giving up"), name, perms_uid, perms_gid);
+  }
 }
 /*--- create_pidfile() --------------------------------------------------------------------------*/
 
@@ -1095,7 +1097,9 @@ main(int argc, char **argv)
   status_start_server();
 
   if (run_as_root) {
-    chdir("/tmp");
+    if(chdir("/tmp")) {
+      Err(_("Cannot change directory to /tmp because %s giving up"), strerror(errno));
+    }
     Notice("%s", _("WARNING: running with superuser permissions (cwd=/tmp)"));
   } else {
 #if PROFILING
@@ -1103,7 +1107,9 @@ main(int argc, char **argv)
      * If profiling, change to a dir that a user
      * without perms can likely write profiling data to
      */
-    chdir("/tmp");
+    if(chdir("/tmp")) {
+      Err(_("Cannot change directory to /tmp because %s giving up"), strerror(errno));
+    }
 #endif
 
     /* Drop permissions */
