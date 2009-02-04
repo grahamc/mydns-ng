@@ -44,17 +44,17 @@ typedef struct _named_comms {
   void		*data;
 } COMMS;
 
-typedef int (*CommandProcessor)(/* TASK *, char * */);
+typedef int (*CommandProcessor)(TASK *, char *, void *);
 
 typedef struct _command {
-  char			*commandname;
+  const char		*commandname;
   CommandProcessor	commandproc;
 } COMMAND;
 
 static int messageid = 0;
 
-static int comms_sendping(TASK *, char *);
-static int comms_sendpong(TASK *, char *);
+static int comms_sendping(TASK *, char *, void *);
+static int comms_sendpong(TASK *, char *, void *);
 
 /* Commands from the master to the server */
 static COMMAND servercommands[] = { { "STOP AXFR",	NULL },
@@ -82,10 +82,10 @@ static COMMAND mastercommands[] = { { "STATS",		NULL },
 				    { NULL,		NULL } };
 
 static COMMS *
-__comms_allocate() {
+__comms_allocate(void) {
   COMMS		*comms = NULL;
 
-  comms = (COMMS*)ALLOCATE(sizeof(COMMS), COMMS);
+  comms = ALLOCATE(sizeof(COMMS), COMMS*);
 
   comms->message = NULL;
   comms->donesofar = 0;
@@ -99,7 +99,7 @@ __message_allocate(size_t messagelength) {
   COMMSMESSAGE	*message = NULL;
 
   messagelength += sizeof(COMMSMESSAGE) - sizeof(message->messagedata) + 1;
-  message = (COMMSMESSAGE*)ALLOCATE(messagelength, COMMSMESSAGE);
+  message = ALLOCATE(messagelength, COMMSMESSAGE*);
 
   message->messageid = htons(messageid++);
   message->messagelength = htons(messagelength);
@@ -165,7 +165,7 @@ _comms_recv(TASK *t, void *data, size_t size, int flags) {
 }
 
 static int
-_comms_send(TASK *t, void *data, size_t size,  int flags) {
+_comms_send(TASK *t, void *data, size_t size, int flags) {
   int rv = 0;
 
 #if !defined(MSG_NOSIGNAL)
@@ -261,7 +261,8 @@ comms_recv(TASK *t, COMMS *comms) {
 }
 
 static taskexec_t
-comms_send(TASK *t, COMMS *comms) {
+comms_send(TASK *t, void *commsp) {
+  COMMS		*comms = commsp;
   int		rv = 0;
   char		*msgbuf = NULL;
   uint16_t	messagelength = 0;
@@ -367,7 +368,7 @@ comms_run(TASK *t, void * data) {
   comms->donesofar = 0;
 
   if (action)
-    action(t, comms, args);
+    action(t, (void*)comms, args);
 
   return TASK_CONTINUE;
 }
@@ -404,7 +405,7 @@ scomms_tick(TASK *t, void *data) {
   if (lastseen <= KEEPALIVE) return TASK_CONTINUE;
 
   if (lastseen  <= (5*KEEPALIVE))
-    rv = comms_sendping(t, NULL);
+    rv = comms_sendping(t, NULL, NULL);
   else
     rv = TASK_FAILED;
 
@@ -432,7 +433,7 @@ mcomms_tick(TASK *t, void *data) {
   if (lastseen <= KEEPALIVE) return TASK_CONTINUE;
 
   if (lastseen <= (5*KEEPALIVE))
-    rv = comms_sendping(t, NULL);
+    rv = comms_sendping(t, NULL, NULL);
   else
     rv = TASK_FAILED;
 
@@ -471,19 +472,19 @@ mcomms_start(int fd) {
 
 
 static taskexec_t
-comms_sendping(TASK *t, char *args) {
+comms_sendping(TASK *t, char *comms, void *args) {
   int		rv;
 
-  rv = comms_sendcommand(t, "PING");
+  rv = comms_sendcommand(t, (char*)"PING");
 
   return rv;
 }
 
 static taskexec_t
-comms_sendpong(TASK *t, char *args) {
+comms_sendpong(TASK *t, char *comms, void *args) {
   int		rv;
 
-  rv = comms_sendcommand(t, "PONG");
+  rv = comms_sendcommand(t, (char*)"PONG");
 
   return rv;
 }

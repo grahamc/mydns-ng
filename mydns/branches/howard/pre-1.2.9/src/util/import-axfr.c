@@ -93,7 +93,7 @@ axfr_connect(char *hostportp, char **hostnamep, char *zone) {
 	Creates a question.  Returns the packet and stores the length of the packet in `packetlen'.
 	The packet is dynamically allocated and should be free()'d.
 **************************************************************************************************/
-char *
+static char *
 make_question(uint16_t id, dns_qtype_t qtype, char *name, size_t *packetlen) {
   char req[1024], *dest = req, *c;
   DNS_HEADER	header;
@@ -134,7 +134,7 @@ make_question(uint16_t id, dns_qtype_t qtype, char *name, size_t *packetlen) {
   
   if (packetlen) *packetlen = len;
 
-  c = ALLOCATE(len, char[]);
+  c = ALLOCATE(len, char*);
   memcpy(c, &req, len);
 
   return (c);
@@ -150,11 +150,12 @@ static void
 request_axfr(int fd, char *rem_hostname, char *zone) {
   char		*qb, *q, *p;
   size_t	qlen;
-  int		rv, off = 0;
+  int		rv;
+  size_t	off = 0;
 
   if (!(qb = make_question(getpid(), DNS_QTYPE_AXFR, zone, &qlen)))
     exit(EXIT_FAILURE);
-  p = q = ALLOCATE(qlen + SIZE16, char[]);
+  p = q = ALLOCATE(qlen + SIZE16, char*);
   DNS_PUT16(p, qlen);
   memcpy(p, qb, qlen);
   RELEASE(qb);
@@ -176,7 +177,7 @@ request_axfr(int fd, char *rem_hostname, char *zone) {
 **************************************************************************************************/
 static char *
 process_axfr_answer(char *reply, size_t replylen, char *src, char* origin) {
-  char *name, *data, *rv;
+  char *name, *rv;
   task_error_t errcode;
   uint16_t type, class, rdlen;
   uint32_t ttl;
@@ -255,7 +256,7 @@ void
 import_axfr(char *hostport, char *import_zone) {
   unsigned char *reply, len[2];
   int fd;
-  size_t replylen;
+  int replylen;
   char *zone;
 
 #if DEBUG_ENABLED
@@ -281,7 +282,7 @@ import_axfr(char *hostport, char *import_zone) {
   while (recv(fd, len, 2, MSG_WAITALL) == 2) {
     if ((replylen = ((len[0] << 8) | (len[1]))) < 12)
       Errx(_("message too short"));
-    reply = ALLOCATE(replylen, char[]);
+    reply = ALLOCATE(replylen, uchar*);
     if (recv(fd, reply, replylen, MSG_WAITALL) != replylen)
       Errx(_("short message from server"));
     if (process_axfr_reply((char*)reply, replylen, zone))

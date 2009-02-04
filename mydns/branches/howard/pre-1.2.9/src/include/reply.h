@@ -20,17 +20,17 @@
 #define _MYDNS_LIB_REPLY_H
 
 extern void		mydns_reply_add_additional(TASK *t, RRLIST *rrlist, datasection_t section);
-extern int		__mydns_reply_add_generic_rr(TASK *t, RR *r, dns_qtype_map *map);
-extern int		__mydns_reply_add_a(TASK *t, RR *r, dns_qtype_map *map);
-extern int		__mydns_reply_add_aaaa(TASK *t, RR *r, dns_qtype_map *map);
-extern int		__mydns_reply_add_hinfo(TASK *t, RR *r, dns_qtype_map *map);
-extern int		__mydns_reply_add_mx(TASK *t, RR *r, dns_qtype_map *map);
-extern int		__mydns_reply_add_naptr(TASK *t, RR *r, dns_qtype_map *map);
-extern int		__mydns_reply_add_rp(TASK *t, RR *r, dns_qtype_map *map);
-extern int		__mydns_reply_add_soa(TASK *t, RR *r, dns_qtype_map *map);
-extern int		__mydns_reply_add_srv(TASK *t, RR *r, dns_qtype_map *map);
-extern int		__mydns_reply_add_txt(TASK *t, RR *r, dns_qtype_map *map);
-extern int		__mydns_reply_unexpected_type(TASK *t, RR *r, dns_qtype_map *map);
-extern int		__mydns_reply_unknown_type(TASK *t, RR *r, dns_qtype_map *map);
+extern int		__mydns_reply_add_generic_rr(TASKP t, RRP r, dns_qtype_mapp map);
+extern int		__mydns_reply_add_a(TASKP t, RRP r, dns_qtype_mapp map);
+extern int		__mydns_reply_add_aaaa(TASKP t, RRP r, dns_qtype_mapp map);
+extern int		__mydns_reply_add_hinfo(TASKP t, RRP r, dns_qtype_mapp map);
+extern int		__mydns_reply_add_mx(TASKP t, RRP r, dns_qtype_mapp map);
+extern int		__mydns_reply_add_naptr(TASKP t, RRP r, dns_qtype_mapp map);
+extern int		__mydns_reply_add_rp(TASKP t, RRP r, dns_qtype_mapp map);
+extern int		__mydns_reply_add_soa(TASKP t, RRP r, dns_qtype_mapp map);
+extern int		__mydns_reply_add_srv(TASKP t, RRP r, dns_qtype_mapp map);
+extern int		__mydns_reply_add_txt(TASKP t, RRP r, dns_qtype_mapp map);
+extern int		__mydns_reply_unexpected_type(TASKP t, RRP r, dns_qtype_mapp map);
+extern int		__mydns_reply_unknown_type(TASKP t, RRP r, dns_qtype_mapp map);
 
 #endif

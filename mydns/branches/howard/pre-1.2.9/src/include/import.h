@@ -19,40 +19,46 @@
 #ifndef _MYDNS_LIB_IMPORT_H
 #define _MYDNS_LIB_IMPORT_H
 
+extern uint32_t import_soa(const char *origin, const char *ns, const char *mbox,
+			   unsigned serial, unsigned refresh, unsigned retry, unsigned expire,
+			   unsigned minimum, unsigned ttl);
+extern void import_rr(const char *name, const char *type, const char *data,
+		      size_t datalen, unsigned aux, unsigned ttl);
+
 extern char *__mydns_process_axfr_default(char *rv, char *name, char *origin,
 					  char *reply, size_t replylen, char *src, uint32_t ttl,
-					  dns_qtype_map *map);
+					  dns_qtype_mapp map);
 extern char *__mydns_process_axfr_a(char *rv, char *name, char *origin,
 				    char *reply, size_t replylen, char *src, uint32_t ttl,
-				    dns_qtype_map *map);
+				    dns_qtype_mapp map);
 extern char *__mydns_process_axfr_aaaa(char *rv, char *name, char *origin,
 				       char *reply, size_t replylen, char *src, uint32_t ttl,
-				       dns_qtype_map *map);
+				       dns_qtype_mapp map);
 extern char *__mydns_process_axfr_cname(char *rv, char *name, char *origin,
 					char *reply, size_t replylen, char *src, uint32_t ttl,
-					dns_qtype_map *map);
+					dns_qtype_mapp map);
 extern char *__mydns_process_axfr_hinfo(char *rv, char *name, char *origin,
 					char *reply, size_t replylen, char *src, uint32_t ttl,
-					dns_qtype_map *map);
+					dns_qtype_mapp map);
 extern char *__mydns_process_axfr_mx(char *rv, char *name, char *origin,
 				     char *reply, size_t replylen, char *src, uint32_t ttl,
-				     dns_qtype_map *map);
+				     dns_qtype_mapp map);
 extern char *__mydns_process_axfr_ns(char *rv, char *name, char *origin,
 				     char *reply, size_t replylen, char *src, uint32_t ttl,
-				     dns_qtype_map *map);
+				     dns_qtype_mapp map);
 extern char *__mydns_process_axfr_ptr(char *rv, char *name, char *origin,
 				      char *reply, size_t replylen, char *src, uint32_t ttl,
-				      dns_qtype_map *map);
+				      dns_qtype_mapp map);
 extern char *__mydns_process_axfr_rp(char *rv, char *name, char *origin,
 				     char *reply, size_t replylen, char *src, uint32_t ttl,
-				     dns_qtype_map *map);
+				     dns_qtype_mapp map);
 extern char *__mydns_process_axfr_soa(char *rv, char *name, char *origin,
 				      char *reply, size_t replylen, char *src, uint32_t ttl,
-				      dns_qtype_map *map);
+				      dns_qtype_mapp map);
 extern char *__mydns_process_axfr_srv(char *rv, char *name, char *origin,
 				      char *reply, size_t replylen, char *src, uint32_t ttl,
-				      dns_qtype_map *map);
+				      dns_qtype_mapp map);
 extern char *__mydns_process_axfr_txt(char *rv, char *name, char *origin,
 				      char *reply, size_t replylen, char *src, uint32_t ttl,
-				      dns_qtype_map *map);
+				      dns_qtype_mapp map);
 #endif

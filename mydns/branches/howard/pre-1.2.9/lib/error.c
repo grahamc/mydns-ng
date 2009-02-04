@@ -35,6 +35,8 @@ int	err_verbose = 0;
 #if DEBUG_ENABLED
 /* Should ERR_DEBUG cause output? */
 int	err_debug = 0;
+int	debug_enabled = 0;
+int	debug_all = 0;
 #endif
 
 /* Should error functions output to a file? */
@@ -83,7 +85,7 @@ error_init(const char *argv0, int facility) {
 	Always returns -1.
 **************************************************************************************************/
 static void
-__error_out(int priority, const char *out, int len, char **err_last) {
+__error_out(int priority, const char *out, char **err_last) {
   static int  repeat = 0;
 
   if (err_last) {
@@ -139,7 +141,7 @@ _error_out(
   else
     len = ASPRINTF(&out, "%s", msg);
 
-  __error_out(priority, out, len, &err_last);
+  __error_out(priority, out, &err_last);
 
   RELEASE(out);
 
@@ -150,28 +152,12 @@ _error_out(
 /*--- _error_out() ------------------------------------------------------------------------------*/
 
 
-/**************************************************************************************************
-   _ERROR_ASSERT_FAIL
-   This is called by the macro "Assert" if an assertion fails.
-**************************************************************************************************/
-void
-_error_assert_fail(const char *assertion) {
-  char *msg = NULL;
-
-  ASPRINTF(&msg, "assertion failed: %s", assertion);
-
-  _error_out(LOG_ERR, 0, 1, msg);
-
-  RELEASE(msg);
-}
-/*--- _error_assert_fail() ----------------------------------------------------------------------*/
-
-
 #if DEBUG_ENABLED
 /**************************************************************************************************
 	DEBUG
 **************************************************************************************************/
 void __Debug(const char *fmt, ...) {
+  int reslength;
   char *msg = NULL;
   va_list ap;
 
@@ -179,12 +165,14 @@ void __Debug(const char *fmt, ...) {
 
   /* Construct output string */
   va_start(ap, fmt);
-  VASPRINTF(&msg, fmt, ap);
+  reslength = vasprintf(&msg, fmt, ap);
   va_end(ap);
+
+  if (reslength < 0) Out_Of_Memory();
 
   _error_out(LOG_DEBUG, 0, 0, msg);
 
-  RELEASE(msg);
+  free((void*)msg);
 }
 /*--- Debug() -----------------------------------------------------------------------------------*/
 #endif
@@ -296,7 +284,7 @@ Err(const char *fmt, ...) {
 
 void
 Out_Of_Memory() {
-  __error_out(LOG_ERR, _("out of memory"), strlen(_("out of memory")), NULL);
+  __error_out(LOG_ERR, _("out of memory"), NULL);
   abort();
 }
 

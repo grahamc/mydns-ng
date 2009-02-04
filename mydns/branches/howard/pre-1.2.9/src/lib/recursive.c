@@ -70,7 +70,7 @@ get_serveraddr(struct sockaddr **rsa) {
   return rsalen;
 }
 
-typedef time_t (*RecursionAlgorithm)(/* TASK *, recursive_fwd_write_t * */);
+typedef time_t (*RecursionAlgorithm)(TASK *, recursive_fwd_write_t *);
 
 static time_t
 _recursive_linear(TASK *t, recursive_fwd_write_t *querypacket) {
@@ -231,8 +231,7 @@ __recursive_fwd_setup_query(TASK *t, recursive_fwd_write_t **querypacket) {
   *querypacket = qp = (recursive_fwd_write_t*)t->extension;
 
   if (!qp) {
-    *querypacket = qp = (recursive_fwd_write_t*)ALLOCATE(sizeof(recursive_fwd_write_t),
-							 recursive_fwd_write_t);
+    *querypacket = qp = ALLOCATE(sizeof(recursive_fwd_write_t), recursive_fwd_write_t*);
     memset(qp, 0, sizeof(recursive_fwd_write_t));
     t->extension = (void*)qp;
   }
@@ -252,7 +251,7 @@ __recursive_fwd_setup_query(TASK *t, recursive_fwd_write_t **querypacket) {
 }
 
 static taskexec_t
-__recursive_fwd_write_udp(TASK *t) {
+__recursive_fwd_write_udp(TASK *t, void *data) {
   char			*query = NULL;					/* Query message */
   size_t		querylen = 0;					/* Length of 'query' */
   int			rv = 0, fd = -1;
@@ -309,7 +308,7 @@ __recursive_fwd_write_udp(TASK *t) {
 }
 
 static taskexec_t
-__recursive_fwd_write_tcp(TASK *t) {
+__recursive_fwd_write_tcp(TASK *t, void *data) {
   char			*query = NULL;					/* Query message */
   size_t		querylen = 0;					/* Length of 'query' */
   int			rv = 0, fd = -1;
@@ -424,7 +423,7 @@ __recursive_fwd_read(TASK *t, char *reply, int replylen) {
   memset(&hdr, 0, sizeof(hdr));
 
   /* Copy reply into task */
-  t->reply = ALLOCATE(replylen, char[]);
+  t->reply = ALLOCATE(replylen, char*);
 
   /* Preserve incoming id rather than the recursive one */
   r = t->reply;
@@ -469,8 +468,7 @@ __recursive_fwd_setup_reply1(TASK *t, recursive_fwd_read_t **replypacket) {
   *replypacket = rp = (recursive_fwd_read_t*)t->extension;
 
   if (!rp) {
-    *replypacket = rp = (recursive_fwd_read_t*)ALLOCATE(sizeof(recursive_fwd_read_t),
-							recursive_fwd_read_t);
+    *replypacket = rp = ALLOCATE(sizeof(recursive_fwd_read_t), recursive_fwd_read_t*);
     memset(rp, 0, sizeof(recursive_fwd_read_t));
     t->extension = (void*)rp;
   }
@@ -488,7 +486,7 @@ __recursive_fwd_setup_reply2(TASK *t, recursive_fwd_read_t **replypacket, size_t
   *replypacket = rp = (recursive_fwd_read_t*)t->extension;
 
   if (!rp->reply) {
-    rp->reply = (char*)ALLOCATE(length, char[]);
+    rp->reply = ALLOCATE(length, char*);
     rp->replylength = length;
   }
 
@@ -507,7 +505,7 @@ __recursive_fwd_setup_reply(TASK *t, recursive_fwd_read_t **replypacket) {
 }
 
 static taskexec_t
-__recursive_fwd_read_udp(TASK *t) {
+__recursive_fwd_read_udp(TASK *t, void* data) {
   char			*reply = NULL;
   uint16_t		replylen = 0;
   int			rv = 0;
@@ -606,7 +604,7 @@ __recursive_fwd_read_udp(TASK *t) {
 }
 
 static taskexec_t
-__recursive_fwd_read_tcp(TASK *t) {
+__recursive_fwd_read_tcp(TASK *t, void *data) {
   char			*reply = NULL;
   uint16_t		replylen = 0;
   int			rv = 0;
@@ -892,7 +890,7 @@ __recursive_fwd_connect_udp(TASK *t) {
   return TASK_CONTINUE;
 }
 
-taskexec_t
+static taskexec_t
 __recursive_fwd_connect_tcp(TASK *t) {
   int			rv = 0;
   struct sockaddr	*rsa = NULL;
@@ -918,7 +916,7 @@ __recursive_fwd_connect_tcp(TASK *t) {
 #endif
       /* Set up timeout so that reconnect is attempted */
       t->timeout = current_time + recursion_connect_timeout;
-      t->status == NEED_RECURSIVE_FWD_CONNECTING;
+      t->status = NEED_RECURSIVE_FWD_CONNECTING;
       return TASK_CONTINUE;
     }
     Warn("%s: %s %s", desctask(t), _("error connecting to recursive forwarder"),
@@ -931,7 +929,7 @@ __recursive_fwd_connect_tcp(TASK *t) {
   return TASK_CONTINUE;
 }
 
-taskexec_t
+static taskexec_t
 __recursive_fwd_connecting_tcp(TASK *t) {
   int			rv = 0;
   int			fd = -1;
@@ -1003,8 +1001,8 @@ recursive_fwd_write(TASK *t) {
 
   switch (t->protocol) {
 
-  case SOCK_DGRAM:		return __recursive_fwd_write_udp(t);
-  case SOCK_STREAM:		return __recursive_fwd_write_tcp(t);
+  case SOCK_DGRAM:		return __recursive_fwd_write_udp(t, NULL);
+  case SOCK_STREAM:		return __recursive_fwd_write_tcp(t, NULL);
 
   default:			return dnserror(t, DNS_RCODE_SERVFAIL, ERR_INTERNAL);
 
@@ -1023,8 +1021,8 @@ recursive_fwd_read(TASK *t) {
 
   switch (t->protocol) {
 
-  case SOCK_DGRAM:		return __recursive_fwd_read_udp(t);
-  case SOCK_STREAM:		return __recursive_fwd_read_tcp(t);
+  case SOCK_DGRAM:		return __recursive_fwd_read_udp(t, NULL);
+  case SOCK_STREAM:		return __recursive_fwd_read_tcp(t, NULL);
 
   default:			return dnserror(t, DNS_RCODE_SERVFAIL, ERR_INTERNAL);
 

@@ -132,10 +132,10 @@ uint32_t import_soa(const char *import_origin, const char *ns, const char *mbox,
 	Update/output results for an RR record.
 **************************************************************************************************/
 void
-import_rr(char *name, char *type, char *data, int datalen, unsigned aux, unsigned ttl) {
+import_rr(const char *name, const char *type, const char *data, size_t datalen, unsigned aux, unsigned ttl) {
   char *esc_name, *esc_data, *esc_edata = NULL;
-  char *querystr = NULL;
-  char *edata = NULL;
+  const char *querystr = NULL;
+  const char *edata = NULL;
   size_t edatalen = 0;
 
 
@@ -154,14 +154,14 @@ import_rr(char *name, char *type, char *data, int datalen, unsigned aux, unsigne
     Errx(_("got rr record without soa"));
 
   /* s = shortname(name); */
-  esc_name = sql_escstr(sql, name);
+  esc_name = sql_escstr(sql, (char*)name);
   if (mydns_rr_extended_data && datalen > mydns_rr_data_length) {
     edatalen = datalen - mydns_rr_data_length;
     edata = &data[mydns_rr_data_length];
     datalen = mydns_rr_data_length;
-    esc_edata = sql_escstr2(sql, edata, edatalen);
+    esc_edata = sql_escstr2(sql, (char*)edata, edatalen);
   }
-  esc_data = sql_escstr2(sql, data, datalen);
+  esc_data = sql_escstr2(sql, (char*)data, datalen);
   if (IXFR) {
     querystr = "INSERT INTO %s (zone,name,type,data%s,aux,ttl,active,serial) "
       "VALUES (%u,'%s','%s','%s'%s%s%s,%u,%u,'%s',%u);";
@@ -225,7 +225,7 @@ import_rr(char *name, char *type, char *data, int datalen, unsigned aux, unsigne
 
 char *__mydns_process_axfr_soa(char *rv, char *name, char *origin,
 			       char *reply, size_t replylen, char *src, uint32_t ttl,
-			       dns_qtype_map *map) {
+			       dns_qtype_mapp map) {
   char *ns, *mbox;
   task_error_t errcode;
   uint32_t serial, refresh, retry, expire, minimum;
@@ -253,7 +253,7 @@ char *__mydns_process_axfr_soa(char *rv, char *name, char *origin,
 
 char *__mydns_process_axfr_a(char *rv, char *name, char *origin,
 			     char *reply, size_t replylen, char *src, uint32_t ttl,
-			     dns_qtype_map *map) {
+			     dns_qtype_mapp map) {
   char *data;
   struct in_addr addr;
   memcpy(&addr.s_addr, src, SIZE32);
@@ -265,7 +265,7 @@ char *__mydns_process_axfr_a(char *rv, char *name, char *origin,
 
 char *__mydns_process_axfr_aaaa(char *rv, char *name, char *origin,
 				char *reply, size_t replylen, char *src, uint32_t ttl,
-				dns_qtype_map *map) {
+				dns_qtype_mapp map) {
   char *data;
   uint8_t addr[16]; /* This is a cheat.
 		    ** it should be a 'struct in6_addr'
@@ -282,7 +282,7 @@ char *__mydns_process_axfr_aaaa(char *rv, char *name, char *origin,
 
 char *__mydns_process_axfr_cname(char *rv, char *name, char *origin,
 				 char *reply, size_t replylen, char *src, uint32_t ttl,
-				 dns_qtype_map *map) {
+				 dns_qtype_mapp map) {
   char *data;
   task_error_t errcode;
   if (!(data = name_unencode(reply, replylen, &src, &errcode)))
@@ -296,7 +296,7 @@ char *__mydns_process_axfr_cname(char *rv, char *name, char *origin,
 
 char *__mydns_process_axfr_hinfo(char *rv, char *name, char *origin,
 				 char *reply, size_t replylen, char *src, uint32_t ttl,
-				 dns_qtype_map *map) {
+				 dns_qtype_mapp map) {
   char *data;
   size_t	len;
   int		quote1, quote2;
@@ -304,7 +304,7 @@ char *__mydns_process_axfr_hinfo(char *rv, char *name, char *origin,
   char		*insdata;
 
   len = *src++;
-  data = ALLOCATE(len+1, char[]);
+  data = ALLOCATE(len+1, char*);
   memcpy(data, src, len);
   data[len] = '\0';
   src += len;
@@ -313,7 +313,7 @@ char *__mydns_process_axfr_hinfo(char *rv, char *name, char *origin,
       quote1++;
 
   len = *src++;
-  data2 = ALLOCATE(len+1, char[]);
+  data2 = ALLOCATE(len+1, char*);
   memcpy(data2, src, len);
   data2[len] = '\0';
   src += len;
@@ -333,7 +333,7 @@ char *__mydns_process_axfr_hinfo(char *rv, char *name, char *origin,
 
 char *__mydns_process_axfr_mx(char *rv, char *name, char *origin,
 			      char *reply, size_t replylen, char *src, uint32_t ttl,
-			      dns_qtype_map *map) {
+			      dns_qtype_mapp map) {
   char *data;
   task_error_t errcode;
   uint16_t pref;
@@ -349,7 +349,7 @@ char *__mydns_process_axfr_mx(char *rv, char *name, char *origin,
 
 char *__mydns_process_axfr_ns(char *rv, char *name, char *origin,
 			      char *reply, size_t replylen, char *src, uint32_t ttl,
-			      dns_qtype_map *map) {
+			      dns_qtype_mapp map) {
   char *data;
   task_error_t errcode;
   if (!(data = name_unencode(reply, replylen, &src, &errcode)))
@@ -363,7 +363,7 @@ char *__mydns_process_axfr_ns(char *rv, char *name, char *origin,
 
 char *__mydns_process_axfr_ptr(char *rv, char *name, char *origin,
 			       char *reply, size_t replylen, char *src, uint32_t ttl,
-			       dns_qtype_map *map) {
+			       dns_qtype_mapp map) {
   char *data;
   task_error_t errcode;
   struct in_addr addr;
@@ -379,7 +379,7 @@ char *__mydns_process_axfr_ptr(char *rv, char *name, char *origin,
 
 char *__mydns_process_axfr_rp(char *rv, char *name, char *origin,
 			      char *reply, size_t replylen, char *src, uint32_t ttl,
-			      dns_qtype_map *map) {
+			      dns_qtype_mapp map) {
   char *data;
   task_error_t errcode;
   char *txtref;
@@ -405,7 +405,7 @@ char *__mydns_process_axfr_rp(char *rv, char *name, char *origin,
 
 char *__mydns_process_axfr_srv(char *rv, char *name, char *origin,
 			       char *reply, size_t replylen, char *src, uint32_t ttl,
-			       dns_qtype_map *map) {
+			       dns_qtype_mapp map) {
   char *data;
   task_error_t errcode;
   uint16_t priority, weight, port;
@@ -425,11 +425,11 @@ char *__mydns_process_axfr_srv(char *rv, char *name, char *origin,
 
 char *__mydns_process_axfr_txt(char *rv, char *name, char *origin,
 			       char *reply, size_t replylen, char *src, uint32_t ttl,
-			       dns_qtype_map *map) {
+			       dns_qtype_mapp map) {
   char *data;
   size_t len = *src++;
       
-  data = ALLOCATE(len + 1, char[]);
+  data = ALLOCATE(len + 1, char*);
   memcpy(data, src, len);
   data[len] = '\0';
   src += len;
@@ -440,7 +440,7 @@ char *__mydns_process_axfr_txt(char *rv, char *name, char *origin,
 
 char *__mydns_process_axfr_default(char *rv, char *name, char *origin,
 				   char *reply, size_t replylen, char *src, uint32_t ttl,
-				   dns_qtype_map *map) {
+				   dns_qtype_mapp map) {
   Warnx("%s %s: %s", name, map->rr_type_name, _("discarding unsupported RR type"));
   return NULL;
 }

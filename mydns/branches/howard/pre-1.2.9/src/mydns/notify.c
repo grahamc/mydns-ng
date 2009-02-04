@@ -26,6 +26,7 @@
 #include "data.h"
 #include "debug.h"
 #include "message.h"
+#include "rr.h"
 #include "support.h"
 #include "taskobj.h"
 
@@ -73,7 +74,7 @@ notify_free(TASK *t, void *data) {
 
 }
 
-typedef time_t (*NotifyAlgorithm)(/* TASK *, NOTIFYSLAVE * */);
+typedef time_t (*NotifyAlgorithm)(TASK *, NOTIFYSLAVE *);
  
 static time_t
 _notify_linear(TASK *t, NOTIFYSLAVE *slave) {
@@ -375,7 +376,7 @@ notify_read(TASK *t) {
       goto CLEANUP;
     }
 
-    if (rv < DNS_HEADERSIZE) {
+    if (rv < (int)DNS_HEADERSIZE) {
       Warn(_("recvfrom (UDP) for slave %s(%d) too short %dbytes should be > %d"), msg, port, rv, (int)DNS_HEADERSIZE);
       RELEASE(msg);
       continue;
@@ -461,7 +462,6 @@ notify_read(TASK *t) {
       dequeue(readT);
     }
     {
-      int rv = 0;
       struct pollfd item;
 
       item.fd = t->fd;
@@ -558,7 +558,7 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
   size_t	querylen = 0;
   char 		*query = NULL;
 
-  rr = find_rr(t, soa, DNS_QTYPE_NS, "");
+  rr = find_rr(t, soa, DNS_QTYPE_NS, (char*)"");
 
   for (r = rr; r; r = r->next) {
     char *name_server;
@@ -589,7 +589,7 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
       if ((row = sql_getrow(res, NULL))) {
 	char *also_notify_servers = row[0];
 	char *also_notify_server = NULL;
-	int scanned = 0;
+	uint scanned = 0;
 
 	if (also_notify_servers) {
 	  while (scanned < strlen(also_notify_servers)) {
@@ -598,12 +598,12 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
 	    int i;
 
 	    if (comma) {
-	      also_notify_server = ALLOCATE(comma - start + 1, char[]);
+	      also_notify_server = ALLOCATE(comma - start + 1, char*);
 	      strncpy(also_notify_server, start, comma - start);
 	      also_notify_server[comma - start] = '\0';
 	      scanned += comma - start + 1;
 	    } else {
-	      also_notify_server = ALLOCATE(strlen(start)+1, char[]);
+	      also_notify_server = ALLOCATE(strlen(start)+1, char*);
 	      strncpy(also_notify_server, start, strlen(start));
 	      also_notify_server[strlen(start)] = '\0';
 	      scanned += strlen(start) + 1;
@@ -684,12 +684,12 @@ notify_get_source(int family, char *sourceaddr)
   struct sockaddr *res = NULL;
 
   if (family == AF_INET) {
-    res = (struct sockaddr*)ALLOCATE(sizeof(struct sockaddr_in), struct sockaddr_in);
+    res = ALLOCATE(sizeof(struct sockaddr_in), struct sockaddr*);
     ((struct sockaddr_in*)res)->sin_port = htons(0); /* Random port selection */
     inet_pton(family, sourceaddr, (void*)&(((struct sockaddr_in*)res)->sin_addr));
 #if HAVE_IPV6
   } else if (family == AF_INET6) {
-    res = (struct sockaddr*)ALLOCATE(sizeof(struct sockaddr_in6), struct sockaddr_in6);
+    res = ALLOCATE(sizeof(struct sockaddr_in6), struct sockaddr*);
     ((struct sockaddr_in6*)res)->sin6_port = htons(0); /* Random port selection */
     inet_pton(family, sourceaddr, (void*)&(((struct sockaddr_in6*)res)->sin6_addr));
 #endif
@@ -779,7 +779,7 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
 #if HAVE_IPV6
     ARRAY *slavesipv6 = array_init(8);
 #endif
-    int slavecount = name_servers2ip(t, soa, name_servers, slavesipv4,
+    int slavecount = name_servers2ip(t, name_servers, slavesipv4,
 #if HAVE_IPV6
 				     slavesipv6
 #else
@@ -825,7 +825,7 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
 			   (TimeExtension)notify_master_tick);
 	notify_tasks_running = 0;
       }
-      notify = (NOTIFYDATA*)ALLOCATE(sizeof(NOTIFYDATA), NOTIFYDATA);
+      notify = ALLOCATE(sizeof(NOTIFYDATA), NOTIFYDATA*);
       notify->origin = STRDUP(soa->origin);
       notify->soa_id = soa->id;
       notify->slaves = slavesipv4;
@@ -875,7 +875,7 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
 			   (TimeExtension)notify_master_tick);
 	notify_tasks_running6 = 0;
       }
-      notify = (NOTIFYDATA*)ALLOCATE(sizeof(NOTIFYDATA), NOTIFYDATA);
+      notify = ALLOCATE(sizeof(NOTIFYDATA), NOTIFYDATA*);
       notify->origin = STRDUP(soa->origin);
       notify->soa_id = soa->id;
       notify->slaves = slavesipv6;
@@ -1010,7 +1010,7 @@ notify_start() {
     return;
   }
 
-  initdata = (INITDATA*)ALLOCATE(sizeof(INITDATA), INITDATA);
+  initdata = ALLOCATE(sizeof(INITDATA), INITDATA*);
   initdata->zonecount = zonecount;
   initdata->lastzone = -1;
   initdata->zones = NULL;

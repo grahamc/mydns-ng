@@ -34,7 +34,7 @@ extern SERVERSTATUS Status;
 
 extern taskexec_t status_get_rr(TASK *t);
 extern void status_task_timedout(TASK *t);
-extern void status_start_server();
+extern void status_start_server(void);
 extern void status_tcp_request(TASK *t);
 extern void status_udp_request(TASK *t);
 extern void status_result(TASK *t, int rcode);

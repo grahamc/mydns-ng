@@ -65,9 +65,9 @@ inline MYDNS_PTR *
 mydns_parse_ptr(row)
 	SQL_ROW row; {
   MYDNS_PTR *rv;
-  register int len;
+  register uint len;
 
-  rv = (MYDNS_PTR *)ALLOCATE(sizeof(MYDNS_PTR), MYDNS_PTR);
+  rv = ALLOCATE(sizeof(MYDNS_PTR), MYDNS_PTR*);
 
   rv->next = NULL;
 
@@ -101,7 +101,7 @@ mydns_ptr_dup(start, recurse)
   for (s = start; s; s = tmp) {
     tmp = s->next;
 
-    ptr = (MYDNS_PTR *)ALLOCATE(sizeof(MYDNS_PTR), MYDNS_PRT);
+    ptr = ALLOCATE(sizeof(MYDNS_PTR), MYDNS_PTR*);
 
     ptr->id = s->id;
     ptr->ip = s->ip;

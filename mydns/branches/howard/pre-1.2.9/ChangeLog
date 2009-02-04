@@ -1,3 +1,5 @@
+29-Jan-2009	Howard Wilkinson	<howard@cohtech.com>	[1.2.9.0]
+	*	Rewrite internal id allocation code to use local facilities.
 26-Jan-2009	Howard Wilkinson	<howard@cohtech.com>	[1.2.9.0]
 	*	Rewrote debug code to use levels properly, made much more efficient if
 		switched off, and more effificent if switched.

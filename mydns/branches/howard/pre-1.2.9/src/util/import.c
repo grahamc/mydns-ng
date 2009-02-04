@@ -24,9 +24,6 @@
 
 #include "debug.h"
 
-extern void import_axfr(char *hostport, char *import_zone);
-extern void import_tinydns(char *datafile, char *import_zone);
-
 enum _input_format {						/* Import format types */
 	INPUT_UNKNOWN,
 	INPUT_AXFR,
@@ -152,7 +149,7 @@ cmdline(int argc, char **argv) {
       if (optarg) {
 	ACTIVE = optarg;
       } else {
-	ACTIVE="Y";
+	ACTIVE=(char*)"Y";
       }
       break;
     case 't':								/* -t, --tinydns */
@@ -176,7 +173,7 @@ cmdline(int argc, char **argv) {
       break;
     case 'I':								/* -I, --IXFR */
       IXFR = 1;
-      if (!ACTIVE) ACTIVE="Y";
+      if (!ACTIVE) ACTIVE=(char*)"Y";
       break;
     case 'p':								/* -p, --password=PASS */
       if (optarg) {

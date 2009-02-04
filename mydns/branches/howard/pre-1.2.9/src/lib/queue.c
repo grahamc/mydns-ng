@@ -34,7 +34,7 @@ queue_init(char *typename, char *priorityname) {
   char		*queuename = NULL;
 
   queuenamelen = ASPRINTF(&queuename, "%s %ss", priorityname, typename);
-  q = ALLOCATE(sizeof(QUEUE), QUEUE);
+  q = ALLOCATE(sizeof(QUEUE), QUEUE*);
   q->size = q->max_size = 0;
   q->queuename = queuename;
   q->head = q->tail = NULL;

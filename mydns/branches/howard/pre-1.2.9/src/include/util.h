@@ -32,6 +32,9 @@ extern uint32_t sqlnum(const char *, ...) __printflike(1,2);
 extern char *mydns_expand_data(char *s, char *origin);
 extern void meter(unsigned long, unsigned long);
 
+extern void import_axfr(char *hostport, char *import_zone);
+extern void import_tinydns(char *datafile, char *import_zone);
+
 extern uint32_t got_soa;
 extern int opt_output;
 extern int opt_notrim;

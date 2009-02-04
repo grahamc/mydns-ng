@@ -19,93 +19,93 @@
 #ifndef _MYDNS_LIB_UPDATE_H
 #define _MYDNS_LIB_UPDATE_H
 
-extern taskexec_t __mydns_update_get_rr_data_unknown_type(TASK *t,
-							  UQRR *rr,
+extern taskexec_t __mydns_update_get_rr_data_unknown_type(TASKP t,
+							  UQRRP rr,
 							  char **data,
 							  size_t *datalen,
 							  char **edata,
 							  size_t *edatalen,
 							  uint32_t *aux,
-							  dns_qtype_map *map);
-extern taskexec_t __mydns_update_get_rr_data_a(TASK *t,
-					       UQRR *rr,
+							  dns_qtype_mapp map);
+extern taskexec_t __mydns_update_get_rr_data_a(TASKP t,
+					       UQRRP rr,
 					       char **data,
 					       size_t *datalen,
 					       char **edata,
 					       size_t *edatalen,
 					       uint32_t *aux,
-					       dns_qtype_map *map);
-extern taskexec_t __mydns_update_get_rr_data_aaaa(TASK *t,
-						  UQRR *rr,
+					       dns_qtype_mapp map);
+extern taskexec_t __mydns_update_get_rr_data_aaaa(TASKP t,
+						  UQRRP rr,
 						  char **data,
 						  size_t *datalen,
 						  char **edata,
 						  size_t *edatalen,
 						  uint32_t *aux,
-						  dns_qtype_map *map);
-extern taskexec_t __mydns_update_get_rr_data_cname(TASK *t,
-						   UQRR *rr,
+						  dns_qtype_mapp map);
+extern taskexec_t __mydns_update_get_rr_data_cname(TASKP t,
+						   UQRRP rr,
 						   char **data,
 						   size_t *datalen,
 						   char **edata,
 						   size_t *edatalen,
 						   uint32_t *aux,
-						   dns_qtype_map *map);
-extern taskexec_t __mydns_update_get_rr_data_hinfo(TASK *t,
-						   UQRR *rr,
+						   dns_qtype_mapp map);
+extern taskexec_t __mydns_update_get_rr_data_hinfo(TASKP t,
+						   UQRRP rr,
 						   char **data,
 						   size_t *datalen,
 						   char **edata,
 						   size_t *edatalen,
 						   uint32_t *aux,
-						   dns_qtype_map *map);
-extern taskexec_t __mydns_update_get_rr_data_mx(TASK *t,
-						UQRR *rr,
+						   dns_qtype_mapp map);
+extern taskexec_t __mydns_update_get_rr_data_mx(TASKP t,
+						UQRRP rr,
 						char **data,
 						size_t *datalen,
 						char **edata,
 						size_t *edatalen,
 						uint32_t *aux,
-						dns_qtype_map *map);
-extern taskexec_t __mydns_update_get_rr_data_ns(TASK *t,
-						UQRR *rr,
+						dns_qtype_mapp map);
+extern taskexec_t __mydns_update_get_rr_data_ns(TASKP t,
+						UQRRP rr,
 						char **data,
 						size_t *datalen,
 						char **edata,
 						size_t *edatalen,
 						uint32_t *aux,
-						dns_qtype_map *map);
-extern taskexec_t __mydns_update_get_rr_data_ptr(TASK *t,
-						 UQRR *rr,
+						dns_qtype_mapp map);
+extern taskexec_t __mydns_update_get_rr_data_ptr(TASKP t,
+						 UQRRP rr,
 						 char **data,
 						 size_t *datalen,
 						 char **edata,
 						 size_t *edatalen,
 						 uint32_t *aux,
-						 dns_qtype_map *map);
-extern taskexec_t __mydns_update_get_rr_data_rp(TASK *t,
-						UQRR *rr,
+						 dns_qtype_mapp map);
+extern taskexec_t __mydns_update_get_rr_data_rp(TASKP t,
+						UQRRP rr,
 						char **data,
 						size_t *datalen,
 						char **edata,
 						size_t *edatalen,
 						uint32_t *aux,
-						dns_qtype_map *map);
-extern taskexec_t __mydns_update_get_rr_data_srv(TASK *t,
-						 UQRR *rr,
+						dns_qtype_mapp map);
+extern taskexec_t __mydns_update_get_rr_data_srv(TASKP t,
+						 UQRRP rr,
 						 char **data,
 						 size_t *datalen,
 						 char **edata,
 						 size_t *edatalen,
 						 uint32_t *aux,
-						 dns_qtype_map *map);
-extern taskexec_t __mydns_update_get_rr_data_txt(TASK *t,
-						 UQRR *rr,
+						 dns_qtype_mapp map);
+extern taskexec_t __mydns_update_get_rr_data_txt(TASKP t,
+						 UQRRP rr,
 						 char **data,
 						 size_t *datalen,
 						 char **edata,
 						 size_t *edatalen,
 						 uint32_t *aux,
-						 dns_qtype_map *map);
+						 dns_qtype_mapp map);
 
 #endif

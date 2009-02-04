@@ -32,7 +32,7 @@ SERVERSTATUS	Status;				/* Server status information */
 	STATUS_FAKE_RR
 	Generates a fake TXT rr and adds it to the requested data section.
 **************************************************************************************************/
-static inline void
+static void
 status_fake_rr(TASK *t, datasection_t ds, const char *name, const char *fmt, ...) {
   va_list	ap;
   char		*buf = NULL;

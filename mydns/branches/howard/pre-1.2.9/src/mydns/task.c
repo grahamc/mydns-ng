@@ -107,7 +107,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
     return formerr(t, DNS_RCODE_FORMERR, ERR_MALFORMED_REQUEST, _("question has zero length"));
   }
 
-  t->qd = ALLOCATE(t->qdlen, char[]);
+  t->qd = ALLOCATE(t->qdlen, uchar*);
 
   memcpy(t->qd, src, t->qdlen);
   qdtop = src;
@@ -178,7 +178,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
     if ((t->hdr.opcode == DNS_OPCODE_UPDATE)
 	|| (t->hdr.opcode == DNS_OPCODE_QUERY && t->qtype == DNS_QTYPE_IXFR)) {
       t->len = len;
-      t->query = ALLOCATE(t->len, char[]);
+      t->query = ALLOCATE(t->len, char*);
       memcpy(t->query, data, t->len);
     }
   }
@@ -887,7 +887,7 @@ static void _task_schedule(TASK *t, struct pollfd *items[],
     }
     *numfds += 1;
     if (*numfds > *maxnumfds) {
-      *items = (struct pollfd*)REALLOCATE(*items, *numfds * sizeof(struct pollfd), struct pollfd[]);
+      *items = REALLOCATE(*items, *numfds * sizeof(struct pollfd), struct pollfd*);
       *maxnumfds = *numfds;
     }
 
@@ -921,13 +921,14 @@ void task_schedule_all(struct pollfd *items[], int *timeoutWanted, int *numfds, 
   return;
 }
 
-void task_purge(TASK *t) {
+static void task_purge(TASK *t) {
   if (t->protocol != SOCK_STREAM) 
     Notice(_("task_purge() bad task %s => %d"), desctask(t), t->fd);
   dequeue(t);
 }
 
-void task_purge_all_bad_tasks() {
+#ifdef PURGING_ENABLED
+static void task_purge_all_bad_tasks(void) {
   /* Find out which task has an invalid fd and kill it */
   int i = 0, j = 0;
   TASK *t = NULL, *next_task = NULL;
@@ -995,6 +996,7 @@ void task_purge_all_bad_tasks() {
   Debug(task, 1, _("purge_bad_tasks() returned"));
 #endif
 }
+#endif
 
 int task_run_all(struct pollfd items[], int numfds) {
   int i = 0, j = 0, tasks_executed = 0;

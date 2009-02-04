@@ -391,22 +391,21 @@ extern int in_cidr(char *cidr, struct in_addr ip);
 **  Routines to load the configuration file
 */
 /* Generic structure for holding name/value pairs */
-typedef struct _conflist
-{
-	char	*name;		/* Name of option */
-	char	*value;		/* Value for this option */
-	char	*desc;		/* Description of this option */
-	char	*altname;	/* Alternate name for this option */
-	int	defaulted;	/* This variable was defaulted; not actually in config file */
-	struct _conflist *next;
+typedef struct _conflist {
+  const char		*name;		/* Name of option */
+  const char		*value;		/* Value for this option */
+  const char		*desc;		/* Description of this option */
+  const char		*altname;	/* Alternate name for this option */
+  int			defaulted;	/* This variable was defaulted; not actually in config file */
+  struct _conflist	*next;
 } CONF;
 
 #define	CONF_FS_CHAR	'\034'
 #define	CONF_FS_STR		"\034"
 
-extern void	conf_clobber(CONF **, char *, char *);
-extern void	conf_set(CONF **, char *, char *, int);
-extern char	*conf_get(CONF **, char *, int *);
+extern void	conf_clobber(CONF **, const char *, const char *);
+extern void	conf_set(CONF **, const char *, const char *, int);
+extern char	*conf_get(CONF **, const char *, int *);
 extern void	conf_load(CONF **, const char *);
 
 /* Convert str to unsigned int */
@@ -425,7 +424,7 @@ extern int		err_debug;			/* Should ERR_DEBUG output anything? */
 #endif
 extern FILE		*err_file;			/* Output to this file */
 
-extern void		error_reinit();
+extern void		error_reinit(void);
 extern void		error_init(const char *argv0, int facility);
 #if DEBUG_ENABLED
 extern void		__Debug(const char *, ...) __printflike(1,2);
@@ -436,7 +435,7 @@ extern int		Warn(const char *, ...) __printflike(1,2);
 extern int		Warnx(const char *, ...) __printflike(1,2);
 extern void		Err(const char *, ...) __printflike(1,2);
 extern void		Errx(const char *, ...) __printflike(1,2);
-extern void		Out_Of_Memory();
+extern void		Out_Of_Memory(void);
 
 #if USE_PGSQL
 extern int		WarnSQL(PGconn *, const char *, ...) __printflike(2,3);
@@ -491,6 +490,25 @@ extern int		strsep_quotes2(char **, char **);
 /* wildcard.c */
 extern int		wildcard_valid(char *p);
 extern int		wildcard_match(register char *, register char *);
+
+#if DEBUG_ENABLED
+extern int	debug_enabled;
+extern int	debug_all;
+
+#define Debug(__MODULE__, __LEVEL__, __FORMAT__, __ARGS__...)	\
+  if (debug_##__MODULE__ >= __LEVEL__ || debug_all >= __LEVEL__) __Debug(__FORMAT__, ## __ARGS__)
+
+#define DEBUGLEVEL_NONE		0
+#define DEBUGLEVEL_BASICOP	1
+#define DEBUGLEVEL_SQL		2
+#define DEBUGLEVEL_3		3
+#define DEBUGLEVEL_4		4
+#define DEBUGLEVEL_FUNCS	5
+#define DEBUGLEVEL_BLOCKS	6
+#define DEBUGLEVEL_LOOPS	7
+#define DEBUGLEVEL_8		8
+#define DEBUGLEVEL_FULLTRACE	9
+#endif
 
 #endif /* MYDNSUTIL_H */
 

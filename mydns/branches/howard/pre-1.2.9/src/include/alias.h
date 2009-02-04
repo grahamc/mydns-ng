@@ -25,6 +25,6 @@
 #define		MAX_ALIAS_LEVEL	6
 
 extern int	alias_recurse(TASK *t, datasection_t section, char *fqdn,
-			      MYDNS_SOA *soa, char *label, MYDNS_RR *alias);
+			      MYDNS_SOA *soa, MYDNS_RR *alias);
 
 #endif

@@ -23,8 +23,10 @@
 #include "memoryman.h"
 
 #include "cache.h"
+#include "data.h"
 #include "debug.h"
 #include "error.h"
+#include "rr.h"
 #include "taskobj.h"
 
 /**************************************************************************************************
@@ -70,7 +72,7 @@ find_soa(
 	  len++;
 	if (len < 0) len = 0;
 	if (len > DNS_MAXNAMELEN) len = DNS_MAXNAMELEN;
-	*label = ALLOCATE(len+1, char[]);
+	*label = ALLOCATE(len+1, char*);
 	memcpy(*label, fqdn, len);
 	(*label)[len] = '\0';
       }

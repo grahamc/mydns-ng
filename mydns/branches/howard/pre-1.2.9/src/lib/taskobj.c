@@ -34,11 +34,43 @@
 #define TASKVECSZ		(MAXTASKS/BITSPERBYTE)
 
 #define TASKVEC_ZERO(TV)	memset((void*)(TV), 0, TASKVECSZ)
-#define TASKVEC_CLR(TI, TV)	FD_CLR((TI), (fd_set*)(TV))
-#define TASKVEC_SET(TI, TV)	FD_SET((TI), (fd_set*)(TV))
-#define TASKVEC_ISSET(TI, TV)	FD_ISSET((TI), (fd_set*)(TV))
 
-static uint8_t		*taskvec = NULL;
+static uint32_t		taskvec_masks[] = {
+  0x1,					/* 2^0 */
+  0x2,					/* 2^1 */
+  0x4,					/* 2^2 */
+  0x8,					/* 2^3 */
+  0x10,					/* 2^4 */
+  0x20,					/* 2^5 */
+  0x40,					/* 2^6 */
+  0x80,					/* 2^7 */
+  0x100,				/* 2^8 */
+  0x200,				/* 2^9 */
+  0x400,				/* 2^10 */
+  0x800,				/* 2^11 */
+  0x1000,				/* 2^12 */
+  0x2000,				/* 2^13 */
+  0x4000,				/* 2^14 */
+  0x8000,				/* 2^15 */
+  0x10000,				/* 2^16 */
+  0x20000,				/* 2^17 */
+  0x40000,				/* 2^18 */
+  0x80000,				/* 2^19 */
+  0x100000,				/* 2^20 */
+  0x200000,				/* 2^21 */
+  0x400000,				/* 2^22 */
+  0x800000,				/* 2^23 */
+  0x1000000,				/* 2^24 */
+  0x2000000,				/* 2^25 */
+  0x4000000,				/* 2^26 */
+  0x8000000,				/* 2^27 */
+  0x10000000,				/* 2^28 */
+  0x20000000,				/* 2^29 */
+  0x40000000,				/* 2^30 */
+  0x80000000				/* 2^31 */
+};
+
+static uint32_t		*taskvec = NULL;
 static uint32_t		internal_id = 0;
 static int32_t		active_tasks = 0;
 
@@ -118,7 +150,7 @@ char * task_priority_name(int priority) {
   /*NOTREACHED*/
 }
 
-char * task_status_name(TASK *t) {
+static const char * task_status_name(TASK *t) {
 
   switch (t->status) {
 
@@ -148,7 +180,7 @@ char * task_status_name(TASK *t) {
     {
       static char *msg = NULL;
       ASPRINTF(&msg, _("Task Status %X"), t->status);
-      return msg;
+      return (const char*)msg;
     }
   }
   /*NOTREACHED*/
@@ -191,7 +223,7 @@ char * desctask(TASK *t) {
 	   clientaddr(t), mydns_rr_get_type_by_id(t->qtype)->rr_type_name,
 	   t->qname ? (char *)t->qname : _("<NONE>"),
 	   t->internal_id, task_status_name(t), task_priority_name(t->priority),
-	   task_type_name(t->type)) < 0;
+	   task_type_name(t->type));
 
   return (desc);
 }
@@ -240,7 +272,7 @@ _task_free(TASK *t, const char *file, int line) {
   RELEASE(t->rdata);
   RELEASE(t->reply);
 
-  TASKVEC_CLR(t->id, taskvec);
+  taskvec[t->internal_id >> 5] &= ~taskvec_masks[t->internal_id & 0x1ff];
 
   RELEASE(t);
 
@@ -301,6 +333,9 @@ _task_init(
   TASK				*new = NULL;
   QUEUE				**TaskQ = NULL;
   uint16_t			id = 0;
+  int				taskvec_index;
+  uint32_t			taskvec_mask;
+  int				wrap_round = 0;
 
   if (active_tasks++ >= MAXTASKS) {
     active_tasks -= 1;
@@ -309,11 +344,28 @@ _task_init(
   }
   
   if (!taskvec) {
-    taskvec = (uint8_t*)ALLOCATE(TASKVECSZ, uint8_t[]);
+    taskvec = (uint32_t*)ALLOCATE(TASKVECSZ, uint32_t*);
     TASKVEC_ZERO(taskvec);
   }
 
-  new = ALLOCATE(sizeof(TASK), TASK);
+  while (1) {
+    id = internal_id++;
+    if (internal_id >= MAXTASKS) {
+      if (wrap_round) {
+	Notice(_("internal_id wrapped around twice while trying to find an empty slot"));
+	return NULL;
+      }
+      internal_id = 0;
+      wrap_round = 1;
+    }
+    taskvec_index = id >> 5;
+    taskvec_mask = taskvec_masks[id & 0x1ff];
+    if (!taskvec[taskvec_index]
+	|| (taskvec[taskvec_index] & taskvec_mask) == 0) break;
+  }
+  taskvec[taskvec_index] |= taskvec_mask;
+
+  new = ALLOCATE(sizeof(TASK), TASK*);
 
   new->status = status;
   new->fd = fd;
@@ -330,11 +382,6 @@ _task_init(
   }
   new->type = type;
   new->priority = priority;
-  do {
-    id = internal_id++;
-    if (internal_id >= MAXTASKS) internal_id = 0;
-  } while (TASKVEC_ISSET(id, taskvec));
-  TASKVEC_SET(id, taskvec);
   new->internal_id = id;
   new->timeout = current_time + task_timeout;
   new->minimum_ttl = DNS_MINIMUM_TTL;
@@ -530,14 +577,14 @@ static void _task_1_queue_stats(QUEUE *q) {
 #endif
 	 q->queuename, (unsigned int)q->size, (unsigned int)q->max_size);
 	  
-  msg = ALLOCATE(msgsize, char[]);
+  msg = ALLOCATE(msgsize, char*);
 
   msg[0] = '\0';
   for (t = (TASK*)q->head; t; t = task_next(t)) {
     int idsize;
     idsize = snprintf(&msg[msglen], msgsize - msglen, " %u", t->internal_id);
     msglen += idsize;
-    if ((msglen + 2*idsize) >= msgsize) msg = REALLOCATE(msg, msgsize *= 2, char[]);
+    if ((msglen + 2*idsize) >= msgsize) msg = REALLOCATE(msg, msgsize *= 2, char*);
   }
   if (msglen)
     Debug(task, 1,_("Queued tasks %s"), msg);

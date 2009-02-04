@@ -32,6 +32,7 @@
 #include "taskobj.h"
 
 #include "ixfr.h"
+#include "listeners.h"
 #include "notify.h"
 #include "servercomms.h"
 #include "task.h"
@@ -48,14 +49,13 @@ static int	got_sigusr1 = 0,
 
 int		run_as_root = 0;		/* Run as root user? */
 
-extern void	listeners_create(void);
 
 
-typedef void (*INITIALTASKSTART)();
+typedef void (*INITIALTASKSTART)(void);
 
 typedef struct {
   INITIALTASKSTART start;
-  char *subsystem;
+  const char *subsystem;
 } INITIALTASK;
 
 INITIALTASK	master_initial_tasks[] = {
@@ -350,13 +350,13 @@ create_pidfile(void) {
 	SIGUSR1
 	Outputs server stats.
 **************************************************************************************************/
-void
+static void
 master_sigusr1(int dummy) {
   server_kill_all(SIGUSR1);
   got_sigusr1 = 0;
 }
 
-void
+static void
 sigusr1(int dummy) {
   server_status();
   got_sigusr1 = 0;
@@ -368,13 +368,13 @@ sigusr1(int dummy) {
 	SIGUSR2
 	Outputs cache stats.
 **************************************************************************************************/
-void
+static void
 master_sigusr2(int dummy) {
   server_kill_all(SIGUSR2);
   got_sigusr2 = 0;
 }
 
-void
+static void
 sigusr2(int dummy) {
   cache_status(ZoneCache);
 #if USE_NEGATIVE_CACHE
@@ -389,13 +389,13 @@ sigusr2(int dummy) {
 /**************************************************************************************************
 	SIGHUP
 **************************************************************************************************/
-void
+static void
 master_sighup(int dummy) {
   server_kill_all(SIGHUP);
   got_sighup = 0;
 }
 
-void
+static void
 sighup(int dummy) {
 
   cache_empty(ZoneCache);
@@ -413,7 +413,7 @@ sighup(int dummy) {
 /**************************************************************************************************
 	SIGNAL_HANDLER
 **************************************************************************************************/
-void
+static void
 signal_handler(int signo) {
   switch (signo) {
   case SIGHUP:
@@ -433,7 +433,7 @@ signal_handler(int signo) {
 /*--- signal_handler() --------------------------------------------------------------------------*/
 
 
-void
+static void
 master_shutdown(int signo) {
   int i = 0, m = 0, n = 0, status = 0, running_procs = 0;
 
@@ -507,7 +507,7 @@ master_shutdown(int signo) {
 	CHILD_CLEANUP
 **************************************************************************************************/
 static int
-reap_child() {
+reap_child(void) {
   int status = 0;
   int pid = -1;
 
@@ -838,7 +838,7 @@ spawn_server(INITIALTASK *initial_tasks) {
     Err(_("fork"));
 
   if (pid > 0) { /* Parent === MASTER */
-    SERVER *server = (SERVER*)ALLOCATE(sizeof(SERVER), SERVER);
+    SERVER *server = ALLOCATE(sizeof(SERVER), SERVER*);
     server->pid = pid;
     server->serverfd = masterfd;
     server->listener = NULL;

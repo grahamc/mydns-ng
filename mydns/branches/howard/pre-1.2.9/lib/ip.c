@@ -53,7 +53,7 @@ ipaddr(int family, void *addr) {
   addrbufsize = MAX(addrbufsize, INET6_ADDRSTRLEN);
 #endif
   
-  addrbuf = REALLOCATE(addrbuf, addrbufsize, char[]);
+  addrbuf = REALLOCATE(addrbuf, addrbufsize, char*);
   memset(addrbuf, 0, addrbufsize);
 
   if (family == AF_INET) {

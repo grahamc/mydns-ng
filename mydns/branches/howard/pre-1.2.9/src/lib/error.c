@@ -24,6 +24,7 @@
 
 #include "bits.h"
 #include "debug.h"
+#include "error.h"
 #include "taskobj.h"
 
 /* The maximum number of resource record ID errors that we'll remember (and avoid repeating) */
@@ -43,7 +44,7 @@ err_reason_str(TASK *t, task_error_t reason) {
   static char *buf = NULL;
 
   switch (reason) {
-  case ERR_NONE:			return ("-");
+  case ERR_NONE:			return ((char*)"-");
   case ERR_INTERNAL: 			return ((char *)_("Internal_error"));
   case ERR_ZONE_NOT_FOUND: 		return ((char *)_("Zone_not_found"));
   case ERR_NO_MATCHING_RECORDS: 	return ((char *)_("No_matching_resource_records"));
@@ -117,7 +118,7 @@ _formerr_internal(
 
   /* Build simple reply to avoid problems with malformed data */
   t->replylen = DNS_HEADERSIZE;
-  dest = t->reply = ALLOCATE(t->replylen, char[]);
+  dest = t->reply = ALLOCATE(t->replylen, char*);
   t->hdr.qr = 1;
   DNS_PUT16(dest, t->id);						/* Query ID */
   DNS_PUT(dest, &t->hdr, SIZE16);					/* Header */

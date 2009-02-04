@@ -27,7 +27,7 @@
 char *mydns_soa_table_name = NULL;
 char *mydns_soa_where_clause = NULL;
 
-char *mydns_soa_active_types[] = { "Y", "N" };
+char *mydns_soa_active_types[] = { (char*)"Y", (char*)"N" };
 
 /* Optional columns */
 int mydns_soa_use_active = 0;
@@ -42,8 +42,8 @@ mydns_soa_get_active_types(SQL *sqlConn) {
   int		querylen;
   char 		*query;
 
-  char		*YES = "Y";
-  char		*NO = "N";
+  char		*YES = (char*)"Y";
+  char		*NO = (char*)"N";
 
   querylen = sql_build_query(&query, "SELECT DISTINCT(active) FROM %s LIMIT 1", mydns_soa_table_name);
 
@@ -136,7 +136,7 @@ mydns_soa_parse(SQL_ROW row) {
   MYDNS_SOA *rv;
   int len;
 
-  rv = (MYDNS_SOA *)ALLOCATE(sizeof(MYDNS_SOA), MYDNS_SOA);
+  rv = (MYDNS_SOA *)ALLOCATE(sizeof(MYDNS_SOA), MYDNS_SOA*);
 
   rv->next = NULL;
 
@@ -194,7 +194,7 @@ mydns_soa_dup(MYDNS_SOA *start, int recurse) {
   for (s = start; s; s = tmp) {
     tmp = s->next;
 
-    soa = (MYDNS_SOA *)ALLOCATE(sizeof(MYDNS_SOA), MYDNS_SOA);
+    soa = (MYDNS_SOA *)ALLOCATE(sizeof(MYDNS_SOA), MYDNS_SOA*);
 
     soa->id = s->id;
     strncpy(soa->origin, s->origin, sizeof(soa->origin)-1);

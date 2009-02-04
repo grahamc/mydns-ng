@@ -25,6 +25,7 @@
 #include "bits.h"
 #include "cache.h"
 #include "debug.h"
+#include "rr.h"
 #include "status.h"
 #include "support.h"
 #include "taskobj.h"
@@ -65,7 +66,7 @@ static CACHE *
 _cache_init(uint32_t limit, uint32_t expire, const char *desc) {
   CACHE *C = NULL;
 
-  C = ALLOCATE(sizeof(CACHE), CACHE);
+  C = ALLOCATE(sizeof(CACHE), CACHE*);
   C->limit = limit;
   C->expire = expire;
 
@@ -107,7 +108,7 @@ _cache_init(uint32_t limit, uint32_t expire, const char *desc) {
 #	error Hash method unknown or unspecified
 #endif
 
-  C->nodes = ALLOCATE_N(C->slots, sizeof(CNODE *), CNODE *);
+  C->nodes = ALLOCATE_N(C->slots, sizeof(CNODE*), CNODE**);
 
 #if DEBUG_ENABLED
 #if (HASH_TYPE == ORIGINAL_HASH)
@@ -183,7 +184,7 @@ cache_init(void) {
 **************************************************************************************************/
 static void
 cache_size_update(CACHE *C) {
-  register int n = 0;
+  register uint n = 0;
   register CNODE *N = NULL;
 
   C->size = 0;
@@ -215,7 +216,7 @@ cache_size_update(CACHE *C) {
 void
 cache_status(CACHE *C) {
   if (C) {
-    register int ct = 0, collisions = 0;
+    register uint ct = 0, collisions = 0;
     register CNODE *n = NULL;
 
     /* Update cache size (bytes) */
@@ -231,10 +232,10 @@ cache_status(CACHE *C) {
 	     " %u collisions (%.0f%%), %.0f%% full (%u records), %u bytes, avg life %u sec"),
 	   C->name, PCT(C->questions, C->hits), C->hits, C->misses,
 	   collisions, PCT(C->slots, collisions),
-	   PCT(C->limit, C->count), (unsigned int)C->count, (unsigned int)C->size,
-	   (unsigned int)(C->removed
-			  ? C->removed_secs / C->removed
-			  : (time(NULL) - status_start_time()))
+	   PCT(C->limit, C->count), (uint)C->count, (uint)C->size,
+	   (uint)(C->removed
+		  ? C->removed_secs / C->removed
+		  : (uint)(time(NULL) - status_start_time()))
 	   );
   }
 }
@@ -340,7 +341,7 @@ cache_free_node(CACHE *ThisCache, uint32_t hash, CNODE *n) {
 **************************************************************************************************/
 void
 cache_empty(CACHE *ThisCache) {
-  register int		ct = 0;
+  register uint		ct = 0;
   register CNODE	*n = NULL, *tmp = NULL;
 
   if (!ThisCache) return;
@@ -360,7 +361,7 @@ cache_empty(CACHE *ThisCache) {
 **************************************************************************************************/
 void
 cache_cleanup(CACHE *ThisCache) {
-  register int		ct = 0;
+  register uint		ct = 0;
   register CNODE	*n = NULL, *tmp = NULL;
 
   if (!ThisCache)
@@ -383,7 +384,7 @@ cache_cleanup(CACHE *ThisCache) {
 **************************************************************************************************/
 void
 cache_purge_zone(CACHE *ThisCache, uint32_t zone) {
-  register int		ct = 0;
+  register uint		ct = 0;
   register CNODE	*n = NULL, *tmp = NULL;
 
   if (!ThisCache)
@@ -404,12 +405,13 @@ cache_purge_zone(CACHE *ThisCache, uint32_t zone) {
 **************************************************************************************************/
 static inline uint32_t
 cache_hash(CACHE *ThisCache, uint32_t initval, void *buf, register size_t buflen) {
+  register uchar	*bufp = (uchar*)buf;
 #if (HASH_TYPE == ORIGINAL_HASH)
   register uint32_t	hash = 0;
-  register unsigned char *p = NULL;
+  register uchar	*p = NULL;
 
   /* Generate hash value */
-  for (hash = initval, p = (unsigned char *)buf; p < (unsigned char *)(buf + buflen); p++) {
+  for (hash = initval, p = bufp; p < (bufp + buflen); p++) {
     register int tmp = 0;
     hash = (hash << 4) + (*p);
     if ((tmp = (hash & 0xf0000000))) {
@@ -420,22 +422,22 @@ cache_hash(CACHE *ThisCache, uint32_t initval, void *buf, register size_t buflen
   return (hash % ThisCache->slots);
 #elif (HASH_TYPE == ADDITIVE_HASH)
   register uint32_t	hash = 0;
-  register unsigned char *p = NULL;
+  register uchar	*p = NULL;
 
-  for (hash = initval, p = (unsigned char *)buf; p < (unsigned char *)(buf + buflen); p++)
+  for (hash = initval, p = bufp; p < (bufp + buflen); p++)
     hash += *p;
   return (hash % ThisCache->slots);
 #elif (HASH_TYPE == ROTATING_HASH)
   register uint32_t	hash = 0;
-  register unsigned char *p = NULL;
+  register uchar	*p = NULL;
 
-  for (hash = initval, p = (unsigned char *)buf; p < (unsigned char *)(buf + buflen); p++)
+  for (hash = initval, p = bufp; p < (bufp + buflen); p++)
     hash = (hash << 4) ^ (hash >> 28) ^ (*p);
   return ((hash ^ (hash>>10) ^ (hash>>20)) & ThisCache->mask);
 #elif (HASH_TYPE == FNV_HASH)
   register uint32_t	hash = FNV_32_INIT;
-  unsigned char *bp = (unsigned char *)buf;
-  unsigned char *be = bp + buflen;
+  uchar			*bp = bufp;
+  uchar			*be = bp + buflen;
 
   while (bp < be) {
     hash *= FNV_32_PRIME;
@@ -615,7 +617,7 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
 
   /* Add to cache */
   C->in++;
-  n = ALLOCATE(sizeof(CNODE), CNODE);
+  n = ALLOCATE(sizeof(CNODE), CNODE*);
   n->hash = hash;
   n->zone = zone;
   n->type = type;
@@ -626,7 +628,7 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
     if (C == ZoneCache)
       n->data = mydns_soa_dup(soa, 1);
 
-    if (soa && (soa->ttl < C->expire))
+    if (soa && ((time_t)soa->ttl < C->expire))
       n->expire = current_time + soa->ttl;
     else if (C->expire)
       n->expire = current_time + C->expire;
@@ -634,7 +636,7 @@ zone_cache_find(TASK *t, uint32_t zone, char *origin, dns_qtype_t type,
     if (C == ZoneCache)
       n->data = mydns_rr_dup(rr, 1);
 
-    if (rr && (rr->ttl < C->expire))
+    if (rr && ((time_t)rr->ttl < C->expire))
       n->expire = current_time + rr->ttl;
     else if (C->expire)
       n->expire = current_time + C->expire;
@@ -663,7 +665,7 @@ int
 reply_cache_find(TASK *t) {
   register uint32_t	hash = 0;
   register CNODE	*n = NULL;
-  register void		*p = NULL;
+  register char		*p = NULL;
 
   if (!ReplyCache || t->qdlen > DNS_MAXPACKETLEN_UDP)
     return (0);
@@ -695,7 +697,7 @@ reply_cache_find(TASK *t) {
 
 	/* Allocate space for reply data */
 	t->replylen = n->datalen - sizeof(DNS_HEADER) - sizeof(task_error_t);
-	t->reply = ALLOCATE(t->replylen, char[]);
+	t->reply = ALLOCATE(t->replylen, char*);
 	p = n->data;
 
 	/* Copy DNS header */
@@ -738,7 +740,7 @@ void
 add_reply_to_cache(TASK *t) {
   register uint32_t	hash = 0;
   register CNODE	*n = NULL;
-  register void		*p = NULL;
+  register char		*p = NULL;
 
   if (!ReplyCache || t->qdlen > DNS_MAXPACKETLEN_UDP || t->hdr.rcode == DNS_RCODE_SERVFAIL) {
     return;
@@ -794,7 +796,7 @@ add_reply_to_cache(TASK *t) {
   /* Add to cache */
   ReplyCache->in++;
 
-  n = ALLOCATE(sizeof(CNODE), CNODE);
+  n = ALLOCATE(sizeof(CNODE), CNODE*);
   n->hash = hash;
   n->zone = t->zone;
   n->type = t->qtype;
@@ -804,7 +806,7 @@ add_reply_to_cache(TASK *t) {
 
   /* The data is the DNS_HEADER, the reason, then the reply */
   n->datalen = sizeof(DNS_HEADER) + sizeof(task_error_t) + t->replylen;
-  n->data = ALLOCATE(n->datalen, char[]);
+  n->data = ALLOCATE(n->datalen, char*);
   p = n->data;
 
   /* Save DNS header */

@@ -2,7 +2,7 @@
 #
 # mydns        This starts and stops mydns.
 #
-# chkconfig: 345 52 50
+# chkconfig: - 52 50
 # description: A database-driven DNS server
 #
 # processname: /usr/sbin/mydns

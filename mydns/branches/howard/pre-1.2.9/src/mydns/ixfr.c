@@ -62,8 +62,8 @@ typedef struct _ixfr_query {
 #define IQ_NAME(__iqp)			((__iqp)->name)
 
 static IQ *
-allocate_iq() {
-  IQ *q = ALLOCATE(sizeof(IQ), IQ);
+allocate_iq(void) {
+  IQ *q = ALLOCATE(sizeof(IQ), IQ*);
 
   memset(q, 0, sizeof(IQ));
 
@@ -87,7 +87,7 @@ free_iq(IQ *q) {
 }
 
 static char *
-ixfr_gobble_authority_rr(TASK *t, MYDNS_SOA *soa, char *query, size_t querylen, char *current, IARR *rr){
+ixfr_gobble_authority_rr(TASK *t, char *query, size_t querylen, char *current, IARR *rr){
   char * src = current;
   int rdlength = 0;
   task_error_t errcode = TASK_FAILED;
@@ -192,7 +192,7 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
   DNS_GET16(q->type, src);
   DNS_GET16(q->class, src);
 
-  if (!(src = ixfr_gobble_authority_rr(t, soa, query, querylen, src, &q->IR))) {
+  if (!(src = ixfr_gobble_authority_rr(t, query, querylen, src, &q->IR))) {
     free_iq(q);
     return (TASK_FAILED);
   }
@@ -371,10 +371,10 @@ ixfr_purge_all_soas(TASK *t, void *data) {
   SQL_ROW	row = NULL;
 
   size_t	querylen;
-  char		*QUERY0 =	"SELECT DISTINCT zone FROM %s WHERE active='%s'";
-  char		*QUERY1 = 	"SELECT origin FROM %s "
+  const char	*QUERY0 =	"SELECT DISTINCT zone FROM %s WHERE active='%s'";
+  const char	*QUERY1 = 	"SELECT origin FROM %s "
 				"WHERE id=%u;";
-  char		*QUERY2 =	"DELETE FROM %s WHERE zone=%u AND active='%s' "
+  const char	*QUERY2 =	"DELETE FROM %s WHERE zone=%u AND active='%s' "
 				" AND stamp < DATE_SUB(NOW(),INTERVAL %u SECOND);";
   char		*query = NULL;
 
@@ -436,7 +436,7 @@ ixfr_purge_all_soas(TASK *t, void *data) {
 }
 
 void
-ixfr_start() {
+ixfr_start(void) {
 
   TASK *inittask = NULL;
 

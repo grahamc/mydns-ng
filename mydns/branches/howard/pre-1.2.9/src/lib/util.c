@@ -31,7 +31,7 @@ char *mydns_expand_data(char *s, char *origin) {
     if (*s) slen += 1;
     slen += strlen(origin);
 
-    s = REALLOCATE(s, slen + 1, char[]);
+    s = REALLOCATE(s, slen + 1, char*);
     if (*s) strcat(s, ".");
     strcat(s, origin);
   }
@@ -52,7 +52,7 @@ void meter(unsigned long current, unsigned long total) {
   if (!isatty(STDERR_FILENO))
     return;
 
-  if (!m) m = ALLOCATE(80, char[]);
+  if (!m) m = ALLOCATE(80, char*);
 
   if (!total || current > total) {						/* Erase meter */
     memset(m, ' ', 73);

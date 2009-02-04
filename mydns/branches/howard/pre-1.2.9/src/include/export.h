@@ -19,31 +19,31 @@
 #ifndef _MYDNS_LIB_EXPORT_H
 #define _MYDNS_LIB_EXPORT_H
 
-void __mydns_bind_dump_rr_unknown(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_bind_dump_rr_unknown(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 				  size_t datalen, int ttl, int aux, int maxlen);
-void __mydns_bind_dump_rr_default(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_bind_dump_rr_default(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 				  size_t datalen, int ttl, int aux, int maxlen);
-void __mydns_bind_dump_rr_mx(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_bind_dump_rr_mx(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 			     size_t datalen, int ttl, int aux, int maxlen);
-void __mydns_bind_dump_rr_rp(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_bind_dump_rr_rp(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 			     size_t datalen, int ttl, int aux, int maxlen);
-void __mydns_bind_dump_rr_srv(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_bind_dump_rr_srv(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 			      size_t datalen, int ttl, int aux, int maxlen);
-void __mydns_bind_dump_rr_txt(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_bind_dump_rr_txt(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 			      size_t datalen, int ttl, int aux, int maxlen);
 
-void __mydns_tinydns_dump_rr_unknown(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_tinydns_dump_rr_unknown(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 				     size_t datalen, int ttl, int aux);
-void __mydns_tinydns_dump_rr_a(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_tinydns_dump_rr_a(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 			       size_t datalen, int ttl, int aux);
-void __mydns_tinydns_dump_rr_cname(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_tinydns_dump_rr_cname(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 				   size_t datalen, int ttl, int aux);
-void __mydns_tinydns_dump_rr_mx(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_tinydns_dump_rr_mx(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 				size_t datalen, int ttl, int aux);
-void __mydns_tinydns_dump_rr_ns(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_tinydns_dump_rr_ns(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 				size_t datalen, int ttl, int aux);
-void __mydns_tinydns_dump_rr_srv(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_tinydns_dump_rr_srv(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 				 size_t datalen, int ttl, int aux);
-void __mydns_tinydns_dump_rr_txt(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_tinydns_dump_rr_txt(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 				 size_t datalen, int ttl, int aux);
 #endif

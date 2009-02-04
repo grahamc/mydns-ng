@@ -24,33 +24,33 @@
 #include "memoryman.h"
 #include "export.h"
 
-void __mydns_bind_dump_rr_default(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_bind_dump_rr_default(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 					 size_t datalen, int ttl, int aux, int maxlen) {
   dns_qtype_map *map = mydns_rr_get_type_by_id(rr->type);
 
   printf("%-*s\t%u\tIN %-5s\t%s\n", maxlen, name, ttl, map->rr_type_name, data);
 }
 
-void __mydns_bind_dump_rr_unknown(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_bind_dump_rr_unknown(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 				  size_t datalen, int ttl, int aux, int maxlen) {
 }
 
-void __mydns_bind_dump_rr_mx(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_bind_dump_rr_mx(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 			     size_t datalen, int ttl, int aux, int maxlen) {
   printf("%-*s\t%u\tIN %-5s\t%u %s\n", maxlen, name, ttl, "MX", aux, data);
 }
 
-void __mydns_bind_dump_rr_srv(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_bind_dump_rr_srv(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 			      size_t datalen, int ttl, int aux, int maxlen) {
   printf("%-*s\t%u\tIN %-5s\t%u %u %u %s\n", maxlen, name, ttl, "SRV", aux, MYDNS_RR_SRV_WEIGHT(rr), MYDNS_RR_SRV_PORT(rr), data);
 }
 
-void __mydns_bind_dump_rr_rp(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_bind_dump_rr_rp(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 			     size_t datalen, int ttl, int aux, int maxlen) {
   printf("%-*s\t%u\tIN %-5s\t%s %s\n", maxlen, name, ttl, "RP", data, MYDNS_RR_RP_TXT(rr));
 }
 
-void __mydns_bind_dump_rr_txt(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_bind_dump_rr_txt(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 			      size_t datalen, int ttl, int aux, int maxlen) {
   unsigned char *c;
   unsigned int length = datalen;
@@ -70,34 +70,34 @@ void __mydns_bind_dump_rr_txt(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *da
   printf("\"\n");
 }
 
-void __mydns_tinydns_dump_rr_unknown(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_tinydns_dump_rr_unknown(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 				     size_t datalen, int ttl, int aux) {
 }
 
-void __mydns_tinydns_dump_rr_a(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_tinydns_dump_rr_a(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 			       size_t datalen, int ttl, int aux) {
   printf("=%s:%s:%u\n", name, data, ttl);
 }
 
-void __mydns_tinydns_dump_rr_cname(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_tinydns_dump_rr_cname(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 				   size_t datalen, int ttl, int aux) {
   TINYDNS_NAMEFIX(data);
   printf("C%s:%s:%u\n", name, data, ttl);
 }
 
-void __mydns_tinydns_dump_rr_mx(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_tinydns_dump_rr_mx(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 				size_t datalen, int ttl, int aux) {
   TINYDNS_NAMEFIX(data);
   printf("@%s::%s:%u:%u\n", name, data, aux, ttl);
 }
 
-void __mydns_tinydns_dump_rr_ns(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_tinydns_dump_rr_ns(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 				size_t datalen, int ttl, int aux) {
   TINYDNS_NAMEFIX(data);
   printf(".%s::%s:%u\n", name, data, ttl);
 }
 
-void __mydns_tinydns_dump_rr_srv(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_tinydns_dump_rr_srv(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 				 size_t datalen, int ttl, int aux) {
   /* tinydns does not natively support SRV; However, there's a patch
      (http://tinydns.org/srv-patch) to support it.  This code complies with
@@ -106,12 +106,12 @@ void __mydns_tinydns_dump_rr_srv(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char 
   printf("S%s::%s:%u:%u:%u:%u\n", name, data, MYDNS_RR_SRV_PORT(rr), MYDNS_RR_SRV_WEIGHT(rr), aux, ttl);
 }
 
-void __mydns_tinydns_dump_rr_txt(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char *data,
+void __mydns_tinydns_dump_rr_txt(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 				 size_t datalen, int ttl, int aux) {
   char *databuf, *c, *d;
   int databuflen = datalen;
   int len = databuflen;
-  databuf = ALLOCATE(databuflen, char[]);
+  databuf = ALLOCATE(databuflen, char*);
   memset(databuf, 0, databuflen);
   memcpy(databuf, data, databuflen);
 
@@ -121,7 +121,7 @@ void __mydns_tinydns_dump_rr_txt(MYDNS_SOA *soa, MYDNS_RR *rr, char *name, char 
       char *newdatabuf;
       databuflen += 3; /* Original Length + 3 more characters */
       /* Grow by a lump usually */
-      newdatabuf = REALLOCATE(databuf, ((databuflen/512)+1)*512, char[]);
+      newdatabuf = REALLOCATE(databuf, ((databuflen/512)+1)*512, char*);
       if (newdatabuf != databuf) d = &newdatabuf[d - databuf];
       databuf = newdatabuf;
       d += sprintf(d, "\\%03o", *c);

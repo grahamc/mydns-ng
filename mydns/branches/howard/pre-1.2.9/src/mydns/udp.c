@@ -139,7 +139,7 @@ write_udp_reply(TASK *t) {
     /* Err("%s: Send to (UDP) returned 0", desctask(t)); */
   }
 
-  if (rv != t->replylen) {
+  if (rv != (int)t->replylen) {
     /*
      * This should never ever happen as we have sent a partial packet over UDP
      */

@@ -29,7 +29,7 @@
 
 extern time_t		current_time;			/* Current time */
 
-extern struct timeval	*gettick();
+extern struct timeval	*gettick(void);
 
 extern int 		shutting_down;		/* Shutdown in progress? */
 
@@ -37,6 +37,6 @@ extern void		named_cleanup(int signo);
 extern void		named_shutdown(int);
 extern void		server_status(void);
 extern char		*mydns_name_2_shortname(char *name, char *origin, int empty_name_is_ok, int notrim);
-extern int		name_servers2ip(TASK *, MYDNS_SOA *, ARRAY *, ARRAY *, ARRAY *);
+extern int		name_servers2ip(TASK *, ARRAY *, ARRAY *, ARRAY *);
 
 #endif

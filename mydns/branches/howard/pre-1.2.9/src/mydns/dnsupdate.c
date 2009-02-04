@@ -27,11 +27,13 @@
 #include "cache.h"
 #include "debug.h"
 #include "error.h"
+#include "rr.h"
 #include "support.h"
 #include "taskobj.h"
 
 #include "buildreply.h"
 #include "dnsupdate.h"
+#include "listeners.h"
 #include "notify.h"
 
 /**************************************************************************************************
@@ -49,19 +51,6 @@ free_uqrr_data(UQRR *uqrr) {
 
 #if DEBUG_ENABLED
   Debug(dnsupdate, 1, _("free_uqrr_data freed %p"), uqrr);
-#endif
-}
-
-static void
-free_uqrr(UQRR *uqrr) {
-#if DEBUG_ENABLED
-  Debug(dnsupdate, 1, _("free_uqrr freeing %p"), uqrr);
-#endif
-  free_uqrr_data(uqrr);
-
-  RELEASE(uqrr);
-#if DEBUG_ENABLED
-  Debug(dnsupdate, 1, _("free_uqrr freed %p"), uqrr);
 #endif
 }
 
@@ -152,7 +141,6 @@ check_update(TASK *t, MYDNS_SOA *soa) {
   /* If the 'soa' table does not have an 'update' column, listing access rules, allow
      DNS UPDATE only from 127.0.0.1 and all local addresses */
   if (!mydns_soa_use_update_acl) {
-    extern char **all_interface_addresses();
     char **allLocalAddresses = all_interface_addresses();
 
     if (allLocalAddresses) {
@@ -220,14 +208,14 @@ check_update(TASK *t, MYDNS_SOA *soa) {
 	UPDATE_RRDUMP
 **************************************************************************************************/
 static void
-update_rrdump(TASK *t, char *section, int which, UQRR *rr) {
+update_rrdump(TASK *t, const char *section, int which, UQRR *rr) {
   char		*buf = NULL;
   char		*b = NULL;
   int		n = 0;
   int		bufused = 0;
   int		bufsiz = BUFSIZ;
 
-  buf = ALLOCATE(bufsiz, char[]);
+  buf = ALLOCATE(bufsiz, char*);
   b = buf;
 
   for (n = 0; n < UQRR_DATA_LENGTH(rr); n++) {
@@ -241,7 +229,7 @@ update_rrdump(TASK *t, char *section, int which, UQRR *rr) {
     }
     if (bufused > (bufsiz - 6)) {
       bufsiz += BUFSIZ;
-      buf = REALLOCATE(buf, bufsiz, char[]);
+      buf = REALLOCATE(buf, bufsiz, char*);
     }
   }
 
@@ -283,7 +271,7 @@ update_gobble_rr(TASK *t, MYDNS_SOA *soa, char *query, size_t querylen, char *cu
   DNS_GET16(rr->class, src);
   DNS_GET32(rr->ttl, src);
   DNS_GET16(UQRR_DATA_LENGTH(rr), src);
-  UQRR_DATA_VALUE(rr) = ALLOCATE(UQRR_DATA_LENGTH(rr)+1, char[]);
+  UQRR_DATA_VALUE(rr) = ALLOCATE(UQRR_DATA_LENGTH(rr)+1, uchar*);
 
   memcpy(UQRR_DATA_VALUE(rr), src, UQRR_DATA_LENGTH(rr));
   src += UQRR_DATA_LENGTH(rr);
@@ -335,7 +323,7 @@ parse_update_query(TASK *t, MYDNS_SOA *soa, UQ *q) {
   **  These records are in normal RR format (RFC 1035 4.1.3)
   */
   q->numPR = t->ancount;
-  q->PR = ALLOCATE_N(q->numPR, sizeof(UQRR), UQRR[]);
+  q->PR = ALLOCATE_N(q->numPR, sizeof(UQRR), UQRR*);
 #if DEBUG_ENABLED
   Debug(dnsupdate, 1, _("%s: parse_update_query checking prerequisites q->numPR = %d, q->PR = %p"),
 	 desctask(t), q->numPR, q->PR);
@@ -353,7 +341,7 @@ parse_update_query(TASK *t, MYDNS_SOA *soa, UQ *q) {
   **  These records are in normal RR format (RFC 1035 4.1.3)
   */
   q->numUP = t->nscount;
-  q->UP = ALLOCATE_N(q->numUP, sizeof(UQRR), UQRR[]);
+  q->UP = ALLOCATE_N(q->numUP, sizeof(UQRR), UQRR*);
 #if DEBUG_ENABLED
   Debug(dnsupdate, 1, _("%s: parse_update_query doing update section q->numUP = %d, q->UP = %p"),
 	 desctask(t), q->numUP, q->UP);
@@ -371,7 +359,7 @@ parse_update_query(TASK *t, MYDNS_SOA *soa, UQ *q) {
   **  These records are in normal RR format (RFC 1035 4.1.3)
   */
   q->numAD = t->arcount;
-  q->AD = ALLOCATE_N(q->numAD, sizeof(UQRR), UQRR[]);
+  q->AD = ALLOCATE_N(q->numAD, sizeof(UQRR), UQRR*);
 #if DEBUG_ENABLED
   Debug(dnsupdate, 1,
 	 _("%s: parse_update_query doing additional data section q->numAD = %d, q->AD = %p"),
@@ -398,11 +386,8 @@ parse_update_query(TASK *t, MYDNS_SOA *soa, UQ *q) {
 	Returns 0 on success, -1 on error.
 **************************************************************************************************/
 static taskexec_t
-update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t *datalen,
+update_get_rr_data(TASK *t, UQRR *rr, char **data, size_t *datalen,
 		   char **edata, size_t *edatalen, uint32_t *aux) {
-  unsigned char	*src = (unsigned char*)UQRR_DATA_VALUE(rr);
-  unsigned char	*end = (unsigned char*)(UQRR_DATA_VALUE(rr) + UQRR_DATA_LENGTH(rr));
-  task_error_t	errcode = 0;
   dns_qtype_map *map;
   taskexec_t res;
 
@@ -416,7 +401,7 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
 
   map = mydns_rr_get_type_by_id(rr->type);
 
-  if ((res = map->rr_get_rr_data(t, rr, data, datalen, edata, edatalen, aux, map)) != TASK_EXECUTED)
+  if ((res = map->rr_update_get_rr_data(t, rr, data, datalen, edata, edatalen, aux, map)) != TASK_EXECUTED)
     return res;
 
   if (mydns_rr_extended_data && *datalen > mydns_rr_data_length) {
@@ -436,7 +421,7 @@ update_get_rr_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **data, size_t
 	Returns 1 if it is, 0 if it's not.
 **************************************************************************************************/
 static int
-update_in_zone(TASK *t, char *name, char *origin) {
+update_in_zone(char *name, char *origin) {
 
   if (strlen(origin) > strlen(name))
     return 0;
@@ -449,7 +434,7 @@ update_in_zone(TASK *t, char *name, char *origin) {
 /*--- update_in_zone() --------------------------------------------------------------------------*/
 
 static void
-update_escape_name(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **xname, char **xhost) {
+update_escape_name(TASK *t, MYDNS_SOA *soa, UQRR *rr, char **xname, char **xhost) {
   char		*tmp = NULL;
 
 #if DEBUG_ENABLED
@@ -466,16 +451,6 @@ update_escape_name(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **xname, char 
   RELEASE(tmp);
 }
 
-static int
-update_escape_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **xdata) {
-#if DEBUG_ENABLED
-  Debug(dnsupdate, 1, _("%s: DNS UPDATE: update_escape_data"), desctask(t));
-#endif
-
-  *xdata = sql_escstr2(sql, (char*)UQRR_DATA_VALUE(rr), UQRR_DATA_LENGTH(rr));
-  return (strlen(*xdata));
-}
-
 /**************************************************************************************************
 	UPDATE_ZONE_HAS_NAME
 	Check to see that there is at least one RR in the zone whose name is the same as the
@@ -483,7 +458,7 @@ update_escape_data(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, char **xdata) {
 	Returns 1 if the name exists, 0 if not, -1 on error.
 **************************************************************************************************/
 static int
-update_zone_has_name(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
+update_zone_has_name(TASK *t, MYDNS_SOA *soa, UQRR *rr) {
   SQL_RES	*res = NULL;
   char		*query = NULL;
   size_t	querylen = 0;
@@ -496,7 +471,7 @@ update_zone_has_name(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 	 soa->origin, UQRR_NAME(rr));
 #endif
 
-  update_escape_name(t, soa, q, rr, &xname, &xhost);
+  update_escape_name(t, soa, rr, &xname, &xhost);
 
   querylen = sql_build_query(&query,
 			     "SELECT id FROM %s WHERE zone=%u AND (name='%s' OR name='%s') LIMIT 1",
@@ -532,7 +507,7 @@ update_zone_has_name(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 	Returns 1 if the name exists, 0 if not, -1 on error.
 **************************************************************************************************/
 static int
-update_zone_has_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
+update_zone_has_rrset(TASK *t, MYDNS_SOA *soa, UQRR *rr) {
   SQL_RES	*res = NULL;
   char		*query = NULL;
   size_t	querylen = 0;
@@ -546,7 +521,7 @@ update_zone_has_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 	 soa->origin, UQRR_NAME(rr), mydns_rr_get_type_by_id(rr->type)->rr_type_name);
 #endif
 
-  update_escape_name(t, soa, q, rr, &xname, &xhost);
+  update_escape_name(t, soa, rr, &xname, &xhost);
 
   querylen = sql_build_query(&query,
 			     "SELECT id FROM %s "
@@ -602,7 +577,7 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 #endif
 
   /* Get aux/data */
-  update_get_rr_data(t, soa, q, rr, &data, &datalen, &edata, &edatalen, &aux);	/* Ignore error */
+  update_get_rr_data(t, rr, &data, &datalen, &edata, &edatalen, &aux);	/* Ignore error */
 
 #if DEBUG_ENABLED
   Debug(dnsupdate, 1, _("%s: DNS UPDATE: check_prerequisite: aux=%u"), desctask(t), aux);
@@ -621,7 +596,7 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
   }
 
   /* rr->name must be in-zone */
-  if (!update_in_zone(t, UQRR_NAME(rr), soa->origin)) {
+  if (!update_in_zone(UQRR_NAME(rr), soa->origin)) {
 #if DEBUG_ENABLED
     Debug(dnsupdate, 1, _("%s: DNS UPDATE: check_prerequisite failed: name (%s) not in zone (%s)"),
 	   desctask(t),
@@ -641,7 +616,7 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
       return dnserror(t, DNS_RCODE_FORMERR, ERR_INVALID_DATA);	
     }
     if (rr->type == DNS_QTYPE_ANY) {
-      if ((rv = update_zone_has_name(t, soa, q, rr)) != 1) {
+      if ((rv = update_zone_has_name(t, soa, rr)) != 1) {
 	if (!rv) {
 #if DEBUG_ENABLED
 	  Debug(dnsupdate, 1,
@@ -653,7 +628,7 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 	  return (TASK_FAILED);
 	}
       }
-    } else if ((rv = update_zone_has_rrset(t, soa, q, rr)) != 1) {
+    } else if ((rv = update_zone_has_rrset(t, soa, rr)) != 1) {
       if (!rv) {
 #if DEBUG_ENABLED
 	Debug(dnsupdate, 1,
@@ -675,7 +650,7 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
       return dnserror(t, DNS_RCODE_FORMERR, ERR_INVALID_DATA);	
     }
     if (rr->type == DNS_QTYPE_ANY) {
-      if ((rv = update_zone_has_name(t, soa, q, rr)) != 0) {
+      if ((rv = update_zone_has_name(t, soa, rr)) != 0) {
 	if (rv == 1) {
 #if DEBUG_ENABLED
 	  Debug(dnsupdate, 1,
@@ -687,7 +662,7 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 	  return (TASK_FAILED);
 	}
       }
-    } else if ((rv = update_zone_has_rrset(t, soa, q, rr)) != 0) {
+    } else if ((rv = update_zone_has_rrset(t, soa, rr)) != 0) {
       if (rv == 1) {
 #if DEBUG_ENABLED
 	Debug(dnsupdate, 1,
@@ -701,7 +676,6 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
     }
   } else if (rr->class == q->class) {
     int		unique = 0;			/* Is this rrset element unique? */
-    uint32_t	aux = 0;			/* 'aux' value for parsed data */
     taskexec_t	ures = TASK_FAILED;
 
 #if DEBUG_ENABLED
@@ -710,7 +684,7 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 #endif
 
     /* Get the RR data */
-    if ((ures = update_get_rr_data(t, soa, q, rr,
+    if ((ures = update_get_rr_data(t, rr,
 				   &data, &datalen, &edata, &edatalen, &aux)) != TASK_EXECUTED) {
       if (ures != TASK_FAILED)
 	return dnserror(t, DNS_RCODE_FORMERR, ERR_INVALID_DATA);
@@ -733,12 +707,12 @@ check_prerequisite(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
 
     if (unique) {
       if (!q->num_tmprr)
-	q->tmprr = ALLOCATE(sizeof(TMPRR *), TMPRR*[]);
+	q->tmprr = ALLOCATE(sizeof(TMPRR*), TMPRR**);
       else
-	q->tmprr = REALLOCATE(q->tmprr, sizeof(TMPRR *) * (q->num_tmprr + 1), TMPRR*[]);
+	q->tmprr = REALLOCATE(q->tmprr, sizeof(TMPRR *) * (q->num_tmprr + 1), TMPRR**);
 
       /* Add this stuff to the new tmprr */
-      q->tmprr[q->num_tmprr] = ALLOCATE(sizeof(TMPRR), TMPRR);
+      q->tmprr[q->num_tmprr] = ALLOCATE(sizeof(TMPRR), TMPRR*);
       strncpy(TMPRR_NAME(q->tmprr[q->num_tmprr]), UQRR_NAME(rr),
 	      sizeof(TMPRR_NAME(q->tmprr[q->num_tmprr])) - 1);
       q->tmprr[q->num_tmprr]->type = rr->type;
@@ -780,7 +754,7 @@ update_rrtype_ok(dns_qtype_t type) {
 	Returns 0 on success, -1 on error.
 **************************************************************************************************/
 static taskexec_t
-prescan_update(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
+prescan_update(TASK *t, UQ *q, UQRR *rr) {
   /* Class must be ANY, NONE, or the same as the zone's class */
   if ((rr->class != DNS_CLASS_ANY) && (rr->class != DNS_CLASS_NONE) && (rr->class != q->class)) {
 #if DEBUG_ENABLED
@@ -851,7 +825,7 @@ prescan_update(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr) {
  *	current verision.
  ************************************************************************************************/
 static taskexec_t
-update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
+update_add_rr(TASK *t, MYDNS_SOA *soa, UQRR *rr, uint32_t next_serial) {
   char		*data = NULL, *edata = NULL;
   size_t	datalen = 0, edatalen = 0;
   uint32_t	aux = 0;
@@ -863,7 +837,7 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 #endif
   taskexec_t	ures = TASK_FAILED;
 
-  if ((ures = update_get_rr_data(t, soa, q, rr,
+  if ((ures = update_get_rr_data(t, rr,
 				 &data, &datalen, &edata, &edatalen, &aux)) != TASK_EXECUTED) {
     if (ures != TASK_FAILED)
       return dnserror(t, DNS_RCODE_FORMERR, ERR_INVALID_DATA);
@@ -878,7 +852,7 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 #endif
 
   /* Construct query */
-  update_escape_name(t, soa, q, rr, &xname, &xhost);
+  update_escape_name(t, soa, rr, &xname, &xhost);
 
   xdata = sql_escstr2(sql, data, datalen);
   if (edatalen)
@@ -1060,7 +1034,7 @@ update_add_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 	Returns 0 on success, -1 on failure.
 **************************************************************************************************/
 static taskexec_t
-update_delete_rrset_all(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
+update_delete_rrset_all(TASK *t, MYDNS_SOA *soa, UQRR *rr, uint32_t next_serial) {
   char		*xname = NULL, *xhost = NULL;
   char		*query = NULL;
   size_t	querylen = 0;
@@ -1075,7 +1049,7 @@ update_delete_rrset_all(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_
 #endif
 
   /* Delete rrset - check both the FQDN and the hostname without trailing dot */
-  update_escape_name(t, soa, q, rr, &xname, &xhost);
+  update_escape_name(t, soa, rr, &xname, &xhost);
 
   if (mydns_rr_use_active && mydns_rr_use_stamp && mydns_rr_use_serial) {
     SQL_ROW	row = NULL;
@@ -1182,7 +1156,7 @@ update_delete_rrset_all(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_
 	Returns 0 on success, -1 on failure.
 **************************************************************************************************/
 static taskexec_t
-update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
+update_delete_rr(TASK *t, MYDNS_SOA *soa, UQRR *rr, uint32_t next_serial) {
   char		*data = NULL, *edata = NULL;
   size_t	datalen = 0, edatalen = 0;
   uint32_t	aux = 0;
@@ -1199,7 +1173,7 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
 	 mydns_rr_get_type_by_id(rr->type)->rr_type_name);
 #endif
 
-  if ((ures = update_get_rr_data(t, soa, q, rr,
+  if ((ures = update_get_rr_data(t, rr,
 				 &data, &datalen, &edata, &edatalen, &aux)) != TASK_EXECUTED) {
     if (ures != TASK_FAILED)
       return dnserror(t, DNS_RCODE_FORMERR, ERR_INVALID_DATA);
@@ -1212,7 +1186,7 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
 	 UQRR_NAME(rr), mydns_rr_get_type_by_id(rr->type)->rr_type_name, data);
 #endif
 
-  update_escape_name(t, soa, q, rr, &xname, &xhost);
+  update_escape_name(t, soa, rr, &xname, &xhost);
 
   xdata = sql_escstr2(sql, data, datalen);
 
@@ -1343,7 +1317,7 @@ update_delete_rr(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial)
 	Returns 0 on success, -1 on failure.
 **************************************************************************************************/
 static taskexec_t
-update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
+update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQRR *rr, uint32_t next_serial) {
   char		*xname = NULL, *xhost = NULL;
   char		*query = NULL;
   size_t	querylen = 0;
@@ -1357,7 +1331,7 @@ update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_seri
 #endif
 
   /* Delete rr - check both the FQDN and the hostname without trailing dot */
-  update_escape_name(t, soa, q, rr, &xname, &xhost);
+  update_escape_name(t, soa, rr, &xname, &xhost);
 
   if (mydns_rr_use_active && mydns_rr_use_stamp && mydns_rr_use_serial) {
     SQL_ROW	row = NULL;
@@ -1461,7 +1435,7 @@ update_delete_rrset(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_seri
 
   return (TASK_EXECUTED);
 }
-/*--- update_delete_rr() ------------------------------------------------------------------------*/
+/*--- update_delete_rrset() ------------------------------------------------------------------------*/
 
 
 /**************************************************************************************************
@@ -1487,7 +1461,7 @@ process_update(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 #if DEBUG_ENABLED
     Debug(dnsupdate, 1, _("%s: DNS UPDATE: 2.5.1: Add to an RRset"), desctask(t));
 #endif
-    return update_add_rr(t, soa, q, rr, next_serial);
+    return update_add_rr(t, soa, rr, next_serial);
   }
 
   /* 2.5.2: Delete an RRset */
@@ -1495,7 +1469,7 @@ process_update(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 #if DEBUG_ENABLED
     Debug(dnsupdate, 1, _("%s: DNS UPDATE: 2.5.2: Delete an RRset"), desctask(t));
 #endif
-    return update_delete_rrset(t, soa, q, rr, next_serial);
+    return update_delete_rrset(t, soa, rr, next_serial);
   }
 
   /* 2.5.3: Delete all RRsets from a name */
@@ -1503,7 +1477,7 @@ process_update(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 #if DEBUG_ENABLED
     Debug(dnsupdate, 1, _("%s: DNS UPDATE: 2.5.3: Delete all RRsets from a name"), desctask(t));
 #endif
-    return update_delete_rrset_all(t, soa, q, rr,next_serial);
+    return update_delete_rrset_all(t, soa, rr,next_serial);
   }
 
   /* 2.5.4: Delete an RR from an RRset */
@@ -1511,7 +1485,7 @@ process_update(TASK *t, MYDNS_SOA *soa, UQ *q, UQRR *rr, uint32_t next_serial) {
 #if DEBUG_ENABLED
     Debug(dnsupdate, 1, _("%s: DNS UPDATE: 2.5.4: Delete an RR from an RRset"), desctask(t));
 #endif
-    return update_delete_rr(t, soa, q, rr, next_serial);
+    return update_delete_rr(t, soa, rr, next_serial);
   }
 
 #if DEBUG_ENABLED
@@ -1690,29 +1664,29 @@ check_tmprr(TASK *t, MYDNS_SOA *soa, UQ *q) {
 **************************************************************************************************/
 static uint32_t
 increment_soa_serial(TASK *t, MYDNS_SOA *soa) {
-  unsigned int current_serial = soa->serial;
-  unsigned int new_serial = 0;
+  uint current_serial = soa->serial;
+  uint new_serial = 0;
   char *datebuffer = NULL;
 
   struct timeval timenow = { 0, 0 };;
-  struct tm *current_time = NULL;
+  struct tm *soa_time = NULL;
 
-  time_t now = 0, low = 0, high = 0;
+  uint now = 0, low = 0, high = 0;
   unsigned int curyear  = 0;
 
   gettimeofday(&timenow, NULL);
-  now = timenow.tv_sec;
+  now = (uint)timenow.tv_sec;
   low = now - (31449600 * 2); /* About 2 years ago */
   high = now + (31449600 * 1); /* About a year away */
 
-  current_time = gmtime((const time_t*)&timenow.tv_sec);
+  soa_time = gmtime((const time_t*)&timenow.tv_sec);
 
-  curyear = current_time->tm_year + 1900;
+  curyear = soa_time->tm_year + 1900;
 
   ASPRINTF(&datebuffer, "%04d%02d%02d%02d",
 	   curyear,
-	   current_time->tm_mon + 1,
-	   current_time->tm_mday,
+	   soa_time->tm_mon + 1,
+	   soa_time->tm_mday,
 	   0);
   sscanf(datebuffer, "%d", &new_serial);
   RELEASE(datebuffer);
@@ -1724,7 +1698,8 @@ increment_soa_serial(TASK *t, MYDNS_SOA *soa) {
     current_serial = now;
   } else {
     unsigned int year = 0;
-    int datelength = ASPRINTF(&datebuffer, "%.12d", current_serial);
+
+    ASPRINTF(&datebuffer, "%.12d", current_serial);
     datebuffer[4] = '\0';
     sscanf(datebuffer, "%d", &year);
     RELEASE(datebuffer);
@@ -1800,7 +1775,6 @@ are_we_master(TASK *t, MYDNS_SOA *soa) {
   ARRAY *ips6 = NULL;
 #endif
 
-  extern char **all_interface_addresses();
   char **allLocalAddresses = all_interface_addresses();
   int i = 0, j = 0, res = 1;
 
@@ -1813,7 +1787,7 @@ are_we_master(TASK *t, MYDNS_SOA *soa) {
 #if HAVE_IPV6
   ips6 = array_init(8);
 #endif
-  ipcount = name_servers2ip(t, soa, nss, ips4,
+  ipcount = name_servers2ip(t, nss, ips4,
 #if HAVE_IPV6
 			    ips6
 #else
@@ -1902,7 +1876,7 @@ taskexec_t dnsupdate(TASK *t) {
   }
 
   /* Parse the update query */
-  q = ALLOCATE(sizeof(UQ), UQ);
+  q = ALLOCATE(sizeof(UQ), UQ*);
   if (parse_update_query(t, soa, q) != TASK_EXECUTED) {
     goto dns_update_error;
   }
@@ -1920,7 +1894,7 @@ taskexec_t dnsupdate(TASK *t) {
 
   /* Prescan the update section (RFC 2136 3.4.1) */
   for (n = 0; n < q->numUP; n++)
-    if (prescan_update(t, soa, q, &q->UP[n]) != TASK_EXECUTED) {
+    if (prescan_update(t, q, &q->UP[n]) != TASK_EXECUTED) {
       goto dns_update_error;
     }
 

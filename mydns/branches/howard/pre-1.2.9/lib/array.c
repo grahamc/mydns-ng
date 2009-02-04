@@ -30,7 +30,7 @@ ARRAY *
 array_init(size_t initial_size) {
   ARRAY *a = NULL;
 
-  a = ALLOCATE(sizeof(ARRAY), ARRAY);
+  a = ALLOCATE(sizeof(ARRAY), ARRAY*);
 
   if (initial_size <= 0) initial_size = 1;
 
@@ -70,7 +70,7 @@ array_free(ARRAY *a, int release_contents) {
 void
 array_append(ARRAY *a, void *o) {
 
-  int idx = a->maxidx + 1;
+  uint idx = a->maxidx + 1;
 
   if (idx >= a->size) {
     a->objects = (void**)REALLOCATE(a->objects, (a->size*2)*sizeof(void*), void*);

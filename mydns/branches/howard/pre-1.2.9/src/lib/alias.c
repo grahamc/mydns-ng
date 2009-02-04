@@ -174,8 +174,7 @@ find_alias(TASK *t, char *fqdn) {
 	If the task has a matching ALIAS record, recurse into it.
 	Returns the number of records added.
 **************************************************************************************************/
-int
-alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, char *label, MYDNS_RR *alias) {
+int alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, MYDNS_RR *alias) {
   uint32_t		aliases[MAX_ALIAS_LEVEL];
   char			*name = NULL;
   register MYDNS_RR	*rr = NULL;

@@ -20,6 +20,7 @@
 #ifndef _MYDNS_TASKINT_H
 #define _MYDNS_TASKINT_H
 
+typedef struct _named_task *TASKP;
 
 /* Task completion codes */
 typedef enum _task_execstatus_t {

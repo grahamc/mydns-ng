@@ -105,7 +105,7 @@ cmdline(int argc, char **argv) {
   };
 
   /* Set default NS and MBOX based on this machine's hostname */
-  thishostname = ALLOCATE(DNS_MAXNAMELEN+1, char[]);
+  thishostname = ALLOCATE(DNS_MAXNAMELEN+1, char*);
   gethostname(thishostname, DNS_MAXNAMELEN);
   ASPRINTF(&ns, "%s.", thishostname);
   ASPRINTF(&mbox, "hostmaster.%s.", thishostname);
@@ -236,11 +236,11 @@ load_zone_list(void) {
     /* Add new zone if not found */
     if (n == numZones) {
       if (!Zones) {
-	Zones = ALLOCATE_N(numZones + 1, sizeof(ARPAZONE *), ARPAZONE*[]);
+	Zones = ALLOCATE_N(numZones + 1, sizeof(ARPAZONE *), ARPAZONE**);
       } else {
-	Zones = REALLOCATE(Zones, (numZones + 1) * sizeof(ARPAZONE *), ARPAZONE*[]);
+	Zones = REALLOCATE(Zones, (numZones + 1) * sizeof(ARPAZONE *), ARPAZONE**);
       }
-      Zones[numZones] = ALLOCATE(sizeof(ARPAZONE), ARPAZONE);
+      Zones[numZones] = ALLOCATE(sizeof(ARPAZONE), ARPAZONE*);
       strncpy(Zones[numZones]->name, name, sizeof(Zones[numZones]->name)-1);
       Zones[numZones]->id = 0;
 
@@ -272,7 +272,7 @@ load_zone_list(void) {
 	GET_ZONE_IDS
 	For each zone in the 'Zones' list, load the zone ID.
 **************************************************************************************************/
-void
+static void
 get_zone_ids(void) {
   int n;
 
@@ -327,7 +327,7 @@ get_zone_ids(void) {
 	For each zone in 'Zones' list, gets all relevant records from the PTR table and inserts them
 	into the appropriate zones.
 **************************************************************************************************/
-void
+static void
 ptrconvert(void) {
   int n;
 
@@ -375,7 +375,7 @@ ptrconvert(void) {
 
       if (rv == 0) {
 	char	*esc_data;
-	int	res;
+	int	sqlres;
 
 	esc_data = sql_escstr(sql, ptr->name);
 
@@ -384,9 +384,9 @@ ptrconvert(void) {
 			    mydns_rr_table_name, Zones[n]->id, quad[3],
 			    esc_data, ptr->ttl);
 	RELEASE(esc_data);
-	res = sql_nrquery(sql, query, querylen);
+	sqlres = sql_nrquery(sql, query, querylen);
 	RELEASE(query);
-	if (res != 0)
+	if (sqlres != 0)
 	  ErrSQL(sql, "%s: Error inserting rr", Zones[n]->name);
 
 	inserted++;

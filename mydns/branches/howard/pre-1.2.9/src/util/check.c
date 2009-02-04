@@ -26,6 +26,7 @@
 #include "memoryman.h"
 #include "check.h"
 #include "debug.h"
+#include "rr.h"
 
 MYDNS_SOA	*soa;					/* Current SOA record being scanned */
 MYDNS_RR	*rr;					/* Current RR record */
@@ -197,7 +198,7 @@ check_soa(const char *zone) {
   rr = NULL;
 
   /* SOA validation */
-  name = REALLOCATE(name, strlen(soa->origin) + 1, char[]);
+  name = REALLOCATE(name, strlen(soa->origin) + 1, char*);
   strcpy(name, soa->origin);
   mydns_check_name(soa, rr, name, data, soa->ns, strlen(soa->ns), "soa.ns", 0, 0);
   mydns_check_name(soa, rr, name, data, soa->mbox, strlen(soa->mbox), "soa.mbox", 0, 0);
@@ -227,9 +228,9 @@ check_rr(void) {
   int	namelen = strlen(MYDNS_RR_NAME(rr));
   dns_qtype_map *map;
 
-  name = REALLOCATE(name, namelen+1, char[]);
+  name = REALLOCATE(name, namelen+1, char*);
   memset(name, 0, namelen+1);
-  data = REALLOCATE(data, MYDNS_RR_DATA_LENGTH(rr)+1, char[]);
+  data = REALLOCATE(data, MYDNS_RR_DATA_LENGTH(rr)+1, char*);
   memset(data, 0, MYDNS_RR_DATA_LENGTH(rr)+1);
   strncpy(name, MYDNS_RR_NAME(rr), namelen);
   memcpy(data, MYDNS_RR_DATA_VALUE(rr), MYDNS_RR_DATA_LENGTH(rr));
@@ -254,7 +255,6 @@ check_rr(void) {
 static void
 check_zone(void) {
   char *query;
-  int querylen;
   unsigned int rrct = 0;
   SQL_RES *res;
   SQL_ROW row;
@@ -383,7 +383,7 @@ main(int argc, char **argv) {
       char *zone;
       int zonelen = strlen(argv[optind]) + 1;
       if (*argv[optind] && LASTCHAR(argv[optind]) != '.') zonelen += 1;
-      zone = ALLOCATE(zonelen, char[]);
+      zone = ALLOCATE(zonelen, char*);
       strcpy(zone, argv[optind++]);
       if (*zone && LASTCHAR(zone) != '.')
 	strcat(zone, ".");

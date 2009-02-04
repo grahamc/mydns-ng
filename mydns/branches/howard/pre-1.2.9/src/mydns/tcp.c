@@ -160,7 +160,7 @@ read_tcp_length(TASK *t) {
     return (TASK_ABANDONED);
   }
 
-  t->query = ALLOCATE(t->len + 1, char[]);
+  t->query = ALLOCATE(t->len + 1, char*);
 
   t->offset = 0;
 

@@ -20,6 +20,6 @@
 #define _MYDNS_MYDNS_IXFR_H
 
 extern taskexec_t	ixfr(TASK *, datasection_t, dns_qtype_t, char *, int);
-extern void		ixfr_start();
+extern void		ixfr_start(void);
 
 #endif

@@ -135,7 +135,7 @@ match_after_star(register char *p, register char *t) {
 	_WILDCARD_MATCH
 	Match pattern (p) against text (t).
 **************************************************************************************************/
-int
+static int
 _wildcard_match(register char *p, register char *t) {
   register char range_start, range_end;		/* start and end in range */
 

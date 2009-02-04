@@ -29,6 +29,6 @@ typedef struct _notify_slave {
 extern taskexec_t	notify_write(TASK *);
 extern taskexec_t	notify_read(TASK*);
 extern void		notify_slaves(TASK *, MYDNS_SOA *);
-extern void		notify_start();
+extern void		notify_start(void);
 
 #endif

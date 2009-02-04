@@ -102,7 +102,7 @@ int name_encode(TASK *t, char **dest, char *name, unsigned int dest_offset, int 
   if (LASTCHAR(namebuf) != '.')
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_NAME_FORMAT);
 
-  *dest = ALLOCATE(strlen(namebuf) + 1, char[]); /* If not compressing this should be equal
+  *dest = ALLOCATE(strlen(namebuf) + 1, char*); /* If not compressing this should be equal
 						    If compressing then it should be bigger */
 
   /* Examine name one label at a time */

@@ -24,12 +24,13 @@
 
 #include "conf.h"
 #include "debug.h"
+#include "rr.h"
 
 #include <pwd.h>
 #include <grp.h>
 
 int		opt_daemon = 0;				/* Run in background? (-d, --daemon) */
-char		*opt_conf = MYDNS_CONF;			/* Location of config file (-c, --conf) */
+char		*opt_conf = (char*)MYDNS_CONF;			/* Location of config file (-c, --conf) */
 uid_t		perms_uid = 0;				/* User permissions */
 gid_t		perms_gid = 0;				/* Group permissions */
 time_t		task_timeout;				/* Task timeout */
@@ -39,7 +40,7 @@ int		dns_update_enabled = 0;			/* Enable DNS UPDATE? */
 int		dns_notify_enabled = 0;			/* Enable notify */
 int		notify_timeout = 60;
 int		notify_retries = 5;
-char		*notify_algorithm = "linear";
+char		*notify_algorithm = (char*)"linear";
 
 int		dns_ixfr_enabled = 0;			/* Enable IXFR functionality */
 int		ixfr_gc_enabled = 0;			/* Enable IXFR GC */
@@ -51,13 +52,13 @@ int		forward_recursive = 0;			/* Forward recursive queries? */
 int		recursion_timeout = 1;
 int		recursion_connect_timeout = 1;
 int		recursion_retries = 5;
-char		*recursion_algorithm = "linear";
+char		*recursion_algorithm = (char*)"linear";
 char		*recursive_fwd_server = NULL;		/* Name of server for recursive forwarding */
 int		recursive_family = AF_INET;		/* Protocol family for recursion */
 
 int		wildcard_recursion = 0;			/* Search ancestor zones for wildcard matches - count give levels -1 means infinite */
 
-char		*mydns_dbengine = "MyISAM";
+char		*mydns_dbengine = (char*)"MyISAM";
 
 #if HAVE_IPV6
 struct sockaddr_in6	recursive_sa6;			/* Recursive server (IPv6) */
@@ -74,71 +75,71 @@ char		*dn_default_ns = NULL;			/* Default NS for directNIC */
 **  If the 'name' is "-", the --dump-config option treats 'desc' as a header field.
 */
 static CONF defConfig[] = {
-/* name				value				desc	*/
-{	"-",			NULL,				N_("DATABASE INFORMATION")},
-{	"db-host",		"localhost",			N_("SQL server hostname")},
-{	"db-user",		"username",			N_("SQL server username")},
-{	"db-password",		"password",			N_("SQL server password")},
-{	"database",		PACKAGE_NAME,			N_("MyDNS database name")},
+  /*	name			value				desc										altname	defaulted	next	*/
+  {	"-",			NULL,				N_("DATABASE INFORMATION"),							NULL,	0,		NULL		},
+  {	"db-host",		"localhost",			N_("SQL server hostname"),							NULL,	0,		NULL		},
+  {	"db-user",		"username",			N_("SQL server username"),							NULL,	0,		NULL		},
+  {	"db-password",		"password",			N_("SQL server password"),							NULL,	0,		NULL		},
+  {	"database",		PACKAGE_NAME,			N_("MyDNS database name"),							NULL,	0,		NULL		},
 
-{	"-",			NULL,				N_("GENERAL OPTIONS")},
+  {	"-",			NULL,				N_("GENERAL OPTIONS"),								NULL,	0,		NULL		},
 
-{	"user",			"nobody",			N_("Run with the permissions of this user")},
-{	"group",		"nobody",			N_("Run with the permissions of this group")},
-{	"listen",		"*",				N_("Listen on these addresses ('*' for all)"),	"bind"},
-{	"no-listen",		"",				N_("Do not listen on these addresses")},
+  {	"user",			"nobody",			N_("Run with the permissions of this user"),					NULL,	0,		NULL		},
+  {	"group",		"nobody",			N_("Run with the permissions of this group"),					NULL,	0,		NULL		},
+  {	"listen",		"*",				N_("Listen on these addresses ('*' for all)"),					"bind",	0,		NULL		},
+  {	"no-listen",		"",				N_("Do not listen on these addresses"),						NULL,	0,		NULL		},
 
-{	"-",			NULL,				N_("CACHE OPTIONS")},
+  {	"-",			NULL,				N_("CACHE OPTIONS"),								NULL,	0,		NULL		},
 
-{	"cache-size",		"1024",				N_("Maximum number of elements stored in the data/reply cache")},
-{	"cache-expire",		"60",				N_("Number of seconds after which cached data/replies expire")},
+  {	"cache-size",		"1024",				N_("Maximum number of elements stored in the data/reply cache"),		NULL,	0,		NULL		},
+  {	"cache-expire",		"60",				N_("Number of seconds after which cached data/replies expire"),			NULL,	0,		NULL		},
 
-{	"zone-cache-size",	"1024",				N_("Maximum number of elements stored in the zone cache")},
-{	"zone-cache-expire",	"60",				N_("Number of seconds after which cached zones expires")},
+  {	"zone-cache-size",	"1024",				N_("Maximum number of elements stored in the zone cache"),			NULL,	0,		NULL		},
+  {	"zone-cache-expire",	"60",				N_("Number of seconds after which cached zones expires"),			NULL,	0,		NULL		},
 
-{	"reply-cache-size",	"1024",				N_("Maximum number of elements stored in the reply cache")},
-{	"reply-cache-expire",	"30",				N_("Number of seconds after which cached replies expire")},
+  {	"reply-cache-size",	"1024",				N_("Maximum number of elements stored in the reply cache"),			NULL,	0,		NULL		},
+  {	"reply-cache-expire",	"30",				N_("Number of seconds after which cached replies expire"),			NULL,	0,		NULL		},
 
-{	"-",			NULL,				N_("ESOTERICA")},
-{	"log",			"LOG_DAEMON",			N_("Facility to use for program output (LOG_*/stdout/stderr)")},
-{	"pidfile",		"/var/run/"PACKAGE_NAME".pid",	N_("Path to PID file")},
-{	"timeout",		"120",				N_("Number of seconds after which queries time out")},
-{	"multicpu",		"-1",				N_("Number of CPUs installed on your system - (deprecated)")},
-{	"servers",		"1",				N_("Number of servers to run")},
-{	"recursive",		"",				N_("Location of recursive resolver")},
-{	"recursive-timeout",	"1",				N_("Number of seconds before first retry")},
-{	"recursive-retries",	"5",				N_("Number of retries before abandoning recursion")},
-{	"recursive-algorithm",	"linear",			N_("Recursion retry algorithm one of: linear, exponential, progressive")},
-{	"allow-axfr",		"no",				N_("Should AXFR be enabled?")},
-{	"allow-tcp",		"no",				N_("Should TCP be enabled?")},
-{	"allow-update",		"no",				N_("Should DNS UPDATE be enabled?")},
-{	"ignore-minimum",	"no",				N_("Ignore minimum TTL for zone?")},
-{	"soa-table",		MYDNS_SOA_TABLE,		N_("Name of table containing SOA records")},
-{	"rr-table",		MYDNS_RR_TABLE,			N_("Name of table containing RR data")},
-{	"use-soa-active",	"no",				N_("Use the soa active attribute if provided")},
-{	"use-rr-active",	"no",				N_("Use the rr active attribute if provided")},
-{	"notify-enabled",	"no",				N_("Enable notify from updates")},
-{	"notify-source",	"0.0.0.0",			N_("Source address for ipv4 notify messages")},
-{	"notify-source6",	"::",				N_("Source address for ipv6 notify messages")},
-{	"notify-timeout",	"60",				N_("Number of seconds before first retry")},
-{	"notify-retries",	"5",				N_("Number of retries before abandoning notify")},
-{	"notify-algorithm",	"linear",			N_("Notify retry algorithm one of: linear, exponential, progressive")},
-{	"ixfr-enabled",		"no",				N_("Enable IXFR functionality")},
-{	"ixfr-gc-enabled",	"no",				N_("Enable IXFR GC functionality")},
-{	"ixfr-gc-interval",	"86400",			N_("How often to run GC for IXFR")},
-{	"ixfr-gc-delay",	"600",				N_("Delay until first IXFR GC runs")},
-{	"extended-data-support","no",				N_("Support extended data fields for large TXT records")},
-{	"dbengine",		"MyISAM",			N_("Support different database engines")},
-{	"wildcard-recursion",	"0",				N_("Wildcard ancestor search levels")},
+  {	"-",			NULL,				N_("ESOTERICA"),								NULL,	0,		NULL		},
+  {	"log",			"LOG_DAEMON",			N_("Facility to use for program output (LOG_*/stdout/stderr)"),			NULL,	0,		NULL		},
+  {	"pidfile",		"/var/run/"PACKAGE_NAME".pid",	N_("Path to PID file"),								NULL,	0,		NULL		},
+  {	"timeout",		"120",				N_("Number of seconds after which queries time out"),				NULL,	0,		NULL		},
+  {	"multicpu",		"-1",				N_("Number of CPUs installed on your system - (deprecated)"),			NULL,	0,		NULL		},
+  {	"servers",		"1",				N_("Number of servers to run"),							NULL,	0,		NULL		},
+  {	"recursive",		"",				N_("Location of recursive resolver"),						NULL,	0,		NULL		},
+  {	"recursive-timeout",	"1",				N_("Number of seconds before first retry"),					NULL,	0,		NULL		},
+  {	"recursive-retries",	"5",				N_("Number of retries before abandoning recursion"),				NULL,	0,		NULL		},
+  {	"recursive-algorithm",	"linear",			N_("Recursion retry algorithm one of: linear, exponential, progressive"),	NULL,	0,		NULL		},
+  {	"allow-axfr",		"no",				N_("Should AXFR be enabled?"),							NULL,	0,		NULL		},
+  {	"allow-tcp",		"no",				N_("Should TCP be enabled?"),							NULL,	0,		NULL		},
+  {	"allow-update",		"no",				N_("Should DNS UPDATE be enabled?"),						NULL,	0,		NULL		},
+  {	"ignore-minimum",	"no",				N_("Ignore minimum TTL for zone?"),						NULL,	0,		NULL		},
+  {	"soa-table",		MYDNS_SOA_TABLE,		N_("Name of table containing SOA records"),					NULL,	0,		NULL		},
+  {	"rr-table",		MYDNS_RR_TABLE,			N_("Name of table containing RR data"),						NULL,	0,		NULL		},
+  {	"use-soa-active",	"no",				N_("Use the soa active attribute if provided"),					NULL,	0,		NULL		},
+  {	"use-rr-active",	"no",				N_("Use the rr active attribute if provided"),					NULL,	0,		NULL		},
+  {	"notify-enabled",	"no",				N_("Enable notify from updates"),						NULL,	0,		NULL		},
+  {	"notify-source",	"0.0.0.0",			N_("Source address for ipv4 notify messages"),					NULL,	0,		NULL		},
+  {	"notify-source6",	"::",				N_("Source address for ipv6 notify messages"),					NULL,	0,		NULL		},
+  {	"notify-timeout",	"60",				N_("Number of seconds before first retry"),					NULL,	0,		NULL		},
+  {	"notify-retries",	"5",				N_("Number of retries before abandoning notify"),				NULL,	0,		NULL		},
+  {	"notify-algorithm",	"linear",			N_("Notify retry algorithm one of: linear, exponential, progressive"),		NULL,	0,		NULL		},
+  {	"ixfr-enabled",		"no",				N_("Enable IXFR functionality"),						NULL,	0,		NULL		},
+  {	"ixfr-gc-enabled",	"no",				N_("Enable IXFR GC functionality"),						NULL,	0,		NULL		},
+  {	"ixfr-gc-interval",	"86400",			N_("How often to run GC for IXFR"),						NULL,	0,		NULL		},
+  {	"ixfr-gc-delay",	"600",				N_("Delay until first IXFR GC runs"),						NULL,	0,		NULL		},
+  {	"extended-data-support","no",				N_("Support extended data fields for large TXT records"),			NULL,	0,		NULL		},
+  {	"dbengine",		"MyISAM",			N_("Support different database engines"),					NULL,	0,		NULL		},
+  {	"wildcard-recursion",	"0",				N_("Wildcard ancestor search levels"),						NULL,	0,		NULL		},
 
 #ifdef DN_COLUMN_NAMES
-{	"default-ns",		"ns0.example.com.",		N_("Default nameserver for all zones")},
+  {	"default-ns",		"ns0.example.com.",		N_("Default nameserver for all zones"),						NULL,	0,		NULL		},
 #endif
 
-{	"soa-where",		"",				N_("Extra WHERE clause for SOA queries")},
-{	"rr-where",		"",				N_("Extra WHERE clause for RR queries")},
+  {	"soa-where",		"",				N_("Extra WHERE clause for SOA queries"),					NULL,	0,		NULL		},
+  {	"rr-where",		"",				N_("Extra WHERE clause for RR queries"),					NULL,	0,		NULL		},
 
-{	NULL,			NULL,				NULL}
+  {	NULL,			NULL,				NULL,										NULL,	0,		NULL		}
 };
 
 
@@ -166,7 +167,7 @@ dump_config(void) {
   ** Get longest words
   */
   for (n = 0; defConfig[n].name; n++) {
-    char *value = conf_get(&Conf, defConfig[n].name, &defaulted);
+    const char *value = conf_get(&Conf, defConfig[n].name, &defaulted);
 
     c = &defConfig[n];
     if (!c->value || !c->value[0])
@@ -193,7 +194,7 @@ dump_config(void) {
   **	Output name/value pairs
   */
   for (n = 0; defConfig[n].name; n++) {
-    char	*value = conf_get(&Conf, defConfig[n].name, &defaulted);
+    const char	*value = conf_get(&Conf, defConfig[n].name, &defaulted);
 
     c = &defConfig[n];
 
@@ -314,7 +315,7 @@ check_config_file_perms(void) {
 	CONF_SET_RECURSIVE
 	If the 'recursive' configuration option was specified, set the recursive server.
 **************************************************************************************************/
-void
+static void
 conf_set_recursive(void) {
   char	*c, *address = conf_get(&Conf, "recursive", NULL), addr[512];
   int	port = 53;

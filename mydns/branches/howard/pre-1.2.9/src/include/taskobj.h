@@ -142,9 +142,9 @@ typedef struct _named_rrlist {
   RR	       		*tail;			/* Tail of list */
 } RRLIST;
 
-typedef void (*FreeExtension)(/* TASK*, void* */);
-typedef taskexec_t (*RunExtension)(/* TASK*, void* */);
-typedef taskexec_t (*TimeExtension)(/* TASK*, void* */);
+typedef void (*FreeExtension)(TASKP, void*);
+typedef taskexec_t (*RunExtension)(TASKP, void*);
+typedef taskexec_t (*TimeExtension)(TASKP, void*);
 
 /* TASK: DNS query task */
 typedef struct _named_task {
@@ -269,13 +269,13 @@ extern void		_task_requeue(QUEUE **, TASK *, const char *, unsigned int);
 #define			dequeue(T)	_task_dequeue((T)->queue_header.Q, (T), __FILE__, __LINE__)
 #define			requeue(Q, T)	_task_requeue((Q), (T), __FILE__, __LINE__)
 
-extern void		task_queue_stats();
+extern void		task_queue_stats(void);
 
 #define task_next(T)	((TASK*)((T)->queue_header.next))
 #define task_prev(T)	((TASK*)((T)->queue_header->prev))
 #define task_queue(T)	((T)->queue_header.Q)
 
-extern void		task_free_all();
+extern void		task_free_all(void);
 
 #endif /* !_MYDNS_TASK_H */
 /* vi:set ts=3: */

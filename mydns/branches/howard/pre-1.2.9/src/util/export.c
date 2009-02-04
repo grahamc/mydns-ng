@@ -24,6 +24,7 @@
 #include "memoryman.h"
 
 #include "debug.h"
+#include "rr.h"
 
 char *zone = NULL;						/* Zone name to dump */
 unsigned int zones_out = 0;					/* Number of zones output */
@@ -108,13 +109,13 @@ cmdline(int argc, char **argv) {
     if (!command_line) 	{
       command_line = STRDUP(argv[n]);
     } else {
-      command_line = REALLOCATE(command_line, strlen(command_line) + strlen(argv[n]) + 2, char[]);
+      command_line = REALLOCATE(command_line, strlen(command_line) + strlen(argv[n]) + 2, char*);
       strcat(command_line, " ");
       strcat(command_line, argv[n]);
     }
   }
 
-  thishostname = ALLOCATE(DNS_MAXNAMELEN +1, char[]);
+  thishostname = ALLOCATE(DNS_MAXNAMELEN +1, char*);
   gethostname(thishostname, DNS_MAXNAMELEN);
 
   err_file = stdout;
@@ -249,12 +250,9 @@ bind_dump_soa(MYDNS_SOA *soa) {
 static void
 bind_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
   dns_qtype_map *map;
-  char *type_name;
   int ttl, aux;
 
   map = mydns_rr_get_type_by_id((rr->alias == 0) ? rr->type : DNS_QTYPE_CNAME);
-
-  type_name = map->rr_type_name;
 
   ttl = (rr->ttl < soa->minimum) ? soa->minimum : rr->ttl;
   aux = rr->aux;
@@ -294,7 +292,7 @@ tinydns_dump_soa(MYDNS_SOA *soa) {
 	Output resource record, BIND format.
 **************************************************************************************************/
 static void
-tinydns_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
+tinydns_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr) {
   dns_qtype_map *map;
   char *name = NULL, *data = NULL;
 
@@ -303,7 +301,7 @@ tinydns_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
   name = STRDUP(MYDNS_RR_NAME(rr));
   TINYDNS_NAMEFIX(name);
 
-  data = ALLOCATE(MYDNS_RR_DATA_LENGTH(rr)+1, char[]);
+  data = ALLOCATE(MYDNS_RR_DATA_LENGTH(rr)+1, char*);
   memset(data, '\0', MYDNS_RR_DATA_LENGTH(rr));
   memcpy(data, MYDNS_RR_DATA_VALUE(rr), MYDNS_RR_DATA_LENGTH(rr));
 
@@ -349,7 +347,7 @@ dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
     bind_dump_rr(soa, rr, maxlen);
     break;
   case OUTPUT_TINYDNS:
-    tinydns_dump_rr(soa, rr, maxlen);
+    tinydns_dump_rr(soa, rr);
     break;
   }
 }
@@ -363,7 +361,6 @@ static void
 dump_rr_long(MYDNS_SOA *soa) {
   int maxlen = 0;
   char *query;
-  size_t querylen;
   SQL_RES *res;
   SQL_ROW row;
   unsigned long *lengths;
@@ -424,7 +421,7 @@ static void
 dump_zone(char *zone_name) {
   MYDNS_SOA *soa;
   int zonelen = (strlen(zone_name) + ((LASTCHAR(zone_name) != '.')?2:1));
-  zone = ALLOCATE(zonelen, char[]);
+  zone = ALLOCATE(zonelen, char*);
   memset(zone, 0, zonelen);
   strcpy(zone, zone_name);
   if (LASTCHAR(zone) != '.')

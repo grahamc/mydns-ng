@@ -3187,6 +3187,7 @@ function ptr_delete_rr($arpazone, $name, $data, $origin, $delete_if_empty = 1) {
 /*--- ptr_delete_rr() ---------------------------------------------------------------------------*/
 
 function rr_extended_data($data, &$edata) {
+  global $rr_datalen;
   $edata = NULL;
   if (strlen($data) > $rr_datalen) {
     $xdata = str_split($data, $rr_datalen);

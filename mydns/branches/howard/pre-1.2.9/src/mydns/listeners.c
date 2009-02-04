@@ -25,6 +25,8 @@
 #include "debug.h"
 #include "listen.h"
 
+#include "listeners.h"
+
 #if HAVE_NET_IF_H
 #  include <net/if.h>
 #endif
@@ -103,7 +105,7 @@ addrlist_add(int family, void *address, int port) {
     }
 
   /* Not a duplicate; add new interface */
-  A = ALLOCATE(sizeof(ADDRLIST), ADDRLIST);
+  A = ALLOCATE(sizeof(ADDRLIST), ADDRLIST*);
   switch ((A->family = family)) {
   case AF_INET: memcpy(&A->addr4, &addr4, sizeof(struct in_addr)); break;
 #if HAVE_IPV6
@@ -128,7 +130,7 @@ addrlist_add(int family, void *address, int port) {
 /**************************************************************************************************
 	IP6_EXTRA
 **************************************************************************************************/
-char *
+static char *
 ip6_extra(const struct in6_addr *a){ 
   static char buf[2048];
   char *b = &buf[0];
@@ -228,9 +230,9 @@ linux_load_ip6(int port) {
 **************************************************************************************************/
 static void
 addAllInterfaceAddress(const char *address) {
-  AllInterfaceAddresses = (char**)REALLOCATE(AllInterfaceAddresses,
-					     sizeof(char*)*(++AllInterfaceAddressesCount + 1),
-					     char*[]);
+  AllInterfaceAddresses = REALLOCATE(AllInterfaceAddresses,
+				     sizeof(char*)*(++AllInterfaceAddressesCount + 1),
+				     char**);
   AllInterfaceAddresses[AllInterfaceAddressesCount-1]=STRDUP(address);
   AllInterfaceAddresses[AllInterfaceAddressesCount] = NULL;
 }
@@ -241,7 +243,7 @@ addAllInterfaceAddress(const char *address) {
         Clean up the storage held to list all of the local interface addresses
 **************************************************************************************************/
 static void
-freeAllInterfaceAddresses() {
+freeAllInterfaceAddresses(void) {
         while (AllInterfaceAddressesCount--) {
 	  RELEASE(AllInterfaceAddresses[AllInterfaceAddressesCount]);
 	}
@@ -255,7 +257,7 @@ freeAllInterfaceAddresses() {
 	ALL_INTERFACE_ADDRESSES
 **************************************************************************************************/
 char **
-all_interface_addresses() {
+all_interface_addresses(void) {
   return AllInterfaceAddresses;
 }
 /*--- all_interface_addresses() -----------------------------------------------------------------*/
@@ -269,7 +271,8 @@ static ADDRLIST *
 addrlist_load(int port) {
   struct ifconf ifc;
   struct ifreq *ifr = NULL;
-  int sockfd = -1, buflen = 8192, n = 0;
+  int sockfd = -1, n = 0;
+  uint buflen = 8192;
   char *buf = NULL;
 
   memset(&ifc, 0, sizeof(ifc));
@@ -283,7 +286,7 @@ addrlist_load(int port) {
     return NULL;
   }
 
-  buf = ALLOCATE(buflen, char[]);
+  buf = ALLOCATE(buflen, char*);
 
   for (;;) {	/* Allocate buffer space */
     ifc.ifc_len = buflen;
@@ -297,7 +300,7 @@ addrlist_load(int port) {
       Err(_("addrlist_load: error setting SIOCGIFCONF for interface scan"));
       return NULL;
     }
-    buf = REALLOCATE(buf, buflen += 4096, char[]);
+    buf = REALLOCATE(buf, buflen += 4096, char*);
   }
 
   for (n = 0; n < ifc.ifc_len;) {					/* Scan interfaces */
@@ -359,7 +362,7 @@ addrlist_load(int port) {
 /**************************************************************************************************
 	ADDRLIST_FREE
 **************************************************************************************************/
-void
+static void
 addrlist_free(ADDRLIST *Addresses) {
   ADDRLIST *A = NULL, *tmp = NULL;
 
@@ -376,7 +379,7 @@ addrlist_free(ADDRLIST *Addresses) {
 	the addresses.
 **************************************************************************************************/
 static ADDRLIST *
-get_opt_addrlist(ADDRLIST *Addresses, const char *opt, int default_port, char *desc) {
+get_opt_addrlist(ADDRLIST *Addresses, const char *opt, int default_port, const char *desc) {
   int family = -1;					/* Protocol family (AF_INET/AF_INET6) */
   struct in_addr addr4;					/* IPv4 address buffer */
 #if HAVE_IPV6
@@ -676,11 +679,11 @@ void listeners_create(void) {
       memcpy(&sa.sin_addr, &L->addr4, sizeof(struct in_addr));
 
       /* Expand FD lists as appropriate and create listening sockets */
-      udp4_fd = REALLOCATE(udp4_fd, (1 + num_udp4_fd) * sizeof(int), int[]);
+      udp4_fd = REALLOCATE(udp4_fd, (1 + num_udp4_fd) * sizeof(int), int*);
       udp4_fd[num_udp4_fd++] = ipv4_listener(&sa, SOCK_DGRAM);
 
       if (axfr_enabled || tcp_enabled) {
-	tcp4_fd = REALLOCATE(tcp4_fd, (1 + num_tcp4_fd) * sizeof(int), int[]);
+	tcp4_fd = REALLOCATE(tcp4_fd, (1 + num_tcp4_fd) * sizeof(int), int*);
 	tcp4_fd[num_tcp4_fd++] = ipv4_listener(&sa, SOCK_STREAM);
       }
     }
@@ -699,11 +702,11 @@ void listeners_create(void) {
 #endif
 
       /* Expand FD lists as appropriate and create listening sockets */
-      udp6_fd = REALLOCATE(udp6_fd, (1 + num_udp6_fd) * sizeof(int), int[]);
+      udp6_fd = REALLOCATE(udp6_fd, (1 + num_udp6_fd) * sizeof(int), int*);
       udp6_fd[num_udp6_fd++] = ipv6_listener(&sa, SOCK_DGRAM);
       
       if (axfr_enabled || tcp_enabled) {
-	tcp6_fd = REALLOCATE(tcp6_fd, (1 + num_tcp6_fd) * sizeof(int), int[]);
+	tcp6_fd = REALLOCATE(tcp6_fd, (1 + num_tcp6_fd) * sizeof(int), int*);
 	tcp6_fd[num_tcp6_fd++] = ipv6_listener(&sa, SOCK_STREAM);
       }
     }

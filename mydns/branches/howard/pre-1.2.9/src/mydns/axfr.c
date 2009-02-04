@@ -261,15 +261,13 @@ axfr_zone(TASK *t, MYDNS_SOA *soa) {
 
     if (mydns_rr_load_active(sql, &ThisRR, soa->id, DNS_QTYPE_ANY, NULL, soa->origin) == 0) {
       for (rr = ThisRR; rr; rr = rr->next) {
-	int len = 0;
-
 	/* If 'name' doesn't end with a dot, append the origin */
 	if (!*MYDNS_RR_NAME(rr) || LASTCHAR(MYDNS_RR_NAME(rr)) != '.') {
 	  mydns_rr_name_append_origin(rr, soa->origin);
 	}
 
 	if (rr->alias != 0)
-	  alias_recurse(t, ANSWER, MYDNS_RR_NAME(rr), soa, NULL, rr);
+	  alias_recurse(t, ANSWER, MYDNS_RR_NAME(rr), soa, rr);
 	else
 	  rrlist_add(t, ANSWER, DNS_RRTYPE_RR, (void *)rr, MYDNS_RR_NAME(rr));
 	/* Transmit this resource record */

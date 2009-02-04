@@ -49,8 +49,8 @@ dns_make_message(TASK * t, uint16_t id, uint8_t opcode, dns_qtype_t qtype,
 
   memset(&header, 0, sizeof(header));
 
-  if (t->protocol == SOCK_DGRAM) message = ALLOCATE(messagesize = DNS_MAXPACKETLEN_UDP, char[]);
-  else if (t->protocol == SOCK_STREAM) message = ALLOCATE(messagesize = DNS_MAXPACKETLEN_TCP, char[]);
+  if (t->protocol == SOCK_DGRAM) message = ALLOCATE(messagesize = DNS_MAXPACKETLEN_UDP, char*);
+  else if (t->protocol == SOCK_STREAM) message = ALLOCATE(messagesize = DNS_MAXPACKETLEN_TCP, char*);
   else Err(_("unknown protocol %d"), t->protocol);
 
   dest = message;

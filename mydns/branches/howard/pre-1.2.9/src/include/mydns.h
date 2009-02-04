@@ -272,21 +272,28 @@ extern int mydns_rr_use_serial;
 /* Macro to convert quads into address -- result like MySQL's INET_ATON() */
 #define INET_ATON(a,b,c,d) (((a) << 24) | ((b) << 16) | ((c) << 8) | (d))
 
+typedef struct _dns_qtype_map *dns_qtype_mapp;
+typedef struct _mydns_rr *MYDNS_RRP;
+typedef struct _mydns_soa *MYDNS_SOAP;
+typedef struct _update_query_rr *UQRRP;
+typedef struct _named_rr *RRP;
 
+typedef int (*rr_parser_t)(const char * origin, MYDNS_RRP rr);
+typedef void (*rr_free_t)(MYDNS_RRP);
+typedef void (*rr_dup_t)(MYDNS_RRP, MYDNS_RRP);
+typedef size_t (*rr_size_t)(MYDNS_RRP);
+typedef int (*rr_reply_add_t)(TASKP t, RRP r, dns_qtype_mapp map);
+typedef taskexec_t (*rr_update_get_rr_data_t)(TASKP t, UQRRP rr,
+					      char **data, size_t *datalen,
+					      char **edata, size_t *edatalen,
+					      uint32_t *aux, dns_qtype_mapp map);
+typedef char *(*rr_process_axfr_t)(char *, char*, char*, char *, size_t, char *, uint32_t, dns_qtype_mapp);
+typedef void (*rr_check_rr_t)(MYDNS_SOAP, MYDNS_RRP, const char *, char *, const char*, size_t);
+typedef void (*rr_export_bind_rr_t)(MYDNS_SOAP, MYDNS_RRP, char *, char *, size_t, int, int, int);
+typedef void (*rr_export_tinydns_rr_t)(MYDNS_SOAP, MYDNS_RRP, char *, char *, size_t, int, int);
 
-typedef int (*rr_parser_t)(/* const char * origin, MYDNS_RR *rr */);
-typedef void (*rr_free_t)(/* MYDNS_RR * */);
-typedef void (*rr_dup_t)(/* MYDNS_RR *, MYDNS_RR * */);
-typedef size_t (*rr_size_t)(/* MYDNS_RR * */);
-typedef int (*rr_reply_add_t)(/* TASK *t, RR *r, dns_qtype_map *map */);
-typedef taskexec_t (*rr_get_rr_data_t)();
-typedef char *(*rr_process_axfr_t)();
-typedef void (*rr_check_rr_t)();
-typedef void (*rr_export_bind_rr_t)();
-typedef void (*rr_export_tinydns_rr_t)();
-
-typedef struct {
-  char 				*rr_type_name;
+typedef struct _dns_qtype_map {
+  const char			*rr_type_name;
   dns_qtype_t			rr_type;
   int				rr_persistent;
   rr_parser_t			rr_parser;
@@ -294,7 +301,7 @@ typedef struct {
   rr_dup_t			rr_duplicator;
   rr_size_t			rr_sizor;
   rr_reply_add_t        	rr_reply_add;
-  rr_get_rr_data_t		rr_get_rr_data;
+  rr_update_get_rr_data_t	rr_update_get_rr_data;
   rr_process_axfr_t		rr_process_axfr;
   rr_check_rr_t			rr_check_rr;
   rr_export_bind_rr_t		rr_export_bind_rr;
@@ -443,7 +450,7 @@ typedef struct _mydns_rr {				/* `rr' table data (resource records) */
 } MYDNS_RR;
 
 #if DEBUG_ENABLED
-extern void *__mydns_rr_assert_pointer(void *, char *, char *, int);
+extern void				*__mydns_rr_assert_pointer(void *, const char *, const char *, int);
 #define MYDNS_RR_NAME(__rrp)		  ((char*)__mydns_rr_assert_pointer((__rrp)->_name, \
 									    "name", __FILE__, __LINE__))
 #define MYDNS_RR_DATA_VALUE(__rrp)	  (__mydns_rr_assert_pointer((__rrp)->_data.value, \
@@ -560,68 +567,6 @@ extern uint32_t		mydns_revstr_ip4(char *);
 extern int		mydns_extract_arpa(char *, uint8_t ip[]);
 
 /* lib/rr.c */
-extern int __mydns_rr_parse_default(const char *origin, MYDNS_RR *rr);
-extern int __mydns_rr_parse_cname(const char *origin, MYDNS_RR *rr);
-extern int __mydns_rr_parse_mx(const char *origin, MYDNS_RR *rr);
-extern int __mydns_rr_parse_naptr(const char *origin, MYDNS_RR *rr);
-extern int __mydns_rr_parse_ns(const char *origin, MYDNS_RR *rr);
-extern int __mydns_rr_parse_rp(const char *origin, MYDNS_RR *rr);
-extern int __mydns_rr_parse_srv(const char *origin, MYDNS_RR *rr);
-extern int __mydns_rr_parse_txt(const char *origin, MYDNS_RR *rr);
-
-extern void __mydns_rr_free_default(MYDNS_RR *rr);
-extern void __mydns_rr_free_naptr(MYDNS_RR *rr);
-extern void __mydns_rr_free_rp(MYDNS_RR *rr);
-
-extern void __mydns_rr_duplicate_default(MYDNS_RR *dst, MYDNS_RR *src);
-extern void __mydns_rr_duplicate_naptr(MYDNS_RR *dst, MYDNS_RR *src);
-extern void __mydns_rr_duplicate_rp(MYDNS_RR *dst, MYDNS_RR *src);
-extern void __mydns_rr_duplicate_srv(MYDNS_RR *dst, MYDNS_RR *src);
-
-extern size_t __mydns_rr_size_default(MYDNS_RR *rr);
-extern size_t __mydns_rr_size_naptr(MYDNS_RR *rr);
-extern size_t __mydns_rr_size_rp(MYDNS_RR *rr);
-
-extern long		mydns_rr_count(SQL *);
-extern void		mydns_rr_get_active_types(SQL *);
-extern void		mydns_set_rr_table_name(char *);
-extern void		mydns_set_rr_where_clause(char *);
-extern char *		mydns_rr_append_origin(char *, char *);
-extern void		mydns_rr_name_append_origin(MYDNS_RR *, char *);
-extern void		mydns_rr_data_append_origin(MYDNS_RR *, char *);
-extern void		_mydns_rr_free(MYDNS_RR *);
-#define			mydns_rr_free(p)	if ((p)) _mydns_rr_free((p)), (p) = NULL
-extern MYDNS_RR		*mydns_rr_build(uint32_t, uint32_t, dns_qtype_map *, dns_class_t, uint32_t, uint32_t,
-					char *active,
-#if USE_PGSQL
-					timestamp *stamp,
-#else
-					MYSQL_TIME *stamp,
-#endif
-					uint32_t, char *, char *,  uint16_t, const char *);
-extern MYDNS_RR		*mydns_rr_parse(SQL_ROW, unsigned long *, const char *);
-extern char		*mydns_rr_columns();
-extern char		*mydns_rr_prepare_query(uint32_t, dns_qtype_t, char *,
-						char *, char *, char *, char *);
-extern int		mydns_rr_load_all(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, char *, char *);
-extern int		mydns_rr_load_active(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, char *, char *);
-extern int		mydns_rr_load_inactive(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, char *, char *);
-extern int		mydns_rr_load_deleted(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, char *, char *);
-extern int		mydns_rr_count_all(SQL *, uint32_t, dns_qtype_t, char *, char *);
-extern int		mydns_rr_count_active(SQL *, uint32_t, dns_qtype_t, char *, char *);
-extern int		mydns_rr_count_inactive(SQL *, uint32_t, dns_qtype_t, char *, char *);
-extern int		mydns_rr_count_deleted(SQL *, uint32_t, dns_qtype_t, char *, char *);
-extern int		mydns_rr_load_all_filtered(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, char *, char *, char *);
-extern int		mydns_rr_load_active_filtered(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, char *, char *, char *);
-extern int		mydns_rr_load_inactive_filtered(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, char *, char *, char *);
-extern int		mydns_rr_load_deleted_filtered(SQL *, MYDNS_RR **, uint32_t, dns_qtype_t, char *, char *, char *);
-extern int		mydns_rr_count_all_filtered(SQL *, uint32_t, dns_qtype_t, char *, char *, char *);
-extern int		mydns_rr_count_active_filtered(SQL *, uint32_t, dns_qtype_t, char *, char *, char *);
-extern int		mydns_rr_count_inactive_filtered(SQL *, uint32_t, dns_qtype_t, char *, char *, char *);
-extern int		mydns_rr_count_deleted_filtered(SQL *, uint32_t, dns_qtype_t, char *, char *, char *);
-extern MYDNS_RR		*mydns_rr_dup(MYDNS_RR *, int);
-extern size_t		mydns_rr_size(MYDNS_RR *);
-
 /* rr_type.c */
 extern dns_qtype_map	**RR_TYPES_BY_ID;
 extern dns_qtype_map	**RR_TYPES_BY_NAME;
@@ -665,10 +610,10 @@ extern int		sql_build_query(char **, const char *, ...) __printflike(2,3);
 
 
 /* str.c */
-extern char		*mydns_class_str(dns_class_t);
-extern char		*mydns_opcode_str(dns_opcode_t);
-extern char		*mydns_rcode_str(dns_rcode_t);
-extern char		*mydns_section_str(datasection_t);
+extern const char	*mydns_class_str(dns_class_t);
+extern const char	*mydns_opcode_str(dns_opcode_t);
+extern const char	*mydns_rcode_str(dns_rcode_t);
+extern const char	*mydns_section_str(datasection_t);
 extern int		hinfo_parse(char *, char *, char *, size_t);
 
 

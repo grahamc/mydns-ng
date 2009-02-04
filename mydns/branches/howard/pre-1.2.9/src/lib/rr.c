@@ -23,6 +23,7 @@
 #include "memoryman.h"
 
 #include "debug.h"
+#include "rr.h"
 #include "taskobj.h"
 
 #define __MYDNS_RR_NAME(__rrp)			((__rrp)->_name)
@@ -50,23 +51,23 @@ int mydns_rr_use_active = 0;
 int mydns_rr_use_stamp = 0;
 int mydns_rr_use_serial = 0;
 
-char *mydns_rr_active_types[] = { "Y", "N", "D" };
+char *mydns_rr_active_types[] = { (char*)"Y", (char*)"N", (char*)"D" };
 
 #if DEBUG_ENABLED
 /* Strings describing the datasections */
-char *datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
+const char *datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
 #endif
 
 void *
-__mydns_rr_assert_pointer(void *ptr, char *fieldname, char *filename, int linenumber) {
+__mydns_rr_assert_pointer(void *ptr, const char *fieldname, const char *filename, int linenumber) {
 #if DEBUG_ENABLED
   Debug(rr, 1, _("mydns_rr_assert_pointer() called for field=%s from %s:%d"),
-	 fieldname, filename, linenumber);
+	fieldname, filename, linenumber);
 #endif
   if (ptr != NULL) return ptr;
 #if DEBUG_ENABLED
   Debug(rr, 1, _("%s Pointer is NULL at %s:%d"),
-	 fieldname, filename, linenumber);
+	fieldname, filename, linenumber);
   abort();
 #endif
   return ptr;
@@ -163,7 +164,7 @@ mydns_set_rr_where_clause(char *where) {
 	__MYDNS_RR_PARSE_DEFAULT
 	Default parser for any record
 **************************************************************************************************/
-int __mydns_rr_parse_default(const char *origin, MYDNS_RR *rr) {
+int __mydns_rr_parse_default(const char *origin, MYDNS_RRP rr) {
   return 0;
 }
 /*--- __mydns_rr_parse_default() ------------------------------------------------------------------*/
@@ -180,13 +181,13 @@ static inline int __mydns_rr_parse_hostname_data(const char *origin, MYDNS_RR *r
 #ifdef DN_COLUMN_NAMES
     datalen += 1;
     __MYDNS_RR_DATA_LENGTH(rr) = datalen;
-    __MYDNS_RR_DATA_VALUE(rr) = REALLOCATE(__MYDNS_RR_DATA_VALUE(rr), datalen+1, char[]);
+    __MYDNS_RR_DATA_VALUE(rr) = REALLOCATE(__MYDNS_RR_DATA_VALUE(rr), datalen+1, char*);
     /* Just append dot for DN */
     ((char*)__MYDNS_RR_DATA_VALUE(rr))[datalen-1] = '.';
 #else
     if (datalen && ((char*)__MYDNS_RR_DATA_VALUE(rr))[datalen-1] != '.') {
       datalen = datalen + 1 + strlen(origin);
-      __MYDNS_RR_DATA_VALUE(rr) = REALLOCATE(__MYDNS_RR_DATA_VALUE(rr), datalen+1, char[]);
+      __MYDNS_RR_DATA_VALUE(rr) = REALLOCATE(__MYDNS_RR_DATA_VALUE(rr), datalen+1, char*);
       ((char*)__MYDNS_RR_DATA_VALUE(rr))[__MYDNS_RR_DATA_LENGTH(rr)] = '.';
       memcpy(&((char*)__MYDNS_RR_DATA_VALUE(rr))[__MYDNS_RR_DATA_LENGTH(rr)+1], origin, strlen(origin));
       __MYDNS_RR_DATA_LENGTH(rr) = datalen;
@@ -197,15 +198,15 @@ static inline int __mydns_rr_parse_hostname_data(const char *origin, MYDNS_RR *r
   return __mydns_rr_parse_default(origin, rr);
 }
 
-int __mydns_rr_parse_cname(const char *origin, MYDNS_RR *rr) {
+int __mydns_rr_parse_cname(const char *origin, MYDNS_RRP rr) {
   return __mydns_rr_parse_hostname_data(origin, rr);
 }
 
-int __mydns_rr_parse_mx(const char *origin, MYDNS_RR *rr) {
+int __mydns_rr_parse_mx(const char *origin, MYDNS_RRP rr) {
   return __mydns_rr_parse_hostname_data(origin, rr);
 }
 
-int __mydns_rr_parse_ns(const char *origin, MYDNS_RR *rr) {
+int __mydns_rr_parse_ns(const char *origin, MYDNS_RRP rr) {
   return __mydns_rr_parse_hostname_data(origin, rr);
 }
 
@@ -215,7 +216,7 @@ int __mydns_rr_parse_ns(const char *origin, MYDNS_RR *rr) {
 	RP contains two names in 'data' -- the mbox and the txt.
 	NUL-terminate mbox and fill 'rp_txt' with the txt part of the record.
 **************************************************************************************************/
-int __mydns_rr_parse_rp(const char *origin, MYDNS_RR *rr) {
+int __mydns_rr_parse_rp(const char *origin, MYDNS_RRP rr) {
   char *c;
 
   /* If no space, set txt to '.' */
@@ -226,7 +227,7 @@ int __mydns_rr_parse_rp(const char *origin, MYDNS_RR *rr) {
     if (LASTCHAR(&c[1]) != '.') {
       namelen += strlen(origin) + 1;
     }
-    __MYDNS_RR_RP_TXT(rr) = ALLOCATE_N(namelen + 1, sizeof(char), char[]);
+    __MYDNS_RR_RP_TXT(rr) = ALLOCATE_N(namelen + 1, sizeof(char), char*);
     strncpy(__MYDNS_RR_RP_TXT(rr), &c[1], namelen);
     if (LASTCHAR(__MYDNS_RR_RP_TXT(rr)) != '.') {
       strncat(__MYDNS_RR_RP_TXT(rr), ".", namelen);
@@ -235,7 +236,7 @@ int __mydns_rr_parse_rp(const char *origin, MYDNS_RR *rr) {
     *c = '\0';
     __MYDNS_RR_DATA_VALUE(rr) = REALLOCATE(__MYDNS_RR_DATA_VALUE(rr),
 					   strlen(__MYDNS_RR_DATA_VALUE(rr))+1,
-					   char[]);
+					   char*);
     __MYDNS_RR_DATA_LENGTH(rr) = strlen(__MYDNS_RR_DATA_VALUE(rr));
   }
   return __mydns_rr_parse_default(origin, rr);
@@ -247,7 +248,7 @@ int __mydns_rr_parse_rp(const char *origin, MYDNS_RR *rr) {
 	'srv_weight' and 'srv_port' - parse them and make "data" contain only the target.  Also, make
 	sure 'aux' fits into 16 bits, clamping values above 65535.
 **************************************************************************************************/
-int __mydns_rr_parse_srv(const char *origin, MYDNS_RR *rr) {
+int __mydns_rr_parse_srv(const char *origin, MYDNS_RRP rr) {
   char *weight, *port, *target;
 
   /* Clamp 'aux' if necessary */
@@ -272,7 +273,7 @@ int __mydns_rr_parse_srv(const char *origin, MYDNS_RR *rr) {
     __MYDNS_RR_DATA_LENGTH(rr) = strlen(__MYDNS_RR_DATA_VALUE(rr));
     __MYDNS_RR_DATA_VALUE(rr) = REALLOCATE(__MYDNS_RR_DATA_VALUE(rr),
 					   __MYDNS_RR_DATA_LENGTH(rr) + 1,
-					   char[]);
+					   char*);
   }
   return __mydns_rr_parse_default(origin, rr);
 }
@@ -281,7 +282,7 @@ int __mydns_rr_parse_srv(const char *origin, MYDNS_RR *rr) {
 	__MYDNS_RR_PARSE_NAPTR
 	Returns 0 on success, -1 on error.
 **************************************************************************************************/
-int __mydns_rr_parse_naptr(const char *origin, MYDNS_RR *rr) {
+int __mydns_rr_parse_naptr(const char *origin, MYDNS_RRP rr) {
   char 		*int_tmp, *p;
 
   p = __MYDNS_RR_DATA_VALUE(rr);
@@ -318,7 +319,7 @@ int __mydns_rr_parse_naptr(const char *origin, MYDNS_RR *rr) {
 	__MYDNS_RR_PARSE_TXT
 	Returns 0 on success, -1 on error.
 **************************************************************************************************/
-int __mydns_rr_parse_txt(const char *origin, MYDNS_RR *rr) {
+int __mydns_rr_parse_txt(const char *origin, MYDNS_RRP rr) {
   int datalen = __MYDNS_RR_DATA_LENGTH(rr);
   char *data = __MYDNS_RR_DATA_VALUE(rr);
 
@@ -344,7 +345,7 @@ __mydns_rr_append(char *s1, char *s2) {
   if (s1len) newlen += 1;
   newlen += s2len;
 
-  name = ALLOCATE(newlen+1, char[]);
+  name = ALLOCATE(newlen+1, char*);
   if (s1len) { strncpy(name, s1, s1len); name[s1len] = '.'; s1len += 1; }
   strncpy(&name[s1len], s2, s2len);
   name[newlen] = '\0';
@@ -360,14 +361,14 @@ mydns_rr_append_origin(char *str, char *origin) {
 }
 
 void
-mydns_rr_name_append_origin(MYDNS_RR *rr, char *origin) {
+mydns_rr_name_append_origin(MYDNS_RRP rr, char *origin) {
   char *res = mydns_rr_append_origin(__MYDNS_RR_NAME(rr), origin);
   if (__MYDNS_RR_NAME(rr) != res) RELEASE(__MYDNS_RR_NAME(rr));
   __MYDNS_RR_NAME(rr) = res;
 }
       
 void
-mydns_rr_data_append_origin(MYDNS_RR *rr, char *origin) {
+mydns_rr_data_append_origin(MYDNS_RRP rr, char *origin) {
   char *res = mydns_rr_append_origin(__MYDNS_RR_DATA_VALUE(rr), origin);
   if (__MYDNS_RR_DATA_VALUE(rr) != res) RELEASE(__MYDNS_RR_DATA_VALUE(rr));
   __MYDNS_RR_DATA_VALUE(rr) = res;
@@ -378,20 +379,20 @@ mydns_rr_data_append_origin(MYDNS_RR *rr, char *origin) {
 	_MYDNS_RR_FREE
 	Frees the pointed-to structure.	Don't call this function directly, call the macro.
 **************************************************************************************************/
-void __mydns_rr_free_default(MYDNS_RR *rr) {
+void __mydns_rr_free_default(MYDNS_RRP rr) {
 }
 
-void __mydns_rr_free_naptr(MYDNS_RR *rr) {
+void __mydns_rr_free_naptr(MYDNS_RRP rr) {
   RELEASE(__MYDNS_RR_NAPTR_SERVICE(rr));
   RELEASE(__MYDNS_RR_NAPTR_REGEX(rr));
   RELEASE(__MYDNS_RR_NAPTR_REPLACEMENT(rr));
 }
 
-void __mydns_rr_free_rp(MYDNS_RR *rr) {
+void __mydns_rr_free_rp(MYDNS_RRP rr) {
   RELEASE(__MYDNS_RR_RP_TXT(rr));
 }
 
-void _mydns_rr_free(MYDNS_RR *first) {
+void _mydns_rr_free(MYDNS_RRP first) {
   register MYDNS_RR *p, *tmp;
   register dns_qtype_map *map;
 
@@ -443,19 +444,19 @@ mydns_rr_build(uint32_t id,
     goto PARSEFAILED;
   }
 
-  rr = (MYDNS_RR *)ALLOCATE(sizeof(MYDNS_RR), MYDNS_RR);
+  rr = (MYDNS_RR *)ALLOCATE(sizeof(MYDNS_RR), MYDNS_RR*);
   memset(rr, '\0', sizeof(MYDNS_RR));
   rr->next = NULL;
 
   rr->id = id;
   rr->zone = zone;
 
-  __MYDNS_RR_NAME(rr) = ALLOCATE(namelen+1, char[]);
+  __MYDNS_RR_NAME(rr) = ALLOCATE(namelen+1, char*);
   memset(__MYDNS_RR_NAME(rr), '\0', namelen+1);
   if (name) strncpy(__MYDNS_RR_NAME(rr), name, namelen);
 
   __MYDNS_RR_DATA_LENGTH(rr) = datalen;
-  __MYDNS_RR_DATA_VALUE(rr) = ALLOCATE(datalen+1, char[]);
+  __MYDNS_RR_DATA_VALUE(rr) = ALLOCATE(datalen+1, char*);
   memcpy(__MYDNS_RR_DATA_VALUE(rr), data, datalen);
 
   rr->class = class;
@@ -526,7 +527,7 @@ mydns_rr_parse(SQL_ROW row, unsigned long *lengths, const char *origin) {
   datalen = lengths[3];
   if (mydns_rr_extended_data) {
     if (lengths[ridx]) {
-      char *newdata = ALLOCATE(datalen + lengths[ridx], char[]);
+      char *newdata = ALLOCATE(datalen + lengths[ridx], char*);
       memcpy(newdata, data, datalen);
       memcpy(&newdata[datalen], row[ridx], lengths[ridx]);
       datalen += lengths[ridx];
@@ -540,7 +541,7 @@ mydns_rr_parse(SQL_ROW row, unsigned long *lengths, const char *origin) {
 #if USE_PGSQL
     stamp = row[ridx++];
 #else
-    stamp = (MYSQL_TIME*)ALLOCATE(sizeof(MYSQL_TIME), MYSQL_TIME);
+    stamp = (MYSQL_TIME*)ALLOCATE(sizeof(MYSQL_TIME), MYSQL_TIME*);
     memcpy(stamp, row[ridx++], sizeof(MYSQL_TIME));
 #endif
   }
@@ -574,20 +575,20 @@ mydns_rr_parse(SQL_ROW row, unsigned long *lengths, const char *origin) {
 	Make and return a copy of a MYDNS_RR record.  If 'recurse' is specified, copies all records
 	in the RRset.
 **************************************************************************************************/
-void  __mydns_rr_duplicate_default(MYDNS_RR *dst, MYDNS_RR *src) {
+void  __mydns_rr_duplicate_default(MYDNS_RRP dst, MYDNS_RRP src) {
 }
 
-void  __mydns_rr_duplicate_srv(MYDNS_RR *dst, MYDNS_RR *src) {
+void  __mydns_rr_duplicate_srv(MYDNS_RRP dst, MYDNS_RRP src) {
   __MYDNS_RR_SRV_WEIGHT(dst) = __MYDNS_RR_SRV_WEIGHT(src);
   __MYDNS_RR_SRV_PORT(dst) = __MYDNS_RR_SRV_PORT(src);
 }
 
-void  __mydns_rr_duplicate_rp(MYDNS_RR *dst, MYDNS_RR *src) {
+void  __mydns_rr_duplicate_rp(MYDNS_RRP dst, MYDNS_RRP src) {
   RELEASE(__MYDNS_RR_RP_TXT(dst));
   __MYDNS_RR_RP_TXT(dst) = STRDUP(__MYDNS_RR_RP_TXT(src));
 }
 
-void  __mydns_rr_duplicate_naptr(MYDNS_RR *dst, MYDNS_RR *src) {
+void  __mydns_rr_duplicate_naptr(MYDNS_RRP dst, MYDNS_RRP src) {
   __MYDNS_RR_NAPTR_ORDER(dst) = __MYDNS_RR_NAPTR_ORDER(src);
   __MYDNS_RR_NAPTR_PREF(dst) = __MYDNS_RR_NAPTR_PREF(src);
   memcpy(__MYDNS_RR_NAPTR_FLAGS(dst), __MYDNS_RR_NAPTR_FLAGS(src), sizeof(__MYDNS_RR_NAPTR_FLAGS(dst)));
@@ -607,7 +608,7 @@ mydns_rr_dup(MYDNS_RR *start, int recurse) {
   for (s = start; s; s = tmp) {
     tmp = s->next;
 
-    rr = (MYDNS_RR *)ALLOCATE(sizeof(MYDNS_RR), MYDNS_RR);
+    rr = (MYDNS_RR *)ALLOCATE(sizeof(MYDNS_RR), MYDNS_RR*);
 
     memset(rr, '\0', sizeof(MYDNS_RR));
     rr->id = s->id;
@@ -616,7 +617,7 @@ mydns_rr_dup(MYDNS_RR *start, int recurse) {
     rr->type = s->type;
     rr->class = s->class;
     __MYDNS_RR_DATA_LENGTH(rr) = __MYDNS_RR_DATA_LENGTH(s);
-    __MYDNS_RR_DATA_VALUE(rr) = ALLOCATE(__MYDNS_RR_DATA_LENGTH(s)+1, char[]);
+    __MYDNS_RR_DATA_VALUE(rr) = ALLOCATE(__MYDNS_RR_DATA_LENGTH(s)+1, char*);
     memcpy(__MYDNS_RR_DATA_VALUE(rr), __MYDNS_RR_DATA_VALUE(s), __MYDNS_RR_DATA_LENGTH(s));
     ((char*)__MYDNS_RR_DATA_VALUE(rr))[__MYDNS_RR_DATA_LENGTH(rr)] = '\0';
     rr->aux = s->aux;
@@ -628,7 +629,7 @@ mydns_rr_dup(MYDNS_RR *start, int recurse) {
 #if USE_PGSQL
       rr->stamp = s->stamp;
 #else
-      rr->stamp = (MYSQL_TIME*)ALLOCATE(sizeof(MYSQL_TIME), MYSQL_TIME);
+      rr->stamp = (MYSQL_TIME*)ALLOCATE(sizeof(MYSQL_TIME), MYSQL_TIME*);
       memcpy(rr->stamp, s->stamp, sizeof(MYSQL_TIME));
 #endif
     } else
@@ -655,18 +656,18 @@ mydns_rr_dup(MYDNS_RR *start, int recurse) {
 /**************************************************************************************************
 	MYDNS_RR_SIZE
 **************************************************************************************************/
-size_t __mydns_rr_size_default(MYDNS_RR *rr) {
+size_t __mydns_rr_size_default(MYDNS_RRP rr) {
   return 0;
 }
 
-size_t __mydns_rr_size_naptr(MYDNS_RR *rr) {
+size_t __mydns_rr_size_naptr(MYDNS_RRP rr) {
   size_t size = strlen(__MYDNS_RR_NAPTR_SERVICE(rr)) + 1;
   size += strlen(__MYDNS_RR_NAPTR_REGEX(rr)) + 1;
   size += strlen(__MYDNS_RR_NAPTR_REPLACEMENT(rr)) + 1;
   return size;
 }
 
-size_t __mydns_rr_size_rp(MYDNS_RR *rr) {
+size_t __mydns_rr_size_rp(MYDNS_RRP rr) {
   return strlen(__MYDNS_RR_RP_TXT(rr)) + 1;
 }
 
@@ -839,7 +840,7 @@ mydns_rr_prepare_query(uint32_t zone, dns_qtype_t type, char *name, char *origin
   return (query);
 }
 			 
-int __mydns_rr_do_load(SQL *sqlConn, MYDNS_RR **rptr, char *query, char *origin) {
+static int __mydns_rr_do_load(SQL *sqlConn, MYDNS_RR **rptr, char *query, char *origin) {
   MYDNS_RR	*first = NULL, *last = NULL;
   char		*cp;
   SQL_RES	*res;
@@ -896,7 +897,7 @@ int __mydns_rr_do_load(SQL *sqlConn, MYDNS_RR **rptr, char *query, char *origin)
   return (0);
 }
 
-int
+static int
 __mydns_rr_count(SQL *sqlConn, uint32_t zone,
 		 dns_qtype_t type, char *name, char *origin, char *active, char *filter) {
   char		*query = NULL;
@@ -905,7 +906,7 @@ __mydns_rr_count(SQL *sqlConn, uint32_t zone,
   SQL_RES	*res;
   SQL_ROW	row;
 
-  query = mydns_rr_prepare_query(zone, type, name, origin, active, "COUNT(*)", filter);
+  query = mydns_rr_prepare_query(zone, type, name, origin, active, (char*)"COUNT(*)", filter);
 
   if (!query || !(res = sql_query(sqlConn, query, strlen(query)))) {
     WarnSQL(sqlConn, _("error processing count with filter %s"), filter);
@@ -924,7 +925,7 @@ __mydns_rr_count(SQL *sqlConn, uint32_t zone,
   return result;
 }
 
-int 
+static int 
 __mydns_rr_load(SQL *sqlConn, MYDNS_RR **rptr, uint32_t zone,
 		dns_qtype_t type, char *name, char *origin, char *active, char *filter) {
   char		*query = NULL;
@@ -1211,7 +1212,7 @@ rrlist_add(
     break;
   }
 
-  new = ALLOCATE(sizeof(RR), RR);
+  new = ALLOCATE(sizeof(RR), RR*);
   new->rrtype = rrtype;
   switch (new->rrtype) {
   case DNS_RRTYPE_SOA:

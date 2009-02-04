@@ -44,7 +44,7 @@ getoptstr(struct option const longopts[]) {
   }
 
   /* Allocate optstr */
-  optstr = REALLOCATE(optstr, optsize + 1, char[]);
+  optstr = REALLOCATE(optstr, optsize + 1, char*);
   memset(optstr, 0, optsize + 1);
 
   /* Build optstr */

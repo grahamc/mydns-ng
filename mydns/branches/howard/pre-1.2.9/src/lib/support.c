@@ -26,6 +26,7 @@
 #include "data.h"
 #include "debug.h"
 #include "listen.h"
+#include "rr.h"
 #include "status.h"
 #include "support.h"
 
@@ -56,7 +57,6 @@ void named_cleanup(int signo) {
 
 void
 named_shutdown(int signo) {
-  int n = 0;
 
   switch (signo) {
   case 0:
@@ -141,7 +141,7 @@ char *mydns_name_2_shortname(char *name, char *origin, int empty_name_is_ok, int
 
   if (!strncasecmp(origin, name, nlen)) {
     if (empty_name_is_ok)
-      return ("");
+      return (char*)("");
     else
       return (name);
   }
@@ -153,7 +153,7 @@ char *mydns_name_2_shortname(char *name, char *origin, int empty_name_is_ok, int
 /*--- mydns_name_2_shortname() -----------------------------------------------------------------*/
 
 int
-name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
+name_servers2ip(TASK *t, ARRAY *name_servers,
 		ARRAY *ips4,
 		ARRAY *ips6
 		) {
@@ -212,7 +212,7 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 	Debug(support, 1, _("%s: name_servers2ip() processing name server %s got ip address %s(%d)"),
 	       desctask(t), name_server, (char*)MYDNS_RR_DATA_VALUE(r), MYDNS_RR_DATA_LENGTH(r));
 #endif
-	slave = (NOTIFYSLAVE*)ALLOCATE(sizeof(NOTIFYSLAVE), NOTIFYSLAVE);
+	slave = (NOTIFYSLAVE*)ALLOCATE(sizeof(NOTIFYSLAVE), NOTIFYSLAVE*);
 	slave->lastsent = 0;
 	slave->replied = 0;
 	slave->retries = 0;
@@ -259,7 +259,7 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
 	Debug(support, 1, _("%s: name_servers2ip() processing name server %s got ip address %s(%d)"),
 	       desctask(t), name_server, (char*)MYDNS_RR_DATA_VALUE(r), MYDNS_RR_DATA_LENGTH(r));
 #endif
-	slave = (NOTIFYSLAVE*)ALLOCATE(sizeof(NOTIFYSLAVE), NOTIFYSLAVE);
+	slave = (NOTIFYSLAVE*)ALLOCATE(sizeof(NOTIFYSLAVE), NOTIFYSLAVE*);
 	slave->lastsent = 0;
 	slave->replied = 0;
 	slave->retries = 0;
@@ -326,11 +326,11 @@ name_servers2ip(TASK *t, MYDNS_SOA *soa, ARRAY *name_servers,
       int rv = getaddrinfo(name_server, NULL, NULL, &hostdata);
 
       if (!rv) {
-	int j, k;
+	int k;
 
 	for (hostentry = hostdata; hostentry; hostentry = hostentry->ai_next) {
 	  const char *ipaddress = NULL;
-	  NOTIFYSLAVE *slave = (NOTIFYSLAVE*)ALLOCATE(sizeof(NOTIFYSLAVE), NOTIFYSLAVE);
+	  NOTIFYSLAVE *slave = (NOTIFYSLAVE*)ALLOCATE(sizeof(NOTIFYSLAVE), NOTIFYSLAVE*);
 	  slave->lastsent = 0;
 	  slave->replied = 0;
 	  slave->retries = 0;

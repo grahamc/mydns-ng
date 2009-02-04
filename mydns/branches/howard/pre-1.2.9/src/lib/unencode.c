@@ -45,14 +45,14 @@ char *name_unencode(char *start, size_t slen, char **current, task_error_t *errc
   if (d >= dest+(destlen-(n))) {		 	\
     int doffset = d - dest;			 	\
     destlen += (n > 16)?n:16;			 	\
-    if (!(dest = REALLOCATE(dest, destlen, char[]))) {	\
+    if (!(dest = REALLOCATE(dest, destlen, char*))) {	\
       *errcode = ERR_Q_BUFFER_OVERFLOW;		 	\
       return (NULL);				 	\
     }						 	\
     d = &dest[doffset];				 	\
   }						 	\
   
-  dest = ALLOCATE(destlen, char[]);
+  dest = ALLOCATE(destlen, char*);
   d = dest;
 
   if (*s == 0) {						/* The name is just "." */

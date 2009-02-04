@@ -20,7 +20,7 @@
 #define _MYDNS_LIB_RECURSIVE_H
 
 #if DEBUG_ENABLED
-extern char		*resolve_datasection_str[];
+extern const char	*resolve_datasection_str[];
 #endif
 extern taskexec_t	recursive_fwd(TASK *);
 extern taskexec_t	recursive_fwd_connect(TASK *);

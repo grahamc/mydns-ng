@@ -23,6 +23,6 @@
 
 extern taskexec_t	read_udp_query(int, int);
 extern taskexec_t	write_udp_reply(TASK *);
-extern void		udp_start();
+extern void		udp_start(void);
 
 #endif

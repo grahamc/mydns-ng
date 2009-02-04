@@ -165,9 +165,9 @@ strdcat(char **dest, const char *src) {
 
   /* Allocate/reallocate the storage in dest */
   if (!d) {
-    d = ALLOCATE(destlen + srclen + 1, char[]);
+    d = ALLOCATE(destlen + srclen + 1, char*);
   } else {
-    d = REALLOCATE(d, destlen + srclen + 1, char[]);
+    d = REALLOCATE(d, destlen + srclen + 1, char*);
   }
 
   memcpy(d + destlen, src, srclen);

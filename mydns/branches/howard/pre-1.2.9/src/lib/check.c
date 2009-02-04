@@ -35,7 +35,7 @@ int		opt_extended_check = 0;			/* Extended check? */
 	RRPROBLEM
 	Output a string describing a problem found.
 **********************************************************************************************/
-void mydns_rrproblem(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+void mydns_rrproblem(MYDNS_SOAP soa, MYDNS_RRP rr, const char *name, char *data,
 		       const char *fmt, ...) {
   va_list ap;
 
@@ -75,7 +75,7 @@ void mydns_rrproblem(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
 /**********************************************************************************************
 	__MYDNS_CHECK_NAME_EXTENDED
 **********************************************************************************************/
-static void __mydns_check_name_extended(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+static void __mydns_check_name_extended(MYDNS_SOAP soa, MYDNS_RRP rr, const char *name, char *data,
 					const char *name_in, size_t namelen_in, const char *fqdn, const char *col) {
   /* XXX: Add check to detect names that we should be authoritative for but
      that do not have records */
@@ -86,17 +86,16 @@ static void __mydns_check_name_extended(MYDNS_SOA *soa, MYDNS_RR *rr, const char
 	__MYDNS_CHECK_NAME
 	Verifies that "name" is a valid name.
 **********************************************************************************************/
-void mydns_check_name(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+void mydns_check_name(MYDNS_SOAP soa, MYDNS_RRP rr, const char *name, char *data,
 		      const char *name_in, size_t namelen_in, const char *col, int is_rr, int allow_underscore) {
   char		*buf, *b, *label;
   char		*fqdn;
   int		fqdnlen;
-  int		buflen;
   
   fqdnlen = strlen(name_in);
   if (is_rr && *name_in && LASTCHAR(name_in) != '.') fqdnlen += strlen(soa->origin) + 1;
 
-  fqdn = ALLOCATE(fqdnlen + 1, char[]);
+  fqdn = ALLOCATE(fqdnlen + 1, char*);
   memset(fqdn, 0, fqdnlen + 1);
 
   strncpy(fqdn, name_in, fqdnlen);
@@ -162,7 +161,7 @@ void mydns_check_name(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data
 	__MYDNS_CHECK_RR_A
 	Expanded check for A resource record.
 **************************************************************************************************/
-void __mydns_check_rr_a(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+void __mydns_check_rr_a(MYDNS_SOAP soa, MYDNS_RRP rr, const char *name, char *data,
 			const char *a_in, size_t alen_in) {
   struct in_addr addr;
 
@@ -181,7 +180,7 @@ void __mydns_check_rr_a(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *da
 	__MYDNS_CHECK_RR_AAAA
 	Expanded check for AAAA resource record.
 **************************************************************************************************/
-void __mydns_check_rr_aaaa(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+void __mydns_check_rr_aaaa(MYDNS_SOAP soa, MYDNS_RRP rr, const char *name, char *data,
 			   const char *aaaa_in, size_t aaaalen_in) {
   uint8_t addr[16];
 
@@ -196,7 +195,7 @@ void __mydns_check_rr_aaaa(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char 
 	__MYDNS_CHECK_RR_CNAME
 	Expanded check for CNAME resource record.
 **************************************************************************************************/
-void __mydns_check_rr_cname(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+void __mydns_check_rr_cname(MYDNS_SOAP soa, MYDNS_RRP rr, const char *name, char *data,
 			    const char *cname_in, size_t cnamelen_in) {
   char *xname;
   int found = 0;
@@ -232,7 +231,7 @@ void __mydns_check_rr_cname(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char
 	__MYDNS_CHECK_RR_HINFO
 	Expanded check for HINFO resource record.
 **************************************************************************************************/
-void __mydns_check_rr_hinfo(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+void __mydns_check_rr_hinfo(MYDNS_SOAP soa, MYDNS_RRP rr, const char *name, char *data,
 			    const char *hinfo_in, size_t hinfolen_in) {
   char	os[DNS_MAXNAMELEN + 1] = "", cpu[DNS_MAXNAMELEN + 1] = "";
 
@@ -248,7 +247,7 @@ void __mydns_check_rr_hinfo(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char
 	__MYDNS_CHECK_RR_MX
 	Expanded check for MX resource record.
 **************************************************************************************************/
-void __mydns_check_rr_mx(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+void __mydns_check_rr_mx(MYDNS_SOAP soa, MYDNS_RRP rr, const char *name, char *data,
 			 const char *mx_in, size_t mxlen_in) {
 
   mydns_check_name(soa, rr, name, data, name, strlen(name), "rr.name", 1, 0);
@@ -262,7 +261,7 @@ void __mydns_check_rr_mx(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *d
 	__MYDNS_CHECK_RR_NAPTR
 	Expanded check for NAPTR resource record.
 **************************************************************************************************/
-void __mydns_check_rr_naptr(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+void __mydns_check_rr_naptr(MYDNS_SOAP soa, MYDNS_RRP rr, const char *name, char *data,
 			    const char *naptr_in, size_t namelen_in) {
   char *tmp, *data_copy, *p;
 
@@ -306,7 +305,7 @@ void __mydns_check_rr_naptr(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char
 	__MYDNS_CHECK_RR_NS
 	Expanded check for NS resource record.
 **************************************************************************************************/
-void __mydns_check_rr_ns(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+void __mydns_check_rr_ns(MYDNS_SOAP soa, MYDNS_RRP rr, const char *name, char *data,
 			 const char *ns_in, size_t nslen_in) {
   
   mydns_check_name(soa, rr, name, data, name, strlen(name), "rr.name", 1, 0);
@@ -320,13 +319,13 @@ void __mydns_check_rr_ns(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *d
 	__MYDNS_CHECK_RR_RP
 	Expanded check for RP resource record.
 **************************************************************************************************/
-void __mydns_check_rr_rp(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+void __mydns_check_rr_rp(MYDNS_SOAP soa, MYDNS_RRP rr, const char *name, char *data,
 			 const char *rp_in, size_t rplen_in) {
   char	*txt;
 
   mydns_check_name(soa, rr, name, data, name, strlen(name), "rr.name", 1, 0);
 
-  txt = ALLOCATE(strlen(MYDNS_RR_RP_TXT(rr)) + 1, char[]);
+  txt = ALLOCATE(strlen(MYDNS_RR_RP_TXT(rr)) + 1, char*);
   strcpy(txt, MYDNS_RR_RP_TXT(rr));
   data = mydns_expand_data(txt, soa->origin);
   mydns_check_name(soa, rr, name, data, rp_in, rplen_in, "rr.data (mbox)", 1,0 );
@@ -339,7 +338,7 @@ void __mydns_check_rr_rp(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *d
 	__MYDNS_CHECK_RR_SRV
 	Expanded check for SRV resource record.
 **************************************************************************************************/
-void __mydns_check_rr_srv(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+void __mydns_check_rr_srv(MYDNS_SOAP soa, MYDNS_RRP rr, const char *name, char *data,
 			  const char *srv_in, size_t srvlen_in) {
 
   mydns_check_name(soa, rr, name, data, name, strlen(name), "rr.name", 1, 1);
@@ -351,7 +350,7 @@ void __mydns_check_rr_srv(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *
 	__MYDNS_CHECK_RR_TXT
 	Expanded check for TXT resource record.
 **************************************************************************************************/
-void __mydns_check_rr_txt(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+void __mydns_check_rr_txt(MYDNS_SOAP soa, MYDNS_RRP rr, const char *name, char *data,
 			  const char *txt_in, size_t txtlen_in) {
 
   mydns_check_name(soa, rr, name, data, name, strlen(name), "rr.name", 1, 1);
@@ -375,7 +374,7 @@ void __mydns_check_rr_txt(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *
 }
 /*--- __mydns_check_rr_txt() --------------------------------------------------------------------------*/
 
-void __mydns_check_rr_unknown(MYDNS_SOA *soa, MYDNS_RR *rr, const char *name, char *data,
+void __mydns_check_rr_unknown(MYDNS_SOAP soa, MYDNS_RRP rr, const char *name, char *data,
 			      const char *unknown_in, size_t unknownlen_in) {
   mydns_rrproblem(soa, rr, name, data, _("Unknown/unsupported resource record type"));
 }

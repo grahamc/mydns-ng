@@ -23,13 +23,14 @@
 
 #include <unistd.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 #define __ALLOCATE__(SIZE, THING, COUNT, ARENA)	\
-  _mydns_allocate(SIZE, COUNT, ARENA, "##THING##", __FILE__, __LINE__)
+  (THING)_mydns_allocate(SIZE, COUNT, ARENA, "##THING##", __FILE__, __LINE__)
 #define __REALLOCATE__(OBJECT, SIZE, THING, COUNT, ARENA) \
-  _mydns_reallocate(OBJECT, SIZE, COUNT, ARENA, "##THING##", __FILE__, __LINE__)
-#define __RELEASE__(OBJECT, COUNT, ARENA) \
-  _mydns_release(OBJECT, COUNT, ARENA, __FILE__, __LINE__), (OBJECT) = NULL
+  (THING)_mydns_reallocate((void*)OBJECT, SIZE, COUNT, ARENA, "##THING##", __FILE__, __LINE__)
+#define __RELEASE__(OBJECT, ARENA) \
+  _mydns_release((void*)OBJECT, ARENA, __FILE__, __LINE__), (OBJECT) = NULL
 
 #define STRDUP(__STRING__)		_mydns_strdup(__STRING__, ARENA_GLOBAL, __FILE__, __LINE__)
 #define STRNDUP(__STRING__, __LENGTH__) _mydns_strndup(__STRING__, __LENGTH__, ARENA_GLOBAL, __FILE__, __LINE__)
@@ -44,11 +45,11 @@ typedef enum _arena_t {
 
 extern int	_mydns_asprintf(char **strp, const char *fmt, ...);
 extern int	_mydns_vasprintf(char **strp, const char *fmt, va_list ap);
-extern char *	_mydns_strdup(const char *, arena_t, char *, int);
-extern char *	_mydns_strndup(const char *, size_t, arena_t, char *, int);
-extern void *	_mydns_allocate(size_t, size_t, arena_t, char *, char *, int);
-extern void *	_mydns_reallocate(void *, size_t, size_t, arena_t, char *, char *, int);
-extern void	_mydns_release(void *, size_t, arena_t, char *, int);
+extern char *	_mydns_strdup(const char *, arena_t, const char *, int);
+extern char *	_mydns_strndup(const char *, size_t, arena_t, const char *, int);
+extern void *	_mydns_allocate(size_t, size_t, arena_t, const char *, const char *, int);
+extern void *	_mydns_reallocate(void *, size_t, size_t, arena_t, const char *, const char *, int);
+extern void	_mydns_release(void *_t, arena_t, const char *, int);
 
 #define ALLOCATE_GLOBAL(SIZE, THING) \
   __ALLOCATE__(SIZE, THING, 1, ARENA_GLOBAL)
@@ -80,14 +81,18 @@ extern void	_mydns_release(void *, size_t, arena_t, char *, int);
   REALLOCATE_GLOBAL(OBJECT, SIZE, THING)
 
 #define RELEASE_GLOBAL(OBJECT) \
-  __RELEASE__(OBJECT, 1, ARENA_GLOBAL)
+  __RELEASE__(OBJECT, ARENA_GLOBAL)
 #define RELEASE_LOCAL(OBJECT) \
-  __RELEASE__(OBJECT, 1, ARENA_LOCAL)
+  __RELEASE__(OBJECT, ARENA_LOCAL)
 #define RELEASE_SHARED(OBJECT, POOL) \
-  __RELEASE__(OBJECT, 1, ARENA_SHARED##POOL)
+  __RELEASE__(OBJECT, ARENA_SHARED##POOL)
 
 #define RELEASE(OBJECT)	\
   RELEASE_GLOBAL(OBJECT)
+
+#if DEBUG_ENABLED
+extern int		debug_memoryman;
+#endif
 
 #endif
 

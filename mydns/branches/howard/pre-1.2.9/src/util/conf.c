@@ -57,7 +57,7 @@ main(int argc, char **argv)
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
 
-	progname = "mydns-conf";
+	progname = (char*)"mydns-conf";
 	err_file = stdout;
 	error_init(argv[0], LOG_USER);                     /* Init output routines */
 

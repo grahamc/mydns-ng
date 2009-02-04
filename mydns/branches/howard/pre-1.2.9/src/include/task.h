@@ -27,7 +27,7 @@ extern int		task_timedout(TASK *);
 extern taskexec_t	task_new(TASK *, unsigned char *, size_t);
 extern void		task_init_header(TASK *);
 extern int		task_process(TASK *, int, int, int);
-extern void		task_start();
+extern void		task_start(void);
 extern void		task_free_others(TASK *t, int closeallfds);
 extern void		task_schedule_all(struct pollfd *items[], int *timeoutWanted, int *numfds, int *maxnumfds);
 extern int		task_run_all(struct pollfd items[], int numfds);

@@ -23,6 +23,7 @@
 #include "memoryman.h"
 
 #include "bits.h"
+#include "buildreply.h"
 #include "debug.h"
 #include "encode.h"
 #include "reply.h"
@@ -33,7 +34,7 @@
 
 #if DEBUG_ENABLED
 /* Strings describing the datasections */
-char *reply_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
+const char *reply_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
 #endif
 
 
@@ -82,7 +83,7 @@ reply_process_rrlist(TASK *t, RRLIST *rrlist) {
 	The TC flag is _not_ set if data was truncated from the ADDITIONAL section.
 **************************************************************************************************/
 static int
-truncate_rrlist(TASK *t, off_t maxpkt, RRLIST *rrlist, datasection_t ds) {
+truncate_rrlist(TASK *t, size_t maxpkt, RRLIST *rrlist, datasection_t ds) {
   register RR *rr = NULL;
   register int recs = 0;
 #if DEBUG_ENABLED
@@ -156,9 +157,6 @@ int buildreply_init(TASK *t) {
 }
 /*--- reply_init() ------------------------------------------------------------------------------*/
 
-
-
-
 void buildreply_abandon(TASK *t) {
   /* Empty RR lists */
   rrlist_free(&t->an);
@@ -229,7 +227,7 @@ void buildreply(TASK *t, int want_additional) {
 
   /* Construct the reply */
   t->replylen = DNS_HEADERSIZE + t->qdlen + t->rdlen;
-  dest = t->reply = ALLOCATE(t->replylen, char[]);
+  dest = t->reply = ALLOCATE(t->replylen, char*);
 
   DNS_PUT16(dest, t->id);					/* Query ID */
   DNS_PUT(dest, &t->hdr, SIZE16);				/* Header */

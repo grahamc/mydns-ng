@@ -34,7 +34,7 @@
 **************************************************************************************************/
 static char *
 text_retrieve(unsigned char **srcp, unsigned char *end, size_t *datalen, int one_word_only) {
-  int		n = 0;
+  size_t	n = 0;
   int		x = 0;							/* Offset in 'data' */
   char 		*data = NULL;
   unsigned char	*src = *srcp;
@@ -46,7 +46,7 @@ text_retrieve(unsigned char **srcp, unsigned char *end, size_t *datalen, int one
 
     if (n >= *datalen) {
       *datalen += len;
-      data = REALLOCATE(data, (*datalen)+1, char[]);
+      data = REALLOCATE(data, (*datalen)+1, char*);
     }
     if (n)
       data[n++] = '\0';
@@ -61,26 +61,26 @@ text_retrieve(unsigned char **srcp, unsigned char *end, size_t *datalen, int one
 }
 /*--- text_retrieve() ---------------------------------------------------------------------------*/
 
-taskexec_t __mydns_update_get_rr_data_unknown_type(TASK *t,
-						   UQRR *rr,
+taskexec_t __mydns_update_get_rr_data_unknown_type(TASKP t,
+						   UQRRP rr,
 						   char **data,
 						   size_t *datalen,
 						   char **edata,
 						   size_t *edatalen,
 						   uint32_t *aux,
-						   dns_qtype_map *map) {
+						   dns_qtype_mapp map) {
   *datalen = ASPRINTF(data, "Unknown type %s", map->rr_type_name);
   return (TASK_FAILED);
 }
 
-taskexec_t __mydns_update_get_rr_data_a(TASK *t,
-					UQRR *rr,
+taskexec_t __mydns_update_get_rr_data_a(TASKP t,
+					UQRRP rr,
 					char **data,
 					size_t *datalen,
 					char **edata,
 					size_t *edatalen,
 					uint32_t *aux,
-					dns_qtype_map *map) {
+					dns_qtype_mapp map) {
   if (UQRR_DATA_LENGTH(rr) != 4)
     return (TASK_ABANDONED);
   *datalen = ASPRINTF(data, "%d.%d.%d.%d", UQRR_DATA_VALUE(rr)[0], UQRR_DATA_VALUE(rr)[1],
@@ -88,14 +88,14 @@ taskexec_t __mydns_update_get_rr_data_a(TASK *t,
   return TASK_EXECUTED;
 }
 
-taskexec_t __mydns_update_get_rr_data_ns(TASK *t,
-					 UQRR *rr,
+taskexec_t __mydns_update_get_rr_data_ns(TASKP t,
+					 UQRRP rr,
 					 char **data,
 					 size_t *datalen,
 					 char **edata,
 					 size_t *edatalen,
 					 uint32_t *aux,
-					 dns_qtype_map *map) {
+					 dns_qtype_mapp map) {
   unsigned char	*src = (unsigned char*)UQRR_DATA_VALUE(rr);
   task_error_t	errcode = 0;
 
@@ -105,14 +105,14 @@ taskexec_t __mydns_update_get_rr_data_ns(TASK *t,
   return TASK_EXECUTED;
 }
 
-taskexec_t __mydns_update_get_rr_data_cname(TASK *t,
-					    UQRR *rr,
+taskexec_t __mydns_update_get_rr_data_cname(TASKP t,
+					    UQRRP rr,
 					    char **data,
 					    size_t *datalen,
 					    char **edata,
 					    size_t *edatalen,
 					    uint32_t *aux,
-					    dns_qtype_map *map) {
+					    dns_qtype_mapp map) {
   unsigned char	*src = (unsigned char*)UQRR_DATA_VALUE(rr);
   task_error_t	errcode = 0;
 
@@ -122,14 +122,14 @@ taskexec_t __mydns_update_get_rr_data_cname(TASK *t,
   return TASK_EXECUTED;
 }
 
-taskexec_t __mydns_update_get_rr_data_ptr(TASK *t,
-					  UQRR *rr,
+taskexec_t __mydns_update_get_rr_data_ptr(TASKP t,
+					  UQRRP rr,
 					  char **data,
 					  size_t *datalen,
 					  char **edata,
 					  size_t *edatalen,
 					  uint32_t *aux,
-					  dns_qtype_map *map) {
+					  dns_qtype_mapp map) {
   unsigned char	*src = (unsigned char*)UQRR_DATA_VALUE(rr);
   task_error_t	errcode = 0;
 
@@ -139,14 +139,14 @@ taskexec_t __mydns_update_get_rr_data_ptr(TASK *t,
   return TASK_EXECUTED;
 }
 
-taskexec_t __mydns_update_get_rr_data_hinfo(TASK *t,
-					    UQRR *rr,
+taskexec_t __mydns_update_get_rr_data_hinfo(TASKP t,
+					    UQRRP rr,
 					    char **data,
 					    size_t *datalen,
 					    char **edata,
 					    size_t *edatalen,
 					    uint32_t *aux,
-					    dns_qtype_map *map) {
+					    dns_qtype_mapp map) {
   char	*data1 = NULL;
   char	*data2 = NULL;
   char	*c = NULL;
@@ -174,14 +174,14 @@ taskexec_t __mydns_update_get_rr_data_hinfo(TASK *t,
   return TASK_EXECUTED;
 }
 
-taskexec_t __mydns_update_get_rr_data_mx(TASK *t,
-					 UQRR *rr,
+taskexec_t __mydns_update_get_rr_data_mx(TASKP t,
+					 UQRRP rr,
 					 char **data,
 					 size_t *datalen,
 					 char **edata,
 					 size_t *edatalen,
 					 uint32_t *aux,
-					 dns_qtype_map *map) {
+					 dns_qtype_mapp map) {
   unsigned char	*src = (unsigned char*)UQRR_DATA_VALUE(rr);
   task_error_t	errcode = 0;
 
@@ -192,14 +192,14 @@ taskexec_t __mydns_update_get_rr_data_mx(TASK *t,
   return TASK_EXECUTED;
 }
 
-taskexec_t __mydns_update_get_rr_data_txt(TASK *t,
-					  UQRR *rr,
+taskexec_t __mydns_update_get_rr_data_txt(TASKP t,
+					  UQRRP rr,
 					  char **data,
 					  size_t *datalen,
 					  char **edata,
 					  size_t *edatalen,
 					  uint32_t *aux,
-					  dns_qtype_map *map) {
+					  dns_qtype_mapp map) {
   unsigned char	*src = (unsigned char*)UQRR_DATA_VALUE(rr);
   unsigned char	*end = (unsigned char*)(UQRR_DATA_VALUE(rr) + UQRR_DATA_LENGTH(rr));
 
@@ -211,14 +211,14 @@ taskexec_t __mydns_update_get_rr_data_txt(TASK *t,
   return TASK_EXECUTED;
 }
 
-taskexec_t __mydns_update_get_rr_data_rp(TASK *t,
-					 UQRR *rr,
+taskexec_t __mydns_update_get_rr_data_rp(TASKP t,
+					 UQRRP rr,
 					 char **data,
 					 size_t *datalen,
 					 char **edata,
 					 size_t *edatalen,
 					 uint32_t *aux,
-					 dns_qtype_map *map) {
+					 dns_qtype_mapp map) {
   unsigned char	*src = (unsigned char*)UQRR_DATA_VALUE(rr);
   task_error_t	errcode = 0;
   char *data1, *data2;
@@ -236,14 +236,14 @@ taskexec_t __mydns_update_get_rr_data_rp(TASK *t,
   return TASK_EXECUTED;
 }
 
-taskexec_t __mydns_update_get_rr_data_aaaa(TASK *t,
-					   UQRR *rr,
+taskexec_t __mydns_update_get_rr_data_aaaa(TASKP t,
+					   UQRRP rr,
 					   char **data,
 					   size_t *datalen,
 					   char **edata,
 					   size_t *edatalen,
 					   uint32_t *aux,
-					   dns_qtype_map *map) {
+					   dns_qtype_mapp map) {
   if (UQRR_DATA_LENGTH(rr) != 16)
     return (TASK_ABANDONED);
   /* Need to allocate a dynamic buffer */
@@ -256,14 +256,14 @@ taskexec_t __mydns_update_get_rr_data_aaaa(TASK *t,
   return TASK_EXECUTED;
 }
 
-taskexec_t __mydns_update_get_rr_data_srv(TASK *t,
-					  UQRR *rr,
+taskexec_t __mydns_update_get_rr_data_srv(TASKP t,
+					  UQRRP rr,
 					  char **data,
 					  size_t *datalen,
 					  char **edata,
 					  size_t *edatalen,
 					  uint32_t *aux,
-					  dns_qtype_map *map) {
+					  dns_qtype_mapp map) {
   unsigned char	*src = (unsigned char*)UQRR_DATA_VALUE(rr);
   task_error_t	errcode = 0;
   uint16_t weight, port;

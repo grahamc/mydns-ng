@@ -24,6 +24,6 @@
 extern int		accept_tcp_query(int, int);
 extern taskexec_t	read_tcp_query(TASK *);
 extern taskexec_t	write_tcp_reply(TASK *);
-extern void		tcp_start();
+extern void		tcp_start(void);
 
 #endif

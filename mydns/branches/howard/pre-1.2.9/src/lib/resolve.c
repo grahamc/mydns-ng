@@ -34,7 +34,7 @@
 
 #if DEBUG_ENABLED
 /* Strings describing the datasections */
-char *resolve_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
+const char *resolve_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
 #endif
 
 /**************************************************************************************************
@@ -175,7 +175,7 @@ process_rr(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn,
     if (r->type == qtype || qtype == DNS_QTYPE_ANY) {
       /* If the RR is an ALIAS then follow it, otherwise just add it. */
       if (r->alias)
-	rv += alias_recurse(t, section, fqdn, soa, label, r);
+	rv += alias_recurse(t, section, fqdn, soa, r);
       else {
 	rrlist_add(t, section, DNS_RRTYPE_RR, (void *)r, fqdn);
 	rv++;
@@ -245,7 +245,7 @@ process_rr(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn,
 	ADD_AUTHORITY_NS
 	Adds AUTHORITY records for any NS records that match the request.
 **************************************************************************************************/
-static inline void
+static void
 add_authority_ns(TASK *t, datasection_t section, MYDNS_SOA *soa, char *match_label) {
   if (!t->ns.size && section == ANSWER)	{
     register MYDNS_RR *rr = NULL, *r = NULL;
@@ -458,7 +458,6 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
   char			*name = NULL;
   register MYDNS_SOA	*soa = NULL;
   taskexec_t		rv = TASK_COMPLETED;
-  register char		*label = NULL;
 
 #if DEBUG_ENABLED
   Debug(resolve, 1, _("%s: resolve(%s, %s, \"%s\", %d)"),
@@ -496,7 +495,7 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
       Debug(resolve, 1, _("%s: Checking for recursion soa = %p, soa->recursive = %d, "
 			     "forward_recursive = %d, t->hdr.rd = %d, section = %d, level = %d"),
 	     desctask(t),
-	     soa, (soa)?soa->recursive:-1,
+	    soa, (soa) ? (int)soa->recursive : -1,
 	     forward_recursive, t->hdr.aa, section, level);
 #endif
       if (forward_recursive && t->hdr.rd) {

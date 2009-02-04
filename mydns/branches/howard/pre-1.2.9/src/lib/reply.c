@@ -43,7 +43,7 @@ static char *rdata_enlarge(TASK *t, size_t size) {
     return (NULL);
 
   t->rdlen += size;
-  t->rdata = REALLOCATE(t->rdata, t->rdlen, char[]);
+  t->rdata = REALLOCATE(t->rdata, t->rdlen, char*);
   return (t->rdata + t->rdlen - size);
 }
 /*--- rdata_enlarge() ---------------------------------------------------------------------------*/
@@ -53,13 +53,13 @@ static char *rdata_enlarge(TASK *t, size_t size) {
 	Begins an RR.  Appends to t->rdata all the header fields prior to rdlength.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-static int reply_start_rr(TASK *t, RR *r, char *name, dns_qtype_t type, uint32_t ttl, char *desc) {
+static int reply_start_rr(TASK *t, RR *r, const char *name, dns_qtype_t type, uint32_t ttl, const char *desc) {
   char	*enc = NULL;
   char	*dest = NULL;
   int	enclen = 0;
 
   /* name_encode returns dnserror() */
-  if ((enclen = name_encode(t, &enc, name, t->replylen + t->rdlen, 1)) < 0) {
+  if ((enclen = name_encode(t, &enc, (char*)name, t->replylen + t->rdlen, 1)) < 0) {
     return rr_error(r->id, _("rr %u: %s (%s %s) (name=\"%s\")"), r->id,
 		    _("invalid name in \"name\""), desc, _("record"), name);
   }
@@ -119,8 +119,9 @@ void mydns_reply_add_additional(TASK *t, RRLIST *rrlist, datasection_t section) 
 	or a 16-bit value plus a domain-name.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int __mydns_reply_add_generic_rr(TASK *t, RR *r, dns_qtype_map *map) {
-  char		*enc = NULL, *dest = NULL, *desc = NULL;
+int __mydns_reply_add_generic_rr(TASKP t, RRP r, dns_qtype_mapp map) {
+  char		*enc = NULL, *dest = NULL;
+  const char	*desc = NULL;
   int		size = 0, enclen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
 
@@ -155,7 +156,7 @@ int __mydns_reply_add_generic_rr(TASK *t, RR *r, dns_qtype_map *map) {
 	Adds an A record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int __mydns_reply_add_a(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_add_a(TASKP t, RRP r, dns_qtype_mapp map) {
   char		*dest = NULL;
   int		size = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
@@ -193,7 +194,7 @@ int __mydns_reply_add_a(TASK *t, RR *r, dns_qtype_map *map) {
 	Adds an AAAA record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int __mydns_reply_add_aaaa(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_add_aaaa(TASKP t, RRP r, dns_qtype_mapp map) {
   char		*dest = NULL;
   int		size = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
@@ -230,7 +231,7 @@ int __mydns_reply_add_aaaa(TASK *t, RR *r, dns_qtype_map *map) {
 	Adds an HINFO record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int __mydns_reply_add_hinfo(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_add_hinfo(TASKP t, RRP r, dns_qtype_mapp map) {
   char		*dest = NULL;
   size_t	oslen = 0, cpulen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
@@ -273,7 +274,7 @@ int __mydns_reply_add_hinfo(TASK *t, RR *r, dns_qtype_map *map) {
 	Adds an MX record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int __mydns_reply_add_mx(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_add_mx(TASKP t, RRP r, dns_qtype_mapp map) {
   char		*enc = NULL, *dest = NULL;
   int		size = 0, enclen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
@@ -308,7 +309,7 @@ int __mydns_reply_add_mx(TASK *t, RR *r, dns_qtype_map *map) {
 	Adds an NAPTR record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int __mydns_reply_add_naptr(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_add_naptr(TASKP t, RRP r, dns_qtype_mapp map) {
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
   size_t	flags_len = 0, service_len = 0, regex_len = 0;
   char		*enc = NULL, *dest = NULL;
@@ -370,7 +371,7 @@ int __mydns_reply_add_naptr(TASK *t, RR *r, dns_qtype_map *map) {
 	Adds an RP record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int __mydns_reply_add_rp(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_add_rp(TASKP t, RRP r, dns_qtype_mapp map) {
   char		*mbox = NULL, *txt = NULL, *dest = NULL;
   char		*encmbox = NULL, *enctxt = NULL;
   int		size = 0, mboxlen = 0, txtlen = 0;
@@ -417,7 +418,7 @@ int __mydns_reply_add_rp(TASK *t, RR *r, dns_qtype_map *map) {
 	Add a SOA record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int __mydns_reply_add_soa(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_add_soa(TASKP t, RRP r, dns_qtype_mapp map) {
   char		*dest = NULL, *ns = NULL, *mbox = NULL;
   int		size = 0, nslen = 0, mboxlen = 0;
   MYDNS_SOA	*soa = (MYDNS_SOA *)r->rr;
@@ -465,7 +466,7 @@ int __mydns_reply_add_soa(TASK *t, RR *r, dns_qtype_map *map) {
 	Adds a SRV record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int __mydns_reply_add_srv(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_add_srv(TASKP t, RRP r, dns_qtype_mapp map) {
   char		*enc = NULL, *dest = NULL;
   int		size = 0, enclen = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
@@ -505,9 +506,9 @@ int __mydns_reply_add_srv(TASK *t, RR *r, dns_qtype_map *map) {
 	Adds a TXT record to the reply.
 	Returns the numeric offset of the start of this record within the reply, or -1 on error.
 **************************************************************************************************/
-int __mydns_reply_add_txt(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_add_txt(TASKP t, RRP r, dns_qtype_mapp map) {
   char		*dest = NULL;
-  uint8_t	size = 0;
+  size_t	size = 0;
   size_t	len = 0;
   MYDNS_RR	*rr = (MYDNS_RR *)r->rr;
 
@@ -531,12 +532,12 @@ int __mydns_reply_add_txt(TASK *t, RR *r, dns_qtype_map *map) {
 /*--- reply_add_txt() ---------------------------------------------------------------------------*/
 
 
-int __mydns_reply_unexpected_type(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_unexpected_type(TASKP t, RRP r, dns_qtype_mapp map) {
   Warnx("%s: %s: %s", desctask(t), map->rr_type_name, _("unexpected resource record type - logic problem"));
   return (-1);
 }
 
-int __mydns_reply_unknown_type(TASK *t, RR *r, dns_qtype_map *map) {
+int __mydns_reply_unknown_type(TASKP t, RRP r, dns_qtype_mapp map) {
   Warnx("%s: %s: %s", desctask(t), map->rr_type_name, _("unsupported resource record type"));
   return (-1);
 }

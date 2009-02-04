@@ -79,7 +79,7 @@ sql_open(char *user, char *password, char *host, char *database) {
     RELEASE(out);
   }
 #else
-  sql = ALLOCATE(sizeof(*sql), MYSQL);
+  sql = ALLOCATE(sizeof(SQL), SQL*);
   if (!mysql_init(sql)) {
     Err(_("Unable to allocate MySQL data structure"));
   }
@@ -129,7 +129,7 @@ sql_reopen(void) {
   }
 #else
   if (!mysql_ping(sql)) return;
-  new_sql = ALLOCATE(sizeof(*new_sql), MYSQL);
+  new_sql = ALLOCATE(sizeof(SQL), SQL*);
   if (!mysql_init(new_sql)) {
     RELEASE(new_sql);
     return;
@@ -453,7 +453,7 @@ sql_getrow(SQL_RES *res, unsigned long **lengths) {
 **************************************************************************************************/
 char *
 sql_escstr2(SQL *sqlConn, char *src, size_t srclen) {
-  char *dest = ALLOCATE(srclen*2+1, char[]);
+  char *dest = ALLOCATE(srclen*2+1, char*);
   size_t reslen;
 #if USE_PGSQL
   int errcode = 0;
@@ -461,7 +461,7 @@ sql_escstr2(SQL *sqlConn, char *src, size_t srclen) {
 #else
   reslen = mysql_real_escape_string(sqlConn, dest, src, srclen);
 #endif
-  dest = REALLOCATE(dest, reslen+1, char[]);
+  dest = REALLOCATE(dest, reslen+1, char*);
   return dest;
 }
 

@@ -24,6 +24,7 @@
 #include "export.h"
 #include "import.h"
 #include "reply.h"
+#include "rr.h"
 #include "update.h"
 
 #define DEFINE_RR_TYPE(__TYPENAME__, __PERSISTENT__, __PARSER__, __FREE__, __DUPLICATOR__, \

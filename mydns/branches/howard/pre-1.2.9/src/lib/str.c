@@ -26,7 +26,7 @@
 	MYDNS_CLASS_STR
 	Returns a pointer to a static string describing the specified query/response protocol class.
 **************************************************************************************************/
-char *
+const char *
 mydns_class_str(dns_class_t c) {
   static char *buf = NULL;
 
@@ -41,7 +41,7 @@ mydns_class_str(dns_class_t c) {
   RELEASE(buf);
   ASPRINTF(&buf, "%03d", c);
 
-  return (buf);
+  return (const char*)(buf);
 }
 /*--- mydns_class_str() -------------------------------------------------------------------------*/
 
@@ -49,7 +49,7 @@ mydns_class_str(dns_class_t c) {
 	MYDNS_OPCODE_STR
 	Returns a pointer to a static string describing the specified query/response opcode.
 **************************************************************************************************/
-char *
+const char *
 mydns_opcode_str(dns_opcode_t opcode) {
   static char *buf = NULL;
 
@@ -67,7 +67,7 @@ mydns_opcode_str(dns_opcode_t opcode) {
   RELEASE(buf);
   ASPRINTF(&buf, "%03d", opcode);
   
-  return (buf);
+  return (const char*)(buf);
 }
 /*--- mydns_opcode_str() ------------------------------------------------------------------------*/
 
@@ -76,7 +76,7 @@ mydns_opcode_str(dns_opcode_t opcode) {
 	MYDNS_RCODE_STR
 	Returns a pointer to a static string describing the specified return code.
 **************************************************************************************************/
-char *
+const char *
 mydns_rcode_str(dns_rcode_t rcode) {
   static char *buf = NULL;
 
@@ -107,7 +107,7 @@ mydns_rcode_str(dns_rcode_t rcode) {
   RELEASE(buf);
   ASPRINTF(&buf, "%03d", rcode);
 
-  return (buf);
+  return (const char *)(buf);
 }
 /*--- mydns_rcode_str() -------------------------------------------------------------------------*/
 
@@ -116,7 +116,7 @@ mydns_rcode_str(dns_rcode_t rcode) {
 	MYDNS_SECTION_STR
 	Returns a pointer to a static string describing the specified data section.
 **************************************************************************************************/
-char *
+const char *
 mydns_section_str(datasection_t section) {
 
   switch (section) {
@@ -144,9 +144,9 @@ hinfo_parse(char *hinfo, char *cpu, char *os, size_t destlen) {
   register char	quote = 0;			/* If inside quotes, which quote char */
 
   for (s = hinfo, d = cpu; *s; s++) {
-    if (!cpu_done && ((d - cpu) > (destlen - 1)))	/* Have we exceeded length for 'cpu'? */
+    if (!cpu_done && ((size_t)(d - cpu) > (destlen - 1)))	/* Have we exceeded length for 'cpu'? */
       return (-1);
-    if (cpu_done && ((d - os) > (destlen - 1)))		/* Have we exceeded length for 'os'? */
+    if (cpu_done && ((size_t)(d - os) > (destlen - 1)))		/* Have we exceeded length for 'os'? */
       return (-1);
 
     if (!cpu_done && isspace(*s) && !quote) {		/* Time to move from 'cpu' to 'os'? */
