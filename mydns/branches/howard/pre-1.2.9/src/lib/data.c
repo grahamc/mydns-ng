@@ -29,6 +29,10 @@
 #include "rr.h"
 #include "taskobj.h"
 
+#if DEBUG_ENABLED
+int		debug_data = 0;
+#endif
+
 /**************************************************************************************************
 	FIND_SOA
 	Determine the origin in `fqdn' and return the MYDNS_SOA structure for that zone.

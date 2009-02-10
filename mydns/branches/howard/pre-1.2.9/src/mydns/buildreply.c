@@ -33,6 +33,8 @@
 #include "sort.h"
 
 #if DEBUG_ENABLED
+int		debug_buildreply = 0;
+
 /* Strings describing the datasections */
 const char *reply_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
 #endif

@@ -30,6 +30,10 @@
 #include "support.h"
 #include "taskobj.h"
 
+#if DEBUG_ENABLED
+int		debug_cache = 0;
+#endif
+
 CACHE *ZoneCache = NULL;							/* Data cache */
 CACHE *ReplyCache = NULL;							/* Reply cache */
 

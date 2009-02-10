@@ -28,6 +28,10 @@
 #include "taskobj.h"
 #include "update.h"
 
+#if DEBUG_ENABLED
+int		debug_update = 0;
+#endif
+
 /**************************************************************************************************
 	TEXT_RETRIEVE
 	Retrieve a name from the source without end-dot encoding.

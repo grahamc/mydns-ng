@@ -28,6 +28,10 @@
 #include "task.h"
 #include "udp.h"
 
+#if DEBUG_ENABLED
+int		debug_udp = 0;
+#endif
+
 /**************************************************************************************************
 	READ_UDP_QUERY
 	Returns 0 on success (a task was added), -1 on failure.

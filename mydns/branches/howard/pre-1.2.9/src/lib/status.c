@@ -26,6 +26,10 @@
 #include "rr.h"
 #include "status.h"
 
+#if DEBUG_ENABLED
+int		debug_status = 0;
+#endif
+
 SERVERSTATUS	Status;				/* Server status information */
 
 /**************************************************************************************************

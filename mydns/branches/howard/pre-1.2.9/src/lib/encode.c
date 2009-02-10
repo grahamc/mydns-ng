@@ -27,6 +27,10 @@
 #include "error.h"
 #include "taskobj.h"
 
+#if DEBUG_ENABLED
+int		debug_encode = 0;
+#endif
+
 /* Set this to nonzero to disable encoding */
 #define	NO_ENCODING	0
 

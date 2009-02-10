@@ -26,6 +26,10 @@
 #include "rr.h"
 #include "taskobj.h"
 
+#if DEBUG_ENABLED
+int		debug_rr = 0;
+#endif
+
 #define __MYDNS_RR_NAME(__rrp)			((__rrp)->_name)
 #define __MYDNS_RR_DATA(__rrp)			((__rrp)->_data)
 #define __MYDNS_RR_DATA_LENGTH(__rrp)		((__rrp)->_data.len)

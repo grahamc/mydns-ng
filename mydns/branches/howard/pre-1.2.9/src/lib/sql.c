@@ -22,6 +22,10 @@
 
 #include "memoryman.h"
 
+#if DEBUG_ENABLED
+int		debug_sql = 0;
+#endif
+
 SQL *sql;						/* Global SQL connection information */
 
 /* Saved connection information for reconnecting */

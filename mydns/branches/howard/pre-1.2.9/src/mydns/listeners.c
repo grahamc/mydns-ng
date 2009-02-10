@@ -32,6 +32,9 @@
 #endif
 #  include <sys/ioctl.h>
 
+#if DEBUG_ENABLED
+int		debug_listeners = 0;
+#endif
 
 extern char	*opt_conf;
 extern uint32_t answer_then_quit;

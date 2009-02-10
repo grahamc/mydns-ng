@@ -19,6 +19,10 @@
 
 #include "listen.h"
 
+#if DEBUG_ENABLED
+int		debug_listen = 0;
+#endif
+
 int *udp4_fd = (int *)NULL;					/* Listening socket: UDP, IPv4 */
 int *tcp4_fd = (int *)NULL;					/* Listening socket: TCP, IPv4 */
 int num_udp4_fd = 0;						/* Number of items in 'udp4_fd' */

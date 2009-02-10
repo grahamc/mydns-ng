@@ -23,6 +23,10 @@
 #include "memoryman.h"
 #include "queue.h"
 
+#if DEBUG_ENABLED
+int		debug_queue = 0;
+#endif
+
 /**************************************************************************************************
 	QUEUE_INIT
 	Creates a new queue and returns a pointer to it.

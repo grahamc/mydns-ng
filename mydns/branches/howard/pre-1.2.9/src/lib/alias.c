@@ -29,6 +29,10 @@
 
 #include "alias.h"
 
+#if DEBUG_ENABLED
+int		debug_alias = 0;
+#endif
+
 /**************************************************************************************************
 	FIND_ALIAS
 	Find an ALIAS or A record for the alias.

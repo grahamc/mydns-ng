@@ -24,6 +24,10 @@
 #include "memoryman.h"
 #include "export.h"
 
+#if DEBUG_ENABLED
+int		debug_export = 0;
+#endif
+
 void __mydns_bind_dump_rr_default(MYDNS_SOAP soa, MYDNS_RRP rr, char *name, char *data,
 					 size_t datalen, int ttl, int aux, int maxlen) {
   dns_qtype_map *map = mydns_rr_get_type_by_id(rr->type);

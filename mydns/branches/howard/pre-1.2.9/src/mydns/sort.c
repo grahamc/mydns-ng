@@ -26,6 +26,10 @@
 #include "buildreply.h"
 #include "sort.h"
 
+#if DEBUG_ENABLED
+int		debug_sort = 0;
+#endif
+
 #define	RR_IS_RR(R)		((R)->rrtype == DNS_RRTYPE_RR)
 #define	RR_IS_ADDR(R)	 	(RR_IS_RR((R)) && (RR_IS_A((R)) || RR_IS_AAAA((R))))
 #define	RR_IS_A(R)		(RR_IS_RR((R)) && (((MYDNS_RR *)(R)->rr)->type == DNS_QTYPE_A))

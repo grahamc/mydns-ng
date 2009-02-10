@@ -29,6 +29,10 @@
 #include "servercomms.h"
 #include "task.h"
 
+#if DEBUG_ENABLED
+int		debug_servercomms = 0;
+#endif
+
 #define KEEPALIVE 30
 
 typedef struct _named_message {

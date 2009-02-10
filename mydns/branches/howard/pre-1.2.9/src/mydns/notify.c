@@ -33,6 +33,10 @@
 #include "notify.h"
 #include "task.h"
 
+#if DEBUG_ENABLED
+int		debug_notify = 0;
+#endif
+
 typedef struct _notify_data {
   char			*origin;	/* Zone origin */
   uint32_t		soa_id;		/* SOA id from DB we are processing */

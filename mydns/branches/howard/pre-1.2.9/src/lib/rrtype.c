@@ -27,6 +27,10 @@
 #include "rr.h"
 #include "update.h"
 
+#if DEBUG_ENABLED
+int		debug_rrtype = 0;
+#endif
+
 #define DEFINE_RR_TYPE(__TYPENAME__, __PERSISTENT__, __PARSER__, __FREE__, __DUPLICATOR__, \
 		       __SIZOR__, __REPLY_ADD__, __UPDATE_GET_RR_DATA__, __PROCESS_AXFR__, \
 		       __CHECK_RR__, \

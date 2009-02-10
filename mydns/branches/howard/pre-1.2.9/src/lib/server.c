@@ -19,6 +19,10 @@
 #include "server.h"
 #include "taskobj.h"
 
+#if DEBUG_ENABLED
+int		debug_server = 0;
+#endif
+
 ARRAY	*Servers = NULL;
 
 SERVER *server_find_by_task(TASK *t) {

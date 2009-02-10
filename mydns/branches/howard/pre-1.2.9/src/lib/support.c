@@ -32,6 +32,10 @@
 
 #include "notify.h"
 
+#if DEBUG_ENABLED
+int		debug_support = 0;
+#endif
+
 int	 	shutting_down = 0;		/* Shutdown in progress? */
 char		hostname[256];			/* Hostname of local machine */
 

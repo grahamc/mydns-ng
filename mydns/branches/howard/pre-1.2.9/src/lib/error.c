@@ -27,6 +27,10 @@
 #include "error.h"
 #include "taskobj.h"
 
+#if DEBUG_ENABLED
+int		debug_error = 0;
+#endif
+
 /* The maximum number of resource record ID errors that we'll remember (and avoid repeating) */
 #define	MAX_RR_ERR_MEMORY	1024
 

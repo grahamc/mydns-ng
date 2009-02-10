@@ -41,6 +41,10 @@
 #include "tcp.h"
 #include "udp.h"
 
+#if DEBUG_ENABLED
+int		debug_task = 0;
+#endif
+
 /**************************************************************************************************
 	TASK_NEW
 	Given a request (TCP or UDP), populates task structure.

@@ -31,6 +31,10 @@
 #include "support.h"
 #include "taskobj.h"
 
+#if DEBUG_ENABLED
+int		debug_recursive = 0;
+#endif
+
 static TASK *udp_recursive_master = NULL;
 static TASK *tcp_recursive_master = NULL;
 

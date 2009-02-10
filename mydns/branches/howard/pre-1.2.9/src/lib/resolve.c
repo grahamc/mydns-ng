@@ -33,6 +33,8 @@
 #include "taskobj.h"
 
 #if DEBUG_ENABLED
+int		debug_resolve = 0;
+
 /* Strings describing the datasections */
 const char *resolve_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
 #endif

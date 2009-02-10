@@ -24,6 +24,10 @@
 #include "util.h"
 #include "memoryman.h"
 
+#if DEBUG_ENABLED
+int		debug_util = 0;
+#endif
+
 char *mydns_expand_data(char *s, char *origin) {
   if (!(s[0]) || LASTCHAR(s) != '.') {
     int slen = strlen(s);

@@ -24,6 +24,10 @@
 
 #include "debug.h"
 
+#if DEBUG_ENABLED
+int		debug_soa = 0;
+#endif
+
 char *mydns_soa_table_name = NULL;
 char *mydns_soa_where_clause = NULL;
 

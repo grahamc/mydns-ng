@@ -27,6 +27,10 @@
 #include "check.h"
 #include "support.h"
 
+#if DEBUG_ENABLED
+int		debug_check = 0;
+#endif
+
 int		syntax_errors, consistency_errors;	/* Number of errors found */
 
 int		opt_extended_check = 0;			/* Extended check? */

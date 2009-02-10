@@ -36,6 +36,10 @@
 #include "listeners.h"
 #include "notify.h"
 
+#if DEBUG_ENABLED
+int		debug_dnsupdate = 0;
+#endif
+
 /**************************************************************************************************
 	FREE_UQ
 	Frees a 'UQ' structure.

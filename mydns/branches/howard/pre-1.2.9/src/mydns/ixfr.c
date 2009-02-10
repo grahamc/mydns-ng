@@ -32,6 +32,10 @@
 
 #include "ixfr.h"
 
+#if DEBUG_ENABLED
+int		debug_ixfr = 0;
+#endif
+
 typedef struct _ixfr_authority_rr {
   char			*name;
   dns_qtype_t		type;

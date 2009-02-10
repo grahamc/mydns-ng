@@ -30,6 +30,10 @@
 #include "support.h"
 #include "taskobj.h"
 
+#if DEBUG_ENABLED
+int		debug_taskobj = 0;
+#endif
+
 #define MAXTASKS		(USHRT_MAX + 1)
 #define TASKVECSZ		(MAXTASKS/BITSPERBYTE)
 

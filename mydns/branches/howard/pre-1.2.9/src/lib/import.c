@@ -30,6 +30,10 @@
 #include "import.h"
 #include "support.h"
 
+#if DEBUG_ENABLED
+int		debug_import = 0;
+#endif
+
 uint32_t got_soa = 0;					/* Have we read the initial SOA record? */
 int opt_output = 0;					/* Output instead of insert */
 int opt_notrim = 0;					/* Don't remove trailing origin */

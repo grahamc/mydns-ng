@@ -26,6 +26,10 @@
 
 #include "bits.h"
 
+#if DEBUG_ENABLED
+int		debug_unencode = 0;
+#endif
+
 /**************************************************************************************************
 	NAME_UNENCODE
 	Get a name from a compressed question.

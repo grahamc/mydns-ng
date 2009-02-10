@@ -22,6 +22,10 @@
 
 #include "memoryman.h"
 
+#if DEBUG_ENABLED
+int		debug_str = 0;
+#endif
+
 /**************************************************************************************************
 	MYDNS_CLASS_STR
 	Returns a pointer to a static string describing the specified query/response protocol class.

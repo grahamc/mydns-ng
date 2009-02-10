@@ -34,6 +34,10 @@
 #include "buildreply.h"
 #include "task.h"
 
+#if DEBUG_ENABLED
+int		debug_axfr = 0;
+#endif
+
 #define	AXFR_TIME_LIMIT		3600		/* AXFR may not take more than this long, overall */
 
 static size_t total_records, total_octets;

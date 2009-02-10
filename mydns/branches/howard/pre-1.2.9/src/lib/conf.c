@@ -29,6 +29,10 @@
 #include <pwd.h>
 #include <grp.h>
 
+#if DEBUG_ENABLED
+int		debug_conf = 0;
+#endif
+
 int		opt_daemon = 0;				/* Run in background? (-d, --daemon) */
 char		*opt_conf = (char*)MYDNS_CONF;			/* Location of config file (-c, --conf) */
 uid_t		perms_uid = 0;				/* User permissions */

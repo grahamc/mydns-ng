@@ -25,6 +25,10 @@
 #include "conf.h"
 #include "rr.h"
 
+#if DEBUG_ENABLED
+int		debug_db = 0;
+#endif
+
 /**************************************************************************************************
 	DB_CHECK_OPTIONAL
 	Check optional columns.
