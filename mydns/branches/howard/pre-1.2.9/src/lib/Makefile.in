@@ -57,15 +57,13 @@ ARFLAGS = cru
 libmydns_a_AR = $(AR) $(ARFLAGS)
 libmydns_a_LIBADD =
 am_libmydns_a_OBJECTS = alias.$(OBJEXT) cache.$(OBJEXT) conf.$(OBJEXT) \
-	check.$(OBJEXT) data.$(OBJEXT) db.$(OBJEXT) debug.$(OBJEXT) \
-	encode.$(OBJEXT) error.$(OBJEXT) export.$(OBJEXT) \
-	import.$(OBJEXT) ip.$(OBJEXT) listen.$(OBJEXT) \
+	data.$(OBJEXT) db.$(OBJEXT) debug.$(OBJEXT) encode.$(OBJEXT) \
+	error.$(OBJEXT) ip.$(OBJEXT) listen.$(OBJEXT) \
 	message.$(OBJEXT) queue.$(OBJEXT) recursive.$(OBJEXT) \
 	reply.$(OBJEXT) resolve.$(OBJEXT) rr.$(OBJEXT) \
 	rrtype.$(OBJEXT) server.$(OBJEXT) soa.$(OBJEXT) sql.$(OBJEXT) \
 	status.$(OBJEXT) str.$(OBJEXT) support.$(OBJEXT) \
-	taskobj.$(OBJEXT) unencode.$(OBJEXT) update.$(OBJEXT) \
-	util.$(OBJEXT)
+	taskobj.$(OBJEXT) unencode.$(OBJEXT) update.$(OBJEXT)
 libmydns_a_OBJECTS = $(am_libmydns_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -237,17 +235,17 @@ top_srcdir = @top_srcdir@
 noinst_LIBRARIES = libmydns.a
 INCLUDES = @MYDNSINCLUDE@ @INTLINCLUDE@ @UTILINCLUDE@ @SQLINCLUDE@
 libmydns_a_SOURCES = alias.c \
-				cache.c conf.c check.c \
+				cache.c conf.c \
 				data.c db.c debug.c \
-				encode.c error.c export.c \
-				import.c ip.c \
+				encode.c error.c \
+				ip.c \
 				listen.c \
 				message.c \
 				queue.c \
 				recursive.c reply.c resolve.c rr.c rrtype.c \
 				server.c soa.c sql.c status.c str.c support.c \
 				taskobj.c \
-				unencode.c update.c util.c
+				unencode.c update.c
 
 all: all-am
 
@@ -298,15 +296,12 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alias.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cache.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/conf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/db.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/debug.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/encode.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/error.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/export.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/import.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ip.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/listen.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/message.Po@am__quote@
@@ -325,7 +320,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/taskobj.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unencode.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/update.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/util.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

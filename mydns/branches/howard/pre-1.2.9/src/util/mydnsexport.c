@@ -491,6 +491,7 @@ main(int argc, char **argv) {
 #if DEBUG_ENABLED
   debug_start(debugging_switches);
 #endif
+  SET_TYPEMAPS();
   setlocale(LC_ALL, "");					/* Internationalization */
   bindtextdomain(PACKAGE, LOCALEDIR);
   textdomain(PACKAGE);
