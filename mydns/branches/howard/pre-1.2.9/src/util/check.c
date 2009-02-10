@@ -24,9 +24,27 @@
 #include "util.h"
 
 #include "memoryman.h"
+
 #include "check.h"
 #include "debug.h"
 #include "rr.h"
+
+#if DEBUG_ENABLED
+int		debug_mydnscheck = 0;
+
+debugging_switch debugging_switches[] = {
+  {	"all",			&debug_all },
+
+  {	"check",		&debug_check },
+  {	"util",			&debug_util },
+
+  {	"mydnscheck",		&debug_mydnscheck },
+
+  {	NULL,			NULL }
+
+};
+
+#endif
 
 MYDNS_SOA	*soa;					/* Current SOA record being scanned */
 MYDNS_RR	*rr;					/* Current RR record */
@@ -347,6 +365,9 @@ consistency_check(void) {
 **************************************************************************************************/
 int
 main(int argc, char **argv) {
+#if DEBUG_ENABLED
+  debug_start(debugging_switches);
+#endif
   setlocale(LC_ALL, "");					/* Internationalization */
   bindtextdomain(PACKAGE, LOCALEDIR);
   textdomain(PACKAGE);

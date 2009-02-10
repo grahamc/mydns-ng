@@ -20,11 +20,30 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **********************************************************************************************/
 
+#include "named.h"
 #include "util.h"
+
 #include "memoryman.h"
 
 #include "debug.h"
 #include "rr.h"
+
+#if DEBUG_ENABLED
+int		debug_mydnsexport = 0;
+
+debugging_switch debugging_switches[] = {
+  {	"all",			&debug_all },
+
+  {	"export",		&debug_export },
+  {	"util",			&debug_util },
+
+  {	"mydnsexport",		&debug_mydnsexport },
+
+  {	NULL,			NULL }
+
+};
+
+#endif
 
 char *zone = NULL;						/* Zone name to dump */
 unsigned int zones_out = 0;					/* Number of zones output */
@@ -441,6 +460,9 @@ dump_zone(char *zone_name) {
 **************************************************************************************************/
 int
 main(int argc, char **argv) {
+#if DEBUG_ENABLED
+  debug_start(debugging_switches);
+#endif
   setlocale(LC_ALL, "");					/* Internationalization */
   bindtextdomain(PACKAGE, LOCALEDIR);
   textdomain(PACKAGE);

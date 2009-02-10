@@ -39,6 +39,59 @@
 #include "tcp.h"
 #include "udp.h"
 
+#if DEBUG_ENABLED
+int		debug_mydns = 0;
+
+debugging_switch debugging_switches[] = {
+  {	"all",			&debug_all },
+
+  {	"alias",		&debug_alias },
+  {	"cache",		&debug_cache },
+  {	"conf",			&debug_conf },
+  {	"data",			&debug_data },
+  {	"db",			&debug_db },
+  {	"encode",		&debug_encode },
+  {	"error",		&debug_error },
+  {	"ip",			&debug_ip },
+  {	"listen",		&debug_listen },
+  {	"message",		&debug_message },
+  {	"queue",		&debug_queue },
+  {	"recursive",		&debug_recursive },
+  {	"reply",		&debug_reply },
+  {	"resolve",		&debug_resolve },
+  {	"rr",			&debug_rr },
+  {	"rrtype",		&debug_rrtype },
+  {	"server",		&debug_server },
+  {	"soa",			&debug_soa },
+  {	"sql",			&debug_sql },
+  {	"status",		&debug_status },
+  {	"str",			&debug_str },
+  {	"support",		&debug_support },
+  {	"taskobj",		&debug_taskobj },
+  {	"unencode",		&debug_unencode },
+  {	"update",		&debug_update },
+
+  {	"axfr",			&debug_axfr },
+  {	"buildreply",		&debug_buildreply },
+  {	"dnsupdate",		&debug_dnsupdate },
+  {	"ixfr",			&debug_ixfr },
+  {	"listeners",		&debug_listeners },
+  {	"notify",		&debug_notify },
+  {	"servercomms",		&debug_servercomms },
+  {	"sort",			&debug_sort },
+  {	"task",			&debug_task },
+  {	"tcp",			&debug_tcp },
+  {	"udp",			&debug_udp },
+
+  {	"mydns",		&debug_mydns },
+
+  {	NULL,			NULL }
+
+};
+
+
+#endif
+
 static int	servers = 0;			/* Number of server processes to run */
 
 static int	got_sigusr1 = 0,
@@ -1043,6 +1096,10 @@ main(int argc, char **argv)
 {
   int i = 0, j = 0, n = 0;
   sigset_t mask;
+
+#if DEBUG_ENABLED
+  debug_start(debugging_switches);
+#endif
 
   memset(&mask, 0, sizeof(mask));
 

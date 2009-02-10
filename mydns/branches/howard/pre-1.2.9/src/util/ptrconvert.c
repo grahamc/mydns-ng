@@ -20,10 +20,26 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **************************************************************************************************/
 
+#include "named.h"
 #include "util.h"
 #include "memoryman.h"
 #include "debug.h"
 #include "libptr.h"
+
+#if DEBUG_ENABLED
+int		debug_mydnsptrconvert = 0;
+static debugging_switch debugging_switches[] = {
+  {	"all",			&debug_all },
+
+  {	"util",			&debug_util },
+
+  {	"mydnsptrconvert",	&debug_mydnsptrconvert },
+
+  {	NULL,			NULL }
+
+};
+
+#endif
 
 char	*thishostname = NULL;   	                        /* Hostname of local machine */
 char	*ns = NULL, *mbox = NULL;				/* Default NS/MBOX */
@@ -413,6 +429,9 @@ ptrconvert(void) {
 **************************************************************************************************/
 int
 main(int argc, char **argv) {
+#if DEBUG_ENABLED
+  debug_start(debugging_switches);
+#endif
   setlocale(LC_ALL, "");						/* Internationalization */
   bindtextdomain(PACKAGE, LOCALEDIR);
   textdomain(PACKAGE);

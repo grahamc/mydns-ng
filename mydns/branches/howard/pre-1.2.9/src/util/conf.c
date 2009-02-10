@@ -21,9 +21,29 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **************************************************************************************************/
 
+#include "named.h"
 #include "util.h"
 
+#include "debug.h"
+
 #include <pwd.h>
+
+#if DEBUG_ENABLED
+int		debug_mydnsconf = 0;
+
+debugging_switch debugging_switches[] = {
+  {	"all",			&debug_all },
+
+  {	"conf",			&debug_conf },
+  {	"util",			&debug_util },
+
+  {	"mydnsconf",		&debug_mydnsconf },
+
+  {	NULL,			NULL }
+
+};
+
+#endif
 
 
 /**************************************************************************************************
@@ -53,6 +73,9 @@ main(int argc, char **argv)
 	int fd;
 	FILE *fp;
 
+#if DEBUG_ENABLED
+	debug_start(debugging_switches);
+#endif
 	setlocale(LC_ALL, "");										/* Internationalization */
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);

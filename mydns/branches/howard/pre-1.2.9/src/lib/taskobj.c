@@ -591,7 +591,7 @@ static void _task_1_queue_stats(QUEUE *q) {
     if ((msglen + 2*idsize) >= msgsize) msg = REALLOCATE(msg, msgsize *= 2, char*);
   }
   if (msglen)
-    Debug(task, 1,_("Queued tasks %s"), msg);
+    Debug(taskobj, 1,_("Queued tasks %s"), msg);
 
   RELEASE(msg);
 #endif

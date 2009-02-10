@@ -13,7 +13,18 @@ LDADD			=	@LIBMYDNS@ @LIBUTIL@ @LIBINTL@ @LIBSQL@ @LIBSSL@ @LIBSOCKET@ @LIBNSL@ 
 mydns_DEPENDENCIES	=	@LIBMYDNS@ @LIBUTIL@
 
 noinst_HEADERS		=	
-mydns_SOURCES		=	main.c
+mydns_SOURCES		=	axfr.c \
+				buildreply.c \
+				dnsupdate.c \
+				ixfr.c \
+				listeners.c \
+				main.c \
+				notify.c \
+				servercomms.c \
+				sort.c \
+				task.c \
+				tcp.c \
+				udp.c
 
 CLEANFILES		=	malloc_trace gmon.out bb.out
 

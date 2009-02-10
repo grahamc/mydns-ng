@@ -20,9 +20,27 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 **************************************************************************************************/
 
+#include "named.h"
 #include "util.h"
 
 #include "debug.h"
+
+#if DEBUG_ENABLED
+int		debug_mydnsimport = 0;
+
+debugging_switch debugging_switches[] = {
+  {	"all",			&debug_all },
+
+  {	"import",		&debug_import },
+  {	"util",			&debug_util },
+
+  {	"mydnsimport",		&debug_mydnsimport },
+
+  {	NULL,			NULL }
+
+};
+
+#endif
 
 enum _input_format {						/* Import format types */
 	INPUT_UNKNOWN,
@@ -216,6 +234,9 @@ cmdline(int argc, char **argv) {
 **************************************************************************************************/
 int
 main(int argc, char **argv) {
+#if DEBUG_ENABLED
+  debug_start(debugging_switches);
+#endif
   setlocale(LC_ALL, "");				/* Internationalization */
   bindtextdomain(PACKAGE, LOCALEDIR);
   textdomain(PACKAGE);

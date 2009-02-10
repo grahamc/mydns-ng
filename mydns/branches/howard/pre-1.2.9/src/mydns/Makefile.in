@@ -57,7 +57,10 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)"
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(sbin_PROGRAMS)
-am_mydns_OBJECTS = main.$(OBJEXT)
+am_mydns_OBJECTS = axfr.$(OBJEXT) buildreply.$(OBJEXT) \
+	dnsupdate.$(OBJEXT) ixfr.$(OBJEXT) listeners.$(OBJEXT) \
+	main.$(OBJEXT) notify.$(OBJEXT) servercomms.$(OBJEXT) \
+	sort.$(OBJEXT) task.$(OBJEXT) tcp.$(OBJEXT) udp.$(OBJEXT)
 mydns_OBJECTS = $(am_mydns_OBJECTS)
 mydns_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -232,7 +235,19 @@ INCLUDES = @UTILINCLUDE@ @MYDNSINCLUDE@ @INTLINCLUDE@ @SQLINCLUDE@ @SSLINCLUDE@
 LDADD = @LIBMYDNS@ @LIBUTIL@ @LIBINTL@ @LIBSQL@ @LIBSSL@ @LIBSOCKET@ @LIBNSL@ @LIBM@
 mydns_DEPENDENCIES = @LIBMYDNS@ @LIBUTIL@
 noinst_HEADERS = 
-mydns_SOURCES = main.c
+mydns_SOURCES = axfr.c \
+				buildreply.c \
+				dnsupdate.c \
+				ixfr.c \
+				listeners.c \
+				main.c \
+				notify.c \
+				servercomms.c \
+				sort.c \
+				task.c \
+				tcp.c \
+				udp.c
+
 CLEANFILES = malloc_trace gmon.out bb.out
 all: all-am
 
@@ -305,7 +320,18 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/axfr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buildreply.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dnsupdate.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ixfr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/listeners.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/notify.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/servercomms.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sort.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/task.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tcp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/udp.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
