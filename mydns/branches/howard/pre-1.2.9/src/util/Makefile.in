@@ -57,20 +57,21 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
-am_mydns_conf_OBJECTS = conf.$(OBJEXT)
+am_mydns_conf_OBJECTS = mydns-conf.$(OBJEXT)
 mydns_conf_OBJECTS = $(am_mydns_conf_OBJECTS)
 mydns_conf_LDADD = $(LDADD)
-am_mydnscheck_OBJECTS = check.$(OBJEXT)
+am_mydnscheck_OBJECTS = mydnscheck.$(OBJEXT)
 mydnscheck_OBJECTS = $(am_mydnscheck_OBJECTS)
 mydnscheck_LDADD = $(LDADD)
-am_mydnsexport_OBJECTS = export.$(OBJEXT)
+am_mydnsexport_OBJECTS = mydnsexport.$(OBJEXT)
 mydnsexport_OBJECTS = $(am_mydnsexport_OBJECTS)
 mydnsexport_LDADD = $(LDADD)
-am_mydnsimport_OBJECTS = import.$(OBJEXT) import-axfr.$(OBJEXT) \
+am_mydnsimport_OBJECTS = mydnsimport.$(OBJEXT) import-axfr.$(OBJEXT) \
 	import-tinydns.$(OBJEXT)
 mydnsimport_OBJECTS = $(am_mydnsimport_OBJECTS)
 mydnsimport_LDADD = $(LDADD)
-am_mydnsptrconvert_OBJECTS = libptr.$(OBJEXT) ptrconvert.$(OBJEXT)
+am_mydnsptrconvert_OBJECTS = libptr.$(OBJEXT) \
+	mydnsptrconvert.$(OBJEXT)
 mydnsptrconvert_OBJECTS = $(am_mydnsptrconvert_OBJECTS)
 mydnsptrconvert_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -252,11 +253,11 @@ mydnsexport_DEPENDENCIES = $(LIBDEPS)
 mydnsimport_DEPENDENCIES = $(LIBDEPS)
 mydnsptrconvert_DEPENDENCIES = $(LIBDEPS)
 mydns_conf_DEPENDENCIES = $(LIBDEPS)
-mydnscheck_SOURCES = check.c
-mydnsexport_SOURCES = export.c
-mydnsimport_SOURCES = import.c import-axfr.c import-tinydns.c
-mydnsptrconvert_SOURCES = libptr.c libptr.h ptrconvert.c
-mydns_conf_SOURCES = conf.c
+mydnscheck_SOURCES = mydnscheck.c
+mydnsexport_SOURCES = mydnsexport.c
+mydnsimport_SOURCES = mydnsimport.c import-axfr.c import-tinydns.c
+mydnsptrconvert_SOURCES = libptr.c libptr.h mydnsptrconvert.c
+mydns_conf_SOURCES = mydns-conf.c
 all: all-am
 
 .SUFFIXES:
@@ -340,14 +341,14 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/conf.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/export.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/import-axfr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/import-tinydns.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/import.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libptr.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ptrconvert.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mydns-conf.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mydnscheck.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mydnsexport.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mydnsimport.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mydnsptrconvert.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

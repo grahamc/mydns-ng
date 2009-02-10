@@ -272,44 +272,13 @@ extern int mydns_rr_use_serial;
 /* Macro to convert quads into address -- result like MySQL's INET_ATON() */
 #define INET_ATON(a,b,c,d) (((a) << 24) | ((b) << 16) | ((c) << 8) | (d))
 
+
 typedef struct _dns_qtype_map *dns_qtype_mapp;
 typedef struct _mydns_rr *MYDNS_RRP;
 typedef struct _mydns_soa *MYDNS_SOAP;
 typedef struct _update_query_rr *UQRRP;
 typedef struct _named_rr *RRP;
 
-typedef int (*rr_parser_t)(const char * origin, MYDNS_RRP rr);
-typedef void (*rr_free_t)(MYDNS_RRP);
-typedef void (*rr_dup_t)(MYDNS_RRP, MYDNS_RRP);
-typedef size_t (*rr_size_t)(MYDNS_RRP);
-typedef int (*rr_reply_add_t)(TASKP t, RRP r, dns_qtype_mapp map);
-typedef taskexec_t (*rr_update_get_rr_data_t)(TASKP t, UQRRP rr,
-					      char **data, size_t *datalen,
-					      char **edata, size_t *edatalen,
-					      uint32_t *aux, dns_qtype_mapp map);
-typedef char *(*rr_process_axfr_t)(char *, char*, char*, char *, size_t, char *, uint32_t, dns_qtype_mapp);
-typedef void (*rr_check_rr_t)(MYDNS_SOAP, MYDNS_RRP, const char *, char *, const char*, size_t);
-typedef void (*rr_export_bind_rr_t)(MYDNS_SOAP, MYDNS_RRP, char *, char *, size_t, int, int, int);
-typedef void (*rr_export_tinydns_rr_t)(MYDNS_SOAP, MYDNS_RRP, char *, char *, size_t, int, int);
-
-typedef struct _dns_qtype_map {
-  const char			*rr_type_name;
-  dns_qtype_t			rr_type;
-  int				rr_persistent;
-  rr_parser_t			rr_parser;
-  rr_free_t			rr_free;
-  rr_dup_t			rr_duplicator;
-  rr_size_t			rr_sizor;
-  rr_reply_add_t        	rr_reply_add;
-  rr_update_get_rr_data_t	rr_update_get_rr_data;
-  rr_process_axfr_t		rr_process_axfr;
-  rr_check_rr_t			rr_check_rr;
-  rr_export_bind_rr_t		rr_export_bind_rr;
-  rr_export_tinydns_rr_t	rr_export_tinydns_rr;
-  int				rr_update_supported;
-  int				rr_match_aux;
-  const char			*rr_whereclause;
-} dns_qtype_map;
 
 typedef enum							/* DNS opcode types */
 {
@@ -565,14 +534,6 @@ typedef MYSQL_ROW SQL_ROW;
 /* ip.c */
 extern uint32_t		mydns_revstr_ip4(char *);
 extern int		mydns_extract_arpa(char *, uint8_t ip[]);
-
-/* lib/rr.c */
-/* rr_type.c */
-extern dns_qtype_map	**RR_TYPES_BY_ID;
-extern dns_qtype_map	**RR_TYPES_BY_NAME;
-extern int		RR_TYPES_ENTRIES;
-extern dns_qtype_map	*mydns_rr_get_type_by_id(dns_qtype_t);
-extern dns_qtype_map	*mydns_rr_get_type_by_name(char *);
 
 /* soa.c */
 extern long		mydns_soa_count(SQL *);

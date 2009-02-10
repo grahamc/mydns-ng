@@ -28,6 +28,7 @@
 #include "bits.h"
 #include "debug.h"
 #include "import.h"
+#include "rrtype.h"
 #include "support.h"
 
 #if DEBUG_ENABLED

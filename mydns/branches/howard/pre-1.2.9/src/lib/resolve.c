@@ -29,6 +29,7 @@
 #include "recursive.h"
 #include "resolve.h"
 #include "rr.h"
+#include "rrtype.h"
 #include "status.h"
 #include "taskobj.h"
 

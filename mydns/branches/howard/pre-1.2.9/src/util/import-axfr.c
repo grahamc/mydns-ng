@@ -29,6 +29,8 @@
 #include "bits.h"
 #include "debug.h"
 
+#include "rrtype.h"
+
 static char *thishostname;			/* Hostname of remote host */
 
 /**************************************************************************************************

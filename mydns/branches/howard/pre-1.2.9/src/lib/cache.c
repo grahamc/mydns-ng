@@ -26,6 +26,7 @@
 #include "cache.h"
 #include "debug.h"
 #include "rr.h"
+#include "rrtype.h"
 #include "status.h"
 #include "support.h"
 #include "taskobj.h"

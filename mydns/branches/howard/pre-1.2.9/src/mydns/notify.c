@@ -27,6 +27,7 @@
 #include "debug.h"
 #include "message.h"
 #include "rr.h"
+#include "rrtype.h"
 #include "support.h"
 #include "taskobj.h"
 

@@ -24,6 +24,7 @@
 
 #include "error.h"
 #include "rr.h"
+#include "rrtype.h"
 #include "status.h"
 
 #if DEBUG_ENABLED

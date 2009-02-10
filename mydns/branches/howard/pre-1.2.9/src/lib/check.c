@@ -25,6 +25,7 @@
 
 #include "memoryman.h"
 #include "check.h"
+#include "rrtype.h"
 #include "support.h"
 
 #if DEBUG_ENABLED

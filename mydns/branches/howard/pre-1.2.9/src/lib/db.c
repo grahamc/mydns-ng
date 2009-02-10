@@ -24,6 +24,7 @@
 
 #include "conf.h"
 #include "rr.h"
+#include "rrtype.h"
 
 #if DEBUG_ENABLED
 int		debug_db = 0;
@@ -216,10 +217,11 @@ db_output_create_tables(void) {
     int i;
 
     printf("(");
-    for (i = 0; i < RR_TYPES_ENTRIES; i++) {
-      if (!RR_TYPES_BY_NAME[i]->rr_persistent) continue;
+    for (i = 0; i < mydns_rr_get_typemap_entries(); i++) {
+      dns_qtype_map *mapentry = mydns_rr_get_type_by_idx(i);
+      if (!mapentry->rr_persistent) continue;
       if (i != 0) printf(" OR ");
-      printf("'%s'", RR_TYPES_BY_NAME[i]->rr_type_name);
+      printf("'%s'", mapentry->rr_type_name);
     }
     printf("),\n");
   }
@@ -256,10 +258,11 @@ db_output_create_tables(void) {
     int i;
 
     printf("  type       ENUM(");
-    for (i = 0; i < RR_TYPES_ENTRIES; i++) {
-      if (!RR_TYPES_BY_NAME[i]->rr_persistent) continue;
+    for (i = 0; i < mydns_rr_get_typemap_entries(); i++) {
+      dns_qtype_map *mapentry = mydns_rr_get_type_by_idx(i);
+      if (!mapentry->rr_persistent) continue;
       if (i != 0) printf(", ");
-      printf("'%s'", RR_TYPES_BY_NAME[i]->rr_type_name);
+      printf("'%s'", mapentry->rr_type_name);
     }
     printf("),\n");
   }

@@ -53,7 +53,7 @@ extern void		mydns_rr_name_append_origin(MYDNS_RR *, char *);
 extern void		mydns_rr_data_append_origin(MYDNS_RR *, char *);
 extern void		_mydns_rr_free(MYDNS_RR *);
 #define			mydns_rr_free(p)	if ((p)) _mydns_rr_free((p)), (p) = NULL
-extern MYDNS_RR		*mydns_rr_build(uint32_t, uint32_t, dns_qtype_map *, dns_class_t, uint32_t, uint32_t,
+extern MYDNS_RR		*mydns_rr_build(uint32_t, uint32_t, dns_qtype_mapp, dns_class_t, uint32_t, uint32_t,
 					char *active,
 #if USE_PGSQL
 					timestamp *stamp,

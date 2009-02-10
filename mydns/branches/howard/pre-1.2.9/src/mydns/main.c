@@ -26,10 +26,13 @@
 #include "conf.h"
 #include "debug.h"
 #include "listen.h"
+#include "reply.h"
+#include "rr.h"
 #include "server.h"
 #include "status.h"
 #include "support.h"
 #include "taskobj.h"
+#include "update.h"
 
 #include "ixfr.h"
 #include "listeners.h"
@@ -38,6 +41,32 @@
 #include "task.h"
 #include "tcp.h"
 #include "udp.h"
+
+#define DEFINE_RR_MAP 1
+
+#define DEFINE_RR_TYPE(__TYPENAME__, __PERSISTENT__, __PARSER__, __FREE__, __DUPLICATOR__, \
+		       __SIZOR__, __REPLY_ADD__, __UPDATE_GET_RR_DATA__, __PROCESS_AXFR__, \
+		       __CHECK_RR__, \
+		       __EXPORT_BIND_RR__, __EXPORT_TINYDNS_RR__, \
+		       __UPDATE_ENABLED__,				\
+		       __MATCH_AUX__, __WHERECLAUSE__)			\
+  static dns_qtype_map __RR_TYPE_##__TYPENAME__ = { "" #__TYPENAME__ "", \
+						    DNS_QTYPE_##__TYPENAME__, \
+						    __PERSISTENT__, \
+						    __PARSER__, \
+						    __FREE__, \
+						    __DUPLICATOR__, \
+						    __SIZOR__, \
+						    __REPLY_ADD__, \
+						    __UPDATE_GET_RR_DATA__, \
+						    NULL, \
+						    NULL, \
+						    NULL, \
+						    NULL, \
+						    __UPDATE_ENABLED__, \
+						    __MATCH_AUX__, \
+						    __WHERECLAUSE__ }
+#include "rrtype.h"
 
 #if DEBUG_ENABLED
 int		debug_mydns = 0;
@@ -1100,6 +1129,8 @@ main(int argc, char **argv)
 #if DEBUG_ENABLED
   debug_start(debugging_switches);
 #endif
+
+  SET_TYPEMAPS();
 
   memset(&mask, 0, sizeof(mask));
 

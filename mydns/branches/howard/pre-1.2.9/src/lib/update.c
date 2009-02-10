@@ -26,6 +26,7 @@
 #include "bits.h"
 #include "error.h"
 #include "taskobj.h"
+#include "rrtype.h"
 #include "update.h"
 
 #if DEBUG_ENABLED

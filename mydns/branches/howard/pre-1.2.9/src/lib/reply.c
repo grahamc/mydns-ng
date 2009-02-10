@@ -28,6 +28,7 @@
 #include "recursive.h"
 #include "resolve.h"
 #include "reply.h"
+#include "rrtype.h"
 #include "taskobj.h"
 
 #if DEBUG_ENABLED

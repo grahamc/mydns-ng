@@ -24,6 +24,7 @@
 
 #include "debug.h"
 #include "rr.h"
+#include "rrtype.h"
 #include "taskobj.h"
 
 #if DEBUG_ENABLED

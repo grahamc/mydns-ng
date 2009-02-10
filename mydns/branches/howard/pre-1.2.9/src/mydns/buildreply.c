@@ -28,6 +28,7 @@
 #include "encode.h"
 #include "reply.h"
 #include "rr.h"
+#include "rrtype.h"
 #include "taskobj.h"
 
 #include "sort.h"

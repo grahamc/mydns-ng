@@ -23,6 +23,7 @@
 #include "util.h"
 #include "memoryman.h"
 #include "export.h"
+#include "rrtype.h"
 
 #if DEBUG_ENABLED
 int		debug_export = 0;
