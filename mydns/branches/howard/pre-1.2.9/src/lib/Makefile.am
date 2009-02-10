@@ -12,10 +12,10 @@ libmydns_a_SOURCES	=	alias.c \
 				listen.c \
 				message.c \
 				queue.c \
-				recursive.c reply.c resolve.c rr.c rrtype.c \
+				recursive.c resolve.c rr.c rrtype.c \
 				server.c soa.c sql.c status.c str.c support.c \
 				taskobj.c \
-				unencode.c update.c
+				unencode.c
 
 ctags:
 	ctags @UTILDIR@/*.[ch] *.[ch]

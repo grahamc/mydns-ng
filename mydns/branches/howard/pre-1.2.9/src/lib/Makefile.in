@@ -60,10 +60,10 @@ am_libmydns_a_OBJECTS = alias.$(OBJEXT) cache.$(OBJEXT) conf.$(OBJEXT) \
 	data.$(OBJEXT) db.$(OBJEXT) debug.$(OBJEXT) encode.$(OBJEXT) \
 	error.$(OBJEXT) ip.$(OBJEXT) listen.$(OBJEXT) \
 	message.$(OBJEXT) queue.$(OBJEXT) recursive.$(OBJEXT) \
-	reply.$(OBJEXT) resolve.$(OBJEXT) rr.$(OBJEXT) \
-	rrtype.$(OBJEXT) server.$(OBJEXT) soa.$(OBJEXT) sql.$(OBJEXT) \
-	status.$(OBJEXT) str.$(OBJEXT) support.$(OBJEXT) \
-	taskobj.$(OBJEXT) unencode.$(OBJEXT) update.$(OBJEXT)
+	resolve.$(OBJEXT) rr.$(OBJEXT) rrtype.$(OBJEXT) \
+	server.$(OBJEXT) soa.$(OBJEXT) sql.$(OBJEXT) status.$(OBJEXT) \
+	str.$(OBJEXT) support.$(OBJEXT) taskobj.$(OBJEXT) \
+	unencode.$(OBJEXT)
 libmydns_a_OBJECTS = $(am_libmydns_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -242,10 +242,10 @@ libmydns_a_SOURCES = alias.c \
 				listen.c \
 				message.c \
 				queue.c \
-				recursive.c reply.c resolve.c rr.c rrtype.c \
+				recursive.c resolve.c rr.c rrtype.c \
 				server.c soa.c sql.c status.c str.c support.c \
 				taskobj.c \
-				unencode.c update.c
+				unencode.c
 
 all: all-am
 
@@ -307,7 +307,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/message.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/queue.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recursive.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reply.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/resolve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rrtype.Po@am__quote@
@@ -319,7 +318,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/support.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/taskobj.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unencode.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/update.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

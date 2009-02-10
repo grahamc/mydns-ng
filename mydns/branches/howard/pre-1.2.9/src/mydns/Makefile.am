@@ -20,11 +20,11 @@ mydns_SOURCES		=	axfr.c \
 				listeners.c \
 				main.c \
 				notify.c \
-				servercomms.c \
-				sort.c \
+				reply.c \
+				servercomms.c sort.c \
 				task.c \
 				tcp.c \
-				udp.c
+				udp.c update.c
 
 CLEANFILES		=	malloc_trace gmon.out bb.out
 
