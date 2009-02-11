@@ -26,9 +26,9 @@
 #include <stdlib.h>
 
 #define __ALLOCATE__(SIZE, THING, COUNT, ARENA)	\
-  (THING)_mydns_allocate(SIZE, COUNT, ARENA, "##THING##", __FILE__, __LINE__)
+  (THING)_mydns_allocate(SIZE, COUNT, ARENA, "" #THING "", __FILE__, __LINE__)
 #define __REALLOCATE__(OBJECT, SIZE, THING, COUNT, ARENA) \
-  (THING)_mydns_reallocate((void*)OBJECT, SIZE, COUNT, ARENA, "##THING##", __FILE__, __LINE__)
+  (THING)_mydns_reallocate((void*)OBJECT, SIZE, COUNT, ARENA, "" #THING "", __FILE__, __LINE__)
 #define __RELEASE__(OBJECT, ARENA) \
   _mydns_release((void*)OBJECT, ARENA, __FILE__, __LINE__), (OBJECT) = NULL
 

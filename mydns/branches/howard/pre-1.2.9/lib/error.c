@@ -34,7 +34,6 @@ int	err_verbose = 0;
 
 #if DEBUG_ENABLED
 /* Should ERR_DEBUG cause output? */
-int	err_debug = 0;
 int	debug_enabled = 0;
 int	debug_all = 0;
 #endif
@@ -82,7 +81,6 @@ error_init(const char *argv0, int facility) {
 /**************************************************************************************************
 	_ERROR_OUT
 	This function handles all program output after command line handling.
-	Always returns -1.
 **************************************************************************************************/
 static void
 __error_out(int priority, const char *out, char **err_last) {
@@ -124,6 +122,11 @@ _error_out(
   char *out = NULL;
   int len;
 
+  static int suppress_recursive = 0;
+
+  if (suppress_recursive) { return; }
+
+  suppress_recursive = 1;
   /* Construct 'out' - the output */
 #if SHOW_PID_IN_ERRORS
   if (err_file && errappend)
@@ -148,6 +151,8 @@ _error_out(
   /* Abort if the error should be fatal */
   if (isfatal)
     exit(EXIT_FAILURE);
+
+  suppress_recursive = 0;
 }
 /*--- _error_out() ------------------------------------------------------------------------------*/
 
@@ -161,7 +166,7 @@ void __Debug(const char *fmt, ...) {
   char *msg = NULL;
   va_list ap;
 
-  if (!err_debug) return;
+  if (!debug_enabled) return;
 
   /* Construct output string */
   va_start(ap, fmt);

@@ -244,6 +244,7 @@ cmdline(int argc, char **argv) {
 
   optstr = getoptstr(longopts);
   opterr = 0;
+  optind = 0;
 
   while ((optc = getopt_long(argc, argv, optstr, longopts, &optindex)) != -1) {
     switch (optc) {
@@ -282,9 +283,9 @@ cmdline(int argc, char **argv) {
 
     case 'd':						/* -d, --debug */
 #if DEBUG_ENABLED
-      err_verbose = err_debug = 1;
-      conf_set(&Conf, "debug-enabled", "1", 0);
-      conf_set(&Conf, "debug-all", "1", 0);
+      err_verbose = 9;
+      debug_set("enabled", "9");
+      debug_set("all", "9");
 #endif
       break;
 

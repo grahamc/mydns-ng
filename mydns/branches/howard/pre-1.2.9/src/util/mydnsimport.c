@@ -209,7 +209,9 @@ cmdline(int argc, char **argv) {
 
     case 'd':								/* -d, --debug */
 #if DEBUG_ENABLED
-      err_verbose = err_debug = 1;
+      err_verbose = 9;
+      debug_set("enabled", "9");
+      debug_set("all", "9");
 #endif
       break;
     case 'D':								/* -D, --database=DB */

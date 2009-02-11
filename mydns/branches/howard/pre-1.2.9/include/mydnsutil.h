@@ -419,9 +419,6 @@ extern CONF	*Conf;				/* Config file data */
 */
 extern char		*progname;			/* The name of this program */
 extern int		err_verbose;			/* Should ERR_VERBOSE output anything? */
-#if DEBUG_ENABLED
-extern int		err_debug;			/* Should ERR_DEBUG output anything? */
-#endif
 extern FILE		*err_file;			/* Output to this file */
 
 extern void		error_reinit(void);
