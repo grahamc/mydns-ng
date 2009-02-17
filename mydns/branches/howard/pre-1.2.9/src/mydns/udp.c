@@ -45,6 +45,9 @@ read_udp_query(int fd, int family) {
   TASK			*t = NULL;
   taskexec_t		rv = TASK_FAILED;
 
+#if DEBUG_ENABLED
+  Debug(udp, DEBUGLEVEL_FUNCS, _("read_udp_query called"));
+#endif
   memset(&addr, 0, sizeof(addr));
   memset(&in, 0, sizeof(in));
     
@@ -68,25 +71,42 @@ read_udp_query(int fd, int family) {
 #endif
 #endif
 	) {
+#if DEBUG_ENABLED
+      Debug(udp, DEBUGLEVEL_FUNCS, _("read_udp_query returns CONTINUE would block"));
+#endif
       return (TASK_CONTINUE);
     }
-    return Warn("%s", _("recvfrom (UDP)"));
+    Warn("%s", _("recvfrom (UDP)"));
+#if DEBUG_ENABLED
+    Debug(udp, DEBUGLEVEL_FUNCS, _("read_udp_query returns FAILED"));
+#endif
+    return TASK_FAILED;
   }
   if (len == 0) {
+#if DEBUG_ENABLED
+    Debug(udp, DEBUGLEVEL_FUNCS, _("read_udp_query returns FAILED zero length read"));
+#endif
     return (TASK_FAILED);
   }
-  if (!(t = IOtask_init(HIGH_PRIORITY_TASK, NEED_ANSWER, fd, SOCK_DGRAM, family, &addr)))
+  if (!(t = IOtask_init(HIGH_PRIORITY_TASK, NEED_ANSWER, fd, SOCK_DGRAM, family, &addr))) {
+#if DEBUG_ENABLED
+    Debug(udp, DEBUGLEVEL_FUNCS, _("read_udp_query returns FAILED failed to make new task"));
+#endif
     return (TASK_FAILED);
+  }
 
 #if DEBUG_ENABLED
-  Debug(udp, 1, "%s: %d %s", clientaddr(t), len, _("UDP octets in"));
+  Debug(udp, DEBUGLEVEL_PROGRESS, "%s: %d %s", clientaddr(t), len, _("UDP octets in"));
 #endif
   rv = task_new(t, (unsigned char*)in, len);
   if (rv < TASK_FAILED) {
     dequeue(t);
     rv = TASK_FAILED;
   }
-  return rv;
+ #if DEBUG_ENABLED
+  Debug(udp, DEBUGLEVEL_FUNCS, _("read_udp_query returns %s"), task_exec_name(rv));
+#endif
+ return rv;
 }
 /*--- read_udp_query() --------------------------------------------------------------------------*/
 
@@ -100,6 +120,9 @@ write_udp_reply(TASK *t) {
   struct sockaddr	*addr = NULL;
   int			addrlen = 0;
 
+#if DEBUG_ENABLED
+  Debug(udp, DEBUGLEVEL_FUNCS, _("write_udp_reply called"));
+#endif
   if (t->family == AF_INET) {
     addr = (struct sockaddr*)&t->addr4;
     addrlen = sizeof(struct sockaddr_in);
@@ -123,10 +146,16 @@ write_udp_reply(TASK *t) {
 #endif
 #endif
 	) {
+#if DEBUG_ENABLED
+      Debug(udp, DEBUGLEVEL_FUNCS, _("write_udp_reply returns CONTINUE would block"));
+#endif
       return (TASK_CONTINUE); /* Try again */
     }
     if (errno != EPERM && errno != EINVAL)
       Warn("%s: %s", desctask(t), _("sendto (UDP)"));
+#if DEBUG_ENABLED
+    Debug(udp, DEBUGLEVEL_FUNCS, _("write_udp_reply returns FAILED"));
+#endif
     return (TASK_FAILED);
   }
 
@@ -139,6 +168,9 @@ write_udp_reply(TASK *t) {
      * so try again and see if the connection returns - this is going to
      * make the process run continuously ....
      */
+#if DEBUG_ENABLED
+    Debug(udp, DEBUGLEVEL_FUNCS, _("write_udp_reply returns EXECUTED - zero length packet written"));
+#endif
     return (TASK_EXECUTED);
     /* Err("%s: Send to (UDP) returned 0", desctask(t)); */
   }
@@ -151,7 +183,7 @@ write_udp_reply(TASK *t) {
   }
 
 #if DEBUG_ENABLED
-  Debug(udp, 1, _("%s: WRITE %u UDP octets (id %u)"),
+  Debug(udp, DEBUGLEVEL_PROGRESS, _("%s: WRITE %u UDP octets (id %u)"),
 	 desctask(t), (unsigned int)t->replylen, t->id);
 #endif
   return (TASK_COMPLETED);
@@ -160,8 +192,14 @@ write_udp_reply(TASK *t) {
 static taskexec_t
 udp_tick(TASK *t, void *data) {
 
+#if DEBUG_ENABLED
+  Debug(udp, DEBUGLEVEL_FUNCS, _("%s: udp_tick called"), desctask(t));
+#endif
   t->timeout = current_time + task_timeout;
 
+#if DEBUG_ENABLED
+  Debug(udp, DEBUGLEVEL_FUNCS, _("%s: udp_tick returns CONTINUE"), desctask(t));
+#endif
   return TASK_CONTINUE;
 }
 
@@ -169,10 +207,16 @@ static taskexec_t
 udp_read_message(TASK *t, void *data) {
   taskexec_t	res;
 
+#if DEBUG_ENABLED
+  Debug(udp, DEBUGLEVEL_FUNCS, _("%s: udp_read_message called"), desctask(t));
+#endif
   while((res = read_udp_query(t->fd, t->family)) != TASK_CONTINUE) continue;
 
   t->timeout = current_time + task_timeout;
 
+#if DEBUG_ENABLED
+  Debug(udp, DEBUGLEVEL_FUNCS, _("%s: udp_read_message returns CONTINUE"), desctask(t));
+#endif
   return TASK_CONTINUE;
 }
 
@@ -180,6 +224,9 @@ void
 udp_start() {
   int		n = 0;
 
+#if DEBUG_ENABLED
+  Debug(udp, DEBUGLEVEL_FUNCS, _("udp_start called"));
+#endif
   for (n = 0; n < num_udp4_fd; n++) {
     TASK *udptask = IOtask_init(HIGH_PRIORITY_TASK, NEED_TASK_READ,
 				udp4_fd[n], SOCK_DGRAM, AF_INET, NULL);
@@ -191,6 +238,9 @@ udp_start() {
 				udp6_fd[n], SOCK_DGRAM, AF_INET6, NULL);
     task_add_extension(udptask, NULL, NULL, udp_read_message, udp_tick);
   }
+#endif
+#if DEBUG_ENABLED
+  Debug(udp, DEBUGLEVEL_FUNCS, _("udp_start returns"));
 #endif
 }
 

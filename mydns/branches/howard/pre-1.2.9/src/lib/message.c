@@ -47,6 +47,10 @@ dns_make_message(TASK * t, uint16_t id, uint8_t opcode, dns_qtype_t qtype,
   register char *c = NULL;
   int		messagesize = 0;
 
+#if DEBUG_ENABLED
+  Debug(message, DEBUGLEVEL_FUNCS, _("%s: dns_make_message: called"), desctask(t));
+#endif
+
   memset(&header, 0, sizeof(header));
 
   if (t->protocol == SOCK_DGRAM) message = ALLOCATE(messagesize = DNS_MAXPACKETLEN_UDP, char*);
@@ -59,6 +63,9 @@ dns_make_message(TASK * t, uint16_t id, uint8_t opcode, dns_qtype_t qtype,
   if (!name) {
     if (length) *length = (int)ERR_MALFORMED_REQUEST;
     RELEASE(message);
+#if DEBUG_ENABLED
+    Debug(message, DEBUGLEVEL_FUNCS, _("%s: dns_make_message: returns the request was MALFORMED"), desctask(t));
+#endif
     return (NULL);
   }
 
@@ -76,6 +83,9 @@ dns_make_message(TASK * t, uint16_t id, uint8_t opcode, dns_qtype_t qtype,
     if ((c - name) > DNS_MAXNAMELEN) {
       if (length) *length = (int)ERR_Q_NAME_TOO_LONG;
       RELEASE(message);
+#if DEBUG_ENABLED
+      Debug(message, DEBUGLEVEL_FUNCS, _("%s: dns_make_message: returns the name is too long"), desctask(t));
+#endif
       return NULL;						/* Name too long */
     }
     if (*c != '.')						/* Append current character */
@@ -85,6 +95,9 @@ dns_make_message(TASK * t, uint16_t id, uint8_t opcode, dns_qtype_t qtype,
       if ((*mark = dest - mark - 1) > DNS_MAXLABELLEN) {
 	if (length) *length = (int)ERR_Q_LABEL_TOO_LONG;
 	RELEASE(message);
+#if DEBUG_ENABLED
+	Debug(message, DEBUGLEVEL_FUNCS, _("%s: dns_make_message: returns the label is too long"), desctask(t));
+#endif
 	return NULL;	/* Label too long */
       }
       mark = dest++;
@@ -97,6 +110,9 @@ dns_make_message(TASK * t, uint16_t id, uint8_t opcode, dns_qtype_t qtype,
     if ((dest - message) >= messagesize) {
       if (length) *length = (int)ERR_QUESTION_TRUNCATED;
       RELEASE(message);
+#if DEBUG_ENABLED
+      Debug(message, DEBUGLEVEL_FUNCS, _("%s: dns_make_message: returns the QUESTION was TRUNCATED"), desctask(t));
+#endif
       return NULL;
     }
   }
@@ -105,6 +121,9 @@ dns_make_message(TASK * t, uint16_t id, uint8_t opcode, dns_qtype_t qtype,
 
   if (length) *length = dest - message;
 
+#if DEBUG_ENABLED
+  Debug(message, DEBUGLEVEL_FUNCS, _("%s: dns_make_message: returns"), desctask(t));
+#endif
   return (message);
 }
 /*--- dns_make_question() -----------------------------------------------------------------------*/

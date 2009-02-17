@@ -45,6 +45,9 @@ char *name_unencode(char *start, size_t slen, char **current, task_error_t *errc
   register char len;
   register char *rp = NULL;
 
+#if DEBUG_ENABLED
+  Debug(unencode, DEBUGLEVEL_FUNCS, _("name_unencode called"));
+#endif
 #define CHECK_DEST_SPACE(n)  \
   if (d >= dest+(destlen-(n))) {		 	\
     int doffset = d - dest;			 	\
@@ -64,6 +67,9 @@ char *name_unencode(char *start, size_t slen, char **current, task_error_t *errc
     *d++ = '.';
     *d = '\0';
     *current = s+1;
+#if DEBUG_ENABLED
+    Debug(unencode, DEBUGLEVEL_FUNCS, _("name_unencode returns %s"), dest);
+#endif
     return dest;
   }
 
@@ -83,6 +89,9 @@ char *name_unencode(char *start, size_t slen, char **current, task_error_t *errc
 	  || ((start + new_offset) > start + slen)) {		/* Pointing out-of-bounds */
 	*errcode = ERR_Q_INVALID_COMPRESSION;
 	RELEASE(dest);
+#if DEBUG_ENABLED
+	Debug(unencode, DEBUGLEVEL_FUNCS, _("name_unencode returns NULL"));
+#endif
 	return (NULL);
       }
 
@@ -93,12 +102,18 @@ char *name_unencode(char *start, size_t slen, char **current, task_error_t *errc
     } else if (mask == 0x40 || mask == 0x80) {
       *errcode = ERR_Q_INVALID_COMPRESSION;
       RELEASE(dest);
+#if DEBUG_ENABLED
+      Debug(unencode, DEBUGLEVEL_FUNCS, _("name_unencode returns NULL"));
+#endif
       return (NULL);
     } else {
       s++;
       if (len + (s - *current) > DNS_MAXNAMELEN) {
 	*errcode = ERR_Q_NAME_TOO_LONG;
 	RELEASE(dest);
+#if DEBUG_ENABLED
+	Debug(unencode, DEBUGLEVEL_FUNCS, _("name_unencode returns NULL"));
+#endif
 	return (NULL);
       }
       for (n = 0; n < len; n++) {				/* Get label */
@@ -112,6 +127,9 @@ char *name_unencode(char *start, size_t slen, char **current, task_error_t *errc
   CHECK_DEST_SPACE(1);
   *d = '\0';
   *current = (rp ? rp : s+1);
+#if DEBUG_ENABLED
+  Debug(unencode, DEBUGLEVEL_FUNCS, _("name_unencode returns %s"), dest);
+#endif
   return dest; /* Could realloc to string length here but should be a small overhead so ignore */
 }
 /*--- name_unencode() ---------------------------------------------------------------------------*/

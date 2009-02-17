@@ -21,10 +21,6 @@
 
 #include "taskobj.h"
 
-#if DEBUG_ENABLED
-extern char *datasection_str[];			/* Strings describing data section types */
-#endif
-
 extern int		buildreply_init(TASK *);
 extern void		buildreply_abandon(TASK *);
 extern void		buildreply_cache(TASK *);

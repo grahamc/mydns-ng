@@ -50,16 +50,24 @@ int		debug_sort = 0;
 **************************************************************************************************/
 static int
 sortcmp(RR *rr1, RR *rr2) {
-  if (rr1->sort_level != rr2->sort_level)
-    return (rr1->sort_level - rr2->sort_level);
+  int res;
+#if DEBUG_ENABLED
+  Debug(sort, DEBUGLEVEL_FUNCS, _("sortcmp called"));
+#endif
+  if (rr1->sort_level != rr2->sort_level) {
+    res = (rr1->sort_level - rr2->sort_level);
+  } else if (rr1->sort1 != rr2->sort1) {
+    res = (rr1->sort1 - rr2->sort1);
+  } else if (rr1->sort2 != rr2->sort2) {
+    res = (rr1->sort2 - rr2->sort2);
+  } else {
+    res = (rr1->id - rr2->id);
+  }
 
-  if (rr1->sort1 != rr2->sort1)
-    return (rr1->sort1 - rr2->sort1);
-
-  if (rr1->sort2 != rr2->sort2)
-    return (rr1->sort2 - rr2->sort2);
-
-  return (rr1->id - rr2->id);
+#if DEBUG_ENABLED
+  Debug(sort, DEBUGLEVEL_FUNCS, _("sortcmp returns %d"), res);
+#endif
+  return res;
 }
 /*--- sortcmp() ---------------------------------------------------------------------------------*/
 
@@ -73,13 +81,24 @@ rrsort(RR *head, int (*compar)(RR *, RR *)) {
   RR	*low = NULL, *high = NULL, *current = NULL, *pivot = NULL, *temp = NULL;
   int	result = 0;
 
-  if (!head)
+#if DEBUG_ENABLED
+  Debug(sort, DEBUGLEVEL_FUNCS, _("rrsort called"));
+#endif
+  if (!head) {
+#if DEBUG_ENABLED
+    Debug(sort, DEBUGLEVEL_FUNCS, _("rrsort returns NULL as head is NULL"));
+#endif
     return (NULL);
+  }
   current = head;
   do {
     current = current->next;
-    if (!current)
+    if (!current) {
+#if DEBUG_ENABLED
+    Debug(sort, DEBUGLEVEL_FUNCS, _("rrsort returns head"));
+#endif
       return (head);
+    }
   } while (!(result = compar(head,current)));
 
   if (result > 0)
@@ -109,6 +128,9 @@ rrsort(RR *head, int (*compar)(RR *, RR *)) {
     temp = current;
   }
   temp->next = high;
+#if DEBUG_ENABLED
+    Debug(sort, DEBUGLEVEL_FUNCS, _("rrsort returns low"));
+#endif
   return low;
 }
 /*--- rrsort() ----------------------------------------------------------------------------------*/
@@ -122,6 +144,9 @@ static inline void
 sort_rrlist(RRLIST *rrlist, int (*compar)(RR *, RR *)) {
   register RR *node = NULL;
 
+#if DEBUG_ENABLED
+    Debug(sort, DEBUGLEVEL_FUNCS, _("sort_rrlist called"));
+#endif
   /* Do the sort */
   rrlist->head = rrsort(rrlist->head, compar);
 
@@ -129,6 +154,9 @@ sort_rrlist(RRLIST *rrlist, int (*compar)(RR *, RR *)) {
   for (node = rrlist->head; node; node = node->next)
     if (!node->next)
       rrlist->tail = node;
+#if DEBUG_ENABLED
+    Debug(sort, DEBUGLEVEL_FUNCS, _("sort_rrlist returns"));
+#endif
 }
 /*--- sort_rrlist() -----------------------------------------------------------------------------*/
 
@@ -143,7 +171,7 @@ load_balance(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
   register int order = 1;					/* Current order */
 
 #if DEBUG_ENABLED
-  Debug(sort, 1, _("%s: Load balancing A records in %s section"), desctask(t), datasection_str[section]);
+  Debug(sort, DEBUGLEVEL_PROGRESS, _("%s: Load balancing A records in %s section"), desctask(t), mydns_section_str(section));
 #endif
 
   /* Hosts with 'aux' values > 50000 are always listed last */
@@ -178,6 +206,9 @@ load_balance(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
 	}
       }
   }
+#if DEBUG_ENABLED
+    Debug(sort, DEBUGLEVEL_FUNCS, _("load_balance returns"));
+#endif
 }
 /*--- load_balance() ----------------------------------------------------------------------------*/
 
@@ -194,6 +225,9 @@ _sort_a_recs(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
   register int nonzero_aux = 0;
   register int count = 0;					/* Number of nodes at this level */
 
+#if DEBUG_ENABLED
+    Debug(sort, DEBUGLEVEL_FUNCS, _("_sort_a_recs called"));
+#endif
   /* If any addresses have nonzero 'aux' values, do load balancing */
   for (count = 0, node = rrlist->head; node; node = node->next)
     if (RR_IS_ADDR(node) && node->sort_level == sort_level) {
@@ -202,8 +236,12 @@ _sort_a_recs(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
 	nonzero_aux = 1;
     }
 
-  if (count < 2)						/* Only one node here, don't bother */
+  if (count < 2) {						/* Only one node here, don't bother */
+#if DEBUG_ENABLED
+    Debug(sort, DEBUGLEVEL_FUNCS, _("_sort_a_recs returns not enough nodes to sort"));
+#endif
     return;
+  }
   t->reply_cache_ok = 0;					/* Don't cache load-balanced replies */
 
   if (nonzero_aux) {
@@ -211,8 +249,8 @@ _sort_a_recs(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
   } else {
     /* Round robin - for address records, set 'sort' to a random number */
 #if DEBUG_ENABLED
-    Debug(sort, 1, _("%s: Sorting A records in %s section (round robin)"),
-	  desctask(t), datasection_str[section]);
+    Debug(sort, DEBUGLEVEL_PROGRESS, _("%s: Sorting A records in %s section (round robin)"),
+	  desctask(t), mydns_section_str(section));
 #endif
 
     for (node = rrlist->head; node; node = node->next)
@@ -220,6 +258,9 @@ _sort_a_recs(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
 	node->sort1 = RAND(4294967294U);
     t->reply_cache_ok = 0;					/* Don't cache load-balanced replies */
   }
+#if DEBUG_ENABLED
+    Debug(sort, DEBUGLEVEL_FUNCS, _("_sort_a_recs returns"));
+#endif
 }
 /*--- _sort_a_recs() ----------------------------------------------------------------------------*/
 
@@ -234,11 +275,17 @@ void
 sort_a_recs(TASK *t, RRLIST *rrlist, datasection_t section) {
   register RR *node = NULL;
 
+#if DEBUG_ENABLED
+    Debug(sort, DEBUGLEVEL_FUNCS, _("sort_a_recs called"));
+#endif
   /* Sort each sort level */
   for (node = rrlist->head; node; node = node->next)
     if (RR_IS_ADDR(node) && !node->sort2)
       _sort_a_recs(t, rrlist, section, node->sort_level);
 
+#if DEBUG_ENABLED
+    Debug(sort, DEBUGLEVEL_FUNCS, _("sort_a_recs returns"));
+#endif
   return (sort_rrlist(rrlist, sortcmp));
 }
 /*--- sort_a_recs() -----------------------------------------------------------------------------*/
@@ -254,7 +301,7 @@ sort_mx_recs(TASK *t, RRLIST *rrlist, datasection_t section) {
   register RR *node = NULL;
 
 #if DEBUG_ENABLED
-  Debug(sort, 1, _("%s: Sorting MX records in %s section"), desctask(t), datasection_str[section]);
+  Debug(sort, DEBUGLEVEL_PROGRESS, _("%s: Sorting MX records in %s section"), desctask(t), mydns_section_str(section));
 #endif
 
   /* Set 'sort' to a random number */
@@ -263,6 +310,9 @@ sort_mx_recs(TASK *t, RRLIST *rrlist, datasection_t section) {
       node->sort1 = ((MYDNS_RR *)node->rr)->aux;
       node->sort2 = RAND(4294967294U);
     }
+#if DEBUG_ENABLED
+    Debug(sort, DEBUGLEVEL_FUNCS, _("sort_mx_recs returns"));
+#endif
   return (sort_rrlist(rrlist, sortcmp));
 }
 /*--- sort_mx_recs() ----------------------------------------------------------------------------*/
@@ -283,8 +333,8 @@ sort_srv_priority(TASK *t, RRLIST *rrlist, datasection_t section, uint32_t prior
   register uint32_t rweight = 0;				/* Random weight */
 
 #if DEBUG_ENABLED
-  Debug(sort, 1, _("%s: Sorting SRV records in %s section with priority %u"),
-	desctask(t), datasection_str[section], priority);
+  Debug(sort, DEBUGLEVEL_PROGRESS, _("%s: Sorting SRV records in %s section with priority %u"),
+	desctask(t), mydns_section_str(section), priority);
 #endif
 
   /* Compute the sum of the weights for all nodes with this priority where 'sort2' == 0 */
@@ -293,8 +343,12 @@ sort_srv_priority(TASK *t, RRLIST *rrlist, datasection_t section, uint32_t prior
       found++;
       weights += MYDNS_RR_SRV_WEIGHT((MYDNS_RR *)node->rr);
     }
-  if (!found)
+  if (!found) {
+#if DEBUG_ENABLED
+    Debug(sort, DEBUGLEVEL_FUNCS, _("sort_srv_priority returns 0 no nodes found"));
+#endif
     return (0);
+  }
 
   /* Set 'sort2' to 'order' for the first node found at this priority where the running sum
      value is greater than or equal to 'rweight' */
@@ -305,9 +359,15 @@ sort_srv_priority(TASK *t, RRLIST *rrlist, datasection_t section, uint32_t prior
       weights += MYDNS_RR_SRV_WEIGHT((MYDNS_RR *)node->rr);
       if (weights >= rweight) {
 	node->sort2 = order;
+#if DEBUG_ENABLED
+	Debug(sort, DEBUGLEVEL_FUNCS, _("sort_srv_priority returns 1 sorted early"));
+#endif
 	return (1);
       }
     }
+#if DEBUG_ENABLED
+  Debug(sort, DEBUGLEVEL_FUNCS, _("sort_srv_priority returns 1 sorted late"));
+#endif
   return (1);
 }
 /*--- sort_srv_priority() -----------------------------------------------------------------------*/
@@ -326,7 +386,7 @@ _sort_srv_recs(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
   register int count = 0;						/* Number of SRV nodes on this level */
 
 #if DEBUG_ENABLED
-  Debug(sort, 1, _("%s: Sorting SRV records in %s section"), desctask(t), datasection_str[section]);
+  Debug(sort, DEBUGLEVEL_PROGRESS, _("%s: Sorting SRV records in %s section"), desctask(t), mydns_section_str(section));
 #endif
 
   /* Assign 'sort1' to the priority (aux) and 'sort2' to 0 if there's a zero weight, else random */
@@ -340,8 +400,12 @@ _sort_srv_recs(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
 	node->sort2 = RAND(4294967294U);
     }
 
-  if (count < 2)						/* Only one node here, don't bother */
+  if (count < 2) {						/* Only one node here, don't bother */
+#if DEBUG_ENABLED
+    Debug(sort, DEBUGLEVEL_FUNCS, _("sort_srv_priority returns insufficient nodes found"));
+#endif
     return;
+  }
   t->reply_cache_ok = 0;					/* Don't cache these replies */
 
   /* Sort a first time, so that the list is ordered by priority/weight */
@@ -361,6 +425,9 @@ _sort_srv_recs(TASK *t, RRLIST *rrlist, datasection_t section, int sort_level) {
       while (sort_srv_priority(t, rrlist, section, priority, sort_level, order++))
 	/* DONOTHING */;
     }
+#if DEBUG_ENABLED
+    Debug(sort, DEBUGLEVEL_FUNCS, _("sort_srv_priority returns"));
+#endif
 }
 /*--- _sort_srv_recs() --------------------------------------------------------------------------*/
 
@@ -372,6 +439,9 @@ void
 sort_srv_recs(TASK *t, RRLIST *rrlist, datasection_t section) {
   register RR	*node = NULL;						/* Current node */
 
+#if DEBUG_ENABLED
+  Debug(sort, DEBUGLEVEL_FUNCS, _("sort_srv_recs called"));
+#endif
   /* Sort each sort level */
   for (node = rrlist->head; node; ) {
     /* _sort_srv_recs() will sort the list, so we need to reset the list each time */
@@ -381,6 +451,9 @@ sort_srv_recs(TASK *t, RRLIST *rrlist, datasection_t section) {
     } else
       node = node->next;
   }
+#if DEBUG_ENABLED
+  Debug(sort, DEBUGLEVEL_FUNCS, _("sort_srv_recs returns"));
+#endif
 }
 /*--- sort_srv_recs() ---------------------------------------------------------------------------*/
 

@@ -158,6 +158,10 @@ dump_config(void) {
   char		pair[512], buf[80];
   CONF		*c;
 
+#if DEBUG_ENABLED
+  Debug(conf, DEBUGLEVEL_FUNCS, _("dump_config called"));
+#endif
+
   /*
   **	Pretty header
   */
@@ -257,6 +261,30 @@ dump_config(void) {
     }
   }
   printf("\n");
+#if DEBUG_ENABLED
+  /* Relies on there not being a module name with a longer name than the longest option */
+  printf("# =================================== DEBUGGING CONFIG ======\n");
+  snprintf(pair, sizeof(pair), "debug-enabled = %s", conf_get(&Conf, "debug-enabled", &defaulted));
+  printf("%-*.*s\t# Switch debug on/off\n\n", w, w, pair);
+  {
+    const debugging_switch *ds = debug_state();
+
+    for (n = 0; ; n++) {
+      const char *module_name = ds[n].module_name;
+      int *debug_level = ds[n].debug_level;
+      int _debug_value = debug_all;
+
+      if (!module_name) break;
+      if (!debug_level) continue;
+      if (*debug_level > debug_all) _debug_value = *debug_level;
+      snprintf(pair, sizeof(pair), "debug-%s = %d", module_name, _debug_value);
+      printf("%-*.*s\t# Debug for %s module\n",
+	     w, w, pair,
+	     module_name);
+    }
+  }
+  Debug(conf, DEBUGLEVEL_FUNCS, _("dump_config: returns"));
+#endif
 }
 /*--- dump_config() -----------------------------------------------------------------------------*/
 
@@ -268,6 +296,10 @@ dump_config(void) {
 void
 conf_set_logging(void) {
   char *logtype;
+
+#if DEBUG_ENABLED
+  Debug(conf, DEBUGLEVEL_FUNCS, _("conf_set_logging: called"));
+#endif
 
   /* logtype is preset to LOG_DAEMON unless overridden */
   logtype = STRDUP(conf_get(&Conf, "log", NULL));
@@ -296,6 +328,9 @@ conf_set_logging(void) {
     closelog();
   }
   RELEASE(logtype);
+#if DEBUG_ENABLED
+  Debug(conf, DEBUGLEVEL_FUNCS, _("conf_set_logging: returns"));
+#endif
 }
 /*--- conf_set_logging() ------------------------------------------------------------------------*/
 
@@ -307,10 +342,16 @@ void
 check_config_file_perms(void) {
   FILE *fp;
 
+#if DEBUG_ENABLED
+  Debug(conf, DEBUGLEVEL_FUNCS, _("check_config_file_perms: called"));
+#endif
   if ((fp = fopen(opt_conf, "r"))) {
     Warnx("%s: %s", opt_conf, _("WARNING: config file is readable by unprivileged user"));
     fclose(fp);
   }
+#if DEBUG_ENABLED
+  Debug(conf, DEBUGLEVEL_FUNCS, _("check_config_file_perms: returns"));
+#endif
 }
 /*--- check_config_file_perms() -----------------------------------------------------------------*/
 
@@ -324,8 +365,16 @@ conf_set_recursive(void) {
   char	*c, *address = conf_get(&Conf, "recursive", NULL), addr[512];
   int	port = 53;
 
-  if (!address || !address[0])
+#if DEBUG_ENABLED
+  Debug(conf, DEBUGLEVEL_FUNCS, _("conf_set_recursive: called"));
+#endif
+
+  if (!address || !address[0]) {
+#if DEBUG_ENABLED
+    Debug(conf, DEBUGLEVEL_FUNCS, _("conf_set_recursive: returns because address of recursive supplier is not set"));
+#endif
     return;
+  }
   strncpy(addr, address, sizeof(addr)-1);
 
 #if HAVE_IPV6
@@ -338,13 +387,16 @@ conf_set_recursive(void) {
     }
     if (inet_pton(AF_INET6, addr, &recursive_sa6.sin6_addr) <= 0) {
       Warnx("%s: %s", address, _("invalid network address for recursive server"));
+#if DEBUG_ENABLED
+      Debug(conf, DEBUGLEVEL_FUNCS, _("conf_set_recursive: returns because recursor address is not a valid IPv6 address"));
+#endif
       return;
     }
     recursive_sa6.sin6_family = AF_INET6;
     recursive_sa6.sin6_port = htons(port);
     forward_recursive = 1;
 #if DEBUG_ENABLED
-    Debug(conf, 1,_("recursive forwarding service through %s:%u"),
+    Debug(conf, DEBUGLEVEL_PROGRESS,_("recursive forwarding service through %s:%u"),
 	  ipaddr(AF_INET6, &recursive_sa6.sin6_addr), port);
 #endif
     recursive_fwd_server = STRDUP(address);
@@ -358,12 +410,15 @@ conf_set_recursive(void) {
     }
     if (inet_pton(AF_INET, addr, &recursive_sa.sin_addr) <= 0) {
       Warnx("%s: %s", address, _("invalid network address for recursive server"));
+#if DEBUG_ENABLED
+      Debug(conf, DEBUGLEVEL_FUNCS, _("conf_set_recursive: returns because recursor address is not a valid IPv4 address"));
+#endif
       return;
     }
     recursive_sa.sin_family = AF_INET;
     recursive_sa.sin_port = htons(port);
 #if DEBUG_ENABLED
-    Debug(conf, 1,_("recursive forwarding service through %s:%u"),
+    Debug(conf, DEBUGLEVEL_PROGRESS,_("recursive forwarding service through %s:%u"),
 	  ipaddr(AF_INET, &recursive_sa.sin_addr), port);
 #endif
     forward_recursive = 1;
@@ -379,6 +434,9 @@ conf_set_recursive(void) {
   recursion_retries = atou(conf_get(&Conf, "recursive-retries", NULL));
   recursion_algorithm = conf_get(&Conf, "recursive-algorithm", NULL);
 
+#if DEBUG_ENABLED
+  Debug(conf, DEBUGLEVEL_FUNCS, _("conf_set_recursive: returns having set up the recurors address"));
+#endif
 }
 /*--- conf_set_recursive() ----------------------------------------------------------------------*/
 
@@ -406,6 +464,8 @@ load_config(void) {
 
 #if DEBUG_ENABLED
   debug_init(&Conf);
+
+  Debug(conf, DEBUGLEVEL_FUNCS, _("load_config: called"));
 #endif
 
   /* Support "mysql-user" etc. for backwards compatibility */
@@ -497,6 +557,9 @@ load_config(void) {
 
 #ifdef DN_COLUMN_NAMES
   dn_default_ns = conf_get(&Conf, "default-ns", NULL);
+#endif
+#if DEBUG_ENABLED
+  Debug(conf, DEBUGLEVEL_FUNCS, _("load_config: returns"));
 #endif
 }
 /*--- load_config() -----------------------------------------------------------------------------*/

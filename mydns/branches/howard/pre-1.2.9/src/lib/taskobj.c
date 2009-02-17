@@ -91,104 +91,145 @@ TASK *task_find_by_id(TASK *t, QUEUE *TaskQ, unsigned long id) {
   }
 #if DEBUG_ENABLED
   Debug(taskobj, 1, _("%s: task_find_by_id(%s, %ld) cannot find task on queue"),
-	 desctask(t), TaskQ->queuename, id);
+	desctask(t), TaskQ->queuename, id);
 #endif
   return NULL;
 }
 
-char * task_exec_name(taskexec_t rv) {
+const char *task_exec_name(taskexec_t rv) {
+  const char *buf;
+
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("task_exec_name called"));
+#endif
   switch(rv) {
 
-  case TASK_ABANDONED:			return _("Task Abandoned");
-  case TASK_FAILED:			return _("Task Failed");
+  case TASK_ABANDONED:			buf = _("Task Abandoned"); break;
+  case TASK_FAILED:			buf = _("Task Failed"); break;
 
-  case TASK_COMPLETED:			return _("Task Completed");
-  case TASK_FINISHED:			return _("Task Finished");
-  case TASK_TIMED_OUT:			return _("Task Timed Out");
+  case TASK_COMPLETED:			buf = _("Task Completed"); break;
+  case TASK_FINISHED:			buf = _("Task Finished"); break;
+  case TASK_TIMED_OUT:			buf = _("Task Timed Out"); break;
 
-  case TASK_EXECUTED:			return _("Task Executed");
-  case TASK_DID_NOT_EXECUTE:		return _("Task did not execute");
-  case TASK_CONTINUE:			return _("Task Continue");
+  case TASK_EXECUTED:			buf = _("Task Executed"); break;
+  case TASK_DID_NOT_EXECUTE:		buf = _("Task did not execute"); break;
+  case TASK_CONTINUE:			buf = _("Task Continue"); break;
 
   default:
     {
       static char *msg = NULL;
-      if (msg) RELEASE(msg);
+      RELEASE(msg);
       ASPRINTF(&msg, _("Task Exec Code %d"), rv);
-      return msg;
+      buf = (const char*)msg;
+      break;
     }
   }
-  /*NOTREACHED*/
+
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("task_exec_name returns %s"), buf);
+#endif
+  return buf;
 }
 
-char * task_type_name(int type) {
+const char * task_type_name(int type) {
+  const char *buf = NULL;
+
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("task_type_name called"));
+#endif
   switch (type) {
 
-  case NORMAL_TASK:			return _("Normal Task");
-  case IO_TASK:				return _("IO Driven Task");
-  case PERIODIC_TASK:			return _("Clock Driven Task");
+  case NORMAL_TASK:			buf = _("Normal Task"); break;
+  case IO_TASK:				buf = _("IO Driven Task"); break;
+  case PERIODIC_TASK:			buf = _("Clock Driven Task"); break;
 
   default:
     {
       static char *msg = NULL;
+      RELEASE(msg);
       ASPRINTF(&msg, _("Task Type %d"), type);
-      return msg;
+      buf = (const char*)msg;
     }
+    break;
   }
-  /*NOTREACHED*/
+
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("task_type_name returns %s"), buf);
+#endif
+  return buf;
 }
 
-char * task_priority_name(int priority) {
+const char * task_priority_name(int priority) {
+  const char *buf = NULL;
+
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("task_priority_name called"));
+#endif
   switch (priority) {
 
-  case HIGH_PRIORITY_TASK:		return _("High Priority");
-  case NORMAL_PRIORITY_TASK:		return _("Normal Priority");
-  case LOW_PRIORITY_TASK:		return _("Low Priority");
+  case HIGH_PRIORITY_TASK:		buf = _("High Priority"); break;
+  case NORMAL_PRIORITY_TASK:		buf = _("Normal Priority"); break;
+  case LOW_PRIORITY_TASK:		buf = _("Low Priority"); break;
 
   default:
     {
       static char *msg = NULL;
+      RELEASE(msg);
       ASPRINTF(&msg, _("Task Priority %d"), priority);
-      return msg;
+      buf = (const char*)msg;
     }
+ break;
   }
-  /*NOTREACHED*/
+
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("task_priority_name returns %s"), buf);
+#endif
+  return buf;
 }
 
-static const char * task_status_name(TASK *t) {
+const char * task_status_name(TASK *t) {
+  const char *buf = NULL;
 
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("task_status_name called"));
+#endif
   switch (t->status) {
 
-  case NEED_READ:			return _("NEED_READ");
-  case NEED_IXFR:			return _("NEED_IXFR");
-  case NEED_ANSWER:			return _("NEED_ANSWER");
-  case NEED_WRITE:			return _("NEED_WRITE");
+  case NEED_READ:			buf = _("NEED_READ"); break;
+  case NEED_IXFR:			buf = _("NEED_IXFR"); break;
+  case NEED_ANSWER:			buf = _("NEED_ANSWER"); break;
+  case NEED_WRITE:			buf = _("NEED_WRITE"); break;
 
-  case NEED_RECURSIVE_FWD_CONNECT:	return _("NEED_RECURSIVE_FWD_CONNECT");
-  case NEED_RECURSIVE_FWD_CONNECTING:	return _("NEED_RECURSIVE_FWD_CONNECTING");
-  case NEED_RECURSIVE_FWD_WRITE:	return _("NEED_RECURSIVE_FWD_WRITE");
-  case NEED_RECURSIVE_FWD_RETRY:	return _("NEED_RECURSIVE_FWD_RETRY");
-  case NEED_RECURSIVE_FWD_READ:		return _("NEED_RECURSIVE_FWD_READ");
+  case NEED_RECURSIVE_FWD_CONNECT:	buf = _("NEED_RECURSIVE_FWD_CONNECT"); break;
+  case NEED_RECURSIVE_FWD_CONNECTING:	buf = _("NEED_RECURSIVE_FWD_CONNECTING"); break;
+  case NEED_RECURSIVE_FWD_WRITE:	buf = _("NEED_RECURSIVE_FWD_WRITE"); break;
+  case NEED_RECURSIVE_FWD_RETRY:	buf = _("NEED_RECURSIVE_FWD_RETRY"); break;
+  case NEED_RECURSIVE_FWD_READ:		buf = _("NEED_RECURSIVE_FWD_READ"); break;
 
-  case NEED_NOTIFY_READ:		return _("NEED_NOTIFY_READ");
-  case NEED_NOTIFY_WRITE:		return _("NEED_NOTIFY_WRITE");
-  case NEED_NOTIFY_RETRY:		return _("NEED_NOTIFY_RETRY");
+  case NEED_NOTIFY_READ:		buf = _("NEED_NOTIFY_READ"); break;
+  case NEED_NOTIFY_WRITE:		buf = _("NEED_NOTIFY_WRITE"); break;
+  case NEED_NOTIFY_RETRY:		buf = _("NEED_NOTIFY_RETRY"); break;
 
-  case NEED_TASK_RUN:			return _("NEED_TASK_RUN");
-  case NEED_AXFR:			return _("NEED_AXFR");
-  case NEED_TASK_READ:			return _("NEED_TASK_READ");
+  case NEED_TASK_RUN:			buf = _("NEED_TASK_RUN"); break;
+  case NEED_AXFR:			buf = _("NEED_AXFR"); break;
+  case NEED_TASK_READ:			buf = _("NEED_TASK_READ"); break;
 
-  case NEED_COMMAND_READ:		return _("NEED_COMMAND_READ");
-  case NEED_COMMAND_WRITE:		return _("NEED_COMMAND_WRITE");
+  case NEED_COMMAND_READ:		buf = _("NEED_COMMAND_READ"); break;
+  case NEED_COMMAND_WRITE:		buf = _("NEED_COMMAND_WRITE"); break;
 
   default:
     {
       static char *msg = NULL;
       ASPRINTF(&msg, _("Task Status %X"), t->status);
-      return (const char*)msg;
+      buf = (const char*)msg;
     }
+    break;
   }
-  /*NOTREACHED*/
+
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("task_status_name returns %s"), buf);
+#endif
+  return buf;
 }
 
 /**************************************************************************************************
@@ -199,6 +240,9 @@ const char * clientaddr(TASK *t) {
   void *addr = NULL;
   const char *res = NULL;
 
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("clientaddr called"));
+#endif
   if (t->family == AF_INET) {
     addr = &t->addr4.sin_addr;
 #if HAVE_IPV6
@@ -210,6 +254,9 @@ const char * clientaddr(TASK *t) {
   }
 
   res = ipaddr(t->family, addr);
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("clientaddr returns %s"), res);
+#endif
   return res;
 }
 /*--- clientaddr() ------------------------------------------------------------------------------*/
@@ -222,6 +269,9 @@ const char * clientaddr(TASK *t) {
 char * desctask(TASK *t) {
   static char *desc = NULL;
 
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("desctask called"));
+#endif
   if (desc) RELEASE(desc);
 
   ASPRINTF(&desc, "%s: %s %s (%u) %s, %s %s",
@@ -230,6 +280,9 @@ char * desctask(TASK *t) {
 	   t->internal_id, task_status_name(t), task_priority_name(t->priority),
 	   task_type_name(t->type));
 
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("desctask returns"));
+#endif
   return (desc);
 }
 /*--- desctask() --------------------------------------------------------------------------------*/
@@ -245,7 +298,7 @@ _task_free(TASK *t, const char *file, int line) {
   if (!t) return;
 
 #if DEBUG_ENABLED
-  Debug(taskobj, 1, _("%s: Freeing task at %s:%d"), desctask(t), file, line);
+  Debug(taskobj, DEBUGLEVEL_PROGRESS, _("%s: Freeing task at %s:%d"), desctask(t), file, line);
 #endif
 
   if (t->protocol == SOCK_STREAM && t->fd >= 0) {
@@ -287,6 +340,9 @@ _task_free(TASK *t, const char *file, int line) {
 
   if (answer_then_quit && (status_udp_requests() + status_tcp_requests()) >= answer_then_quit)
     named_cleanup(SIGQUIT);
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("_task_free returns"));
+#endif
 }
 /*--- _task_free() ------------------------------------------------------------------------------*/
 
@@ -294,6 +350,9 @@ void
 task_add_extension(TASK *t, void *extension, FreeExtension freeextension, RunExtension runextension,
 		   TimeExtension timeextension)
 {
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("task_add_extension called"));
+#endif
   if (t->extension && t->freeextension) {
     t->freeextension(t, t->extension);
   }
@@ -303,10 +362,16 @@ task_add_extension(TASK *t, void *extension, FreeExtension freeextension, RunExt
   t->freeextension = freeextension;
   t->runextension = runextension;
   t->timeextension = timeextension;
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("task_add_extension returns"));
+#endif
 }
 
 void
 task_remove_extension(TASK *t) {
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("task_remove_extension called"));
+#endif
   if (t->extension && t->freeextension) {
     t->freeextension(t, t->extension);
   }
@@ -315,7 +380,9 @@ task_remove_extension(TASK *t) {
   t->freeextension = NULL;
   t->runextension = NULL;
   t->timeextension = NULL;
-  return;
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("task_remove_extension returns"));
+#endif
 }
 
 /**************************************************************************************************
@@ -342,9 +409,15 @@ _task_init(
   uint32_t			taskvec_mask;
   int				wrap_round = 0;
 
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("_task_init called"));
+#endif
   if (active_tasks++ >= MAXTASKS) {
     active_tasks -= 1;
-    Notice(_("More than %d tasks running can't serverice this task"), MAXTASKS);
+    Notice(_("More than %d tasks running can't service this task"), MAXTASKS);
+#if DEBUG_ENABLED
+    Debug(taskobj, DEBUGLEVEL_FUNCS, _("_task_init returns NULL too many tasks queued in this process"));
+#endif
     return NULL;
   }
   
@@ -358,6 +431,9 @@ _task_init(
     if (internal_id >= MAXTASKS) {
       if (wrap_round) {
 	Notice(_("internal_id wrapped around twice while trying to find an empty slot"));
+#if DEBUG_ENABLED
+	Debug(taskobj, DEBUGLEVEL_FUNCS, _("_task_init returns NULL cannot find a free task slot in this process"));
+#endif
 	return NULL;
       }
       internal_id = 0;
@@ -401,18 +477,30 @@ _task_init(
 
   if (enqueue(TaskQ, new) < 0) {
     task_free(new);
+#if DEBUG_ENABLED
+    Debug(taskobj, DEBUGLEVEL_FUNCS, _("_task_init returns NULL could not queue new task in this process"));
+#endif
     return (NULL);
   }
 
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("_task_init returns new task %s"), desctask(new));
+#endif
   return (new);
 }
 /*--- _task_init() -------------------------------------------------------------------------------*/
 
 void
 _task_change_type(TASK *t, tasktype_t type, taskpriority_t priority) {
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("_task_change_type called"));
+#endif
   requeue(&TaskArray[type][priority], t);
   t->type = type;
   t->priority = priority;
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("_task_change_type returns"));
+#endif
 }
 
 /**************************************************************************************************
@@ -427,13 +515,24 @@ task_output_info(TASK *t, char *update_desc) {
   char datebuf[80]; /* This is magic and needs rethinking - string should be ~ 23 characters */
 #endif
 
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("task_output_info called"));
+#endif
   /* If we've already outputted the info for this (i.e. multiple DNS UPDATE requests), ignore */
-  if (t->info_already_out)
+  if (t->info_already_out) {
+#if DEBUG_ENABLED
+    Debug(taskobj, DEBUGLEVEL_FUNCS, _("task_output_info returns already output information"));
+#endif
     return;
+  }
 
   /* Don't output anything for TCP sockets in the process of closing */
-  if (t->protocol == SOCK_STREAM && t->fd < 0)
+  if (t->protocol == SOCK_STREAM && t->fd < 0) {
+#if DEBUG_ENABLED
+    Debug(taskobj, DEBUGLEVEL_FUNCS, _("task_output_info returns tcp socket closing"));
+#endif
     return;
+  }
 
 #if !DISABLE_DATE_LOGGING
   gettimeofday(&tv, NULL);
@@ -487,6 +586,9 @@ task_output_info(TASK *t, char *update_desc) {
 	  mydns_opcode_str(t->hdr.opcode),
 	  update_desc ? update_desc : ""
 	  );
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("task_output_info returns having output information"));
+#endif
 }
 /*--- task_output_info() ------------------------------------------------------------------------*/
 
@@ -496,6 +598,9 @@ task_output_info(TASK *t, char *update_desc) {
 **************************************************************************************************/
 int _task_enqueue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("_task_enqueue called from %s:%u"), file, line);
+#endif
   queue_append(q, t);
 
   t->len = 0;							/* Reset TCP packet len */
@@ -506,7 +611,7 @@ int _task_enqueue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
     status_udp_request(t);
 
 #if DEBUG_ENABLED
-  Debug(taskobj, 1,_("%s: enqueued (by %s:%u)"), desctask(t), file, line);
+  Debug(taskobj, DEBUGLEVEL_PROGRESS, _("%s: enqueued (by %s:%u)"), desctask(t), file, line);
 #endif
 
   return (0);
@@ -523,7 +628,7 @@ void _task_dequeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 #if DEBUG_ENABLED
   char *taskdesc = STRDUP(desctask(t));
 
-  Debug(taskobj, 1,_("%s: dequeuing (by %s:%u)"), taskdesc, file, line);
+  Debug(taskobj, DEBUGLEVEL_PROGRESS, _("%s: dequeuing (by %s:%u)"), taskdesc, file, line);
 #endif
 
   if (err_verbose)				/* Output task info if being verbose */
@@ -535,7 +640,7 @@ void _task_dequeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 
   task_free(t);
 #if DEBUG_ENABLED
-  Debug(taskobj, 1,_("%s: dequeued (by %s:%u)"), taskdesc, file, line);
+  Debug(taskobj, DEBUGLEVEL_PROGRESS, _("%s: dequeued (by %s:%u)"), taskdesc, file, line);
   RELEASE(taskdesc);
 #endif
 }
@@ -544,12 +649,15 @@ void _task_dequeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 void _task_requeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 #if DEBUG_ENABLED
   char *taskdesc = desctask(t);
-  Debug(taskobj, 1,_("%s: requeuing (by %s:%u) called"), taskdesc, file, line);
+  Debug(taskobj, DEBUGLEVEL_PROGRESS, _("%s: requeuing (by %s:%u) called"), taskdesc, file, line);
 #endif
 
   queue_remove(task_queue(t), t);
   queue_append(q, t);
-
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_PROGRESS, _("%s: requeued (by %s:%u)"), taskdesc, file, line);
+  RELEASE(taskdesc);
+#endif
 }
 
 static void _task_1_queue_stats(QUEUE *q) {
@@ -572,15 +680,16 @@ static void _task_1_queue_stats(QUEUE *q) {
   strftime(datebuf, sizeof(datebuf)-1, "%d-%b-%Y %H:%M:%S", tm);
 #endif
 
-  Debug(taskobj, 1,_(
+  Debug(taskobj, DEBUGLEVEL_PROGRESS,
+	_(
 #if !DISABLE_DATE_LOGGING
-		      "%s+%06lu "
+	  "%s+%06lu "
 #endif
-		      "%s size=%u, max size=%u"),
+	  "%s size=%u, max size=%u"),
 #if !DISABLE_DATE_LOGGING
-	 datebuf, tv.tv_usec,
+	datebuf, tv.tv_usec,
 #endif
-	 q->queuename, (unsigned int)q->size, (unsigned int)q->max_size);
+	q->queuename, (unsigned int)q->size, (unsigned int)q->max_size);
 	  
   msg = ALLOCATE(msgsize, char*);
 
@@ -592,7 +701,7 @@ static void _task_1_queue_stats(QUEUE *q) {
     if ((msglen + 2*idsize) >= msgsize) msg = REALLOCATE(msg, msgsize *= 2, char*);
   }
   if (msglen)
-    Debug(taskobj, 1,_("Queued tasks %s"), msg);
+    Debug(taskobj, DEBUGLEVEL_PROGRESS, _("Queued tasks %s"), msg);
 
   RELEASE(msg);
 #endif
@@ -601,17 +710,26 @@ static void _task_1_queue_stats(QUEUE *q) {
 void task_queue_stats() {
   int i = 0, j = 0;
 
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("task_queue_stats called"));
+#endif
   for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
     for (j= HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
       _task_1_queue_stats(TaskArray[j][i]);
     }
   }
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("task_queue_stats returns"));
+#endif
 }
 
 static void _task_close_queue(QUEUE *TaskP) {
 
   register TASK *t = NULL;
 
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("_task_close_queue called"));
+#endif
   /* Close any TCP connections and any NOTIFY sockets */
   for (t = (TASK*)(TaskP->head); t; t = task_next(t)) {
     if (t->protocol == SOCK_STREAM && t->fd >= 0)
@@ -622,18 +740,26 @@ static void _task_close_queue(QUEUE *TaskP) {
       sockclose(t->fd);
     dequeue(t);
   }
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("_task_close_queue returns"));
+#endif
 }
 
 void task_free_all() {
   int i = 0, j = 0;
 
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("task_free_all called"));
+#endif
   for (i = NORMAL_TASK; i <= PERIODIC_TASK; i++) {
     for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
       QUEUE *TaskQ = TaskArray[i][j];
       _task_close_queue(TaskQ);
-      /*TaskArray[i][j] = NULL;*/
     }
   }
+#if DEBUG_ENABLED
+  Debug(taskobj, DEBUGLEVEL_FUNCS, _("task_free_all returns"));
+#endif
 }
 
 /* vi:set ts=3: */

@@ -254,10 +254,10 @@ extern void		task_add_extension(TASK*, void*, FreeExtension, RunExtension, TimeE
 extern void		task_remove_extension(TASK *);
 
 extern void		task_output_info(TASK *, char *);
-extern char		*task_exec_name(taskexec_t);
-extern char		*task_type_name(int);
-extern char		*task_priority_name(int);
-extern char		*task_string_name(TASK *);
+extern const char	*task_exec_name(taskexec_t);
+extern const char	*task_type_name(int);
+extern const char	*task_priority_name(int);
+extern const char	*task_status_name(TASK *t);
 extern const char	*clientaddr(TASK *);
 extern char		*desctask(TASK *);
 

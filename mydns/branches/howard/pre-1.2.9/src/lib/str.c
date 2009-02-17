@@ -32,20 +32,33 @@ int		debug_str = 0;
 **************************************************************************************************/
 const char *
 mydns_class_str(dns_class_t c) {
-  static char *buf = NULL;
+  const char *buf = NULL;
+
+#if DEBUG_ENABLED
+  Debug(str, DEBUGLEVEL_FUNCS, _("mydns_class_str called"));
+#endif
 
   switch (c) {
-  case DNS_CLASS_UNKNOWN:	return ("UNKNOWN");
-  case DNS_CLASS_IN:		return ("IN");
-  case DNS_CLASS_CHAOS:		return ("CHAOS");
-  case DNS_CLASS_HESIOD:	return ("HESIOD");
-  case DNS_CLASS_NONE:		return ("NONE");
-  case DNS_CLASS_ANY:		return ("ANY");
+  case DNS_CLASS_UNKNOWN:	buf = "UNKNOWN"; break;
+  case DNS_CLASS_IN:		buf = "IN"; break;
+  case DNS_CLASS_CHAOS:		buf = "CHAOS"; break;
+  case DNS_CLASS_HESIOD:	buf = "HESIOD"; break;
+  case DNS_CLASS_NONE:		buf = "NONE"; break;
+  case DNS_CLASS_ANY:		buf = "ANY"; break;
+  default:
+    {
+      static char *msg = NULL;
+      RELEASE(msg);
+      ASPRINTF(&msg, "%03d", c);
+      buf = (const char*)msg;
+    }
+    break;
   }
-  RELEASE(buf);
-  ASPRINTF(&buf, "%03d", c);
 
-  return (const char*)(buf);
+#if DEBUG_ENABLED
+  Debug(str, DEBUGLEVEL_FUNCS, _("mydns_class_str returns %s"), buf);
+#endif
+  return buf;
 }
 /*--- mydns_class_str() -------------------------------------------------------------------------*/
 
@@ -55,23 +68,34 @@ mydns_class_str(dns_class_t c) {
 **************************************************************************************************/
 const char *
 mydns_opcode_str(dns_opcode_t opcode) {
-  static char *buf = NULL;
+  const char *buf = NULL;
+
+#if DEBUG_ENABLED
+  Debug(str, DEBUGLEVEL_FUNCS, _("mydns_opcode_str called"));
+#endif
 
   switch (opcode) {
-  case DNS_OPCODE_UNKNOWN:	return ("UNKNOWN");
+  case DNS_OPCODE_UNKNOWN:	buf = "UNKNOWN"; break;
 
-  case DNS_OPCODE_QUERY:	return ("QUERY");
-  case DNS_OPCODE_IQUERY:	return ("IQUERY");
-  case DNS_OPCODE_STATUS:	return ("STATUS");
-  case DNS_OPCODE_NOTIFY:	return ("NOTIFY");
-  case DNS_OPCODE_UPDATE:	return ("UPDATE");
-  
+  case DNS_OPCODE_QUERY:	buf = "QUERY"; break;
+  case DNS_OPCODE_IQUERY:	buf = "IQUERY"; break;
+  case DNS_OPCODE_STATUS:	buf = "STATUS"; break;
+  case DNS_OPCODE_NOTIFY:	buf = "NOTIFY"; break;
+  case DNS_OPCODE_UPDATE:	buf = "UPDATE"; break;
+  default:
+    {
+      static char *msg = NULL;
+      RELEASE(msg);
+      ASPRINTF(&msg, "%03d", opcode);
+      buf = (const char*)msg;
+    }
+    break;
   }
 
-  RELEASE(buf);
-  ASPRINTF(&buf, "%03d", opcode);
-  
-  return (const char*)(buf);
+#if DEBUG_ENABLED
+  Debug(str, DEBUGLEVEL_FUNCS, _("mydns_opcode_str returns %s"), buf);
+#endif
+  return buf;
 }
 /*--- mydns_opcode_str() ------------------------------------------------------------------------*/
 
@@ -82,36 +106,48 @@ mydns_opcode_str(dns_opcode_t opcode) {
 **************************************************************************************************/
 const char *
 mydns_rcode_str(dns_rcode_t rcode) {
-  static char *buf = NULL;
+  const char *buf;
+
+#if DEBUG_ENABLED
+  Debug(str, DEBUGLEVEL_FUNCS, _("mydns_rcode_str called"));
+#endif
 
   switch (rcode) {
-  case DNS_RCODE_UNKNOWN:	return ("UNKNOWN");
+  case DNS_RCODE_UNKNOWN:	buf = "UNKNOWN"; break;
 
-  case DNS_RCODE_NOERROR:	return ("NOERROR");
-  case DNS_RCODE_FORMERR:	return ("FORMERR");
-  case DNS_RCODE_SERVFAIL:	return ("SERVFAIL");
-  case DNS_RCODE_NXDOMAIN:	return ("NXDOMAIN");
-  case DNS_RCODE_NOTIMP:	return ("NOTIMP");
-  case DNS_RCODE_REFUSED:	return ("REFUSED");
-  case DNS_RCODE_YXDOMAIN:	return ("YXDOMAIN");
-  case DNS_RCODE_YXRRSET:	return ("YXRRSET");
-  case DNS_RCODE_NXRRSET:	return ("NXRRSET");
-  case DNS_RCODE_NOTAUTH:	return ("NOTAUTH");
-  case DNS_RCODE_NOTZONE:	return ("NOTZONE");
+  case DNS_RCODE_NOERROR:	buf = "NOERROR"; break;
+  case DNS_RCODE_FORMERR:	buf = "FORMERR"; break;
+  case DNS_RCODE_SERVFAIL:	buf = "SERVFAIL"; break;
+  case DNS_RCODE_NXDOMAIN:	buf = "NXDOMAIN"; break;
+  case DNS_RCODE_NOTIMP:	buf = "NOTIMP"; break;
+  case DNS_RCODE_REFUSED:	buf = "REFUSED"; break;
+  case DNS_RCODE_YXDOMAIN:	buf = "YXDOMAIN"; break;
+  case DNS_RCODE_YXRRSET:	buf = "YXRRSET"; break;
+  case DNS_RCODE_NXRRSET:	buf = "NXRRSET"; break;
+  case DNS_RCODE_NOTAUTH:	buf = "NOTAUTH"; break;
+  case DNS_RCODE_NOTZONE:	buf = "NOTZONE"; break;
 
-  case DNS_RCODE_BADSIG:	return ("BADSIG");
-  case DNS_RCODE_BADKEY:	return ("BADKEY");
-  case DNS_RCODE_BADTIME:	return ("BADTIME");
-  case DNS_RCODE_BADMODE:	return ("BADMODE");
-  case DNS_RCODE_BADNAME:	return ("BADNAME");
-  case DNS_RCODE_BADALG:	return ("BADALG");
-  case DNS_RCODE_BADTRUNC:	return ("BADTRUNC");
+  case DNS_RCODE_BADSIG:	buf = "BADSIG"; break;
+  case DNS_RCODE_BADKEY:	buf = "BADKEY"; break;
+  case DNS_RCODE_BADTIME:	buf = "BADTIME"; break;
+  case DNS_RCODE_BADMODE:	buf = "BADMODE"; break;
+  case DNS_RCODE_BADNAME:	buf = "BADNAME"; break;
+  case DNS_RCODE_BADALG:	buf = "BADALG"; break;
+  case DNS_RCODE_BADTRUNC:	buf = "BADTRUNC"; break;
+  default:
+    {
+      static char *msg = NULL;
+      RELEASE(msg);
+      ASPRINTF(&msg, "%03d", rcode);
+      buf = (const char*)msg;
+    }
+    break;
   }
 
-  RELEASE(buf);
-  ASPRINTF(&buf, "%03d", rcode);
-
-  return (const char *)(buf);
+#if DEBUG_ENABLED
+  Debug(str, DEBUGLEVEL_FUNCS, _("mydns_rcode_str returns %s"), buf);
+#endif
+  return buf;
 }
 /*--- mydns_rcode_str() -------------------------------------------------------------------------*/
 
@@ -122,15 +158,22 @@ mydns_rcode_str(dns_rcode_t rcode) {
 **************************************************************************************************/
 const char *
 mydns_section_str(datasection_t section) {
+  const char *buf = "UNKNOWN";
 
+#if DEBUG_ENABLED
+  Debug(str, DEBUGLEVEL_FUNCS, _("mydns_section_str called"));
+#endif
   switch (section) {
-  case QUESTION:		return ("QUESTION");
-  case ANSWER:			return ("ANSWER");
-  case AUTHORITY:		return ("AUTHORITY");
-  case ADDITIONAL:		return ("ADDITIONAL");
+  case QUESTION:		buf = ("QUESTION"); break;
+  case ANSWER:			buf = ("ANSWER"); break;
+  case AUTHORITY:		buf = ("AUTHORITY"); break;
+  case ADDITIONAL:		buf = ("ADDITIONAL"); break;
   }
 	
-  return ("UNKNOWN");
+#if DEBUG_ENABLED
+  Debug(str, DEBUGLEVEL_FUNCS, _("mydns_section_str returns %s"), buf);
+#endif
+  return buf;
 }
 /*--- mydns_section_str() -----------------------------------------------------------------------*/
 
@@ -147,11 +190,22 @@ hinfo_parse(char *hinfo, char *cpu, char *os, size_t destlen) {
   register int	cpu_done = 0;			/* Completed 'cpu' yet? */
   register char	quote = 0;			/* If inside quotes, which quote char */
 
+#if DEBUG_ENABLED
+  Debug(str, DEBUGLEVEL_FUNCS, _("hinfo_parse called"));
+#endif
   for (s = hinfo, d = cpu; *s; s++) {
-    if (!cpu_done && ((size_t)(d - cpu) > (destlen - 1)))	/* Have we exceeded length for 'cpu'? */
+    if (!cpu_done && ((size_t)(d - cpu) > (destlen - 1))) {	/* Have we exceeded length for 'cpu'? */
+#if DEBUG_ENABLED
+      Debug(str, DEBUGLEVEL_FUNCS, _("hinfo_parse returns -1 CPU length is too large"));
+#endif
       return (-1);
-    if (cpu_done && ((size_t)(d - os) > (destlen - 1)))		/* Have we exceeded length for 'os'? */
+    }
+    if (cpu_done && ((size_t)(d - os) > (destlen - 1))) {	/* Have we exceeded length for 'os'? */
+#if DEBUG_ENABLED
+      Debug(str, DEBUGLEVEL_FUNCS, _("hinfo_parse returns -1 OS length is too large"));
+#endif
       return (-1);
+    }
 
     if (!cpu_done && isspace(*s) && !quote) {		/* Time to move from 'cpu' to 'os'? */
       *d = '\0';
@@ -167,6 +221,9 @@ hinfo_parse(char *hinfo, char *cpu, char *os, size_t destlen) {
     } else
       *d++ = *s;
   }
+#if DEBUG_ENABLED
+  Debug(str, DEBUGLEVEL_FUNCS, _("hinfo_parse returns 0"));
+#endif
   return (0);
 }
 /*--- hinfo_parse() -----------------------------------------------------------------------------*/

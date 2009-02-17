@@ -44,9 +44,15 @@ time_t		current_time;			/* Current time */
 
 struct timeval *gettick() {
 
+#if DEBUG_ENABLED
+  Debug(support, DEBUGLEVEL_FUNCS, _("gettick called"));
+#endif
   gettimeofday(&current_tick, NULL);
   current_time = current_tick.tv_sec;
 
+#if DEBUG_ENABLED
+  Debug(support, DEBUGLEVEL_FUNCS, _("gettick returns"));
+#endif
   return (&current_tick);
 }
 
@@ -55,13 +61,22 @@ struct timeval *gettick() {
 **************************************************************************************************/
 void named_cleanup(int signo) {
 
+#if DEBUG_ENABLED
+  Debug(support, DEBUGLEVEL_FUNCS, _("named_cleanup called"));
+#endif
   shutting_down = signo;
+#if DEBUG_ENABLED
+  Debug(support, DEBUGLEVEL_FUNCS, _("named_cleanup returns"));
+#endif
 
 }
 
 void
 named_shutdown(int signo) {
 
+#if DEBUG_ENABLED
+  Debug(support, DEBUGLEVEL_FUNCS, _("named_shutdown called"));
+#endif
   switch (signo) {
   case 0:
     Notice(_("Normal shutdown")); break;
@@ -89,6 +104,9 @@ named_shutdown(int signo) {
 
   listen_close_all();
 
+#if DEBUG_ENABLED
+  Debug(support, DEBUGLEVEL_FUNCS, _("named_shutdown returns"));
+#endif
 }
 
 /**************************************************************************************************
@@ -99,6 +117,9 @@ void server_status(void) {
   time_t		uptime = time(NULL) - Status.start_time;
   unsigned long 	requests = Status.udp_requests + Status.tcp_requests;
 
+#if DEBUG_ENABLED
+  Debug(support, DEBUGLEVEL_FUNCS, _("server_status called"));
+#endif
   b += snprintf(b, sizeof(buf)-(b-buf), "%s ", hostname);
   b += snprintf(b, sizeof(buf)-(b-buf), "%s %s (%lus) ", _("up"), strsecs(uptime),
 		(unsigned long)uptime);
@@ -117,6 +138,9 @@ void server_status(void) {
 		  (unsigned long)Status.tcp_requests);
 
   Notice("%s", buf);
+#if DEBUG_ENABLED
+  Debug(support, DEBUGLEVEL_FUNCS, _("server_status returns"));
+#endif
 }
 /*--- server_status() ---------------------------------------------------------------------------*/
 
@@ -128,11 +152,33 @@ char *mydns_name_2_shortname(char *name, char *origin, int empty_name_is_ok, int
   size_t nlen = 0, olen = 0;
   int name_is_dotted, origin_is_dotted;
 
-  if (name) nlen = strlen(name); else return name;
-  if (origin) olen = strlen(origin); else return name;
+#if DEBUG_ENABLED
+  Debug(support, DEBUGLEVEL_FUNCS, _("mydns_name_2_shortname called with name = %s, origin = %s"),
+	(name) ? name : "NULL", (origin) ? origin : "NULL");
+#endif
+  if (name)
+    nlen = strlen(name);
+  else {
+#if DEBUG_ENABLED
+  Debug(support, DEBUGLEVEL_FUNCS, _("mydns_name_2_shortname name is NULL returns NULL"));
+#endif
+    return name;
+  }
+  if (origin)
+    olen = strlen(origin);
+  else {
+#if DEBUG_ENABLED
+    Debug(support, DEBUGLEVEL_FUNCS, _("mydns_name_2_shortname origin is NULL returns %s"), name);
+#endif
+    return name;
+  }
 
-  if (notrim)
+  if (notrim) {
+#if DEBUG_ENABLED
+    Debug(support, DEBUGLEVEL_FUNCS, _("mydns_name_2_shortname not trimming NULL returns %s"), name);
+#endif
     return (name);
+  }
 
   name_is_dotted = (LASTCHAR(name) == '.');
   origin_is_dotted = (LASTCHAR(origin) == '.');
@@ -140,18 +186,32 @@ char *mydns_name_2_shortname(char *name, char *origin, int empty_name_is_ok, int
   if (name_is_dotted && !origin_is_dotted) nlen -= 1;
   if (origin_is_dotted && !name_is_dotted) olen -= 1;
 
-  if (nlen < olen)
+  if (nlen < olen) {
+#if DEBUG_ENABLED
+    Debug(support, DEBUGLEVEL_FUNCS, _("mydns_name_2_shortname name length is less than origin returns %s"), name);
+#endif
     return (name);
+  }
 
   if (!strncasecmp(origin, name, nlen)) {
-    if (empty_name_is_ok)
+    if (empty_name_is_ok) {
+#if DEBUG_ENABLED
+    Debug(support, DEBUGLEVEL_FUNCS, _("mydns_name_2_shortname name is equal to origin returns ''"));
+#endif
       return (char*)("");
-    else
+    } else {
+#if DEBUG_ENABLED
+      Debug(support, DEBUGLEVEL_FUNCS, _("mydns_name_2_shortname name is equal to origin returns %s"), name);
+#endif
       return (name);
+    }
   }
   if (!strncasecmp(name + nlen - olen, origin, olen)
       && name[nlen - olen - 1] == '.')
     name[nlen - olen - 1] = '\0';
+#if DEBUG_ENABLED
+      Debug(support, DEBUGLEVEL_FUNCS, _("mydns_name_2_shortname returns %s"), name);
+#endif
   return (name);
 }
 /*--- mydns_name_2_shortname() -----------------------------------------------------------------*/
@@ -165,14 +225,14 @@ name_servers2ip(TASK *t, ARRAY *name_servers,
   int i = 0;
 
 #if DEBUG_ENABLED
-  Debug(support, 1, _("%s: name_servers2ip() called name_servers = %p"),
+  Debug(support, DEBUGLEVEL_FUNCS, _("%s: name_servers2ip() called name_servers = %p"),
 	 desctask(t), name_servers);
 #endif
 
   if(!name_servers) return 0;
 
 #if DEBUG_ENABLED
-  Debug(support, 1, _("%s: name_servers2ip() called name_servers count = %d"),
+  Debug(support, DEBUGLEVEL_FULLTRACE, _("%s: name_servers2ip() called name_servers count = %d"),
 	 desctask(t), array_numobjects(name_servers));
 #endif
 
@@ -185,7 +245,7 @@ name_servers2ip(TASK *t, ARRAY *name_servers,
     MYDNS_RR *rr = NULL;
 
 #if DEBUG_ENABLED
-    Debug(support, 1, _("%s: name_servers2ip() processing name server %s"),
+    Debug(support, DEBUGLEVEL_FULLTRACE, _("%s: name_servers2ip() processing name server %s"),
 	   desctask(t), name_server);
 #endif
 
@@ -195,7 +255,7 @@ name_servers2ip(TASK *t, ARRAY *name_servers,
       MYDNS_RR *r = NULL;
 
 #if DEBUG_ENABLED
-      Debug(support, 1, _("%s: name_servers2ip() processing rr %s for name server %s"),
+      Debug(support, DEBUGLEVEL_FULLTRACE, _("%s: name_servers2ip() processing rr %s for name server %s"),
 	     desctask(t), label, name_server);
 #endif
 
@@ -213,7 +273,7 @@ name_servers2ip(TASK *t, ARRAY *name_servers,
 	  if (!strncmp(MYDNS_RR_DATA_VALUE(r), ipa, MYDNS_RR_DATA_LENGTH(r))) goto NextA_RR;
 	}
 #if DEBUG_ENABLED
-	Debug(support, 1, _("%s: name_servers2ip() processing name server %s got ip address %s(%d)"),
+	Debug(support, DEBUGLEVEL_FULLTRACE, _("%s: name_servers2ip() processing name server %s got ip address %s(%d)"),
 	       desctask(t), name_server, (char*)MYDNS_RR_DATA_VALUE(r), MYDNS_RR_DATA_LENGTH(r));
 #endif
 	slave = (NOTIFYSLAVE*)ALLOCATE(sizeof(NOTIFYSLAVE), NOTIFYSLAVE*);
@@ -233,7 +293,7 @@ name_servers2ip(TASK *t, ARRAY *name_servers,
 	  continue;
 	}
 #if DEBUG_ENABLED
-	Debug(support, 1,
+	Debug(support, DEBUGLEVEL_FULLTRACE,
 	       _("%s: name_servers2ip() processing name server %s append IP address to saved vector"),
 	       desctask(t), name_server);
 #endif
@@ -260,7 +320,7 @@ name_servers2ip(TASK *t, ARRAY *name_servers,
 	  if (!strncmp(MYDNS_RR_DATA_VALUE(r), ipa, MYDNS_RR_DATA_LENGTH(r))) goto NextAAAA_RR;
 	}
 #if DEBUG_ENABLED
-	Debug(support, 1, _("%s: name_servers2ip() processing name server %s got ip address %s(%d)"),
+	Debug(support, DEBUGLEVEL_FULLTRACE, _("%s: name_servers2ip() processing name server %s got ip address %s(%d)"),
 	       desctask(t), name_server, (char*)MYDNS_RR_DATA_VALUE(r), MYDNS_RR_DATA_LENGTH(r));
 #endif
 	slave = (NOTIFYSLAVE*)ALLOCATE(sizeof(NOTIFYSLAVE), NOTIFYSLAVE*);
@@ -280,7 +340,7 @@ name_servers2ip(TASK *t, ARRAY *name_servers,
 	  continue;
 	}
 #if DEBUG_ENABLED
-	Debug(support, 1,
+	Debug(support, DEBUGLEVEL_FULLTRACE,
 	       _("%s: name_servers2ip() processing name server %s append IP address to saved vector"),
 	       desctask(t), name_server);
 #endif
@@ -302,7 +362,7 @@ name_servers2ip(TASK *t, ARRAY *name_servers,
     if (resolved) { continue; }
 
 #if DEBUG_ENABLED
-    Debug(support, 1, _("%s: name_servers2ip() - done try local DNS - %d"), desctask(t), resolved);
+    Debug(support, DEBUGLEVEL_FULLTRACE, _("%s: name_servers2ip() - done try local DNS - %d"), desctask(t), resolved);
 #endif
 
     /* This needs enhancing so that a recursive lookup is run before trying the local DNS */
@@ -425,7 +485,7 @@ name_servers2ip(TASK *t, ARRAY *name_servers,
   }
 
 #if DEBUG_ENABLED
-  Debug(support, 1,
+  Debug(support, DEBUGLEVEL_FULLTRACE,
 	 _("%s: name_servers2ip() - releasing data and then returning ipaddresses=%p, name_servers=%p"),
 	 desctask(t), ipaddresses, name_servers);
 #endif
@@ -434,7 +494,7 @@ name_servers2ip(TASK *t, ARRAY *name_servers,
   array_free(name_servers, 1);
 
 #if DEBUG_ENABLED
-  Debug(support, 1, _("%s: name_servers2ip() - returning"), desctask(t));
+  Debug(support, DEBUGLEVEL_FUNCS, _("%s: name_servers2ip() - returning"), desctask(t));
 #endif
 
   return array_numobjects(ips4)

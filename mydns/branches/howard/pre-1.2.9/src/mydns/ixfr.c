@@ -97,8 +97,14 @@ ixfr_gobble_authority_rr(TASK *t, char *query, size_t querylen, char *current, I
   int rdlength = 0;
   task_error_t errcode = TASK_FAILED;
 
+#if DEBUG_ENABLED
+  Debug(ixfr, DEBUGLEVEL_FUNCS, _("%s: ixfr_gobble_authority_rr called"), desctask(t));
+#endif
   if (!(IARR_NAME(rr) = name_unencode(query, querylen, &src, &errcode))) {
     formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
+#if DEBUG_ENABLED
+    Debug(ixfr, DEBUGLEVEL_FUNCS, _("%s: ixfr_gobble_authority_rr returns RCODE_FORMERR IARR_NAME name_unencode failed"), desctask(t));
+#endif
     return NULL;
   }
   DNS_GET16(rr->type, src);
@@ -108,11 +114,17 @@ ixfr_gobble_authority_rr(TASK *t, char *query, size_t querylen, char *current, I
   DNS_GET16(rdlength, src);
   if (!(IARR_MNAME(rr) = name_unencode(query, querylen, &src, &errcode))) {
     formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
+#if DEBUG_ENABLED
+    Debug(ixfr, DEBUGLEVEL_FUNCS, _("%s: ixfr_gobble_authority_rr returns RCODE_FORMERR IARR_MNAME name_unencode failed"), desctask(t));
+#endif
     return NULL;
   }
 
   if (!(IARR_RNAME(rr) = name_unencode(query, querylen, &src, &errcode))) {
     formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
+#if DEBUG_ENABLED
+    Debug(ixfr, DEBUGLEVEL_FUNCS, _("%s: ixfr_gobble_authority_rr returns RCODE_FORMERR IARR_RNAME name_unencode failed"), desctask(t));
+#endif
     return NULL;
   }
 
@@ -122,6 +134,9 @@ ixfr_gobble_authority_rr(TASK *t, char *query, size_t querylen, char *current, I
   DNS_GET32(rr->expire, src);
   DNS_GET32(rr->minimum, src);
 
+#if DEBUG_ENABLED
+  Debug(ixfr, DEBUGLEVEL_FUNCS, _("%s: ixfr_gobble_authority_rr returns OK"), desctask(t));
+#endif
   return src;
 }
 
@@ -135,13 +150,16 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
   task_error_t	errcode = 0;
 
 #if DEBUG_ENABLED
-  Debug(ixfr, 1, "%s: ixfr(%s, %s, \"%s\", %d)", desctask(t),
-	resolve_datasection_str[section], mydns_rr_get_type_by_id(qtype)->rr_type_name,
+  Debug(ixfr, DEBUGLEVEL_PROGRESS, "%s: ixfr(%s, %s, \"%s\", %d)", desctask(t),
+	mydns_section_str(section), mydns_rr_get_type_by_id(qtype)->rr_type_name,
 	fqdn, truncateonly);
 #endif
 
   if (!dns_ixfr_enabled) {
     dnserror(t, DNS_RCODE_REFUSED, ERR_IXFR_NOT_ENABLED);
+#if DEBUG_ENABLED
+    Debug(ixfr, DEBUGLEVEL_FUNCS, _("%s: ixfr returns RCODE_REFUSED ixfr not enabled"), desctask(t));
+#endif
     return (TASK_FAILED);
   }
 
@@ -152,45 +170,74 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
 
   if (mydns_soa_load(sql, &soa, fqdn) < 0) {
     dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
+#if DEBUG_ENABLED
+    Debug(ixfr, DEBUGLEVEL_FUNCS, _("%s: ixfr returns RCODE_SERVFAIL cannot load soa"), desctask(t));
+#endif
     return (TASK_FAILED);
   }
 
   if (!soa) {
     dnserror(t, DNS_RCODE_REFUSED, ERR_ZONE_NOT_FOUND);
+#if DEBUG_ENABLED
+    Debug(ixfr, DEBUGLEVEL_FUNCS, _("%s: ixfr returns RCODE_REFUSED zone not found"), desctask(t));
+#endif
     return (TASK_FAILED);
   }
 
 #if DEBUG_ENABLED
-  Debug(ixfr, 1, _("%s: DNS IXFR: SOA id %u"), desctask(t), soa->id);
-  Debug(ixfr, 1, _("%s: DNS IXFR: QDCOUNT=%d (Query)"), desctask(t), t->qdcount);
-  Debug(ixfr, 1, _("%s: DNS IXFR: ANCOUNT=%d (Answer)"), desctask(t), t->ancount);
-  Debug(ixfr, 1, _("%s: DNS IXFR: AUCOUNT=%d (Authority)"), desctask(t), t->nscount);
-  Debug(ixfr, 1, _("%s: DNS IXFR: ADCOUNT=%d (Additional data)"), desctask(t), t->arcount);
+  Debug(ixfr, DEBUGLEVEL_PROGRESS, _("%s: DNS IXFR: SOA id %u"), desctask(t), soa->id);
+  Debug(ixfr, DEBUGLEVEL_PROGRESS, _("%s: DNS IXFR: QDCOUNT=%d (Query)"), desctask(t), t->qdcount);
+  Debug(ixfr, DEBUGLEVEL_PROGRESS, _("%s: DNS IXFR: ANCOUNT=%d (Answer)"), desctask(t), t->ancount);
+  Debug(ixfr, DEBUGLEVEL_PROGRESS, _("%s: DNS IXFR: AUCOUNT=%d (Authority)"), desctask(t), t->nscount);
+  Debug(ixfr, DEBUGLEVEL_PROGRESS, _("%s: DNS IXFR: ADCOUNT=%d (Additional data)"), desctask(t), t->arcount);
 #endif
-  if (!t->nscount)
+  if (!t->nscount) {
+#if DEBUG_ENABLED
+    Debug(ixfr, DEBUGLEVEL_FUNCS, _("%s: ixfr returns RCODE_FORMERR no authority data"), desctask(t));
+#endif
     return formerr(t, DNS_RCODE_FORMERR, ERR_NO_AUTHORITY,
 		   _("ixfr query contains no authority data"));
+  }
 
-  if (t->nscount != 1)
+  if (t->nscount != 1) {
+#if DEBUG_ENABLED
+    Debug(ixfr, DEBUGLEVEL_FUNCS, _("%s: ixfr returns RCODE_FORMERR multiple authority records"), desctask(t));
+#endif
     return formerr(t, DNS_RCODE_FORMERR, ERR_MULTI_AUTHORITY,
 		   _("ixfr query contains multiple authority records"));
+  }
 
-  if (!t->qdcount)
+  if (!t->qdcount) {
+#if DEBUG_ENABLED
+    Debug(ixfr, DEBUGLEVEL_FUNCS, _("%s: ixfr returns RCODE_FORMERR no question"), desctask(t));
+#endif
     return formerr(t, DNS_RCODE_FORMERR, ERR_NO_QUESTION,
 		   _("ixfr query does not contain question"));
+  }
 
-  if (t->qdcount != 1)
+  if (t->qdcount != 1) {
+#if DEBUG_ENABLED
+    Debug(ixfr, DEBUGLEVEL_FUNCS, _("%s: ixfr returns RCODE_FORMERR multiple questions"), desctask(t));
+#endif
     return formerr(t, DNS_RCODE_FORMERR, ERR_MULTI_QUESTIONS,
 		   _("ixfr query contains multiple questions"));
+  }
 
-  if (t->ancount || t->arcount)
+  if (t->ancount || t->arcount) {
+#if DEBUG_ENABLED
+    Debug(ixfr, DEBUGLEVEL_FUNCS, _("%s: ixfr returns RCODE_FORMERR has answer or additional data"), desctask(t));
+#endif
     return formerr(t, DNS_RCODE_FORMERR, ERR_MALFORMED_REQUEST,
 		   _("ixfr query has answer or additional data"));
+  }
 
   q = allocate_iq();
 
   if (!(IQ_NAME(q) = name_unencode(query, querylen, &src, &errcode))) {
     free_iq(q);
+#if DEBUG_ENABLED
+    Debug(ixfr, DEBUGLEVEL_FUNCS, _("%s: ixfr returns RCODE_FORMERR IQ_NAME name_unencode failed"), desctask(t));
+#endif
     return formerr(t, DNS_RCODE_FORMERR, errcode, NULL);
   }
 
@@ -199,12 +246,15 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
 
   if (!(src = ixfr_gobble_authority_rr(t, query, querylen, src, &q->IR))) {
     free_iq(q);
+#if DEBUG_ENABLED
+    Debug(ixfr, DEBUGLEVEL_FUNCS, _("%s: ixfr returns FAILED ixfr_gobble_authority_rr failed"), desctask(t));
+#endif
     return (TASK_FAILED);
   }
 
   /* Get the serial number from the RR record in the authority section */
 #if DEBUG_ENABLED
-  Debug(ixfr, 1, _("%s: DNS IXFR Question[zone %s qclass %s qtype %s]"
+  Debug(ixfr, DEBUGLEVEL_PROGRESS, _("%s: DNS IXFR Question[zone %s qclass %s qtype %s]"
 		      " Authority[zone %s qclass %s qtype %s ttl %u "
 		      "mname %s rname %s serial %u refresh %u retry %u expire %u minimum %u]"),
 	desctask(t), q->name, mydns_class_str(q->class),
@@ -289,6 +339,9 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
       if ((deletecount < 0) || (activecount < 0) || (zonesize < 0)) {
 	RELEASE(deltafilter);
 	dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
+#if DEBUG_ENABLED
+	Debug(ixfr, DEBUGLEVEL_FUNCS, _("%s: ixfr returns RCODE_SERVFAIL ixfr data is inconsisten for zone"), desctask(t));
+#endif
 	return (TASK_FAILED);
       }
       if (deletecount || activecount) {
@@ -359,6 +412,9 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
 
   t->hdr.aa = 1;
 
+#if DEBUG_ENABLED
+    Debug(ixfr, DEBUGLEVEL_FUNCS, _("%s: ixfr returns EXECUTED"), desctask(t));
+#endif
   return (TASK_EXECUTED);
 }
 
@@ -383,6 +439,9 @@ ixfr_purge_all_soas(TASK *t, void *data) {
 				" AND stamp < DATE_SUB(NOW(),INTERVAL %u SECOND);";
   char		*query = NULL;
 
+#if DEBUG_ENABLED
+    Debug(ixfr, DEBUGLEVEL_FUNCS, _("%s: ixfr_purge_all_soas called"), desctask(t));
+#endif
   /*
    * Reset task timeout clock to some suitable value in the future
    */
@@ -437,6 +496,9 @@ ixfr_purge_all_soas(TASK *t, void *data) {
   sql_free(res);
   RELEASE(query);     
 
+#if DEBUG_ENABLED
+    Debug(ixfr, DEBUGLEVEL_FUNCS, _("%s: ixfr_purge_all_soas returns CONTINUE"), desctask(t));
+#endif
   return (TASK_CONTINUE);
 }
 
@@ -445,7 +507,15 @@ ixfr_start(void) {
 
   TASK *inittask = NULL;
 
-  if (!ixfr_gc_enabled) return;
+#if DEBUG_ENABLED
+    Debug(ixfr, DEBUGLEVEL_FUNCS, _("ixfr_start called"));
+#endif
+    if (!ixfr_gc_enabled) {
+#if DEBUG_ENABLED
+    Debug(ixfr, DEBUGLEVEL_FUNCS, _("ixfr_start returns ixfr is not enabled"));
+#endif
+      return;
+    }
 
   /* Only GC if the DB has IXFR information in it */
   if (mydns_rr_use_active && mydns_rr_use_stamp && mydns_rr_use_serial) {
@@ -454,6 +524,9 @@ ixfr_start(void) {
 
     inittask->timeout = current_time + ixfr_gc_delay; /* Run first one in e.g. 10 minutes time */
   }
+#if DEBUG_ENABLED
+    Debug(ixfr, DEBUGLEVEL_FUNCS, _("ixfr_start returns"));
+#endif
 }
 
 /* vi:set ts=3: */

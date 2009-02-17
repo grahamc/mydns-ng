@@ -35,9 +35,6 @@
 
 #if DEBUG_ENABLED
 int		debug_buildreply = 0;
-
-/* Strings describing the datasections */
-const char *reply_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
 #endif
 
 
@@ -49,16 +46,27 @@ static int
 reply_process_rrlist(TASK *t, RRLIST *rrlist) {
   register RR *r = NULL;
 
-  if (!rrlist)
-    return (0);
+#if DEBUG_ENABLED
+  Debug(buildreply, DEBUGLEVEL_FUNCS, _("%s: reply_process_rrlist called"), desctask(t));
+#endif
+  if (!rrlist) {
+#if DEBUG_ENABLED
+    Debug(buildreply, DEBUGLEVEL_FUNCS, _("%s: reply_process_rrlist returns 0 rrlist is NULL"), desctask(t));
+#endif
+    return 0;
+  }
 
   for (r = rrlist->head; r; r = r->next) {
     dns_qtype_map *map;
     switch (r->rrtype) {
     case DNS_RRTYPE_SOA:
       map = mydns_rr_get_type_by_id(DNS_QTYPE_SOA);
-      if (map->rr_reply_add(t, r, map) < 0)
+      if (map->rr_reply_add(t, r, map) < 0) {
+#if DEBUG_ENABLED
+	Debug(buildreply, DEBUGLEVEL_FUNCS, _("%s: reply_process_rrlist returns -1 could not add SOA"), desctask(t));
+#endif
 	return (-1);
+      }
       break;
 
     case DNS_RRTYPE_RR:
@@ -68,13 +76,20 @@ reply_process_rrlist(TASK *t, RRLIST *rrlist) {
 	if (!rr) break;
 
 	map = mydns_rr_get_type_by_id(rr->type);
-	if (map->rr_reply_add(t, r, map) < 0)
+	if (map->rr_reply_add(t, r, map) < 0) {
+#if DEBUG_ENABLED
+	  Debug(buildreply, DEBUGLEVEL_FUNCS, _("%s: reply_process_rrlist returns -1 could not add RR"), desctask(t));
+#endif
 	  return -1;
+	}
 
       }
       break;
     }
   }
+#if DEBUG_ENABLED
+  Debug(buildreply, DEBUGLEVEL_FUNCS, _("%s: reply_process_rrlist returns 0 having added rrlist"), desctask(t));
+#endif
   return (0);
 }
 /*--- reply_process_rrlist() --------------------------------------------------------------------*/
@@ -91,6 +106,8 @@ truncate_rrlist(TASK *t, size_t maxpkt, RRLIST *rrlist, datasection_t ds) {
   register int recs = 0;
 #if DEBUG_ENABLED
   int orig_recs = rrlist->size;
+
+  Debug(buildreply, DEBUGLEVEL_FUNCS, _("%s: truncate_rrlist called"), desctask(t));
 #endif
 
   /* Warn about truncated packets, but only if TCP is not enabled.  Most resolvers will try
@@ -108,8 +125,8 @@ truncate_rrlist(TASK *t, size_t maxpkt, RRLIST *rrlist, datasection_t ds) {
       t->rdlen += rr->length;
   }
 #if DEBUG_ENABLED
-  Debug(buildreply, 1, _("%s section truncated from %d records to %d records"),
-	 reply_datasection_str[ds], orig_recs, recs);
+  Debug(buildreply, DEBUGLEVEL_PROGRESS, _("%s section truncated from %d records to %d records"),
+	mydns_section_str(ds), orig_recs, recs);
 #endif
   return (recs);
 }
@@ -125,12 +142,19 @@ reply_check_truncation(TASK *t, int *ancount, int *nscount, int *arcount) {
   size_t maxpkt = (t->protocol == SOCK_STREAM ? DNS_MAXPACKETLEN_TCP : DNS_MAXPACKETLEN_UDP);
   size_t maxrd = maxpkt - (DNS_HEADERSIZE + t->qdlen);
 
-  if (t->rdlen <= maxrd)
+#if DEBUG_ENABLED
+  Debug(buildreply, DEBUGLEVEL_FUNCS, _("%s: reply_check_truncation called"), desctask(t));
+#endif
+  if (t->rdlen <= maxrd) {
+#if DEBUG_ENABLED
+  Debug(buildreply, DEBUGLEVEL_FUNCS, _("%s: reply_check_truncation returns OK"), desctask(t));
+#endif
     return;
+  }
 
 #if DEBUG_ENABLED
-  Debug(buildreply, 1, _("reply_check_truncation() needs to truncate reply (%u) to fit packet max (%u)"),
-	 (unsigned int)t->rdlen, (unsigned int)maxrd);
+  Debug(buildreply, DEBUGLEVEL_PROGRESS, _("%s: reply_check_truncation() needs to truncate reply (%u) to fit packet max (%u)"),
+	desctask(t), (unsigned int)t->rdlen, (unsigned int)maxrd);
 #endif
 
   /* Loop through an/ns/ar sections, truncating as necessary, and updating counts */
@@ -138,6 +162,9 @@ reply_check_truncation(TASK *t, int *ancount, int *nscount, int *arcount) {
   *ancount = truncate_rrlist(t, maxpkt, &t->an, ANSWER);
   *nscount = truncate_rrlist(t, maxpkt, &t->ns, AUTHORITY);
   *arcount = truncate_rrlist(t, maxpkt, &t->ar, ADDITIONAL);
+#if DEBUG_ENABLED
+  Debug(buildreply, DEBUGLEVEL_FUNCS, _("%s: reply_check_truncation returns having truncated reply"), desctask(t));
+#endif
 }
 /*--- reply_check_truncation() ------------------------------------------------------------------*/
 
@@ -148,19 +175,32 @@ reply_check_truncation(TASK *t, int *ancount, int *nscount, int *arcount) {
 int buildreply_init(TASK *t) {
   register char *c = NULL;						/* Current character in name */
 
+#if DEBUG_ENABLED
+  Debug(buildreply, DEBUGLEVEL_FUNCS, _("%s: buildreply_init called"), desctask(t));
+#endif
   /* Examine question data, save labels found therein. The question data should begin with
      the name we've already parsed into t->qname.  I believe it is safe to assume that no
      compression will be possible in the question. */
   for (c = t->qname; *c; c++)
     if ((c == t->qname || *c == '.') && c[1])
       if (name_remember(t, (c == t->qname) ? c : (c+1),
-			(((c == t->qname) ? c : (c+1)) - t->qname) + DNS_HEADERSIZE) < -1)
+			(((c == t->qname) ? c : (c+1)) - t->qname) + DNS_HEADERSIZE) < -1) {
+#if DEBUG_ENABLED
+	Debug(buildreply, DEBUGLEVEL_FUNCS, _("%s: buildreply_init returns -1"), desctask(t));
+#endif
 	return (-1);
+      }
+#if DEBUG_ENABLED
+  Debug(buildreply, DEBUGLEVEL_FUNCS, _("%s: buildreply_init returns 0"), desctask(t));
+#endif
   return (0);
 }
 /*--- reply_init() ------------------------------------------------------------------------------*/
 
 void buildreply_abandon(TASK *t) {
+#if DEBUG_ENABLED
+  Debug(buildreply, DEBUGLEVEL_FUNCS, _("%s: buildreply_abandon called"), desctask(t));
+#endif
   /* Empty RR lists */
   rrlist_free(&t->an);
   rrlist_free(&t->ns);
@@ -170,6 +210,9 @@ void buildreply_abandon(TASK *t) {
   t->replylen = 0;
   t->rdlen = 0;
   RELEASE(t->rdata);
+#if DEBUG_ENABLED
+  Debug(buildreply, DEBUGLEVEL_FUNCS, _("%s: buildreply_abandon returns"), desctask(t));
+#endif
 }
 
 /**************************************************************************************************
@@ -179,8 +222,14 @@ void buildreply_abandon(TASK *t) {
 void buildreply_cache(TASK *t) {
   char *dest = t->reply;
 
+#if DEBUG_ENABLED
+  Debug(buildreply, DEBUGLEVEL_FUNCS, _("%s: buildreply_cache called"), desctask(t));
+#endif
   DNS_PUT16(dest, t->id);							/* Query ID */
   DNS_PUT(dest, &t->hdr, SIZE16);						/* Header */
+#if DEBUG_ENABLED
+  Debug(buildreply, DEBUGLEVEL_FUNCS, _("%s: buildreply_cache returns"), desctask(t));
+#endif
 }
 /*--- buildreply_cache() -----------------------------------------------------------------------*/
 
@@ -193,6 +242,9 @@ void buildreply(TASK *t, int want_additional) {
   char	*dest = NULL;
   int	ancount = 0, nscount = 0, arcount = 0;
 
+#if DEBUG_ENABLED
+  Debug(buildreply, DEBUGLEVEL_FUNCS, _("%s: buildreply called"), desctask(t));
+#endif
   /* Add data to ADDITIONAL section */
   if (want_additional) {
     mydns_reply_add_additional(t, &t->an, ANSWER);
@@ -243,21 +295,21 @@ void buildreply(TASK *t, int want_additional) {
   DNS_PUT(dest, t->rdata, t->rdlen);				/* Resource record data */
 
 #if DEBUG_ENABLED
-  Debug(buildreply, 1, _("%s: reply:     id = %u"), desctask(t),
+  Debug(buildreply, DEBUGLEVEL_PROGRESS, _("%s: reply:     id = %u"), desctask(t),
 	 t->id);
-  Debug(buildreply, 1, _("%s: reply:     qr = %u (message is a %s)"), desctask(t),
+  Debug(buildreply, DEBUGLEVEL_PROGRESS, _("%s: reply:     qr = %u (message is a %s)"), desctask(t),
 	 t->hdr.qr, t->hdr.qr ? "response" : "query");
-  Debug(buildreply, 1, _("%s: reply: opcode = %u (%s)"), desctask(t),
+  Debug(buildreply, DEBUGLEVEL_PROGRESS, _("%s: reply: opcode = %u (%s)"), desctask(t),
 	 t->hdr.opcode, mydns_opcode_str(t->hdr.opcode));
-  Debug(buildreply, 1, _("%s: reply:     aa = %u (answer %s)"), desctask(t),
+  Debug(buildreply, DEBUGLEVEL_PROGRESS, _("%s: reply:     aa = %u (answer %s)"), desctask(t),
 	 t->hdr.aa, t->hdr.aa ? "is authoritative" : "not authoritative");
-  Debug(buildreply, 1, _("%s: reply:     tc = %u (message %s)"), desctask(t),
+  Debug(buildreply, DEBUGLEVEL_PROGRESS, _("%s: reply:     tc = %u (message %s)"), desctask(t),
 	 t->hdr.tc, t->hdr.tc ? "truncated" : "not truncated");
-  Debug(buildreply, 1, _("%s: reply:     rd = %u (%s)"), desctask(t),
+  Debug(buildreply, DEBUGLEVEL_PROGRESS, _("%s: reply:     rd = %u (%s)"), desctask(t),
 	 t->hdr.rd, t->hdr.rd ? "recursion desired" : "no recursion");
-  Debug(buildreply, 1, _("%s: reply:     ra = %u (recursion %s)"), desctask(t),
+  Debug(buildreply, DEBUGLEVEL_PROGRESS, _("%s: reply:     ra = %u (recursion %s)"), desctask(t),
 	 t->hdr.ra, t->hdr.ra ? "available" : "unavailable");
-  Debug(buildreply, 1, _("%s: reply:  rcode = %u (%s)"), desctask(t),
+  Debug(buildreply, DEBUGLEVEL_PROGRESS, _("%s: reply:  rcode = %u (%s)"), desctask(t),
 	 t->hdr.rcode, mydns_rcode_str(t->hdr.rcode));
   /* escdata(t->reply, t->replylen); */
 #endif

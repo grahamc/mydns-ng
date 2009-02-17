@@ -27,6 +27,7 @@
 #include "debug.h"
 #include "error.h"
 #include "rr.h"
+#include "rrtype.h"
 #include "taskobj.h"
 
 #if DEBUG_ENABLED
@@ -51,7 +52,7 @@ find_soa(
   int			errflag = 0;
 
 #if DEBUG_ENABLED
-  Debug(data, 1, _("%s: find_soa(%s, %s)"), desctask(t), fqdn, (label)?*label:_("<NULL>"));
+  Debug(data, DEBUGLEVEL_PROGRESS, _("%s: find_soa(%s, %s)"), desctask(t), fqdn, (label)?*label:_("<NULL>"));
 #endif
 
   end = fqdn + fqdnlen;
@@ -64,6 +65,11 @@ find_soa(
 
       if (errflag) {
 	dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
+#if DEBUG_ENABLED
+	Debug(data, DEBUGLEVEL_FUNCS,
+	      _("%s: find_soa: returns NULL and SERVFAIL because the zone could not be found in the cache"),
+	      desctask(t));
+#endif
 	return (NULL);
       }
 
@@ -83,6 +89,9 @@ find_soa(
     }
   }
 
+#if DEBUG_ENABLED
+  Debug(data, DEBUGLEVEL_FUNCS, _("%s: find_soa returns SOA"), desctask(t));
+#endif
   return (soa);
 }
 /*--- find_soa() --------------------------------------------------------------------------------*/
@@ -101,12 +110,22 @@ find_rr(
   int errflag = 0;
   MYDNS_RR *rr = NULL;
 
+#if DEBUG_ENABLED
+  Debug(data, DEBUGLEVEL_PROGRESS, _("%s: find_rr(%s, %s, %s)"), desctask(t),
+	soa->origin, mydns_rr_get_type_by_id(type)->rr_type_name, name);
+#endif
+
   rr = zone_cache_find(t, soa->id, soa->origin, type, name, strlen(name), &errflag, soa);
 
   if (errflag) {
     if (rr)
       mydns_rr_free(rr);
     dnserror(t, DNS_RCODE_SERVFAIL, ERR_DB_ERROR);
+#if DEBUG_ENABLED
+    Debug(data, DEBUGLEVEL_FUNCS,
+	  _("%s: find_rr return NULL and SERVFAIL because the record could not be found in the cache"),
+	  desctask(t));
+#endif
     return (NULL);
   }
 
@@ -119,10 +138,20 @@ find_rr(
 
       mydns_rr_free(rr);
       dnserror(t, DNS_RCODE_SERVFAIL, ERR_NAME_FORMAT);
+#if DEBUG_ENABLED
+    Debug(data, DEBUGLEVEL_FUNCS,
+	  _("%s: find_rr return NULL and SERVFAIL because the record has empty data"),
+	  desctask(t));
+#endif
       return (NULL);
     }
   }
 
+#if DEBUG_ENABLED
+    Debug(data, DEBUGLEVEL_FUNCS,
+	  _("%s: find_rr returns RR"),
+	  desctask(t));
+#endif
   return (rr);
 }
 /*--- find_rr() ---------------------------------------------------------------------------------*/

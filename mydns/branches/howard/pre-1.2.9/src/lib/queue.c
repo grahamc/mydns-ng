@@ -37,11 +37,17 @@ queue_init(char *typename, char *priorityname) {
   int		queuenamelen = strlen(typename) + strlen(priorityname) + 3;
   char		*queuename = NULL;
 
+#if DEBUG_ENABLED
+  Debug(queue, DEBUGLEVEL_FUNCS, _("queue_init: called for %s/%s"), typename, priorityname);
+#endif
   queuenamelen = ASPRINTF(&queuename, "%s %ss", priorityname, typename);
   q = ALLOCATE(sizeof(QUEUE), QUEUE*);
   q->size = q->max_size = 0;
   q->queuename = queuename;
   q->head = q->tail = NULL;
+#if DEBUG_ENABLED
+  Debug(queue, DEBUGLEVEL_FUNCS, _("queue_init: returns"));
+#endif
   return (q);
 }
 /*--- queue_init() ------------------------------------------------------------------------------*/
@@ -49,6 +55,9 @@ queue_init(char *typename, char *priorityname) {
 void queue_append(QUEUE **q, void *t) {
   QueueEntry *qe = (QueueEntry*)t;
 
+#if DEBUG_ENABLED
+  Debug(queue, DEBUGLEVEL_FUNCS, _("queue_append: called"));
+#endif
   qe->next = qe->prev = NULL;
 
   if ((*q)->head) {
@@ -64,11 +73,17 @@ void queue_append(QUEUE **q, void *t) {
   if ((*q)->max_size < (*q)->size) (*q)->max_size = (*q)->size;
 
   qe->Q = q;
+#if DEBUG_ENABLED
+  Debug(queue, DEBUGLEVEL_FUNCS, _("queue_append: returns"));
+#endif
 }
 
 void queue_remove(QUEUE **q, void *t) {
   QueueEntry *qe = (QueueEntry*)t;
 
+#if DEBUG_ENABLED
+  Debug(queue, DEBUGLEVEL_FUNCS, _("queue_remove: called"));
+#endif
   if (qe == (*q)->head) {
     (*q)->head = qe->next;
     if ((*q)->head == NULL) {
@@ -88,6 +103,9 @@ void queue_remove(QUEUE **q, void *t) {
 
   qe->next = qe->prev = NULL;
   qe->Q = NULL;
+#if DEBUG_ENABLED
+  Debug(queue, DEBUGLEVEL_FUNCS, _("queue_remove: returns"));
+#endif
 }
 
 /* vi:set ts=3: */

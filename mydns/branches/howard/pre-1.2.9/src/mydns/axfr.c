@@ -54,6 +54,9 @@ axfr_error(TASK *t, const char *fmt, ...) {
   va_list	ap; 
   char		*msg = NULL;
 
+#if DEBUG_ENABLED
+  Debug(axfr, DEBUGLEVEL_FUNCS, _("axfr_error called"));
+#endif
   if (t) {
     task_output_info(t, NULL);
   } else {
@@ -67,6 +70,9 @@ axfr_error(TASK *t, const char *fmt, ...) {
 
   sockclose(t->fd);
 
+#if DEBUG_ENABLED
+  Debug(axfr, DEBUGLEVEL_FUNCS, _("axfr_error exiting FAILURE"));
+#endif
   _exit(EXIT_FAILURE);
   /* NOTREACHED */
 }
@@ -79,6 +85,9 @@ axfr_error(TASK *t, const char *fmt, ...) {
 **************************************************************************************************/
 static void
 axfr_timeout(int dummy) {
+#if DEBUG_ENABLED
+  Debug(axfr, DEBUGLEVEL_FUNCS, _("axfr_timeout called"));
+#endif
   axfr_error(NULL, _("AXFR timed out"));
 }
 /*--- axfr_timeout() ----------------------------------------------------------------------------*/
@@ -96,6 +105,9 @@ axfr_write_wait(TASK *t) {
   item.events = POLLOUT;
   item.revents = 0;
 
+#if DEBUG_ENABLED
+  Debug(axfr, DEBUGLEVEL_FUNCS, _("%s: axfr_write_wait called"), desctask(t));
+#endif
 #if HAVE_POLL
   rv = poll(&item, 1, -1);
   if (rv >= 0) {
@@ -125,6 +137,9 @@ axfr_write_wait(TASK *t) {
 #endif
   if (rv < 0)
     axfr_error(t, "axfr_write_wait poll failed %s(%d)", strerror(errno), errno);
+#if DEBUG_ENABLED
+  Debug(axfr, DEBUGLEVEL_FUNCS, _("%s: axfr_write_wait returns"), desctask(t));
+#endif
 }
 /*--- axfr_write_wait() -------------------------------------------------------------------------*/
 
@@ -138,6 +153,9 @@ axfr_write(TASK *t, char *buf, size_t size) {
   int		rv = 0;
   size_t	offset = 0;
 
+#if DEBUG_ENABLED
+  Debug(axfr, DEBUGLEVEL_FUNCS, _("%s: axfr_write called"), desctask(t));
+#endif
   do {
     axfr_write_wait(t);
     if ((rv = write(t->fd, buf+offset, size-offset)) < 0)
@@ -146,6 +164,9 @@ axfr_write(TASK *t, char *buf, size_t size) {
       axfr_error(t, _("client closed connection"));
     offset += rv;
   } while (offset < size);
+#if DEBUG_ENABLED
+  Debug(axfr, DEBUGLEVEL_FUNCS, _("%s: axfr_write returns"), desctask(t));
+#endif
 }
 /*--- axfr_write() ------------------------------------------------------------------------------*/
 
@@ -158,6 +179,9 @@ static void
 axfr_reply(TASK *t) {
   char len[2] = { 0, 0 }, *l = len;
 
+#if DEBUG_ENABLED
+  Debug(axfr, DEBUGLEVEL_FUNCS, _("%s: axfr_reply called"), desctask(t));
+#endif
   buildreply(t, 0);
   DNS_PUT16(l, t->replylen);
   axfr_write(t, len, SIZE16);
@@ -181,6 +205,9 @@ axfr_reply(TASK *t) {
   /* Nuke question data */
   t->qdcount = 0;
   t->qdlen = 0;
+#if DEBUG_ENABLED
+  Debug(axfr, DEBUGLEVEL_FUNCS, _("%s: axfr_reply returns"), desctask(t));
+#endif
 }
 /*--- axfr_reply() ------------------------------------------------------------------------------*/
 
@@ -200,43 +227,49 @@ check_xfer(TASK *t, MYDNS_SOA *soa) {
   size_t	querylen = 0;
   int		ok = 0;
 
+#if DEBUG_ENABLED
+  Debug(axfr, DEBUGLEVEL_FUNCS, _("%s: check_xfer called"), desctask(t));
+#endif
   memset(&ip, 0, sizeof(ip));
 
-  if (!mydns_soa_use_xfer)
-    return;
+  if (mydns_soa_use_xfer) {
+    strncpy(ip, clientaddr(t), sizeof(ip)-1);
 
-  strncpy(ip, clientaddr(t), sizeof(ip)-1);
+    querylen = sql_build_query(&query, "SELECT xfer FROM %s WHERE id=%u%s%s%s;",
+			       mydns_soa_table_name, soa->id,
+			       (mydns_rr_use_active)? " AND active='" : "",
+			       (mydns_rr_use_active)? mydns_rr_active_types[0] : "",
+			       (mydns_rr_use_active)? "'" : "");
 
-  querylen = sql_build_query(&query, "SELECT xfer FROM %s WHERE id=%u%s%s%s;",
-			     mydns_soa_table_name, soa->id,
-			     (mydns_rr_use_active)? " AND active='" : "",
-			     (mydns_rr_use_active)? mydns_rr_active_types[0] : "",
-			     (mydns_rr_use_active)? "'" : "");
-
-  res = sql_query(sql, query, querylen);
-  RELEASE(query);
-  if (!res) {
-    ErrSQL(sql, "%s: %s", desctask(t), _("error loading zone transfer access rules"));
-  }
-
-  if ((row = sql_getrow(res, NULL))) {
-    char *wild = NULL, *r = NULL;
-
-    for (r = row[0]; !ok && (wild = strsep(&r, ",")); )	{
-      if (strchr(wild, '/')) {
-	if (t->family == AF_INET)
-	  ok = in_cidr(wild, t->addr4.sin_addr);
-      }	else if (wildcard_match(wild, ip))
-	ok = 1;
+    res = sql_query(sql, query, querylen);
+    RELEASE(query);
+    if (!res) {
+      ErrSQL(sql, "%s: %s", desctask(t), _("error loading zone transfer access rules"));
     }
+
+    if ((row = sql_getrow(res, NULL))) {
+      char *wild = NULL, *r = NULL;
+
+      for (r = row[0]; !ok && (wild = strsep(&r, ",")); )	{
+	if (strchr(wild, '/')) {
+	  if (t->family == AF_INET)
+	    ok = in_cidr(wild, t->addr4.sin_addr);
+	}	else if (wildcard_match(wild, ip))
+	  ok = 1;
+      }
+    }
+    sql_free(res);
+
   }
-  sql_free(res);
 
   if (!ok) {
     dnserror(t, DNS_RCODE_REFUSED, ERR_NO_AXFR);
     axfr_reply(t);
     axfr_error(t, _("access denied"));
   }
+#if DEBUG_ENABLED
+  Debug(axfr, DEBUGLEVEL_FUNCS, _("%s: check_xfer returns"), desctask(t));
+#endif
 }
 /*--- check_xfer() ------------------------------------------------------------------------------*/
 
@@ -248,6 +281,9 @@ check_xfer(TASK *t, MYDNS_SOA *soa) {
 static void
 axfr_zone(TASK *t, MYDNS_SOA *soa) {
 
+#if DEBUG_ENABLED
+  Debug(axfr, DEBUGLEVEL_FUNCS, _("%s: axfr_zone called"), desctask(t));
+#endif
   /* Check optional "xfer" column and initialize reply */
   check_xfer(t, soa);
   buildreply_init(t);
@@ -286,6 +322,9 @@ axfr_zone(TASK *t, MYDNS_SOA *soa) {
   axfr_reply(t);
 
   mydns_soa_free(soa);
+#if DEBUG_ENABLED
+  Debug(axfr, DEBUGLEVEL_FUNCS, _("%s: axfr_zone returns"), desctask(t));
+#endif
 }
 /*--- axfr_zone() -------------------------------------------------------------------------------*/
 
@@ -298,10 +337,16 @@ static MYDNS_SOA *
 axfr_get_soa(TASK *t) {
   MYDNS_SOA *soa = NULL;
 
+#if DEBUG_ENABLED
+  Debug(axfr, DEBUGLEVEL_FUNCS, _("%s: axfr_get_soa called"), desctask(t));
+#endif
   /* Try to load SOA */
   if (mydns_soa_load(sql, &soa, t->qname) < 0)
     ErrSQL(sql, "%s: %s", desctask(t), _("error loading zone"));
   if (soa) {
+#if DEBUG_ENABLED
+    Debug(axfr, DEBUGLEVEL_FUNCS, _("%s: axfr_get_soa returns SOA"), desctask(t));
+#endif
     return (soa);
   }
 
@@ -326,6 +371,9 @@ axfr(TASK *t) {
 #endif
   MYDNS_SOA *soa = NULL;				/* SOA record for zone (may be bogus!) */
 
+#if DEBUG_ENABLED
+  Debug(axfr, DEBUGLEVEL_FUNCS, _("%s: axfr called"), desctask(t));
+#endif
   /* Do generic startup stuff; this is a child process */
   signal(SIGALRM, axfr_timeout);
   alarm(AXFR_TIME_LIMIT);
@@ -334,7 +382,7 @@ axfr(TASK *t) {
 
 #if DEBUG_ENABLED
   gettimeofday(&start, NULL);
-  Debug(axfr, 1,_("%s: Starting AXFR for task ID %u"), desctask(t), t->internal_id);
+  Debug(axfr, DEBUGLEVEL_PROGRESS,_("%s: Starting AXFR for task ID %u"), desctask(t), t->internal_id);
 #endif
   total_records = total_octets = 0;
   t->no_markers = 1;
@@ -350,7 +398,7 @@ axfr(TASK *t) {
 #if DEBUG_ENABLED
   /* Report result */
   gettimeofday(&finish, NULL);
-  Debug(axfr, 1,_("AXFR: %u records, %u octets, %.3fs"), 
+  Debug(axfr, DEBUGLEVEL_PROGRESS,_("AXFR: %u records, %u octets, %.3fs"), 
 	 (unsigned int)total_records, (unsigned int)total_octets,
 	 ((finish.tv_sec + finish.tv_usec / 1000000.0) - (start.tv_sec + start.tv_usec / 1000000.0)));
 #endif
@@ -360,6 +408,9 @@ axfr(TASK *t) {
 
   sockclose(t->fd);
 
+#if DEBUG_ENABLED
+  Debug(axfr, DEBUGLEVEL_FUNCS, _("%s: axfr exiting SUCCESS"), desctask(t));
+#endif
   _exit(EXIT_SUCCESS);
 }
 /*--- axfr() ------------------------------------------------------------------------------------*/
@@ -370,7 +421,7 @@ axfr_fork(TASK *t) {
   pid_t pid = -1, parent = -1;
 
 #if DEBUG_ENABLED
-  Debug(axfr, 1,_("%s: axfr_fork called on fd %d"), desctask(t), t->fd);
+  Debug(axfr, DEBUGLEVEL_PROGRESS,_("%s: axfr_fork called on fd %d"), desctask(t), t->fd);
 #endif
 
   if (pipe(pfd))
@@ -407,7 +458,7 @@ axfr_fork(TASK *t) {
     error_reinit();
 
 #if DEBUG_ENABLED
-    Debug(axfr, 1,_("%s: axfr_fork is in the child"), desctask(t));
+    Debug(axfr, DEBUGLEVEL_PROGRESS,_("%s: axfr_fork is in the child"), desctask(t));
 #endif
 
     /*  Let parent know I have started */
@@ -417,14 +468,14 @@ axfr_fork(TASK *t) {
     close(pfd[1]);
 
 #if DEBUG_ENABLED
-    Debug(axfr, 1,_("%s: axfr_fork child has told parent I am running"), desctask(t));
+    Debug(axfr, DEBUGLEVEL_PROGRESS,_("%s: axfr_fork child has told parent I am running"), desctask(t));
 #endif
 
     /* Clean up parents resources */
     task_free_others(t, 1);
 
 #if DEBUG_ENABLED
-    Debug(axfr, 1,_("%s: AXFR child built"), desctask(t));
+    Debug(axfr, DEBUGLEVEL_PROGRESS,_("%s: AXFR child built"), desctask(t));
 #endif
     /* Do AXFR */
     axfr(t);
@@ -443,7 +494,7 @@ axfr_fork(TASK *t) {
     close(pfd[0]);
 
 #if DEBUG_ENABLED
-    Debug(axfr, 1,_("AXFR: process started on pid %d for TCP fd %d, task ID %u"),
+    Debug(axfr, DEBUGLEVEL_PROGRESS,_("AXFR: process started on pid %d for TCP fd %d, task ID %u"),
 	   pid, t->fd, t->internal_id);
 #endif
   }

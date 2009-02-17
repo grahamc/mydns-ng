@@ -188,9 +188,6 @@ extern char	*recursion_algorithm;
 extern char	*recursive_fwd_server;		/* Name of server for recursive forwarding */
 extern int	recursive_family;		/* Protocol family for recursion */
 
-#if DEBUG_ENABLED
-#endif
-
 #if HAVE_IPV6
 extern struct sockaddr_in6	recursive_sa6;	/* Recursive server (IPv6) */
 #endif

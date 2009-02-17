@@ -45,6 +45,9 @@ db_check_optional(void) {
   int		old_rr_use_serial = mydns_rr_use_serial;
   int		old_rr_extended_data = mydns_rr_extended_data;
 
+#if DEBUG_ENABLED
+  Debug(db, DEBUGLEVEL_FUNCS, _("db_check_optional: called"));
+#endif
   /* Check for soa.active */
   mydns_set_soa_use_active(sql);
   if (mydns_soa_use_active != old_soa_use_active)
@@ -88,6 +91,10 @@ db_check_optional(void) {
   mydns_set_rr_extended_data(sql);
   if (mydns_rr_extended_data != old_rr_extended_data)
     Verbose(_("optional 'edata' column found in '%s' table"), mydns_rr_table_name);
+
+#if DEBUG_ENABLED
+  Debug(db, DEBUGLEVEL_FUNCS, _("db_check_optional: returns"));
+#endif
 }
 /*--- db_check_optional() -----------------------------------------------------------------------*/
 
@@ -103,7 +110,13 @@ db_connect(void) {
   char *user = conf_get(&Conf, "db-user", NULL);
   char *database = conf_get(&Conf, "database", NULL);
 
+#if DEBUG_ENABLED
+  Debug(db, DEBUGLEVEL_FUNCS, _("db_connect: called"));
+#endif
   sql_open(user, password, host, database);
+#if DEBUG_ENABLED
+  Debug(db, DEBUGLEVEL_FUNCS, _("db_connect: returns"));
+#endif
 }
 /*--- db_connect() ------------------------------------------------------------------------------*/
 
@@ -114,6 +127,9 @@ db_connect(void) {
 **************************************************************************************************/
 void
 db_output_create_tables(void) {
+#if DEBUG_ENABLED
+    Debug(db, DEBUGLEVEL_FUNCS, _("db_output_create_tables: called"));
+#endif
   load_config();
 
   /* Header */
@@ -284,6 +300,9 @@ db_output_create_tables(void) {
   printf(") Engine=%s;\n\n", mydns_dbengine);
 #endif
 
+#if DEBUG_ENABLED
+  Debug(db, DEBUGLEVEL_FUNCS, _("db_output_create_tables: returns"));
+#endif
   exit(EXIT_SUCCESS);
 }
 /*--- db_output_create_tables() -----------------------------------------------------------------*/
@@ -302,6 +321,9 @@ db_sql_numrows(const char *fmt, ...) {
   SQL_RES	*res = NULL;
   int		rv = 0;
 
+#if DEBUG_ENABLED
+  Debug(db, DEBUGLEVEL_FUNCS, _("db_sql_numrows: called"));
+#endif
   va_start(ap, fmt);
   querylen = VASPRINTF(&query,fmt, ap);
   va_end(ap);
@@ -313,6 +335,9 @@ db_sql_numrows(const char *fmt, ...) {
   }
   rv = sql_num_rows(res);
   sql_free(res);
+#if DEBUG_ENABLED
+  Debug(db, DEBUGLEVEL_FUNCS, _("db_sql_numrows: returns"));
+#endif
   return (rv);
 }
 /*--- db_sql_numrows() --------------------------------------------------------------------------*/
@@ -326,6 +351,9 @@ db_sql_numrows(const char *fmt, ...) {
 **************************************************************************************************/
 static void
 db_check_column(const char *database, const char *table, const char *name) {
+#if DEBUG_ENABLED
+  Debug(db, DEBUGLEVEL_FUNCS, _("db_check_column: called"));
+#endif
   if (!sql_iscolumn(sql, table, name)) {
     Warnx(_("Required column `%s' in table `%s' (database `%s') not found or inaccessible"),
 	  name, table, database);
@@ -333,13 +361,24 @@ db_check_column(const char *database, const char *table, const char *name) {
     Warnx(_("You can run `%s --create-tables' to output appropriate SQL commands"), progname);
     exit(EXIT_FAILURE);
   }
+#if DEBUG_ENABLED
+  Debug(db, DEBUGLEVEL_FUNCS, _("db_check_column: returns"));
+#endif
 }
 /*--- db_check_column() -------------------------------------------------------------------------*/
 
 static uint
 db_get_column_width(const char *table, const char *name) {
-  uint width = sql_get_column_width(sql, table, name);
+  uint width;
 
+#if DEBUG_ENABLED
+  Debug(db, DEBUGLEVEL_FUNCS, _("db_get_column_width: called for %s:%s"), table, name);
+#endif
+  width = sql_get_column_width(sql, table, name);
+
+#if DEBUG_ENABLED
+  Debug(db, DEBUGLEVEL_FUNCS, _("db_get_column_width: returns"));
+#endif
   return width;
 }
 
@@ -351,6 +390,9 @@ static void
 db_verify_table(const char *database, const char *table, const char *columns) {
   char *fields = NULL, *f = NULL, *name = NULL;
 
+#if DEBUG_ENABLED
+  Debug(db, DEBUGLEVEL_FUNCS, _("db_verify_table: called for %s, %s (%s)"), database, table, columns);
+#endif
   /* Check that the table itself exists */
   if (!sql_istable(sql, table)) {
     Warnx(_("Required table `%s' in database `%s' not found or inaccessible"), table, database);
@@ -365,6 +407,9 @@ db_verify_table(const char *database, const char *table, const char *columns) {
   while ((name = strsep(&f, ",")))
     db_check_column(database, table, name);
   RELEASE(fields);
+#if DEBUG_ENABLED
+  Debug(db, DEBUGLEVEL_FUNCS, _("db_verify_table: returns"));
+#endif
 }
 /*--- db_verify_table() -------------------------------------------------------------------------*/
 
@@ -377,6 +422,10 @@ static void
 db_check_ptr_table(const char *database) {
   const char *table = conf_get(&Conf, "ptr-table", NULL);
 
+#if DEBUG_ENABLED
+  Debug(db, DEBUGLEVEL_FUNCS, _("db_check_ptr_table: called for %s"), database);
+#endif
+
   if (!table)
     table = "ptr";
 
@@ -387,6 +436,9 @@ db_check_ptr_table(const char *database) {
     Warnx(_("See %s/ptr.html for more information"), PACKAGE_HOMEPAGE);
     exit(EXIT_FAILURE);
   }
+#if DEBUG_ENABLED
+  Debug(db, DEBUGLEVEL_FUNCS, _("db_check_ptr_table: returns"));
+#endif
 }
 /*--- db_check_ptr_table() ----------------------------------------------------------------------*/
 
@@ -402,6 +454,9 @@ db_verify_tables(void) {
   char *password = conf_get(&Conf, "db-password", NULL);
   char *user = conf_get(&Conf, "db-user", NULL);
 
+#if DEBUG_ENABLED
+  Debug(db, DEBUGLEVEL_FUNCS, _("db_verify_tables: called"));
+#endif
   sql_open(user, password, host, database);
 
   /* XXX: Fix this - check existence of database etc */
@@ -420,6 +475,9 @@ db_verify_tables(void) {
 #endif
 
   sql_close(sql);
+#if DEBUG_ENABLED
+  Debug(db, DEBUGLEVEL_FUNCS, _("db_verify_tables: returns"));
+#endif
 }
 /*--- db_verify_tables() ------------------------------------------------------------------------*/
 

@@ -776,7 +776,7 @@ server_loop(INITIALTASK *initial_tasks, int serverfd) {
     if (numfds == 0 || items == NULL) {
       Err(_("No IO for process - something is wrong"));
     }
-    Debug(mydns, 1, _("Scheduling Tasks - timeout = %d, numfds = %d"), timeoutWanted, numfds);
+    Debug(mydns, DEBUGLEVEL_PROGRESS, _("Scheduling Tasks - timeout = %d, numfds = %d"), timeoutWanted, numfds);
 #endif
     if (timeoutWanted > 0 && TaskArray[NORMAL_TASK][HIGH_PRIORITY_TASK]->head) {
       /* If we have a high priority normal task to run then wake up in 1/10th second */
@@ -794,7 +794,7 @@ server_loop(INITIALTASK *initial_tasks, int serverfd) {
 
 #if HAVE_POLL
 #if DEBUG_ENABLED
-      Debug(mydns, 1, _("Selecting for IO numfds = %d, timeout = %s(%d)"), numfds,
+      Debug(mydns, DEBUGLEVEL_PROGRESS, _("Selecting for IO numfds = %d, timeout = %s(%d)"), numfds,
 	    (timeoutWanted<0)?"no"
 	    :(timeoutWanted==0)?"poll":"yes", timeoutWanted);
 #endif
@@ -837,7 +837,7 @@ server_loop(INITIALTASK *initial_tasks, int serverfd) {
 	FD_SET(fd, &efd);
       }
 #if DEBUG_ENABLED
-      Debug(mydns, 1, _("Selecting for IO maxfd = %d, timeout = %s"), maxfd, (tvp)?"yes":"no");
+      Debug(mydns, DEBUGLEVEL_PROGRESS, _("Selecting for IO maxfd = %d, timeout = %s"), maxfd, (tvp)?"yes":"no");
 #endif
       rv = select(maxfd+1, &rfd, &wfd, &efd, tvp);
 
@@ -871,7 +871,7 @@ server_loop(INITIALTASK *initial_tasks, int serverfd) {
 	  item->revents |= POLLERR;
 	}
 #if DEBUG_ENABLED
-	Debug(mydns, 1, _("Item fd = %d, events = %x, revents = %x"), fd, item->events, item->revents);
+	Debug(mydns, DEBUGLEVEL_PROGRESS, _("Item fd = %d, events = %x, revents = %x"), fd, item->events, item->revents);
 #endif
       }
     }
@@ -942,7 +942,7 @@ spawn_server(INITIALTASK *initial_tasks) {
     SERVER *server = array_remove(Servers);
     if (server) {
 #if DEBUG_ENABLED
-      Debug(mydns, 1, _("closing fd %d"), server->serverfd);
+      Debug(mydns, DEBUGLEVEL_PROGRESS, _("closing fd %d"), server->serverfd);
 #endif
       close(server->serverfd);
       RELEASE(server);
@@ -957,7 +957,7 @@ spawn_server(INITIALTASK *initial_tasks) {
   /* Delete pre-existing tasks as they belong to master */
   task_free_all();
 #if DEBUG_ENABLED
-  Debug(mydns, 1, _("Cleaned up master structures - starting work"));
+  Debug(mydns, DEBUGLEVEL_PROGRESS, _("Cleaned up master structures - starting work"));
 #endif
 
   sql_close(sql); /* Release the database connection held by the master */
@@ -1005,9 +1005,9 @@ master_loop(INITIALTASK *initial_tasks) {
 		  
 #if DEBUG_ENABLED    
     if (numfds == 0 || items == NULL) {
-      Err(_("No IO for process - something is wrong"));
+      Err(_("No IO for master process - something is wrong"));
     }
-    Debug(mydns, 1, _("Scheduling Tasks - timeout = %d, numfds = %d"),
+    Debug(mydns, DEBUGLEVEL_PROGRESS, _("Scheduling Tasks - timeout = %d, numfds = %d"),
 	   timeoutWanted, numfds);
 #endif
     if (TaskArray[NORMAL_TASK][HIGH_PRIORITY_TASK]->head) {
@@ -1026,7 +1026,7 @@ master_loop(INITIALTASK *initial_tasks) {
 
 #if HAVE_POLL
 #if DEBUG_ENABLED
-      Debug(mydns, 1, _("Selecting for IO numfds = %d, timeout = %s(%d)"), numfds,
+      Debug(mydns, DEBUGLEVEL_PROGRESS, _("Selecting for IO numfds = %d, timeout = %s(%d)"), numfds,
 	     (timeoutWanted<0)?"no"
 	     :(timeoutWanted==0)?"poll":"yes", timeoutWanted);
 #endif
@@ -1069,7 +1069,7 @@ master_loop(INITIALTASK *initial_tasks) {
 	FD_SET(fd, &efd);
       }
 #if DEBUG_ENABLED
-      Debug(mydns, 1, _("Selecting for IO maxfd = %d, timeout = %s"), maxfd, (tvp)?"yes":"no");
+      Debug(mydns, DEBUGLEVEL_PROGRESS, _("Selecting for IO maxfd = %d, timeout = %s"), maxfd, (tvp)?"yes":"no");
 #endif
       rv = select(maxfd+1, &rfd, &wfd, &efd, tvp);
 
@@ -1097,7 +1097,7 @@ master_loop(INITIALTASK *initial_tasks) {
 	  item->revents |= POLLERR;
 	}
 #if DEBUG_ENABLED
-	Debug(mydns, 1, _("Item fd = %d, events = %x, revents = %x"), fd, item->events, item->revents);
+	Debug(mydns, DEBUGLEVEL_PROGRESS, _("Item fd = %d, events = %x, revents = %x"), fd, item->events, item->revents);
 #endif
       }
     }

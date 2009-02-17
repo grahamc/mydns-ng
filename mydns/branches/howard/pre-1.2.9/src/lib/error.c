@@ -47,50 +47,57 @@ char *
 err_reason_str(TASK *t, task_error_t reason) {
   static char *buf = NULL;
 
+#if DEBUG_ENABLED
+  Debug(error, DEBUGLEVEL_FUNCS, _("%s: err_reason_str: called"), desctask(t));
+#endif
   switch (reason) {
-  case ERR_NONE:			return ((char*)"-");
-  case ERR_INTERNAL: 			return ((char *)_("Internal_error"));
-  case ERR_ZONE_NOT_FOUND: 		return ((char *)_("Zone_not_found"));
-  case ERR_NO_MATCHING_RECORDS: 	return ((char *)_("No_matching_resource_records"));
-  case ERR_NO_AXFR: 			return ((char *)_("AXFR_disabled"));
-  case ERR_RR_NAME_TOO_LONG: 		return ((char *)_("Name_too_long_in_RR"));
-  case ERR_RR_LABEL_TOO_LONG: 		return ((char *)_("Label_too_long_in_RR"));
-  case ERR_Q_BUFFER_OVERFLOW: 		return ((char *)_("Input_name_buffer_overflow"));
-  case ERR_Q_INVALID_COMPRESSION:	return ((char *)_("Invalid_compression_method"));
-  case ERR_Q_NAME_TOO_LONG: 		return ((char *)_("Question_name_too_long"));
-  case ERR_Q_LABEL_TOO_LONG: 		return ((char *)_("Question_label_too_long"));
-  case ERR_NO_CLASS: 			return ((char *)_("Unsupported_class"));
-  case ERR_NAME_FORMAT: 		return ((char *)_("Invalid_name_format"));
-  case ERR_TIMEOUT: 			return ((char *)_("Communications_timeout"));
-  case ERR_BROKEN_GLUE: 		return ((char *)_("Malformed_glue"));
-  case ERR_INVALID_ADDRESS: 		return ((char *)_("Invalid_address"));
-  case ERR_INVALID_TYPE: 		return ((char *)_("Invalid_type"));
-  case ERR_INVALID_CLASS: 		return ((char *)_("Invalid_class"));
-  case ERR_INVALID_TTL: 		return ((char *)_("Invalid_TTL"));
-  case ERR_INVALID_DATA: 		return ((char *)_("Invalid_data"));
-  case ERR_DB_ERROR: 			return ((char *)_("Database_error"));
-  case ERR_NO_QUESTION: 		return ((char *)_("No_question_in_query"));
-  case ERR_NO_AUTHORITY:		return ((char *)_("No_authority_in_query"));
-  case ERR_MULTI_QUESTIONS: 		return ((char *)_("Multiple_questions_in_query"));
-  case ERR_MULTI_AUTHORITY:		return ((char *)_("Multiple_authority_records_in_ixfr_query"));
-  case ERR_QUESTION_TRUNCATED: 		return ((char *)_("Question_truncated"));
+  case ERR_NONE:			buf = (char*)"-"; break;
+  case ERR_INTERNAL: 			buf = (char *)_("Internal_error"); break;
+  case ERR_ZONE_NOT_FOUND: 		buf = (char *)_("Zone_not_found"); break;
+  case ERR_NO_MATCHING_RECORDS: 	buf = (char *)_("No_matching_resource_records"); break;
+  case ERR_NO_AXFR: 			buf = (char *)_("AXFR_disabled"); break;
+  case ERR_RR_NAME_TOO_LONG: 		buf = (char *)_("Name_too_long_in_RR"); break;
+  case ERR_RR_LABEL_TOO_LONG: 		buf = (char *)_("Label_too_long_in_RR"); break;
+  case ERR_Q_BUFFER_OVERFLOW: 		buf = (char *)_("Input_name_buffer_overflow"); break;
+  case ERR_Q_INVALID_COMPRESSION:	buf = (char *)_("Invalid_compression_method"); break;
+  case ERR_Q_NAME_TOO_LONG: 		buf = (char *)_("Question_name_too_long"); break;
+  case ERR_Q_LABEL_TOO_LONG: 		buf = (char *)_("Question_label_too_long"); break;
+  case ERR_NO_CLASS: 			buf = (char *)_("Unsupported_class"); break;
+  case ERR_NAME_FORMAT: 		buf = (char *)_("Invalid_name_format"); break;
+  case ERR_TIMEOUT: 			buf = (char *)_("Communications_timeout"); break;
+  case ERR_BROKEN_GLUE: 		buf = (char *)_("Malformed_glue"); break;
+  case ERR_INVALID_ADDRESS: 		buf = (char *)_("Invalid_address"); break;
+  case ERR_INVALID_TYPE: 		buf = (char *)_("Invalid_type"); break;
+  case ERR_INVALID_CLASS: 		buf = (char *)_("Invalid_class"); break;
+  case ERR_INVALID_TTL: 		buf = (char *)_("Invalid_TTL"); break;
+  case ERR_INVALID_DATA: 		buf = (char *)_("Invalid_data"); break;
+  case ERR_DB_ERROR: 			buf = (char *)_("Database_error"); break;
+  case ERR_NO_QUESTION: 		buf = (char *)_("No_question_in_query"); break;
+  case ERR_NO_AUTHORITY:		buf = (char *)_("No_authority_in_query"); break;
+  case ERR_MULTI_QUESTIONS: 		buf = (char *)_("Multiple_questions_in_query"); break;
+  case ERR_MULTI_AUTHORITY:		buf = (char *)_("Multiple_authority_records_in_ixfr_query"); break;
+  case ERR_QUESTION_TRUNCATED: 		buf = (char *)_("Question_truncated"); break;
   case ERR_UNSUPPORTED_OPCODE:
     if (buf) RELEASE(buf);
     ASPRINTF(&buf,
 	     "%s_%s",
 	     _("Unsupported_opcode"),
 	     mydns_opcode_str(t->hdr.opcode));
-    return buf;
-  case ERR_UNSUPPORTED_TYPE: 		return ((char *)_("Unsupported_type"));
-  case ERR_MALFORMED_REQUEST: 		return ((char *)_("Malformed_request"));
-  case ERR_IXFR_NOT_ENABLED: 		return ((char *)_("IXFR_not_enabled"));
-  case ERR_TCP_NOT_ENABLED: 		return ((char *)_("TCP_not_enabled"));
-  case ERR_RESPONSE_BIT_SET: 		return ((char *)_("Response_bit_set_on_query"));
-  case ERR_FWD_RECURSIVE: 		return ((char *)_("Recursive_query_forwarding_error"));
-  case ERR_NO_UPDATE: 			return ((char *)_("UPDATE_denied"));
-  case ERR_PREREQUISITE_FAILED: 	return ((char *)_("UPDATE_prerequisite_failed"));
+    break;
+  case ERR_UNSUPPORTED_TYPE: 		buf = (char *)_("Unsupported_type"); break;
+  case ERR_MALFORMED_REQUEST: 		buf = (char *)_("Malformed_request"); break;
+  case ERR_IXFR_NOT_ENABLED: 		buf = (char *)_("IXFR_not_enabled"); break;
+  case ERR_TCP_NOT_ENABLED: 		buf = (char *)_("TCP_not_enabled"); break;
+  case ERR_RESPONSE_BIT_SET: 		buf = (char *)_("Response_bit_set_on_query"); break;
+  case ERR_FWD_RECURSIVE: 		buf = (char *)_("Recursive_query_forwarding_error"); break;
+  case ERR_NO_UPDATE: 			buf = (char *)_("UPDATE_denied"); break;
+  case ERR_PREREQUISITE_FAILED: 	buf = (char *)_("UPDATE_prerequisite_failed"); break;
+  default:				buf =  (char *)_("Unknown"); break;
   }
-  return ((char *)_("Unknown"));
+#if DEBUG_ENABLED
+Debug(error, DEBUGLEVEL_FUNCS, _("%s: err_reason_str: returns %s"), desctask(t), buf);
+#endif
+  return buf;
 }
 /*--- err_reason_str() --------------------------------------------------------------------------*/
 
@@ -111,7 +118,7 @@ _formerr_internal(
   char	*dest = NULL;
 
 #if DEBUG_ENABLED
-  Debug(error, 1, _("%s: formerr(): %s %s from %s:%u: %s"),
+  Debug(error, DEBUGLEVEL_PROGRESS, _("%s: formerr(): %s %s from %s:%u: %s"),
 	 desctask(t), mydns_rcode_str(rcode), err_reason_str(t, reason), filename, lineno,
 	 xtra ?: _("no additional information"));
 #endif
@@ -131,6 +138,9 @@ _formerr_internal(
   DNS_PUT16(dest, 0);							/* AUTHORITY count */
   DNS_PUT16(dest, 0);							/* ADDITIONAL count */
 
+#if DEBUG_ENABLED
+  Debug(error, DEBUGLEVEL_FUNCS, _("%s: formerr: returns"), desctask(t));
+#endif
   return (TASK_FAILED);
 }
 /*--- _formerr_internal() -----------------------------------------------------------------------*/
@@ -149,9 +159,12 @@ _dnserror_internal(
 	const char *filename,
 	unsigned int lineno
 ) {
+#if DEBUG_ENABLED
+  Debug(error, DEBUGLEVEL_FUNCS, _("%s: dnserror: called"), desctask(t));
+#endif
   if (t->hdr.rcode == DNS_RCODE_NOERROR) {
 #if DEBUG_ENABLED
-    Debug(error, 1, _("%s: dnserror(): %s %s from %s:%u"),
+    Debug(error, DEBUGLEVEL_PROGRESS, _("%s: dnserror(): %s %s from %s:%u"),
 	   desctask(t), mydns_rcode_str(rcode), err_reason_str(t, reason), filename, lineno);
 #endif
     t->hdr.rcode = rcode;
@@ -159,6 +172,9 @@ _dnserror_internal(
     t->reason = reason;
   }
 
+#if DEBUG_ENABLED
+  Debug(error, DEBUGLEVEL_FUNCS, _("%s: dnserror: returns"), desctask(t));
+#endif
   return (TASK_FAILED);
 }
 /*--- _dnserror_internal() ----------------------------------------------------------------------*/
@@ -169,18 +185,29 @@ _dnserror_internal(
 	If the program has already reported on the specified RR as having an error, returns 1, else
 	0.  Maintains an internal list of the past 1024 RR id's that have been reported.
 **************************************************************************************************/
-int
+static int
 rr_error_repeat(uint32_t id) {
   register int n = 0;
 
+#if DEBUG_ENABLED
+  Debug(error, DEBUGLEVEL_FUNCS, _("rr_error_repeat: called"));
+#endif
+
   for (n = 0; n < MAX_RR_ERR_MEMORY; n++)
-    if (rr_err_memory[n] == id)
+    if (rr_err_memory[n] == id) {
+#if DEBUG_ENABLED
+      Debug(error, DEBUGLEVEL_FUNCS, _("rr_error_repeat: returns duplicate error"));
+#endif
       return 1;
+    }
 
   /* Move rest of list back and add 'id' to beginning of list */
   for (n = MAX_RR_ERR_MEMORY; n > 0; n--)
     rr_err_memory[n] = rr_err_memory[n-1];
   rr_err_memory[0] = id;
+#if DEBUG_ENABLED
+  Debug(error, DEBUGLEVEL_FUNCS, _("rr_error_repeat: returns new error"));
+#endif
   return 0;
 }
 /*--- rr_error_repeat() -------------------------------------------------------------------------*/
@@ -192,6 +219,9 @@ rr_error_repeat(uint32_t id) {
 **************************************************************************************************/
 int
 rr_error(uint32_t id, const char *fmt, ...) {
+#if DEBUG_ENABLED
+  Debug(error, DEBUGLEVEL_FUNCS, _("rr_error: called"));
+#endif
   if (show_data_errors && !rr_error_repeat(id)) {
     char *msg = NULL;
     va_list ap;
@@ -204,6 +234,9 @@ rr_error(uint32_t id, const char *fmt, ...) {
     Warnx("%s", msg);
     RELEASE(msg);
   }
+#if DEBUG_ENABLED
+  Debug(error, DEBUGLEVEL_FUNCS, _("rr_error: returns"));
+#endif
   return -1;
 }
 /*--- rr_error() --------------------------------------------------------------------------------*/

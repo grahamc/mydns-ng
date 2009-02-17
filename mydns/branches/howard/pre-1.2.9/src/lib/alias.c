@@ -44,11 +44,18 @@ find_alias(TASK *t, char *fqdn) {
   register MYDNS_RR *rr = NULL;
   register char *label = NULL;
   char *name = NULL;
-	
+
+#if DEBUG_ENABLED
+  Debug(alias, DEBUGLEVEL_FUNCS, _("%s: find_alias --> fqdn = %s"), desctask(t), (fqdn) ? fqdn : "<NULL>");
+#endif
   /* Load the SOA for the alias name. */
 
-  if (!(soa = find_soa(t, fqdn, &name)))
+  if (!(soa = find_soa(t, fqdn, &name))) {
+#if DEBUG_ENABLED
+    Debug(alias, DEBUGLEVEL_FUNCS, _("%s: find_alias <-- returns NULL - no SOA found for %s"), desctask(t), (fqdn) ? fqdn : "<NULL>");
+#endif
     return (NULL);
+  }
 
   /* Examine each label in the name, one at a time; look for relevant records */
   for (label = name; ; label++) {
@@ -61,10 +68,13 @@ find_alias(TASK *t, char *fqdn) {
       /* Do an exact match if the label is the first in the list */
       if (label == name) {
 #if DEBUG_ENABLED
-	Debug(alias, 1, _("%s: trying exact match `%s'"), desctask(t), label);
+	Debug(alias, DEBUGLEVEL_PROGRESS, _("%s: trying exact match `%s'"), desctask(t), label);
 #endif
 	if ((rr = find_rr(t, soa, DNS_QTYPE_A, label))) {
 	  RELEASE(name);
+#if DEBUG_ENABLED
+	  Debug(alias, DEBUGLEVEL_FUNCS, _("%s: find_alias <-- returns a RR"), desctask(t));
+#endif
 	  return (rr);
 	}
       }
@@ -78,7 +88,7 @@ find_alias(TASK *t, char *fqdn) {
 	  char *zlabel = label;
 
 #if DEBUG_ENABLED
-	  Debug(alias, 1, _("%s: alias(%s) -> trying zone look up on %s - %d"),
+	  Debug(alias, DEBUGLEVEL_PROGRESS, _("%s: alias(%s) -> trying zone look up on %s - %d"),
 		 desctask(t), label, zlabel, recurs);
 #endif
 	  /* Strip one label element and replace with a '*' then test and repeat until we run out of labels */
@@ -92,16 +102,19 @@ find_alias(TASK *t, char *fqdn) {
 	      ASPRINTF(&wclabel, "*.%s", c);
 
 #if DEBUG_ENABLED
-	    Debug(alias, 1, _("%s: alias(%s) trying wildcard `%s'"), desctask(t), label, wclabel);
+	    Debug(alias, DEBUGLEVEL_PROGRESS, _("%s: alias(%s) trying wildcard `%s'"), desctask(t), label, wclabel);
 #endif
 	    rr = find_rr(t, zsoa, DNS_QTYPE_A, wclabel);
 #if DEBUG_ENABLED
-	    Debug(alias, 1, _("%s: resolve(%s) tried wildcard `%s' got rr = %p"),
+	    Debug(alias, DEBUGLEVEL_PROGRESS, _("%s: resolve(%s) tried wildcard `%s' got rr = %p"),
 		   desctask(t), label, wclabel, rr);
 #endif
 	    if(rr) {
 	      RELEASE(name);
 	      RELEASE(wclabel);
+#if DEBUG_ENABLED
+	  Debug(alias, DEBUGLEVEL_FUNCS, _("%s: find_alias <-- returns a RR"), desctask(t));
+#endif
 	      return (rr);
 	    }
 	    RELEASE(wclabel);
@@ -109,12 +122,12 @@ find_alias(TASK *t, char *fqdn) {
 	  }
 
 #if DEBUG_ENABLED
-	  Debug(alias, 1, _("%s: alias(%s) -> shall we try recursive look up on - %d"),
+	  Debug(alias, DEBUGLEVEL_PROGRESS, _("%s: alias(%s) -> shall we try recursive look up on - %d"),
 		 desctask(t), label, recurs);
 #endif
 	  if (recurs--) {
 #if DEBUG_ENABLED
-	    Debug(alias, 1, _("%s: alias(%s) -> trying recursive look up"), desctask(t), label);
+	    Debug(alias, DEBUGLEVEL_PROGRESS, _("%s: alias(%s) -> trying recursive look up"), desctask(t), label);
 #endif
 	    char *zc;
 	    if((zc = strchr(zsoa->origin, '.'))) {
@@ -125,22 +138,22 @@ find_alias(TASK *t, char *fqdn) {
 	    if (*zc) {
 	      MYDNS_SOA *xsoa;
 #if DEBUG_ENABLED
-	      Debug(alias, 1, _("%s: alias(%s) -> trying recursive look up in %s"), desctask(t), label, zc);
+	      Debug(alias, DEBUGLEVEL_PROGRESS, _("%s: alias(%s) -> trying recursive look up in %s"), desctask(t), label, zc);
 #endif
 	      xsoa = find_soa(t, zc, NULL);
 #if DEBUG_ENABLED
-	      Debug(alias, 1, _("%s: resolve(%s) -> got %s for recursive look up in %s"), desctask(t),
+	      Debug(alias, DEBUGLEVEL_PROGRESS, _("%s: resolve(%s) -> got %s for recursive look up in %s"), desctask(t),
 		    label, ((xsoa)?xsoa->origin:"<no match>"), zc);
 #endif
 	      if (xsoa) {
 		/* Got a ancestor need to check that it is a parent for the last zone we checked */
 #if DEBUG_ENABLED
-		Debug(alias, 1, _("%s: alias(%s) -> %s is an ancestor of %s"), desctask(t), label,
+		Debug(alias, DEBUGLEVEL_PROGRESS, _("%s: alias(%s) -> %s is an ancestor of %s"), desctask(t), label,
 		      xsoa->origin, zsoa->origin);
 #endif
 		MYDNS_RR *xrr = find_rr(t, xsoa, DNS_QTYPE_NS, zsoa->origin);
 #if DEBUG_ENABLED
-		Debug(alias, 1, _("%s: alias(%s) -> %s is%s a parent of %s"), desctask(t), label,
+		Debug(alias, DEBUGLEVEL_PROGRESS, _("%s: alias(%s) -> %s is%s a parent of %s"), desctask(t), label,
 		       ((xrr) ? "" : " not"),
 		       xsoa->origin, zsoa->origin);
 #endif
@@ -169,6 +182,9 @@ find_alias(TASK *t, char *fqdn) {
     }
   }
   RELEASE(name);
+#if DEBUG_ENABLED
+  Debug(alias, DEBUGLEVEL_FUNCS, _("%s: find_alias <-- returns NULL - no SOA found for %s"), desctask(t), (fqdn) ? fqdn : "<NULL>");
+#endif
   return (NULL);
 }
 /*--- find_alias() ------------------------------------------------------------------------------*/
@@ -184,6 +200,12 @@ int alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, MY
   register MYDNS_RR	*rr = NULL;
   register int		depth = 0, n = 0;
 
+#if DEBUG_ENABLED
+  Debug(alias, DEBUGLEVEL_FUNCS, _("%s: alias_recurse called for %s, %s, %s, %s"), desctask(t),
+	mydns_section_str(section), (fqdn) ? fqdn : "<NULL>",
+	soa->origin, (char*)MYDNS_RR_DATA_VALUE(alias));
+#endif
+
   memset(&aliases[0], 0, sizeof(aliases));
 
   if ((MYDNS_RR_DATA_LENGTH(alias) > 0)
@@ -194,7 +216,7 @@ int alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, MY
 
   for (depth = 0; depth < MAX_ALIAS_LEVEL; depth++) {
 #if DEBUG_ENABLED
-    Debug(alias, 1, _("%s: ALIAS -> `%s'"), desctask(t), name);
+    Debug(alias, DEBUGLEVEL_BASICOP, _("%s: ALIAS -> `%s'"), desctask(t), name);
 #endif
     /* Are there any alias records? */
     if ((rr = find_alias(t, name))) {
@@ -210,6 +232,9 @@ int alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, MY
 	t->sort_level++;
 	mydns_rr_free(rr);
 	RELEASE(name);
+#if DEBUG_ENABLED
+	Debug(mydns, DEBUGLEVEL_FUNCS, _("%s: alias_recurse <-- returns 1"), desctask(t));
+#endif
 	return (1);
       }
 
@@ -227,6 +252,9 @@ int alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, MY
 	  Verbose(_("%s: %s: %s (depth %d)"), desctask(t), _("ALIAS loop detected"), fqdn, depth);
 	  mydns_rr_free(rr);
 	  RELEASE(name);
+#if DEBUG_ENABLED
+	  Debug(mydns, DEBUGLEVEL_FUNCS,  _("%s: alias_recurse <-- ALIAS loop detected returns 0"), desctask(t));
+#endif
 	  return (0);
 	}
       aliases[depth] = rr->id;
@@ -237,12 +265,18 @@ int alias_recurse(TASK *t, datasection_t section, char *fqdn, MYDNS_SOA *soa, MY
     } else {
       Verbose("%s: %s: %s -> %s", desctask(t), _("ALIAS chain is broken"), fqdn, name);
       RELEASE(name);
+#if DEBUG_ENABLED
+	  Debug(mydns, DEBUGLEVEL_FUNCS, _("%s: alias_recurse <-- ALIAS chain is broken returns 0"), desctask(t));
+#endif
       return (0);
     }
   }
   Verbose(_("%s: %s: %s -> %s (depth %d)"), desctask(t), _("max ALIAS depth exceeded"),
 	  fqdn, (char*)MYDNS_RR_DATA_VALUE(alias), depth);
   RELEASE(name);
+#if DEBUG_ENABLED
+  Debug(mydns, DEBUGLEVEL_FUNCS, _("%s: alias_recurse <-- max ALIAS depth exceeded returns 0"), desctask(t));
+#endif
   return (0);
 }
 /*--- alias_recurse() ---------------------------------------------------------------------------*/

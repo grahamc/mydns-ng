@@ -89,12 +89,18 @@ static COMMS *
 __comms_allocate(void) {
   COMMS		*comms = NULL;
 
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("__comms_allocate called"));
+#endif
   comms = ALLOCATE(sizeof(COMMS), COMMS*);
 
   comms->message = NULL;
   comms->donesofar = 0;
   comms->connectionalive = current_time;
   comms->data = NULL;
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("__comms_allocate returns"));
+#endif
   return comms;
 }
 
@@ -102,11 +108,17 @@ static COMMSMESSAGE *
 __message_allocate(size_t messagelength) {
   COMMSMESSAGE	*message = NULL;
 
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("__message_allocate called"));
+#endif
   messagelength += sizeof(COMMSMESSAGE) - sizeof(message->messagedata) + 1;
   message = ALLOCATE(messagelength, COMMSMESSAGE*);
 
   message->messageid = htons(messageid++);
   message->messagelength = htons(messagelength);
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("__message_allocate returns"));
+#endif
   return message;
 }
 
@@ -114,10 +126,16 @@ static COMMSMESSAGE *
 _message_allocate(char *commandstring) {
   COMMSMESSAGE	*message = NULL;
 
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("_message_allocate called"));
+#endif
   message = __message_allocate(strlen(commandstring));
 
   strncpy(&message->messagedata[0], commandstring, strlen(commandstring));
   message->messagedata[strlen(commandstring)] = '\0';
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("_message_allocate returns"));
+#endif
   return message;
 }
 
@@ -125,6 +143,9 @@ static void
 __message_free(TASK *t, void *data) {
   COMMSMESSAGE	*message = (COMMSMESSAGE*)data;
 
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("__message_free called"));
+#endif
   if (!message) return;
 }
 
@@ -132,16 +153,25 @@ static void
 __comms_free(TASK *t, void *data) {
   COMMS		*comms = (COMMS*)data;
 
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("__comms_free called"));
+#endif
   if (!comms) return;
 
   __message_free(t, comms->message);
   RELEASE(comms->message);
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("__comms_free returns"));
+#endif
 }
 
 static int
 _comms_recv(TASK *t, void *data, size_t size, int flags) {
   int	rv  = 0;
 
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("_comms_recv called"));
+#endif
   rv = recv(t->fd, data, size, MSG_DONTWAIT|flags);
 
   if (rv > 0) return rv;
@@ -161,10 +191,16 @@ _comms_recv(TASK *t, void *data, size_t size, int flags) {
 #endif
 #endif
       ) {
+#if DEBUG_ENABLED
+    Debug(servercomms, DEBUGLEVEL_FUNCS, _("_comms_recv returns 0 try again later"));
+#endif
     return 0; /* Try again later */
   }
   Warn("%s: %s (%d) - %s(%d)", desctask(t), _("Receive failed"), rv, strerror(errno), errno);
 
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("_comms_recv returns %d"), rv);
+#endif
   return rv;
 }
 
@@ -172,6 +208,9 @@ static int
 _comms_send(TASK *t, void *data, size_t size, int flags) {
   int rv = 0;
 
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("_comms_send called"));
+#endif
 #if !defined(MSG_NOSIGNAL)
 #define __FAKE_MSG_NOSIGNAL__
 #define MSG_NOSIGNAL 0
@@ -199,6 +238,9 @@ _comms_send(TASK *t, void *data, size_t size, int flags) {
 
   if (rv == 0) {
       Warn("%s: %s", desctask(t), _("connection closed assume it died"));
+#if DEBUG_ENABLED
+      Debug(servercomms, DEBUGLEVEL_FUNCS, _("_comms_send returns -2 - the connection has been closed"));
+#endif
       return -2;
   }
    
@@ -212,10 +254,16 @@ _comms_send(TASK *t, void *data, size_t size, int flags) {
 #endif
 #endif
       ) {
+#if DEBUG_ENABLED
+      Debug(servercomms, DEBUGLEVEL_FUNCS, _("_comms_send returns 0 - try again later"));
+#endif
     return 0; /* Try again later */
   }
   Warn("%s: %s - %s", desctask(t), _("Send failed"), strerror(errno));
 
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("_comms_send returns %d"), rv);
+#endif
   return rv;
 }
 
@@ -225,13 +273,26 @@ comms_recv(TASK *t, COMMS *comms) {
   uint16_t	messagelength = 0;
   char		*msgbuf = NULL;
 
+#if DEBUG_ENABLED
+      Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_recv called"));
+#endif
   if (comms->message == NULL) {
     /* Read in message and dispatch */
     rv = _comms_recv(t, &messagelength, sizeof(messagelength), MSG_PEEK);
 
-    if (rv == -1) { return TASK_FAILED; }
+    if (rv == -1) {
+#if DEBUG_ENABLED
+      Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_recv returns FAILED"));
+#endif
+      return TASK_FAILED;
+    }
 
-    if (rv != sizeof(messagelength)) { return TASK_CONTINUE; }
+    if (rv != sizeof(messagelength)) {
+#if DEBUG_ENABLED
+      Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_recv returns CONTINUE"));
+#endif
+      return TASK_CONTINUE;
+    }
 
     messagelength = ntohs(messagelength);
     comms->message = __message_allocate(messagelength);
@@ -249,6 +310,9 @@ comms_recv(TASK *t, COMMS *comms) {
     if (rv == 0) { /* STALLED */ return TASK_CONTINUE; }
     if (rv == -1) {
       __comms_free(t, comms);
+#if DEBUG_ENABLED
+      Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_recv returns FAILED"));
+#endif
       return TASK_FAILED;
     }
     messagelength -= rv;
@@ -261,6 +325,9 @@ comms_recv(TASK *t, COMMS *comms) {
 
   t->timeout = current_time + KEEPALIVE;
 
+#if DEBUG_ENABLED
+      Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_recv returns EXECUTED"));
+#endif
   return TASK_EXECUTED;
 }
 
@@ -272,7 +339,15 @@ comms_send(TASK *t, void *commsp) {
   uint16_t	messagelength = 0;
   TASK		*newt = NULL;;
 
-  if (!comms->message) return (TASK_COMPLETED);
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_send called"));
+#endif
+  if (!comms->message) {
+#if DEBUG_ENABLED
+    Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_send returns COMPLETED"));
+#endif
+    return (TASK_COMPLETED);
+  }
 
   if (!comms->donesofar) {
     newt = IOtask_init(NORMAL_PRIORITY_TASK, NEED_COMMAND_WRITE, t->fd, t->protocol, t->family, NULL);
@@ -291,14 +366,24 @@ comms_send(TASK *t, void *commsp) {
   while (messagelength > 0) {
     rv = _comms_send(t, msgbuf, messagelength, 0);
 
-    if (rv == 0) /* Let the task scheduler run us when there is message space */
+    if (rv == 0) { /* Let the task scheduler run us when there is message space */
+#if DEBUG_ENABLED
+      Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_send returns CONTINUE"));
+#endif
       return (TASK_CONTINUE);
+    }
 
     if (rv < 0) {
       if (t == newt) {
+#if DEBUG_ENABLED
+	Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_send returns FAILED"));
+#endif
 	return (TASK_FAILED);
       } else {
 	dequeue(newt);
+#if DEBUG_ENABLED
+	Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_send returns CONTINUE"));
+#endif
 	return (TASK_CONTINUE);
       }
     }
@@ -308,9 +393,15 @@ comms_send(TASK *t, void *commsp) {
   }
 
   if (t == newt) {
+#if DEBUG_ENABLED
+      Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_send returns COMPLETED"));
+#endif
     return (TASK_COMPLETED);
   } else {
     dequeue(newt);
+#if DEBUG_ENABLED
+      Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_send returns CONTINUE"));
+#endif
     return (TASK_CONTINUE);
   }
 }
@@ -322,6 +413,9 @@ comms_find_command(TASK *t, COMMS *comms, COMMAND *commands, char **args) {
   size_t		commandlength = (ntohs(comms->message->messagelength )
 					 - (sizeof(comms->message->messagelength)
 					    + sizeof(comms->message->messageid)));
+#if DEBUG_ENABLED
+      Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_find_command called"));
+#endif
   for (i = 0; commands[i].commandname; i++) {
     if (strlen(commands[i].commandname) > commandlength) continue;
     if (strncasecmp(commands[i].commandname, comms->message->messagedata,
@@ -331,6 +425,9 @@ comms_find_command(TASK *t, COMMS *comms, COMMAND *commands, char **args) {
     break;
   }
 
+#if DEBUG_ENABLED
+      Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_find_command returns"));
+#endif
   return action;
 }
 
@@ -340,10 +437,16 @@ comms_start(int fd, FreeExtension comms_freeer, RunExtension comms_runner,
   TASK		*listener = NULL;
   COMMS		*comms = __comms_allocate();
 
+#if DEBUG_ENABLED
+      Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_start called"));
+#endif
   listener = IOtask_init(NORMAL_PRIORITY_TASK, NEED_COMMAND_READ, fd, SOCK_DGRAM, AF_UNIX, NULL);
   task_add_extension(listener, comms, comms_freeer, comms_runner, comms_ticker);
   listener->timeout = current_time + KEEPALIVE;
 
+#if DEBUG_ENABLED
+      Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_start returns"));
+#endif
   return listener;
 }
 
@@ -354,16 +457,24 @@ comms_run(TASK *t, void * data) {
   CommandProcessor	action = NULL;
   char			*args = NULL;
 
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_run called"));
+#endif
   t->timeout = current_time + KEEPALIVE;
 
   comms = (COMMS*)data;
 
   rv = comms_recv(t, comms);
 #if DEBUG_ENABLED
-  Debug(servercomms, 1, _("%s: Received command %s - result %s"), desctask(t),
+  Debug(servercomms, DEBUGLEVEL_PROGRESS, _("%s: Received command %s - result %s"), desctask(t),
 	 &comms->message->messagedata[0], task_exec_name(rv));
 #endif
-  if ((rv == TASK_FAILED) || (rv == TASK_CONTINUE)) return TASK_CONTINUE;
+  if ((rv == TASK_FAILED) || (rv == TASK_CONTINUE)) {
+#if DEBUG_ENABLED
+    Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_run returns CONTINUE"));
+#endif
+    return TASK_CONTINUE;
+  }
 
   /* Got a message from the master dispatch it. */
   action = comms_find_command(t, comms, servercommands, &args);
@@ -374,6 +485,9 @@ comms_run(TASK *t, void * data) {
   if (action)
     action(t, (void*)comms, args);
 
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_run returns CONTINUE"));
+#endif
   return TASK_CONTINUE;
 }
 
@@ -383,7 +497,7 @@ comms_sendcommand(TASK *t, char *commandstring) {
   taskexec_t	rv = TASK_FAILED;
 
 #if DEBUG_ENABLED
-  Debug(servercomms, 1, _("%s: Sending commands %s"), desctask(t), commandstring);
+  Debug(servercomms, DEBUGLEVEL_PROGRESS, _("%s: Sending commands %s"), desctask(t), commandstring);
 #endif
 
   comms = __comms_allocate();
@@ -392,7 +506,7 @@ comms_sendcommand(TASK *t, char *commandstring) {
 
   rv = comms_send(t, comms);
 #if DEBUG_ENABLED
-  Debug(servercomms, 1, _("%s: Sent command %s - result %s"),
+  Debug(servercomms, DEBUGLEVEL_PROGRESS, _("%s: Sent command %s - result %s"),
 	 desctask(t), commandstring, task_exec_name(rv));
 #endif
   return rv;
@@ -404,9 +518,17 @@ scomms_tick(TASK *t, void *data) {
   COMMS		*comms = (COMMS*)data;
   int		lastseen = current_time - comms->connectionalive;
 
+#if DEBUG_ENABLED
+    Debug(servercomms, DEBUGLEVEL_FUNCS, _("scomms_tick called"));
+#endif
   t->timeout = current_time + KEEPALIVE;
 
-  if (lastseen <= KEEPALIVE) return TASK_CONTINUE;
+  if (lastseen <= KEEPALIVE) {
+#if DEBUG_ENABLED
+    Debug(servercomms, DEBUGLEVEL_FUNCS, _("scomms_tick returns CONTINUE timeout has not yet happened"));
+#endif
+    return TASK_CONTINUE;
+  }
 
   if (lastseen  <= (5*KEEPALIVE))
     rv = comms_sendping(t, NULL, NULL);
@@ -416,13 +538,16 @@ scomms_tick(TASK *t, void *data) {
   if (rv == TASK_FAILED) {
     /* Nothing from the master for 5 cycles assume one of us has gone AWOL */
 #if DEBUG_ENABLED
-    Debug(servercomms, 1, _("%s: Server comms tick - master has not pinged for %d seconds"),
+    Debug(servercomms, DEBUGLEVEL_PROGRESS, _("%s: Server comms tick - master has not pinged for %d seconds"),
 	   desctask(t),
 	   lastseen);
 #endif
     named_shutdown(0);
   }
 
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("scomms_tick returns CONTINUE"));
+#endif
   return TASK_CONTINUE;
 }
 
@@ -432,9 +557,17 @@ mcomms_tick(TASK *t, void *data) {
   COMMS		*comms = (COMMS*)data;
   int		lastseen = current_time - comms->connectionalive;
 
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("mcomms_tick called"));
+#endif
   t->timeout = current_time + KEEPALIVE;
 
-  if (lastseen <= KEEPALIVE) return TASK_CONTINUE;
+  if (lastseen <= KEEPALIVE) {
+#if DEBUG_ENABLED
+    Debug(servercomms, DEBUGLEVEL_FUNCS, _("mcomms_tick returns CONTINUE timeout has not yet happened"));
+#endif
+    return TASK_CONTINUE;
+  }
 
   if (lastseen <= (5*KEEPALIVE))
     rv = comms_sendping(t, NULL, NULL);
@@ -445,7 +578,7 @@ mcomms_tick(TASK *t, void *data) {
     /* Shutdown and restart server at other end of connection */
     SERVER *server = server_find_by_task(t);
 #if DEBUG_ENABLED
-    Debug(servercomms, 1,
+    Debug(servercomms, DEBUGLEVEL_PROGRESS,
 	   _("%s: Master comms tick - connection to server has not pinged for %d seconds"),
 	   desctask(t), lastseen);
 #endif
@@ -461,6 +594,9 @@ mcomms_tick(TASK *t, void *data) {
     }
   }
 
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("mcomms_tick returns CONTINUE"));
+#endif
   return TASK_CONTINUE;
 }
 

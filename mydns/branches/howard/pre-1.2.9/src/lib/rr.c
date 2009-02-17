@@ -58,20 +58,15 @@ int mydns_rr_use_serial = 0;
 
 char *mydns_rr_active_types[] = { (char*)"Y", (char*)"N", (char*)"D" };
 
-#if DEBUG_ENABLED
-/* Strings describing the datasections */
-const char *datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
-#endif
-
 void *
 __mydns_rr_assert_pointer(void *ptr, const char *fieldname, const char *filename, int linenumber) {
 #if DEBUG_ENABLED
-  Debug(rr, 1, _("mydns_rr_assert_pointer() called for field=%s from %s:%d"),
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_assert_pointer() called for field=%s from %s:%d"),
 	fieldname, filename, linenumber);
 #endif
   if (ptr != NULL) return ptr;
 #if DEBUG_ENABLED
-  Debug(rr, 1, _("%s Pointer is NULL at %s:%d"),
+  Debug(rr, DEBUGLEVEL_PROGRESS, _("%s Pointer is NULL at %s:%d"),
 	fieldname, filename, linenumber);
   abort();
 #endif
@@ -89,9 +84,17 @@ mydns_rr_get_active_types(SQL *sqlConn) {
   char		*NO = NULL;
   char		*DELETED = NULL;
 
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_get_active_types: called"));
+#endif
   querylen = sql_build_query(&query, "SELECT DISTINCT(active) FROM %s", mydns_rr_table_name);
 
-  if (!(res = sql_query(sqlConn, query, querylen))) return;
+  if (!(res = sql_query(sqlConn, query, querylen))) {
+#if DEBUG_ENABLED
+    Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_get_active_types: returns - query failed"));
+#endif
+    return;
+  }
 
   RELEASE(query);
 
@@ -127,6 +130,10 @@ mydns_rr_get_active_types(SQL *sqlConn) {
   mydns_rr_active_types[0] = YES;
   mydns_rr_active_types[1] = NO;
   mydns_rr_active_types[2] = DELETED;
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_get_active_types: returns - active = %s, inactive = %s, deleted = %s"),
+	YES, NO, DELETED);
+#endif
 }
 
 /**************************************************************************************************
@@ -145,11 +152,17 @@ mydns_rr_count(SQL *sqlConn) {
 **************************************************************************************************/
 void
 mydns_set_rr_table_name(char *name) {
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_set_rr_table_name called with %s"), (name) ? name : "NULL");
+#endif
   RELEASE(mydns_rr_table_name);
   if (!name)
     mydns_rr_table_name = STRDUP(MYDNS_RR_TABLE);
   else
     mydns_rr_table_name = STRDUP(name);
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_set_rr_table_name returns with %s"), mydns_rr_table_name);
+#endif
 }
 /*--- mydns_set_rr_table_name() -----------------------------------------------------------------*/
 
@@ -159,9 +172,15 @@ mydns_set_rr_table_name(char *name) {
 **************************************************************************************************/
 void
 mydns_set_rr_where_clause(char *where) {
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_set_rr_where_name called with %s"), (where) ? where : "NULL");
+#endif
   if (where && strlen(where)) {
     mydns_rr_where_clause = STRDUP(where);
   }
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_set_rr_where_name returns with %s"), mydns_rr_where_clause);
+#endif
 }
 /*--- mydns_set_rr_where_clause() ---------------------------------------------------------------*/
 
@@ -170,6 +189,9 @@ mydns_set_rr_where_clause(char *where) {
 	Default parser for any record
 **************************************************************************************************/
 int __mydns_rr_parse_default(const char *origin, MYDNS_RRP rr) {
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_PROGRESS, _("__mydns_rr_parse_default: called for %s"), origin);
+#endif
   return 0;
 }
 /*--- __mydns_rr_parse_default() ------------------------------------------------------------------*/
@@ -180,6 +202,9 @@ int __mydns_rr_parse_default(const char *origin, MYDNS_RRP rr) {
 static inline int __mydns_rr_parse_hostname_data(const char *origin, MYDNS_RR *rr) {
   uint16_t datalen;
 
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_PROGRESS, _("__mydns_rr_parse_hostname_data: called for %s"), origin);
+#endif
   /* Append origin to data if it's not there for these types: */
   if (origin) {
     datalen = __MYDNS_RR_DATA_LENGTH(rr);
@@ -204,14 +229,23 @@ static inline int __mydns_rr_parse_hostname_data(const char *origin, MYDNS_RR *r
 }
 
 int __mydns_rr_parse_cname(const char *origin, MYDNS_RRP rr) {
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_PROGRESS, _("__mydns_rr_parse_cname: called for %s"), origin);
+#endif
   return __mydns_rr_parse_hostname_data(origin, rr);
 }
 
 int __mydns_rr_parse_mx(const char *origin, MYDNS_RRP rr) {
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_PROGRESS, _("__mydns_rr_parse_mx: called for %s"), origin);
+#endif
   return __mydns_rr_parse_hostname_data(origin, rr);
 }
 
 int __mydns_rr_parse_ns(const char *origin, MYDNS_RRP rr) {
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_PROGRESS, _("__mydns_rr_parse_ns: called for %s"), origin);
+#endif
   return __mydns_rr_parse_hostname_data(origin, rr);
 }
 
@@ -224,6 +258,9 @@ int __mydns_rr_parse_ns(const char *origin, MYDNS_RRP rr) {
 int __mydns_rr_parse_rp(const char *origin, MYDNS_RRP rr) {
   char *c;
 
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_PROGRESS, _("__mydns_rr_parse_rp: called for %s"), origin);
+#endif
   /* If no space, set txt to '.' */
   if (!(c = strchr(__MYDNS_RR_DATA_VALUE(rr), ' '))) {
     __MYDNS_RR_RP_TXT(rr) = STRDUP(".");
@@ -256,6 +293,9 @@ int __mydns_rr_parse_rp(const char *origin, MYDNS_RRP rr) {
 int __mydns_rr_parse_srv(const char *origin, MYDNS_RRP rr) {
   char *weight, *port, *target;
 
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_PROGRESS, _("__mydns_rr_parse_srv: called for %s"), origin);
+#endif
   /* Clamp 'aux' if necessary */
   if (rr->aux > 65535)
     rr->aux = 65535;
@@ -290,6 +330,9 @@ int __mydns_rr_parse_srv(const char *origin, MYDNS_RRP rr) {
 int __mydns_rr_parse_naptr(const char *origin, MYDNS_RRP rr) {
   char 		*int_tmp, *p;
 
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_PROGRESS, _("__mydns_rr_parse_naptr: called for %s"), origin);
+#endif
   p = __MYDNS_RR_DATA_VALUE(rr);
 
   if (!strsep_quotes2(&p, &int_tmp))
@@ -328,6 +371,9 @@ int __mydns_rr_parse_txt(const char *origin, MYDNS_RRP rr) {
   int datalen = __MYDNS_RR_DATA_LENGTH(rr);
   char *data = __MYDNS_RR_DATA_VALUE(rr);
 
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_PROGRESS, _("__mydns_rr_parse_txt: called for %s"), origin);
+#endif
   if (datalen > DNS_MAXTXTLEN) return (-1);
 
   while (datalen > 0) {
@@ -347,6 +393,10 @@ __mydns_rr_append(char *s1, char *s2) {
   int s2len = strlen(s2);
   int newlen = s1len;
   char *name;
+
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_append called with %s, %s"), s1, s2);
+#endif
   if (s1len) newlen += 1;
   newlen += s2len;
 
@@ -354,30 +404,58 @@ __mydns_rr_append(char *s1, char *s2) {
   if (s1len) { strncpy(name, s1, s1len); name[s1len] = '.'; s1len += 1; }
   strncpy(&name[s1len], s2, s2len);
   name[newlen] = '\0';
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_append returns %s"), name);
+#endif
   return name;
 }
 
 char *
 mydns_rr_append_origin(char *str, char *origin) {
-  char *res = ((!*str || LASTCHAR(str) != '.')
-	       ?__mydns_rr_append(str, origin)
-	       :str);
+  char *res;
+
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_append_origin called with %s, %s"), str, origin);
+#endif
+  res = ((!*str || LASTCHAR(str) != '.')
+	 ?__mydns_rr_append(str, origin)
+	 :str);
+
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_append_origin returns %s"), res);
+#endif
   return res;
 }
 
 void
 mydns_rr_name_append_origin(MYDNS_RRP rr, char *origin) {
-  char *res = mydns_rr_append_origin(__MYDNS_RR_NAME(rr), origin);
+  char *res;
+
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_name_append_origin called with %s"), origin);
+#endif
+  res = mydns_rr_append_origin(__MYDNS_RR_NAME(rr), origin);
   if (__MYDNS_RR_NAME(rr) != res) RELEASE(__MYDNS_RR_NAME(rr));
   __MYDNS_RR_NAME(rr) = res;
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_name_append_origin returns %s"), res);
+#endif
 }
       
 void
 mydns_rr_data_append_origin(MYDNS_RRP rr, char *origin) {
-  char *res = mydns_rr_append_origin(__MYDNS_RR_DATA_VALUE(rr), origin);
+  char *res;
+
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_data_append_origin called with %s"), origin);
+#endif
+  res = mydns_rr_append_origin(__MYDNS_RR_DATA_VALUE(rr), origin);
   if (__MYDNS_RR_DATA_VALUE(rr) != res) RELEASE(__MYDNS_RR_DATA_VALUE(rr));
   __MYDNS_RR_DATA_VALUE(rr) = res;
   __MYDNS_RR_DATA_LENGTH(rr) = strlen(__MYDNS_RR_DATA_VALUE(rr));
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_data_append_origin returns %s"), res);
+#endif
 }
       
 /**************************************************************************************************
@@ -385,22 +463,40 @@ mydns_rr_data_append_origin(MYDNS_RRP rr, char *origin) {
 	Frees the pointed-to structure.	Don't call this function directly, call the macro.
 **************************************************************************************************/
 void __mydns_rr_free_default(MYDNS_RRP rr) {
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_free_default called"));
+#endif
 }
 
 void __mydns_rr_free_naptr(MYDNS_RRP rr) {
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_free_naptr called"));
+#endif
   RELEASE(__MYDNS_RR_NAPTR_SERVICE(rr));
   RELEASE(__MYDNS_RR_NAPTR_REGEX(rr));
   RELEASE(__MYDNS_RR_NAPTR_REPLACEMENT(rr));
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_free_naptr returns"));
+#endif
 }
 
 void __mydns_rr_free_rp(MYDNS_RRP rr) {
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_free_rp called"));
+#endif
   RELEASE(__MYDNS_RR_RP_TXT(rr));
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_free_rp returns"));
+#endif
 }
 
 void _mydns_rr_free(MYDNS_RRP first) {
   register MYDNS_RR *p, *tmp;
   register dns_qtype_map *map;
 
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("_mydns_rr_free called"));
+#endif
   for (p = first; p; p = tmp) {
     tmp = p->next;
     RELEASE(p->stamp);
@@ -410,6 +506,9 @@ void _mydns_rr_free(MYDNS_RRP first) {
     map->rr_free(p);
     RELEASE(p);
   }
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("_mydns_rr_free returns"));
+#endif
 }
 /*--- _mydns_rr_free() --------------------------------------------------------------------------*/
 
@@ -438,7 +537,7 @@ mydns_rr_build(uint32_t id,
   type = map->rr_type;
 
 #if DEBUG_ENABLED
-  Debug(rr, 1, _("mydns_rr_build(): called for id=%d, zone=%d, type=%d, class=%d, aux=%d, "
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_build(): called for id=%d, zone=%d, type=%d, class=%d, aux=%d, "
 			"ttl=%d, active='%s', stamp=%p, serial=%d, name='%s', data=%p, datalen=%d, origin='%s'"),
 	 id, zone, type, class, aux, ttl, active, stamp, serial,
 	 (name)?name:_("<NULL>"), data, datalen, origin);
@@ -489,12 +588,15 @@ mydns_rr_build(uint32_t id,
     goto PARSEFAILED;
 
 #if DEBUG_ENABLED
-  Debug(rr, 1, _("mydns_rr_build(): returning result=%p"), rr);
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_build(): returning result=%p"), rr);
 #endif
   return (rr);
 
  PARSEFAILED:
   mydns_rr_free(rr);
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_build(): returning result=NULL"));
+#endif
   return (NULL);
 }
 
@@ -519,11 +621,14 @@ mydns_rr_parse(SQL_ROW row, unsigned long *lengths, const char *origin) {
   MYDNS_RR	*rr;
 
 #if DEBUG_ENABLED
-  Debug(rr, 1, _("mydns_rr_parse(): called for origin %s"), origin);
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_parse(): called for origin %s"), origin);
 #endif
 
   if (!(map = mydns_rr_get_type_by_name(row[6]))) {
     /* Ignore unknown RR type(s) */
+#if DEBUG_ENABLED
+    Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_parse(): returns NULL unknown rr type %s"), row[6]);
+#endif
     return (NULL);
   }
 
@@ -569,6 +674,9 @@ mydns_rr_parse(SQL_ROW row, unsigned long *lengths, const char *origin) {
 
   if (mydns_rr_extended_data && lengths[MYDNS_RR_NUMFIELDS]) RELEASE(data);
 
+#if DEBUG_ENABLED
+    Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_parse(): returns"));
+#endif
   return (rr);
 }
 /*--- mydns_rr_parse() --------------------------------------------------------------------------*/
@@ -580,19 +688,37 @@ mydns_rr_parse(SQL_ROW row, unsigned long *lengths, const char *origin) {
 	in the RRset.
 **************************************************************************************************/
 void  __mydns_rr_duplicate_default(MYDNS_RRP dst, MYDNS_RRP src) {
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_duplicate_default called"));
+#endif
 }
 
 void  __mydns_rr_duplicate_srv(MYDNS_RRP dst, MYDNS_RRP src) {
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_duplicate_srv called"));
+#endif
   __MYDNS_RR_SRV_WEIGHT(dst) = __MYDNS_RR_SRV_WEIGHT(src);
   __MYDNS_RR_SRV_PORT(dst) = __MYDNS_RR_SRV_PORT(src);
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_duplicate_srv returns"));
+#endif
 }
 
 void  __mydns_rr_duplicate_rp(MYDNS_RRP dst, MYDNS_RRP src) {
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_duplicate_rp called"));
+#endif
   RELEASE(__MYDNS_RR_RP_TXT(dst));
   __MYDNS_RR_RP_TXT(dst) = STRDUP(__MYDNS_RR_RP_TXT(src));
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_duplicate_rp returns"));
+#endif
 }
 
 void  __mydns_rr_duplicate_naptr(MYDNS_RRP dst, MYDNS_RRP src) {
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_duplicate_naptr called"));
+#endif
   __MYDNS_RR_NAPTR_ORDER(dst) = __MYDNS_RR_NAPTR_ORDER(src);
   __MYDNS_RR_NAPTR_PREF(dst) = __MYDNS_RR_NAPTR_PREF(src);
   memcpy(__MYDNS_RR_NAPTR_FLAGS(dst), __MYDNS_RR_NAPTR_FLAGS(src), sizeof(__MYDNS_RR_NAPTR_FLAGS(dst)));
@@ -602,6 +728,9 @@ void  __mydns_rr_duplicate_naptr(MYDNS_RRP dst, MYDNS_RRP src) {
   __MYDNS_RR_NAPTR_REGEX(dst) = STRDUP(__MYDNS_RR_NAPTR_REGEX(src));
   RELEASE(__MYDNS_RR_NAPTR_REPLACEMENT(dst));
   __MYDNS_RR_NAPTR_REPLACEMENT(dst) = STRDUP(__MYDNS_RR_NAPTR_REPLACEMENT(src));
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_duplicate_naptr returns"));
+#endif
 }
 
 MYDNS_RR *
@@ -609,6 +738,9 @@ mydns_rr_dup(MYDNS_RR *start, int recurse) {
   register MYDNS_RR *first = NULL, *last = NULL, *rr, *s, *tmp;
   dns_qtype_map *map;
 
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_dup called"));
+#endif
   for (s = start; s; s = tmp) {
     tmp = s->next;
 
@@ -649,9 +781,16 @@ mydns_rr_dup(MYDNS_RR *start, int recurse) {
       if (!first) first = rr;
       if (last) last->next = rr;
       last = rr;
-    } else
+    } else {
+#if DEBUG_ENABLED
+      Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_dup returns rr=%p"), rr);
+#endif
       return (rr);
+    }
   }
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_dup returns first=%p"), first);
+#endif
   return (first);
 }
 /*--- mydns_rr_dup() ----------------------------------------------------------------------------*/
@@ -661,17 +800,29 @@ mydns_rr_dup(MYDNS_RR *start, int recurse) {
 	MYDNS_RR_SIZE
 **************************************************************************************************/
 size_t __mydns_rr_size_default(MYDNS_RRP rr) {
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_size_default called"));
+#endif
   return 0;
 }
 
 size_t __mydns_rr_size_naptr(MYDNS_RRP rr) {
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_size_naptr called"));
+#endif
   size_t size = strlen(__MYDNS_RR_NAPTR_SERVICE(rr)) + 1;
   size += strlen(__MYDNS_RR_NAPTR_REGEX(rr)) + 1;
   size += strlen(__MYDNS_RR_NAPTR_REPLACEMENT(rr)) + 1;
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_size_naptr returns"));
+#endif
   return size;
 }
 
 size_t __mydns_rr_size_rp(MYDNS_RRP rr) {
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_size_rp called"));
+#endif
   return strlen(__MYDNS_RR_RP_TXT(rr)) + 1;
 }
 
@@ -680,6 +831,9 @@ size_t mydns_rr_size(MYDNS_RR *first) {
   register size_t size = 0;
   dns_qtype_map *map;
 
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_size called"));
+#endif
   for (p = first; p; p = p->next) {
     size += sizeof(MYDNS_RR)
       + (strlen(__MYDNS_RR_NAME(p)) + 1)
@@ -692,6 +846,9 @@ size_t mydns_rr_size(MYDNS_RR *first) {
     size += map->rr_sizor(p);
   }    
 
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_size returns %d"), size);
+#endif
   return (size);
 }
 /*--- mydns_rr_size() ---------------------------------------------------------------------------*/
@@ -707,12 +864,18 @@ mydns_rr_columns() {
   char		*columns = NULL;
   size_t	columnslen = 0;
 
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_columns called"));
+#endif
   columnslen = sql_build_query(&columns, MYDNS_RR_FIELDS"%s%s%s%s",
 			       /* Optional columns */
 			       (mydns_rr_extended_data ? ",edata" : ""),
 			       (mydns_rr_use_active ? ",active" : ""),
 			       (mydns_rr_use_stamp  ? ",stamp"  : ""),
 			       (mydns_rr_use_serial ? ",serial" : ""));
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_columns returns %s"), columns);
+#endif
   return columns;
 }
 
@@ -730,26 +893,40 @@ mydns_rr_prepare_query(uint32_t zone, dns_qtype_t type, char *name, char *origin
 #endif
   dns_qtype_map	*map;
 
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_prepare_query called"));
+#endif
   if (!(map = mydns_rr_get_type_by_id(type))) {
     errno = EINVAL;
+#if DEBUG_ENABLED
+    Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_prepare_query returns NULL as the type %d is not known"), type);
+#endif
     return NULL;
   }
 
 #if DEBUG_ENABLED
-  Debug(rr, 1, _("mydns_rr_prepare_query(zone=%u, type='%s', name='%s', origin='%s')"),
+  Debug(rr, DEBUGLEVEL_PROGRESS, _("mydns_rr_prepare_query(zone=%u, type='%s', name='%s', origin='%s')"),
 	 zone, map->rr_type_name, name ?: _("NULL"), origin ?: _("NULL"));
 #endif
 
   /* Make sure 'name' and 'origin' (if present) are valid */
   if (name) {
     for (cp = name; *cp; cp++)
-      if (SQL_BADCHAR(*cp))
+      if (SQL_BADCHAR(*cp)) {
+#if DEBUG_ENABLED
+	Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_prepare_query returns NULL as the name contains a bad character %s(%c)"), name, *cp);
+#endif
 	return (NULL);
+      }
   }
   if (origin) {
     for (cp = origin; *cp; cp++)
-      if (SQL_BADCHAR(*cp))
+      if (SQL_BADCHAR(*cp)) {
+#if DEBUG_ENABLED
+	Debug(rr, DEBUGLEVEL_FUNCS, _("mydns_rr_prepare_query returns NULL as the origin contains a bad character %s(%c)"), origin, *cp);
+#endif
 	return (NULL);
+      }
   }
 
 #ifdef DN_COLUMN_NAMES
@@ -841,6 +1018,9 @@ mydns_rr_prepare_query(uint32_t zone, dns_qtype_t type, char *name, char *origin
   RELEASE(namequery);
   RELEASE(wheretype);
 
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_SQL, _("mydns_rr_prepare_query return %s"), query);
+#endif
   return (query);
 }
 			 
@@ -853,7 +1033,7 @@ static int __mydns_rr_do_load(SQL *sqlConn, MYDNS_RR **rptr, char *query, char *
 
 
 #if DEBUG_ENABLED
-  Debug(rr, 1, _("mydns_rr_do_load(query='%s', origin='%s')"), query, origin ? origin : _("NULL"));
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_do_load(query='%s', origin='%s')"), query, origin ? origin : _("NULL"));
 #endif
 
   if (rptr) *rptr = NULL;
@@ -861,18 +1041,28 @@ static int __mydns_rr_do_load(SQL *sqlConn, MYDNS_RR **rptr, char *query, char *
   /* Verify args */
   if (!sqlConn || !rptr || !query) {
     errno = EINVAL;
+#if DEBUG_ENABLED
+    Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_do_load returns -1 as %s"),
+	  (!sqlConn) ? _("sql is not connected") 
+	  : (!rptr) ? _("rrptr is NULL")
+	  : _("query is NULL"));
+#endif
     return (-1);
   }
 
   /* Submit query */
-  if (!(res = sql_query(sqlConn, query, strlen(query))))
+  if (!(res = sql_query(sqlConn, query, strlen(query)))) {
+#if DEBUG_ENABLED
+    Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_do_load returns -1 as the query failed"));
+#endif
     return (-1);
+  }
 
 #if DEBUG_ENABLED
   {
     int numresults = sql_num_rows(res);
 
-    Debug(rr, 1, _("RR query: %d row%s: %s"), numresults, S(numresults), query);
+    Debug(rr, DEBUGLEVEL_PROGRESS, _("RR query: %d row%s: %s"), numresults, S(numresults), query);
   }
 #endif
 
@@ -898,6 +1088,9 @@ static int __mydns_rr_do_load(SQL *sqlConn, MYDNS_RR **rptr, char *query, char *
 
   *rptr = first;
   sql_free(res);
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_do_load returns 0 (Success)"));
+#endif
   return (0);
 }
 
@@ -910,10 +1103,16 @@ __mydns_rr_count(SQL *sqlConn, uint32_t zone,
   SQL_RES	*res;
   SQL_ROW	row;
 
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_count called"));
+#endif
   query = mydns_rr_prepare_query(zone, type, name, origin, active, (char*)"COUNT(*)", filter);
 
   if (!query || !(res = sql_query(sqlConn, query, strlen(query)))) {
     WarnSQL(sqlConn, _("error processing count with filter %s"), filter);
+#if DEBUG_ENABLED
+    Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_count returns -1 because %s"), (!query) ? _("query was NULL") : _("query failed"));
+#endif
     return (-1);
   }
 
@@ -926,6 +1125,9 @@ __mydns_rr_count(SQL *sqlConn, uint32_t zone,
 
   sql_free(res);
 
+#if DEBUG_ENABLED
+    Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_count returns %d"), result);
+#endif
   return result;
 }
 
@@ -936,6 +1138,9 @@ __mydns_rr_load(SQL *sqlConn, MYDNS_RR **rptr, uint32_t zone,
   int		res;
   char		*columns = NULL;
 
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_load called"));
+#endif
   columns = mydns_rr_columns();
 
   query = mydns_rr_prepare_query(zone, type, name, origin, active, columns, filter);
@@ -944,6 +1149,9 @@ __mydns_rr_load(SQL *sqlConn, MYDNS_RR **rptr, uint32_t zone,
 
   res = __mydns_rr_do_load(sqlConn, rptr, query, origin);
 
+#if DEBUG_ENABLED
+    Debug(rr, DEBUGLEVEL_FUNCS, _("__mydns_rr_load returns %d"), res);
+#endif
   return res;
 }
 
@@ -1067,6 +1275,9 @@ mydns_rr_count_deleted_filtered(SQL *sqlConn, uint32_t zone,
 **************************************************************************************************/
 void
 rrlist_free(RRLIST *list) {
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("rrlist_free called"));
+#endif
   if (list) {
     register RR *p, *tmp;
 
@@ -1084,6 +1295,9 @@ rrlist_free(RRLIST *list) {
     }
     memset(list, 0, sizeof(RRLIST));
   }
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("rrlist_free returns"));
+#endif
 }
 /*--- rrlist_free() -----------------------------------------------------------------------------*/
 
@@ -1096,10 +1310,20 @@ static int
 rrdup(RRLIST *list, dns_rrtype_t rrtype, uint32_t id) {
   register RR *r = NULL;
 
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("rrdup called"));
+#endif
   if (list && id)						/* Ignore (fake) RRs with ID 0 */
     for (r = list->head; r; r = r->next)
-      if (r->rrtype == rrtype && r->id == id)
+      if (r->rrtype == rrtype && r->id == id) {
+#if DEBUG_ENABLED
+	Debug(rr, DEBUGLEVEL_FUNCS, _("rrdup returns 1"));
+#endif
 	return (1);
+      }
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("rrlist_free returns 0"));
+#endif
   return (0);
 }
 /*--- rrdup() -----------------------------------------------------------------------------------*/
@@ -1123,6 +1347,9 @@ rrlist_add(
   uint32_t id = 0;
   register char *s = NULL, *d = NULL;
 
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("rrlist_add called"));
+#endif
   /* Remove erroneous empty labels in 'name' if any exist */
   if (name) {
     name = STRDUP(name); /* Might be read only */
@@ -1139,6 +1366,9 @@ rrlist_add(
     MYDNS_RR *r = (MYDNS_RR *)rr;
     if (!strcmp(MYDNS_RR_NAME(r), "*")) {
       RELEASE(name);
+#if DEBUG_ENABLED
+      Debug(rr, DEBUGLEVEL_FUNCS, _("rrlist_add returns"));
+#endif
       return;
     }
   }
@@ -1150,17 +1380,17 @@ rrlist_add(
     case DNS_RRTYPE_SOA:
       {
 	MYDNS_SOA *soa = (MYDNS_SOA *)rr;
-	Debug(rr, 1, _("%s: RRLIST_ADD: %s (id=%u) (%s) (`%s')"), desctask(t),
-	       datasection_str[ds], soa->id, soa->origin, name);
+	Debug(rr, DEBUGLEVEL_PROGRESS, _("%s: RRLIST_ADD: %s (id=%u) (%s) (`%s')"), desctask(t),
+	      mydns_section_str(ds), soa->id, soa->origin, name);
       }
       break;
 
     case DNS_RRTYPE_RR:
       {
 	MYDNS_RR *r = (MYDNS_RR *)rr;
-	Debug(rr, 1, _("%s: RRLIST_ADD: %s (id=%u) (name='%s',qtype='%s',data='%s') (`%s')"),
+	Debug(rr, DEBUGLEVEL_PROGRESS, _("%s: RRLIST_ADD: %s (id=%u) (name='%s',qtype='%s',data='%s') (`%s')"),
 	       desctask(t),
-	       datasection_str[ds], r->id,
+	      mydns_section_str(ds), r->id,
 	       (char *)(strlen(MYDNS_RR_NAME(r)) ? MYDNS_RR_NAME(r) : (char *)""),
 	       mydns_rr_get_type_by_id(r->type)->rr_type_name, (char*)MYDNS_RR_DATA_VALUE(r), name);
       }
@@ -1186,7 +1416,7 @@ rrlist_add(
     if (t->qtype == DNS_QTYPE_IXFR) break;
     if (rrdup(&t->an, rrtype, id)) {
 #if DEBUG_ENABLED
-      Debug(rr, 1, _("%s: Duplicate record, ignored"), desctask(t));
+      Debug(rr, DEBUGLEVEL_PROGRESS, _("%s: Duplicate record, ignored"), desctask(t));
 #endif
       RELEASE(name);
       return;
@@ -1197,7 +1427,7 @@ rrlist_add(
     list = &t->ns;
     if (rrdup(&t->ns, rrtype, id) || rrdup(&t->an, rrtype, id)) {
 #if DEBUG_ENABLED
-      Debug(rr, 1, _("%s: Duplicate record, ignored"), desctask(t));
+      Debug(rr, DEBUGLEVEL_PROGRESS, _("%s: Duplicate record, ignored"), desctask(t));
 #endif
       RELEASE(name);
       return;
@@ -1208,7 +1438,7 @@ rrlist_add(
     list = &t->ar;
     if (rrdup(&t->ar, rrtype, id) || rrdup(&t->an, rrtype, id)) {
 #if DEBUG_ENABLED
-      Debug(rr, 1, _("%s: Duplicate record, ignored"), desctask(t));
+      Debug(rr, DEBUGLEVEL_PROGRESS, _("%s: Duplicate record, ignored"), desctask(t));
 #endif
       RELEASE(name);
       return;
@@ -1272,6 +1502,9 @@ rrlist_add(
     list->tail = new;
   }
   list->size++;
+#if DEBUG_ENABLED
+  Debug(rr, DEBUGLEVEL_FUNCS, _("rrlist_add returns"));
+#endif
 }
 /*--- rrlist_add() ------------------------------------------------------------------------------*/
 

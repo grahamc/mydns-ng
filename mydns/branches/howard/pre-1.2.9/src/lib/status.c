@@ -43,6 +43,9 @@ status_fake_rr(TASK *t, datasection_t ds, const char *name, const char *fmt, ...
   char		*buf = NULL;
   MYDNS_RR 	*rr = NULL;					/* Temporary resource record */
 
+#if DEBUG_ENABLED
+  Debug(status, DEBUGLEVEL_FUNCS, _("%s: status_fake_rr called"), desctask(t));
+#endif
   va_start(ap, fmt);
   VASPRINTF(&buf, fmt, ap);
   va_end(ap);
@@ -53,7 +56,9 @@ status_fake_rr(TASK *t, datasection_t ds, const char *name, const char *fmt, ...
   rrlist_add(t, ds, DNS_RRTYPE_RR, (void *)rr, (char*)name);
   mydns_rr_free(rr);
   RELEASE(buf);
-
+#if DEBUG_ENABLED
+  Debug(status, DEBUGLEVEL_FUNCS, _("%s: status_fake_rr returns"), desctask(t));
+#endif
 }
 /*--- status_fake_rr() --------------------------------------------------------------------------*/
 
@@ -64,9 +69,15 @@ status_fake_rr(TASK *t, datasection_t ds, const char *name, const char *fmt, ...
 **************************************************************************************************/
 static int
 status_version_bind(TASK *t) {
+#if DEBUG_ENABLED
+  Debug(status, DEBUGLEVEL_FUNCS, _("%s: status_version_bind called"), desctask(t));
+#endif
   /* Generate fake TXT rr with version number and add to reply list */
   status_fake_rr(t, ANSWER, t->qname, "%s", VERSION);
 
+#if DEBUG_ENABLED
+  Debug(status, DEBUGLEVEL_FUNCS, _("%s: status_version_bind returns COMPLETED"), desctask(t));
+#endif
   return TASK_COMPLETED;
 }
 /*--- status_version_bind() ---------------------------------------------------------------------*/
@@ -82,6 +93,9 @@ status_version_mydns(TASK *t) {
   unsigned long requests = Status.udp_requests + Status.tcp_requests;
   int n = 0;
 
+#if DEBUG_ENABLED
+  Debug(status, DEBUGLEVEL_FUNCS, _("%s: status_version_mydns called"), desctask(t));
+#endif
   /* Generate fake TXT rr with version number and add to reply list */
   status_fake_rr(t, ANSWER, t->qname, "%s", VERSION);
 
@@ -114,6 +128,9 @@ status_version_mydns(TASK *t) {
     }
   }
 
+#if DEBUG_ENABLED
+  Debug(status, DEBUGLEVEL_FUNCS, _("%s: status_version_mydns returns COMPLETED"), desctask(t));
+#endif
   return TASK_COMPLETED;
 }
 /*--- status_version_mydns() --------------------------------------------------------------------*/
@@ -123,40 +140,88 @@ status_version_mydns(TASK *t) {
 	STATUS_GET_RR
 **************************************************************************************************/
 taskexec_t status_get_rr(TASK *t) {
-  if (t->qtype != DNS_QTYPE_TXT)
+#if DEBUG_ENABLED
+  Debug(status, DEBUGLEVEL_FUNCS, _("%s: status_get_rr called"), desctask(t));
+#endif
+  if (t->qtype != DNS_QTYPE_TXT) {
+#if DEBUG_ENABLED
+    Debug(status, DEBUGLEVEL_FUNCS, _("%s: status_get_rr returns RCODE_NOTIMP"), desctask(t));
+#endif
     return formerr(t, DNS_RCODE_NOTIMP, ERR_NO_CLASS, NULL);
+  }
 
   /* Emulate BIND's 'version.bind.' ("dig txt chaos version.bind") */
-  if (!strcasecmp(t->qname, "version.bind."))
+  if (!strcasecmp(t->qname, "version.bind.")) {
+#if DEBUG_ENABLED
+    Debug(status, DEBUGLEVEL_FUNCS, _("%s: status_get_rr returns bind status"), desctask(t));
+#endif
     return status_version_bind(t);
+  }
 
   /* Extended MyDNS 'version.mydns.' ("dig txt chaos version.mydns") */
-  else if (!strcasecmp(t->qname, "version.mydns."))
+  else if (!strcasecmp(t->qname, "version.mydns.")) {
+#if DEBUG_ENABLED
+    Debug(status, DEBUGLEVEL_FUNCS, _("%s: status_get_rr returns mydns status"), desctask(t));
+#endif
     return status_version_mydns(t);
+  }
 
+#if DEBUG_ENABLED
+    Debug(status, DEBUGLEVEL_FUNCS, _("%s: status_get_rr returns RCODE_NOTIMP"), desctask(t));
+#endif
   return formerr(t, DNS_RCODE_NOTIMP, ERR_NO_CLASS, NULL);
 }
 /*--- status_get_rr() ---------------------------------------------------------------------------*/
 
 void status_task_timedout(TASK *t) {
+#if DEBUG_ENABLED
+  Debug(status, DEBUGLEVEL_FUNCS, _("%s: status_task_timedout called"), desctask(t));
+#endif
   Status.timedout++;
+#if DEBUG_ENABLED
+  Debug(status, DEBUGLEVEL_FUNCS, _("%s: status_task_timedout returns"), desctask(t));
+#endif
 }
 
 void status_start_server() {
+#if DEBUG_ENABLED
+  Debug(status, DEBUGLEVEL_FUNCS, _("status_start_server called"));
+#endif
   time(&Status.start_time);
+#if DEBUG_ENABLED
+  Debug(status, DEBUGLEVEL_FUNCS, _("status_start_server returns"));
+#endif
 }
 
 void status_tcp_request(TASK *t) {
+#if DEBUG_ENABLED
+  Debug(status, DEBUGLEVEL_FUNCS, _("%s: status_tcp_request called"), desctask(t));
+#endif
   Status.tcp_requests++;
+#if DEBUG_ENABLED
+  Debug(status, DEBUGLEVEL_FUNCS, _("%s: status_tcp_request returns"), desctask(t));
+#endif
 }
 
 void status_udp_request(TASK *t) {
+#if DEBUG_ENABLED
+  Debug(status, DEBUGLEVEL_FUNCS, _("%s: status_udp_request called"), desctask(t));
+#endif
   Status.udp_requests++;
+#if DEBUG_ENABLED
+  Debug(status, DEBUGLEVEL_FUNCS, _("%s: status_udp_request returns"), desctask(t));
+#endif
 }
 
 void status_result(TASK *t, int rcode) {
+#if DEBUG_ENABLED
+  Debug(status, DEBUGLEVEL_FUNCS, _("%s: status_result called"), desctask(t));
+#endif
   if (rcode >= 0 && rcode < MAX_RESULTS) {
     Status.results[rcode]++;
   }
+#if DEBUG_ENABLED
+  Debug(status, DEBUGLEVEL_FUNCS, _("%s: status_result returns"), desctask(t));
+#endif
 }
 /* vi:set ts=3: */

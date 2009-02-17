@@ -499,7 +499,7 @@ extern int	debug_all;
 #define DEBUGLEVEL_BASICOP	1
 #define DEBUGLEVEL_SQL		2
 #define DEBUGLEVEL_3		3
-#define DEBUGLEVEL_4		4
+#define DEBUGLEVEL_PROGRESS	4
 #define DEBUGLEVEL_FUNCS	5
 #define DEBUGLEVEL_BLOCKS	6
 #define DEBUGLEVEL_LOOPS	7

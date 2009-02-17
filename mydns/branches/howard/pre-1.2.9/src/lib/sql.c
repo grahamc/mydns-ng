@@ -44,6 +44,9 @@ sql_open(char *user, char *password, char *host, char *database) {
   char *portp = NULL;
   unsigned int port = 0;
 
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_open called"));
+#endif
   if (host && (portp = strchr(host, ':'))) {
     port = atoi(portp + 1);
     *portp = '\0';
@@ -99,6 +102,9 @@ sql_open(char *user, char *password, char *host, char *database) {
 
   if (portp)
     *portp = ':';
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_open returns"));
+#endif
 }
 /*--- sql_open() --------------------------------------------------------------------------------*/
 
@@ -113,6 +119,9 @@ sql_reopen(void) {
   char *portp = NULL;
   unsigned int port = 0;
 
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_reopen called"));
+#endif
   if (_sql_host && (portp = strchr(_sql_host, ':'))) {
     port = atoi(portp + 1);
     *portp = '\0';
@@ -128,14 +137,25 @@ sql_reopen(void) {
     if (PQstatus(new_sql) == CONNECTION_BAD) {
       if (new_sql)
 	PQfinish(new_sql);
+#if DEBUG_ENABLED
+      Debug(sql, DEBUGLEVEL_FUNCS, _("sql_reopen returns"));
+#endif
       return;
     }
   }
 #else
-  if (!mysql_ping(sql)) return;
+  if (!mysql_ping(sql)) {
+#if DEBUG_ENABLED
+    Debug(sql, DEBUGLEVEL_FUNCS, _("sql_reopen cannot ping dbserver"));
+#endif
+    return;
+  }
   new_sql = ALLOCATE(sizeof(SQL), SQL*);
   if (!mysql_init(new_sql)) {
     RELEASE(new_sql);
+#if DEBUG_ENABLED
+    Debug(sql, DEBUGLEVEL_FUNCS, _("sql_reopen cannot initialise new dbserver"));
+#endif
     return;
   }
 #if MYSQL_VERSION_ID > 32349
@@ -146,6 +166,9 @@ sql_reopen(void) {
 #endif
   if (!(mysql_real_connect(new_sql, _sql_host, _sql_user, _sql_password, _sql_database, port, NULL, 0))) {
     mysql_close(new_sql);
+#if DEBUG_ENABLED
+    Debug(sql, DEBUGLEVEL_FUNCS, _("sql_reopen cannot connect to dbserver"));
+#endif
     return;
   }
 #endif
@@ -155,6 +178,9 @@ sql_reopen(void) {
 
   if (portp)
     *portp = ':';
+#if DEBUG_ENABLED
+    Debug(sql, DEBUGLEVEL_FUNCS, _("sql_reopen returns"));
+#endif
 }
 /*--- sql_reopen() ------------------------------------------------------------------------------*/
 
@@ -171,6 +197,9 @@ sql_istable(SQL *sqlConn, const char *tablename) {
 #endif
   int rv = 0;
 
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_istable called for %s"), tablename);
+#endif
   xtablename = sql_escstr(sqlConn, (char*)tablename);
 
 #if USE_PGSQL
@@ -186,6 +215,9 @@ sql_istable(SQL *sqlConn, const char *tablename) {
 #endif
 
   RELEASE(xtablename);
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_istable returns %d"), rv);
+#endif
   return (rv);
 }
 /*--- sql_istable() -----------------------------------------------------------------------------*/
@@ -203,6 +235,9 @@ sql_iscolumn(SQL *sqlConn, const char *tablename, const char *columnname) {
 #endif
   int rv = 0;
 
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_iscolumn called for %s:%s"), tablename, columnname);
+#endif
   xtablename = sql_escstr(sqlConn, (char*)tablename);
   xcolumnname = sql_escstr(sqlConn, (char*)columnname);
 
@@ -225,6 +260,9 @@ sql_iscolumn(SQL *sqlConn, const char *tablename, const char *columnname) {
 
   RELEASE(xtablename);
   RELEASE(xcolumnname);
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_iscolumn returns %d"), rv);
+#endif
   return (rv);
 }
 /*--- sql_iscolumn() ----------------------------------------------------------------------------*/
@@ -233,6 +271,9 @@ int sql_get_column_width(SQL *sqlConn, const char *tablename, const char *column
   char *xtablename, *xcolumnname;
   int width = 0;
 
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_get_column_width called for %s:%s"), tablename, columnname);
+#endif
   xtablename = sql_escstr(sqlConn, (char*)tablename);
   xcolumnname = sql_escstr(sqlConn, (char*)columnname);
 
@@ -252,6 +293,9 @@ int sql_get_column_width(SQL *sqlConn, const char *tablename, const char *column
 
   RELEASE(xtablename);
   RELEASE(xcolumnname);
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_get_column_widht returns %d"), width);
+#endif
   return (width);
 }
 /**************************************************************************************************
@@ -259,11 +303,17 @@ int sql_get_column_width(SQL *sqlConn, const char *tablename, const char *column
 **************************************************************************************************/
 void
 _sql_close(SQL *sqlConn) {
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("_sql_close called"));
+#endif
 #if USE_PGSQL
   PQfinish(sqlConn);
 #else
   mysql_close(sqlConn);
   RELEASE(sqlConn);
+#endif
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("_sql_close returns"));
 #endif
 }
 /*--- _sql_close() ------------------------------------------------------------------------------*/
@@ -275,29 +325,46 @@ _sql_close(SQL *sqlConn) {
 **************************************************************************************************/
 int
 sql_nrquery(SQL *sqlConn, const char *query, size_t querylen) {
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_nrquery called with %s"), query);
+#endif
 #if USE_PGSQL
-  ExecStatusType q_rv = PGRES_COMMAND_OK;
-  PGresult *result = NULL;
+  {
+    ExecStatusType q_rv = PGRES_COMMAND_OK;
+    PGresult *result = NULL;
 
-  result = PQexec(sqlConn, query);
-  q_rv = PQresultStatus(result);
+    result = PQexec(sqlConn, query);
+    q_rv = PQresultStatus(result);
 
-  if (q_rv == PGRES_COMMAND_OK) {
-    PQclear(result);
-    return (0);
-  } else {
-    /* WarnSQL(sqlConn, _("%s: error during query"), PQresStatus(PQresultStatus(result))); */
-    PQclear(result);
-    return (-1);
+    if (q_rv == PGRES_COMMAND_OK) {
+      PQclear(result);
+#if DEBUG_ENABLED
+      Debug(sql, DEBUGLEVEL_FUNCS, _("sql_nrquery returns 0"));
+#endif
+      return (0);
+    } else {
+      /* WarnSQL(sqlConn, _("%s: error during query"), PQresStatus(PQresultStatus(result))); */
+      PQclear(result);
+#if DEBUG_ENABLED
+      Debug(sql, DEBUGLEVEL_FUNCS, _("sql_nrquery returns -1"));
+#endif
+      return (-1);
+    }
   }
 #else
   if (mysql_real_query(sqlConn, query, querylen)) {
     if (mysql_error(sql)[0] != '\0')
       WarnSQL(sql, _("%s: error during query"), mysql_error(sql));
+#if DEBUG_ENABLED
+      Debug(sql, DEBUGLEVEL_FUNCS, _("sql_nrquery returns -1"));
+#endif
     return (-1);
   }
 #endif
 
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_nrquery returns 0"));
+#endif
   return (0);
 }
 /*--- sql_nrquery() -----------------------------------------------------------------------------*/
@@ -311,38 +378,55 @@ SQL_RES *
 sql_query(SQL *sqlConn, const char *query, size_t querylen) {
   SQL_RES *res = NULL;
 
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_query called with %s"), query);
+#endif
 #if USE_PGSQL
-  ExecStatusType q_rv = PGRES_COMMAND_OK;
-  PGresult *result = NULL;
+  {
+    ExecStatusType q_rv = PGRES_COMMAND_OK;
+    PGresult *result = NULL;
 
-  result = PQexec(sqlConn, query);
-  q_rv = PQresultStatus(result);
+    result = PQexec(sqlConn, query);
+    q_rv = PQresultStatus(result);
 
-  if (q_rv == PGRES_TUPLES_OK) {
-    res = ALLOCATE(sizeof(SQL_RES), SQL_RES);
-    res->result = result;
-    res->tuples = PQntuples(result);
-    res->fields = PQnfields(result);
-    res->current_tuple = 0;
-    res->current_row = ALLOCATE(res->fields * sizeof(unsigned char *), unsigned char[]);
-    res->current_length = ALLOCATE(res->fields * sizeof(int *), int[]);
-  } else if (q_rv == PGRES_COMMAND_OK) {
-    PQclear(result);
-    return (NULL);
-  } else {
-    /* WarnSQL(sqlConn, _("%s: error during query"), PQresStatus(PQresultStatus(result))); */
-    PQclear(result);
-    return (NULL);
+    if (q_rv == PGRES_TUPLES_OK) {
+      res = ALLOCATE(sizeof(SQL_RES), SQL_RES);
+      res->result = result;
+      res->tuples = PQntuples(result);
+      res->fields = PQnfields(result);
+      res->current_tuple = 0;
+      res->current_row = ALLOCATE(res->fields * sizeof(unsigned char *), unsigned char[]);
+      res->current_length = ALLOCATE(res->fields * sizeof(int *), int[]);
+    } else if (q_rv == PGRES_COMMAND_OK) {
+      PQclear(result);
+#if DEBUG_ENABLED
+      Debug(sql, DEBUGLEVEL_FUNCS, _("sql_query returns NULL"));
+#endif
+      return (NULL);
+    } else {
+      /* WarnSQL(sqlConn, _("%s: error during query"), PQresStatus(PQresultStatus(result))); */
+      PQclear(result);
+#if DEBUG_ENABLED
+      Debug(sql, DEBUGLEVEL_FUNCS, _("sql_query returns NULL"));
+#endif
+      return (NULL);
+    }
   }
 #else
   if (mysql_real_query(sqlConn, query, querylen)
       || !(res = mysql_store_result(sqlConn))) {
     if (mysql_error(sql)[0] != '\0')
       WarnSQL(sql, _("%s: error during query"), mysql_error(sql));
+#if DEBUG_ENABLED
+      Debug(sql, DEBUGLEVEL_FUNCS, _("sql_query returns NULL"));
+#endif
     return (NULL);
   }
 #endif
 
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_query returns %p"), res);
+#endif
   return (res);
 }
 /*--- sql_query() -------------------------------------------------------------------------------*/
@@ -359,6 +443,9 @@ sql_queryf(SQL *sqlConn, const char *fmt, ...) {
   size_t	buflen;
   SQL_RES	*res;
 
+#if DEBUG_ENABLED
+      Debug(sql, DEBUGLEVEL_FUNCS, _("sql_queryf called"));
+#endif
   va_start(ap, fmt);
   buflen = VASPRINTF(&buf, fmt, ap);
   va_end(ap);
@@ -366,6 +453,9 @@ sql_queryf(SQL *sqlConn, const char *fmt, ...) {
   res = sql_query(sqlConn, buf, buflen);
   RELEASE(buf);
 
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_queryf returns %p"), res);
+#endif
   return (res);
 }
 /*--- sql_queryf() ------------------------------------------------------------------------------*/
@@ -384,6 +474,9 @@ sql_count(SQL *sqlConn, const char *fmt, ...) {
   SQL_RES	*res = NULL;
   long		rv = 0;
 
+#if DEBUG_ENABLED
+      Debug(sql, DEBUGLEVEL_FUNCS, _("sql_count called"));
+#endif
   va_start(ap, fmt);
   buflen = VASPRINTF(&buf, fmt, ap);
   va_end(ap);
@@ -404,6 +497,9 @@ sql_count(SQL *sqlConn, const char *fmt, ...) {
 #endif
   }
   sql_free(res);
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_queryf returns %d"), rv);
+#endif
   return (rv);
 }
 /*--- sql_count() -------------------------------------------------------------------------------*/
@@ -415,6 +511,9 @@ sql_count(SQL *sqlConn, const char *fmt, ...) {
 **************************************************************************************************/
 long
 sql_num_rows(SQL_RES *res) {
+#if DEBUG_ENABLED
+      Debug(sql, DEBUGLEVEL_FUNCS, _("sql_num_rows called"));
+#endif
 #if USE_PGSQL
   return res->tuples;
 #else
@@ -430,23 +529,38 @@ sql_num_rows(SQL_RES *res) {
 **************************************************************************************************/
 SQL_ROW
 sql_getrow(SQL_RES *res, unsigned long **lengths) {
-#if USE_PGSQL
-  register int n;
-
-  if (res->current_tuple >= res->tuples)
-    return (NULL);
-  for (n = 0; n < res->fields; n++) {
-    res->current_row[n] = PQgetvalue(res->result, res->current_tuple, n);
-    res->current_length[n] = PQgetlength(res->result, res->current_tuple, n);
-  }
-  if (lengths) *lengths = res->current_length;
-  res->current_tuple++;
-  return (res->current_row);
-#else
-  SQL_ROW row = mysql_fetch_row(res);
-  if (lengths) *lengths = mysql_fetch_lengths(res);
-  return row;
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_getrow called"));
 #endif
+  {
+#if USE_PGSQL
+    register int n;
+
+    if (res->current_tuple >= res->tuples) {
+#if DEBUG_ENABLED
+      Debug(sql, DEBUGLEVEL_FUNCS, _("sql_getrow returns NULL"));
+#endif
+      return (NULL);
+    }
+    for (n = 0; n < res->fields; n++) {
+      res->current_row[n] = PQgetvalue(res->result, res->current_tuple, n);
+      res->current_length[n] = PQgetlength(res->result, res->current_tuple, n);
+    }
+    if (lengths) *lengths = res->current_length;
+    res->current_tuple++;
+#if DEBUG_ENABLED
+    Debug(sql, DEBUGLEVEL_FUNCS, _("sql_getrow returns %p"), res->current_row);
+#endif
+    return (res->current_row);
+#else
+    SQL_ROW row = mysql_fetch_row(res);
+    if (lengths) *lengths = mysql_fetch_lengths(res);
+#if DEBUG_ENABLED
+    Debug(sql, DEBUGLEVEL_FUNCS, _("sql_getrow returns %p"), row);
+#endif
+    return row;
+#endif
+  }
 }
 /*--- sql_getrow() ------------------------------------------------------------------------------*/
 
@@ -459,18 +573,29 @@ char *
 sql_escstr2(SQL *sqlConn, char *src, size_t srclen) {
   char *dest = ALLOCATE(srclen*2+1, char*);
   size_t reslen;
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_escstr2 called"));
+#endif
 #if USE_PGSQL
-  int errcode = 0;
-  reslen =   PQescapeStringConn(sqlConn, dest, src, srclen, &errcode);
+  {
+    int errcode = 0;
+    reslen =   PQescapeStringConn(sqlConn, dest, src, srclen, &errcode);
+  }
 #else
   reslen = mysql_real_escape_string(sqlConn, dest, src, srclen);
 #endif
   dest = REALLOCATE(dest, reslen+1, char*);
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_escstr2 returns %s"), dest);
+#endif
   return dest;
 }
 
 char *
 sql_escstr(SQL *sqlConn, char *src) {
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_escstr called"));
+#endif
   return sql_escstr2(sqlConn, src, strlen(src));
 }
 /*--- sql_escstr() ------------------------------------------------------------------------------*/
@@ -482,6 +607,9 @@ sql_escstr(SQL *sqlConn, char *src) {
 **************************************************************************************************/
 void
 _sql_free(SQL_RES *res) {
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("_sql_free called"));
+#endif
 #if USE_PGSQL
   RELEASE(res->current_length);
   RELEASE(res->current_row);
@@ -490,6 +618,9 @@ _sql_free(SQL_RES *res) {
 #else
   mysql_free_result(res);
 #endif
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("_sql_free returns"));
+#endif
 }
 /*--- _sql_free() -------------------------------------------------------------------------------*/
 int
@@ -497,10 +628,16 @@ sql_build_query(char **query, const char *fmt, ...) {
   va_list ap;
   int querylen;
 
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_build_query called"));
+#endif
   va_start(ap, fmt);
   querylen = VASPRINTF(query, fmt, ap);
   va_end(ap);
 
+#if DEBUG_ENABLED
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_build_query returns %s(%d)"), *query, querylen);
+#endif
   return querylen;
 }
 

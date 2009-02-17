@@ -66,6 +66,9 @@ notify_free(TASK *t, void *data) {
    */
   NOTIFYDATA *notify = (NOTIFYDATA*)data;
 
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_free called"), desctask(t));
+#endif
   array_free(notify->slaves, 1);
 
   RELEASE(notify->origin);
@@ -74,7 +77,10 @@ notify_free(TASK *t, void *data) {
     notify_tasks_running -= 1;
 #if HAVE_IPV6
   else if (t->family == AF_INET6)
-    notify_tasks_running -= 1;
+    notify_tasks_running6 -= 1;
+#endif
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_free returns"), desctask(t));
 #endif
 
 }
@@ -107,6 +113,9 @@ _notify_timeout(TASK *t, NOTIFYSLAVE *slave) {
   static NotifyAlgorithm _notify_algorithm = NULL;
   time_t timeout = 0;
 
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_timeout called"), desctask(t));
+#endif
   if (!_notify_algorithm) {
     if (!strcasecmp(notify_algorithm, "linear")) _notify_algorithm = _notify_linear;
     else if (!strcasecmp(notify_algorithm, "exponential")) _notify_algorithm = _notify_exponential;
@@ -115,6 +124,9 @@ _notify_timeout(TASK *t, NOTIFYSLAVE *slave) {
   }
 
   timeout = _notify_algorithm(t, slave);
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_timeout returns %ld"), desctask(t), (long)timeout);
+#endif
   return (timeout);
 }
 
@@ -130,15 +142,19 @@ notify_write(TASK *t) {
   slavecount = array_numobjects(notify->slaves);
 
 #if DEBUG_ENABLED
-  Debug(notify, 1, _("%s: DNS NOTIFY notify_write called with %d slaves"),
+  Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_write called with %d slaves"),
 	 desctask(t), slavecount);
 #endif
 
   /*
    * Build notify packet
    */
-  if (!(out = dns_make_notify(t, t->id, DNS_QTYPE_SOA, notify->origin, 0, &reqlen)))
+  if (!(out = dns_make_notify(t, t->id, DNS_QTYPE_SOA, notify->origin, 0, &reqlen))) {
+#if DEBUG_ENABLED
+    Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_write returns FAILED cannot make notify packet"), desctask(t));
+#endif
     return TASK_FAILED;
+  }
 
   for (i = 0; i < array_numobjects(notify->slaves); i++) {
     NOTIFYSLAVE *slave = (NOTIFYSLAVE*)array_fetch(notify->slaves, i);
@@ -158,6 +174,9 @@ notify_write(TASK *t) {
 #endif
     } else {
       Warn(_("DNS NOTIFY Unknown address family %d"), slaveaddr->sa_family);
+#if DEBUG_ENABLED
+      Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_write returns FAILED address family unknown"), desctask(t));
+#endif
       return TASK_FAILED;
     }
 
@@ -172,14 +191,14 @@ notify_write(TASK *t) {
     }
 
 #if DEBUG_ENABLED
-    Debug(notify, 1, _("%s: DNS NOTIFY notify_write processing slave %s(%d)"),
-	   desctask(t), msg, port);
+    Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_write processing slave %s(%d)"),
+	  desctask(t), msg, port);
 #endif
  
     if (slave->replied) {
 #if DEBUG_ENABLED
-      Debug(notify, 1, _("%s: DNS NOTIFY notify_write slave %s(%d) has already replied"),
-	     desctask(t), msg, port);
+      Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_write slave %s(%d) has already replied"),
+	    desctask(t), msg, port);
 #endif
       RELEASE(msg);
       slavecount--;
@@ -188,8 +207,8 @@ notify_write(TASK *t) {
 
     if (slave->retries > notify_retries) {
 #if DEBUG_ENABLED
-      Debug(notify, 1, _("%s: DNS NOTIFY notify_write slave %s(%d) has has exceeded retry count"),
-	     desctask(t), msg, port);
+      Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_write slave %s(%d) has has exceeded retry count"),
+	    desctask(t), msg, port);
 #endif
       RELEASE(msg);
       slavecount--;
@@ -198,8 +217,8 @@ notify_write(TASK *t) {
 
     if (slave->lastsent > (current_time - _notify_timeout(t, slave))) {
 #if DEBUG_ENABLED
-      Debug(notify, 1, _("%s: DNS NOTIFY notify_write slave %s(%d) has not timed out yet"),
-	     desctask(t), msg, port);
+      Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_write slave %s(%d) has not timed out yet"),
+	    desctask(t), msg, port);
 #endif
       RELEASE(msg);
       continue; /* slave has not timed out yet - try again later */
@@ -207,8 +226,8 @@ notify_write(TASK *t) {
 
     if ((rv = sendto(t->fd, out, reqlen, 0, slaveaddr, slavelen)) < 0) {
 #if DEBUG_ENABLED
-      Debug(notify, 1, _("%s: DNS NOTIFY notify_write send to slave %s(%d) failed - %s(%d)"), desctask(t),
-	     msg, port, strerror(errno), errno);
+      Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_write send to slave %s(%d) failed - %s(%d)"), desctask(t),
+	    msg, port, strerror(errno), errno);
 #endif
       if (
 	  (errno == EINTR)
@@ -229,8 +248,8 @@ notify_write(TASK *t) {
     }
 #if DEBUG_ENABLED
     else {
-      Debug(notify, 1, _("%s: DNS NOTIFY notify_write sent notify to slave %s:%d"),
-	     desctask(t), msg, port);
+      Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_write sent notify to slave %s:%d"),
+	    desctask(t), msg, port);
     }
 #endif
 	   
@@ -251,9 +270,9 @@ notify_write(TASK *t) {
   }
 
 #if DEBUG_ENABLED
-  Debug(notify, 1,
-	 _("%s: DNS NOTIFY notify_write wrote notifies to slaves, %d left to reply, timeout %ld - %ld = %ld"),
-	 desctask(t), slavecount, t->timeout, current_time, t->timeout - current_time);
+  Debug(notify, DEBUGLEVEL_PROGRESS,
+	_("%s: DNS NOTIFY notify_write wrote notifies to slaves, %d left to reply, timeout %ld - %ld = %ld"),
+	desctask(t), slavecount, t->timeout, current_time, t->timeout - current_time);
 #endif
 
   return ((slavecount > 0)?TASK_CONTINUE:TASK_COMPLETED);
@@ -268,7 +287,15 @@ _notify_read(TASK *t, struct sockaddr *from, socklen_t fromlen) {
   int		i = 0;
   int		slavecount = 0;
 
-  if (from->sa_family != t->family) return 1; /* Ignore this ... */
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: _notify_read called"), desctask(t));
+#endif
+  if (from->sa_family != t->family) {
+#if DEBUG_ENABLED
+    Debug(notify, DEBUGLEVEL_FUNCS, _("%s: _notify_read returns 1 families do not match"), desctask(t));
+#endif
+    return 1; /* Ignore this ... */
+  }
 
   if (from->sa_family == AF_INET) {
     msg = STRDUP(ipaddr(AF_INET, (void*)(&((struct sockaddr_in*)from)->sin_addr)));
@@ -279,7 +306,7 @@ _notify_read(TASK *t, struct sockaddr *from, socklen_t fromlen) {
   }
 
 #if DEBUG_ENABLED
-  Debug(notify, 1, _("%s: DNS NOTIFY _notify_read read response from slave %s"), desctask(t), msg);
+  Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY _notify_read read response from slave %s"), desctask(t), msg);
 #endif
 
   slavecount = array_numobjects(notify->slaves);
@@ -321,6 +348,9 @@ _notify_read(TASK *t, struct sockaddr *from, socklen_t fromlen) {
 
   RELEASE(msg);
 
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: _notify_read returns %d"), desctask(t), slavecount);
+#endif
   return slavecount;
 }
 
@@ -328,6 +358,9 @@ taskexec_t
 notify_read(TASK *t) {
   int			rv;
 
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_read called"), desctask(t));
+#endif
   do {
     char		*msg = NULL;
     char		in[DNS_MAXPACKETLEN_UDP];
@@ -373,7 +406,7 @@ notify_read(TASK *t) {
 	goto CLEANUP;
       }
 #if DEBUG_ENABLED
-      Debug(notify, 1, _("%s: DNS NOTIFY notify_read recv from slave %s(%d) failed - %s(%d)"), desctask(t),
+      Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_read recv from slave %s(%d) failed - %s(%d)"), desctask(t),
 	     msg, port, strerror(errno), errno);
 #endif
       Warn(_("recvfrom (UDP) for slave %s(%d) failed with %s(%d)"), msg, port, strerror(errno), errno);
@@ -395,7 +428,7 @@ notify_read(TASK *t) {
     DNS_GET16(ancount, src);
     DNS_GET16(nscount, src);
     DNS_GET16(arcount, src);
-    Debug(notify, 1, _("%s: DNS NOTIFY notify_read read response from slave %s length %d for id = %d, "
+    Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_read read response from slave %s length %d for id = %d, "
 			  "qr = %d, opcode = %d, aa = %d, tc = %d, rd = %d, "
 			  "ra = %d, z = %d, ad = %d, cd = %d, rcode = %d, "
 			  "qdcount = %d, ancount = %d, nscount = %d, arcount = %d"),
@@ -410,12 +443,12 @@ notify_read(TASK *t) {
     if (!hdr.qr || (hdr.opcode != DNS_OPCODE_NOTIFY)) {
       TASK *newt = NULL;
 #if DEBUG_ENABLED
-      Debug(notify, 1, _("%s: DNS NOTIFY notify_read got a non-notify response from %s"), desctask(t), msg);
+      Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_read got a non-notify response from %s"), desctask(t), msg);
       if ((hdr.opcode == DNS_OPCODE_QUERY) && !hdr.qr) {
 	char *current = src;
 	char *msg2 = NULL;
 	task_error_t errcode = TASK_FAILED;
-	Debug(notify, 1, _("%s: DNS NOTIFY notify_read response is a query"), desctask(t));
+	Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_read response is a query"), desctask(t));
 	msg2 = name_unencode(src, rv - DNS_HEADERSIZE, &current, &errcode);
 	if(msg2) {
 	  dns_qtype_t qtype = 0;
@@ -424,7 +457,7 @@ notify_read(TASK *t) {
 	    DNS_GET16(qtype, current);
 	    if (current+SIZE16 <= &in[rv]) {
 	      DNS_GET16(qclass, current);
-	      Debug(notify, 1, _("%s: DNS NOTIFY notify_read %s asks for %s - %s against %s"), desctask(t),
+	      Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_read %s asks for %s - %s against %s"), desctask(t),
 		     msg, mydns_rr_get_type_by_id(qtype)->rr_type_name, mydns_class_str(qclass), msg2);
 	      RELEASE(msg2);
 	      goto DECODEDQUERY;
@@ -432,7 +465,7 @@ notify_read(TASK *t) {
 	  }
 	  RELEASE(msg2);
 	}
-	Debug(notify, 1, _("%s: DNS NOTIFY notify_read %s sent malformed query - ignored"), desctask(t), msg);
+	Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_read %s sent malformed query - ignored"), desctask(t), msg);
       DECODEDQUERY: ;
       }
 #endif
@@ -451,7 +484,7 @@ notify_read(TASK *t) {
 
     if (!readT) {
 #if DEBUG_ENABLED
-      Debug(notify, 1, _("%s: DNS NOTIFY notify_read no task found for id %d from %s"), desctask(t), id, msg);
+      Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_read no task found for id %d from %s"), desctask(t), id, msg);
 #endif
       RELEASE(msg);
       continue;
@@ -460,7 +493,7 @@ notify_read(TASK *t) {
     rv = _notify_read(readT, &from, fromlen);
 
 #if DEBUG_ENABLED
-    Debug(notify, 1, _("%s: DNS NOTIFY notify_read %d slaves still to be matched"), desctask(readT), rv);
+    Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_read %d slaves still to be matched"), desctask(readT), rv);
 #endif
     if (rv <= 0) {
       /* Task has finished */
@@ -497,14 +530,14 @@ notify_read(TASK *t) {
 #endif
       if (rv < 0) {
 #if DEBUG_ENABLED
-	Debug(notify, 1, _("%s: DNS NOTIFY notify_read poll fd %d failed with %s(%d)"),
+	Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_read poll fd %d failed with %s(%d)"),
 	       desctask(t), t->fd, strerror(errno), errno);
 #endif
 	break;
       }
       if ((item.revents & POLLERR)) {
 #if DEBUG_ENABLED
-	Debug(notify, 1, _("%s: DNS NOTIFY notify_read poll fd %d gave an error"), desctask(t), t->fd);
+	Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_read poll fd %d gave an error"), desctask(t), t->fd);
 #endif
 	break;
       }
@@ -520,6 +553,9 @@ notify_read(TASK *t) {
     rv = notify_tasks_running6;
 #endif
 
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_read returns %s"), desctask(t), (rv > 0) ? "CONTINUE" : "COMPLETED");
+#endif
   return ((rv > 0)?TASK_CONTINUE:TASK_COMPLETED);
 }
 
@@ -531,16 +567,25 @@ notify_running(TASK *t, MYDNS_SOA *soa) {
    * Scan running tasks for one that is doing notification on this soa
    */
 
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_running called"), desctask(t));
+#endif
   for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
     for (checkt = (TASK*)(TaskArray[PERIODIC_TASK][j]->head); checkt; checkt = task_next(checkt)) {
       if (t->freeextension == notify_free) {
 	NOTIFYDATA *notify = t->extension;
 	if (notify->soa_id == soa->id) {
+#if DEBUG_ENABLED
+	  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_running returns task"), desctask(t));
+#endif
 	  return checkt;
 	}
       }
     }
   }
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_running returns NULL"), desctask(t));
+#endif
   return NULL;
 }
 
@@ -563,6 +608,9 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
   size_t	querylen = 0;
   char 		*query = NULL;
 
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_get_server_list called"), desctask(t));
+#endif
   rr = find_rr(t, soa, DNS_QTYPE_NS, (char*)"");
 
   for (r = rr; r; r = r->next) {
@@ -586,7 +634,7 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
     querylen = sql_build_query(&query, "SELECT also_notify FROM %s WHERE id=%u;",
 			       mydns_soa_table_name, soa->id);
 #if DEBUG_ENABLED
-    Debug(notify, 1, _("%s: DNS NOTIFY: notify_get_server_list %s"), desctask(t), query);
+    Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY: notify_get_server_list %s"), desctask(t), query);
 #endif
     res = sql_query(sql, query, querylen);
     RELEASE(query);
@@ -633,7 +681,7 @@ notify_get_server_list(TASK *t, MYDNS_SOA *soa)
   }
 
 #if DEBUG_ENABLED
-  Debug(notify, 1,
+  Debug(notify, DEBUGLEVEL_PROGRESS,
 	 _("%s: DNS NOTIFY notify_get_server_list found %d name servers in zone data and also-notify"),
 	 desctask(t), array_numobjects(name_servers));
 #endif
@@ -646,6 +694,9 @@ notify_allocate_fd(int family, struct sockaddr *sourceaddr)
 {
   int fd = -1;
 
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("notify_allocate_fd called"));
+#endif
   if ((fd = socket(family, SOCK_DGRAM, IPPROTO_UDP)) >= 0) {
     int n = 0, opt = 1;
 
@@ -671,6 +722,9 @@ notify_allocate_fd(int family, struct sockaddr *sourceaddr)
       }
       Warn(_("bind (UDP): %s:%d - %s(%d)"), msg, port, strerror(errno), errno);
       RELEASE(msg);
+#if DEBUG_ENABLED
+      Debug(notify, DEBUGLEVEL_FUNCS, _("notify_allocate_fd returns %d"), fd);
+#endif
       return fd;
     }
     for (n = 1; n < 1024; n++) {
@@ -680,6 +734,9 @@ notify_allocate_fd(int family, struct sockaddr *sourceaddr)
     }
   }
 
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("notify_allocate_fd returns %d"), fd);
+#endif
   return fd;
 }
 
@@ -688,6 +745,9 @@ notify_get_source(int family, char *sourceaddr)
 {
   struct sockaddr *res = NULL;
 
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("notify_get_source called"));
+#endif
   if (family == AF_INET) {
     res = ALLOCATE(sizeof(struct sockaddr_in), struct sockaddr*);
     ((struct sockaddr_in*)res)->sin_port = htons(0); /* Random port selection */
@@ -700,12 +760,18 @@ notify_get_source(int family, char *sourceaddr)
 #endif
   }
 
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("notify_get_source returns"));
+#endif
   return res;
 }
 
 static void
 notify_master_free(TASK *t, void *data) {
 
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_master_free called"), desctask(t));
+#endif
   sockclose(t->fd);
 
   if (t->family == AF_INET)
@@ -715,27 +781,42 @@ notify_master_free(TASK *t, void *data) {
     notifyfd6 = -1;
 #endif
 
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_master_free returns"), desctask(t));
+#endif
 }
 
 static taskexec_t
 notify_master_tick(TASK *t, int extension) {
 
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_master_tick called"), desctask(t));
+#endif
   if (
       ((t->family == AF_INET) && (notify_tasks_running <= 0))
 #if HAVE_IPV6
       || ((t->family == AF_INET6) && (notify_tasks_running6 <= 0))
 #endif
       ) {
+#if DEBUG_ENABLED
+    Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_master_tick returns COMPLETED"), desctask(t));
+#endif
     return TASK_COMPLETED;
   }
 
   t->timeout = current_time + 3600;
 
+#if DEBUG_ENABLED
+    Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_master_tick returns CONTINUE"), desctask(t));
+#endif
   return TASK_CONTINUE;
 }
 
 static taskexec_t
 notify_tick(TASK *t, void *extension) {
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_tick called"), desctask(t));
+#endif
   t->status = NEED_NOTIFY_WRITE;
 
   return notify_write(t);
@@ -747,7 +828,7 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
   NOTIFYDATA *notify = NULL;
 
 #if DEBUG_ENABLED
-  Debug(notify, 1, _("%s: DNS NOTIFY notify_slaves called for %s"), desctask(t), soa->origin);
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: DNS NOTIFY notify_slaves called for %s"), desctask(t), soa->origin);
 #endif
 
   /*
@@ -793,7 +874,7 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
 				     );
 
 #if DEBUG_ENABLED
-    Debug(notify, 1, _("%s: DNS NOTIFY notify_slaves has %d slaves to notify for %s"),
+    Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_slaves has %d slaves to notify for %s"),
 	   desctask(t), slavecount, soa->origin);
 #endif
 
@@ -820,7 +901,7 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
       }
       if (notify_tasks_running <= 0) {
 #if DEBUG_ENABLED
-	Debug(notify, 1, _("%s: DNS NOTIFY notify_slaves initializing master IPV4 task for %s"),
+	Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_slaves initializing master IPV4 task for %s"),
 	       desctask(t), soa->origin);
 #endif
 	notify_master = IOtask_init(NORMAL_PRIORITY_TASK, NEED_NOTIFY_READ, notifyfd,
@@ -836,7 +917,7 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
       notify->slaves = slavesipv4;
 
 #if DEBUG_ENABLED
-	Debug(notify, 1, _("%s: DNS NOTIFY notify_slaves initializing notifier IPV4 task for %s"),
+	Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_slaves initializing notifier IPV4 task for %s"),
 	       desctask(t), soa->origin);
 #endif
       notify_task = Ticktask_init(NORMAL_PRIORITY_TASK, NEED_NOTIFY_WRITE, notifyfd,
@@ -870,7 +951,7 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
       }
       if (notify_tasks_running6 <= 0) {
 #if DEBUG_ENABLED
-	Debug(notify, 1, _("%s: DNS NOTIFY notify_slaves initializing master IPV6 task for %s"),
+	Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_slaves initializing master IPV6 task for %s"),
 	       desctask(t), soa->origin);
 #endif
 	notify_master = IOtask_init(NORMAL_PRIORITY_TASK, NEED_NOTIFY_READ, notifyfd6,
@@ -886,7 +967,7 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
       notify->slaves = slavesipv6;
       
 #if DEBUG_ENABLED
-	Debug(notify, 1, _("%s: DNS NOTIFY notify_slaves initializing notifier IPV6 task for %s"),
+	Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_slaves initializing notifier IPV6 task for %s"),
 	       desctask(t), soa->origin);
 #endif
       notify_task = Ticktask_init(NORMAL_PRIORITY_TASK, NEED_NOTIFY_WRITE, notifyfd,
@@ -906,6 +987,9 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
     ;
 #endif
   }
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_slave returns"), desctask(t));
+#endif
   return;
 }
 
@@ -913,10 +997,16 @@ static void
 notify_initfree(TASK *t, void *data) {
   INITDATA	*initdata = (INITDATA*)data;
 
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_initfree called"), desctask(t));
+#endif
   if (initdata->zones != NULL) {
     array_free(initdata->zones, 1);
     initdata->zones = NULL;
   }
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_initfree returns"), desctask(t));
+#endif
 }
 
 static taskexec_t
@@ -929,6 +1019,9 @@ notify_all_soas(TASK *t, void *data) {
   char *zone = NULL;
   MYDNS_SOA *soa;
 
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_all_soas called"), desctask(t));
+#endif
   if (initdata->zones == NULL) {
     size_t	querylen = 0;
     char	*query = NULL;
@@ -955,7 +1048,7 @@ notify_all_soas(TASK *t, void *data) {
       char *origin = row[0];
 
 #if DEBUG_ENABLED
-      Debug(notify, 1, _("%s: DNS NOTIFY notify_all_soas prime zone %s for NOTIFY check"),
+      Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_all_soas prime zone %s for NOTIFY check"),
 	     desctask(t), origin);
 #endif
       array_append(initdata->zones, STRDUP(origin));
@@ -973,7 +1066,7 @@ notify_all_soas(TASK *t, void *data) {
 
   if (mydns_soa_load(sql, &soa, zone) == 0) {
 #if DEBUG_ENABLED
-    Debug(notify, 1, _("%s: DNS NOTIFY notify_all_soas loaded SOA for zone %s"),
+    Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_all_soas loaded SOA for zone %s"),
 	   desctask(t), zone);
 #endif
     if (!soa->recursive) {
@@ -983,7 +1076,7 @@ notify_all_soas(TASK *t, void *data) {
   }
 #if DEBUG_ENABLED
   else {
-    Debug(notify, 1, _("%s: DNS NOTIFY notify_all_soas failed to load SOA for zone %s"),
+    Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_all_soas failed to load SOA for zone %s"),
 	   desctask(t), zone);
   }
 #endif
@@ -991,11 +1084,14 @@ notify_all_soas(TASK *t, void *data) {
   initdata->zonecount -= 1;
 
 #if DEBUG_ENABLED
-  Debug(notify, 1,
+  Debug(notify, DEBUGLEVEL_PROGRESS,
 	 _("%s: DNS NOTIFY notify_all_soas loaded a soa for notification zone %s number %d, zonesremaining %d"),
 	 desctask(t), zone, initdata->lastzone, initdata->zonecount);
 #endif
 
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_all_soas returns %s"), desctask(t), (initdata->zonecount > 0) ? "CONTINUE" : "COMPLETED");
+#endif
   return ((initdata->zonecount > 0)?TASK_CONTINUE:TASK_COMPLETED);
 }
 
@@ -1006,12 +1102,23 @@ notify_start() {
 
   int zonecount = 0;
 
-  if (!dns_notify_enabled) return;
+#if DEBUG_ENABLED
+  Debug(notify, DEBUGLEVEL_FUNCS, _("notify_start called"));
+#endif
+  if (!dns_notify_enabled) {
+#if DEBUG_ENABLED
+    Debug(notify, DEBUGLEVEL_FUNCS, _("notify_start returns notify is not enabled"));
+#endif
+    return;
+  }
 
   /*
    * Allocate a task to run through the SOA's and set up notify tasks for each.
    */
   if(!(zonecount = mydns_soa_count(sql))) {
+#if DEBUG_ENABLED
+    Debug(notify, DEBUGLEVEL_FUNCS, _("notify_start returns no zones to notify"));
+#endif
     return;
   }
 
@@ -1023,7 +1130,9 @@ notify_start() {
   inittask = Ticktask_init(LOW_PRIORITY_TASK, NEED_TASK_RUN, -1, 0, AF_UNSPEC, NULL);
   task_add_extension(inittask, initdata, notify_initfree, notify_all_soas, notify_all_soas);
   inittask->timeout = current_time + 10; /* Wait 10 seconds before firing first notify set */
-
+#if DEBUG_ENABLED
+    Debug(notify, DEBUGLEVEL_FUNCS, _("notify_start returns"));
+#endif
 }
 /* vi:set ts=3: */
 /* NEED_PO */

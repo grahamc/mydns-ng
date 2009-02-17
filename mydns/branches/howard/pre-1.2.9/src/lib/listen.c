@@ -38,6 +38,9 @@ int num_tcp6_fd = 0;						/* Number of items in 'tcp6_fd' */
 void listen_close_all(void) {
   int n;
 
+#if DEBUG_ENABLED
+  Debug(listen, DEBUGLEVEL_FUNCS, _("listen_close_all: called"));
+#endif
   /* Close listening FDs - do not sockclose these are shared with other processes */
   for (n = 0; n < num_tcp4_fd; n++)
     close(tcp4_fd[n]);
@@ -52,6 +55,9 @@ void listen_close_all(void) {
   for (n = 0; n < num_udp6_fd; n++)
     close(udp6_fd[n]);
 #endif	/* HAVE_IPV6 */
+#if DEBUG_ENABLED
+  Debug(listen, DEBUGLEVEL_FUNCS, _("listen_close_all: returns"));
+#endif
 
 }
 

@@ -35,9 +35,6 @@
 
 #if DEBUG_ENABLED
 int		debug_resolve = 0;
-
-/* Strings describing the datasections */
-const char *resolve_datasection_str[] = { "QUESTION", "ANSWER", "AUTHORITY", "ADDITIONAL" };
 #endif
 
 /**************************************************************************************************
@@ -50,7 +47,7 @@ resolve_soa(TASK *t, datasection_t section, char *fqdn, int level) {
   MYDNS_SOA *soa = find_soa(t, fqdn, NULL);
 
 #if DEBUG_ENABLED
-  Debug(resolve, 1, _("%s: resolve_soa(%s) -> soa %s"),
+  Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve_soa(%s) -> soa %s"),
 	 desctask(t), fqdn, (soa)?soa->origin:_("not found"));
 #endif
 
@@ -61,8 +58,15 @@ resolve_soa(TASK *t, datasection_t section, char *fqdn, int level) {
        then if section is ANSWER and we are in level 0 */
     if(soa->recursive) {
       if(forward_recursive && t->hdr.rd)
-	if((section == ANSWER) && !level)
+	if((section == ANSWER) && !level) {
+#if DEBUG_ENABLED
+	  Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve_soa: going recursive"), desctask(t));
+#endif
 	  return recursive_fwd(t);
+	}
+#if DEBUG_ENABLED
+      Debug(resolve, DEBUGLEVEL_FUNCS, _("%s: resolve_soa returns RCODE_REFUSED as recursion is turned off"), desctask(t));
+#endif
       return dnserror(t, DNS_RCODE_REFUSED, ERR_ZONE_NOT_FOUND);
     }
 
@@ -94,8 +98,14 @@ resolve_soa(TASK *t, datasection_t section, char *fqdn, int level) {
 
     if (section == ANSWER)				/* We are authoritative; Set `aa' flag */
       t->hdr.aa = 1;
+#if DEBUG_ENABLED
+      Debug(resolve, DEBUGLEVEL_FUNCS, _("%s: resolve_soa returns EXECUTED"), desctask(t));
+#endif
     return (TASK_EXECUTED);
   }
+#if DEBUG_ENABLED
+  Debug(resolve, DEBUGLEVEL_FUNCS, _("%s: resolve_soa returns %s"), desctask(t), (section == ANSWER) ? "RCODE_REFUSED" : "EXECUTED");
+#endif
   return (section == ANSWER ? dnserror(t, DNS_RCODE_REFUSED, ERR_ZONE_NOT_FOUND) : TASK_EXECUTED);
 }
 /*--- resolve_soa() -----------------------------------------------------------------------------*/
@@ -111,8 +121,15 @@ cname_recurse(TASK *t, datasection_t section, dns_qtype_t qtype,
 	      char *fqdn, MYDNS_SOA *soa, char *label, MYDNS_RR *cname, int level) {
   register int n = 0;
 
-  if (level >= MAX_CNAME_LEVEL)
+#if DEBUG_ENABLED
+  Debug(resolve, DEBUGLEVEL_FUNCS, _("%s: cname_recurse called for %s, level %d"), desctask(t), fqdn, level);
+#endif
+  if (level >= MAX_CNAME_LEVEL) {
+#if DEBUG_ENABLED
+    Debug(resolve, DEBUGLEVEL_FUNCS, _("%s: cname_recurse returns too many indirections"), desctask(t));
+#endif
     return (1);
+  }
 
   /* Add the CNAME record to the answer section */
   if (section == ANSWER && level)
@@ -122,8 +139,12 @@ cname_recurse(TASK *t, datasection_t section, dns_qtype_t qtype,
   t->sort_level++;
 
   /* If the request was for CNAME records, this is the answer; we are done. */
-  if (t->qtype == DNS_QTYPE_CNAME)
+  if (t->qtype == DNS_QTYPE_CNAME) {
+#if DEBUG_ENABLED
+    Debug(resolve, DEBUGLEVEL_FUNCS, _("%s: cname_recurse returns COMPLETED"), desctask(t));
+#endif
     return (TASK_COMPLETED);
+  }
 
   /* Check `Cnames' list; if we are looping, stop.  Otherwise add this to the array. */
   for (n = 0; n < level; n++)
@@ -131,12 +152,15 @@ cname_recurse(TASK *t, datasection_t section, dns_qtype_t qtype,
       /* CNAME loop: Send what we have so far and consider the resolution complete */
       Verbose(_("%s: %s: %s %s %s (depth %d)"), desctask(t), _("CNAME loop detected"),
 	      MYDNS_RR_NAME(cname), mydns_rr_get_type_by_id(cname->type)->rr_type_name, (char*)MYDNS_RR_DATA_VALUE(cname), level);
+#if DEBUG_ENABLED
+      Debug(resolve, DEBUGLEVEL_FUNCS, _("%s: cname_recurse returns COMPLETED"), desctask(t));
+#endif
       return (TASK_COMPLETED);
     }
   t->Cnames[level] = cname->id;
 
 #if DEBUG_ENABLED
-  Debug(resolve, 1, _("%s: CNAME -> `%s'"), desctask(t), (char*)MYDNS_RR_DATA_VALUE(cname));
+  Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: CNAME -> `%s'"), desctask(t), (char*)MYDNS_RR_DATA_VALUE(cname));
 #endif
 
   /* Resolve with this new CNAME record as the FQDN */
@@ -159,6 +183,9 @@ process_rr(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn,
 			 && qtype != DNS_QTYPE_NS
 			 && qtype != DNS_QTYPE_ANY);
 
+#if DEBUG_ENABLED
+    Debug(resolve, DEBUGLEVEL_FUNCS, _("%s: process_rr called"), desctask(t));
+#endif
   t->name_ok = 1;
 
   /* If the data section calls for a FQDN, and we just get a hostname, append the origin */
@@ -170,8 +197,12 @@ process_rr(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn,
 
   /* If the RR list returned contains a CNAME record, follow the CNAME. */
   for (r = rr; r; r = r->next)
-    if (r->type == DNS_QTYPE_CNAME)
+    if (r->type == DNS_QTYPE_CNAME) {
+#if DEBUG_ENABLED
+      Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: process_rr chasing CNAME"), desctask(t));
+#endif
       return cname_recurse(t, section, qtype, fqdn, soa, label, r, level);
+    }
 
   /* Find RRs matching QTYPE */
   for (r = rr; r; r = r->next)
@@ -239,6 +270,9 @@ process_rr(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn,
     t->sort_level++;
   }
 
+#if DEBUG_ENABLED
+  Debug(resolve, DEBUGLEVEL_FUNCS, _("%s: process_rr returns %s"), desctask(t), (rv) ? "COMPLETED" : "EXECUTED");
+#endif
   return ((rv) ? TASK_COMPLETED : TASK_EXECUTED);
 }
 /*--- process_rr() ------------------------------------------------------------------------------*/
@@ -254,6 +288,9 @@ add_authority_ns(TASK *t, datasection_t section, MYDNS_SOA *soa, char *match_lab
     register MYDNS_RR *rr = NULL, *r = NULL;
     register char *label = NULL;
 
+#if DEBUG_ENABLED
+    Debug(resolve, DEBUGLEVEL_FUNCS, _("%s: add_authority_ns called"), desctask(t));
+#endif
     /* Match down label by label in `label' -- include first matching NS record(s) */
     for (label = match_label; *label; label++) {
       if (label == match_label || *label == '.') {
@@ -271,6 +308,9 @@ add_authority_ns(TASK *t, datasection_t section, MYDNS_SOA *soa, char *match_lab
 	    }
 	    t->sort_level++;
 	    mydns_rr_free(rr);
+#if DEBUG_ENABLED
+	    Debug(resolve, DEBUGLEVEL_FUNCS, _("%s: add_authority_ns returns"), desctask(t));
+#endif
 	    return;
 	  }
 	}
@@ -285,6 +325,9 @@ add_authority_ns(TASK *t, datasection_t section, MYDNS_SOA *soa, char *match_lab
       mydns_rr_free(rr);
     }
   }
+#if DEBUG_ENABLED
+  Debug(resolve, DEBUGLEVEL_FUNCS, _("%s: add_authority_ns returns"), desctask(t));
+#endif
 }
 /*--- add_authority_ns() ------------------------------------------------------------------------*/
 
@@ -302,7 +345,7 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
   int			recurs = wildcard_recursion;
 
 #if DEBUG_ENABLED
-  Debug(resolve, 1, _("%s: resolve_label(%s, %s, %s, %s, %d)"), desctask(t),
+  Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve_label(%s, %s, %s, %s, %d)"), desctask(t),
 	 fqdn, soa->origin, label, mydns_rr_get_type_by_id(qtype)->rr_type_name, level);
 #endif
 
@@ -314,7 +357,7 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
     mydns_rr_free(rr);
     add_authority_ns(t, section, soa, label);
 #if DEBUG_ENABLED
-    Debug(resolve, 1, _("%s: resolve_label(%s) returning results %s"), desctask(t),
+    Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve_label(%s) returning results %s"), desctask(t),
 	   fqdn, task_exec_name(rv));
 #endif
     return (rv);
@@ -334,7 +377,7 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
       char *zlabel = label;
 
 #if DEBUG_ENABLED
-      Debug(resolve, 1, _("%s: resolve_label(%s) -> trying zone look up on %s - %d"),
+      Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve_label(%s) -> trying zone look up on %s - %d"),
 	     desctask(t), label, zlabel, recurs);
 #endif
       /* Strip one label element and replace with a '*' then test and repeat until we run out of labels */
@@ -348,12 +391,12 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
 	  ASPRINTF(&wclabel, "*%s", c);
 
 #if DEBUG_ENABLED
-	Debug(resolve, 1, _("%s: resolve_label(%s) trying wildcard `%s'"),
+	Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve_label(%s) trying wildcard `%s'"),
 	       desctask(t), label, wclabel);
 #endif
 	rr = find_rr(t, zsoa, DNS_QTYPE_ANY, wclabel);
 #if DEBUG_ENABLED
-	Debug(resolve, 1, _("%s: resolve(%s) tried wildcard `%s' got rr = %p"),
+	Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve(%s) tried wildcard `%s' got rr = %p"),
 	       desctask(t), label, wclabel, rr);
 #endif
 	if (rr) {
@@ -361,7 +404,7 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
 	  mydns_rr_free(rr);
 	  add_authority_ns(t, section, zsoa, wclabel);
 #if DEBUG_ENABLED
-	  Debug(resolve, 1, _("%s: resolve_label(%s) returning results %s having matched %s"),
+	  Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve_label(%s) returning results %s having matched %s"),
 		 desctask(t),
 		 fqdn, task_exec_name(rv), wclabel);
 #endif
@@ -373,12 +416,12 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
       }
 
 #if DEBUG_ENABLED
-      Debug(resolve, 1, _("%s: resolve_label(%s) -> shall we try recursive look up - %d"),
+      Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve_label(%s) -> shall we try recursive look up - %d"),
 	     desctask(t), label, recurs);
 #endif
       if (recurs--) {
 #if DEBUG_ENABLED
-	Debug(resolve, 1, _("%s: resolve_label(%s) -> trying recursive look up"),
+	Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve_label(%s) -> trying recursive look up"),
 	       desctask(t), label);
 #endif
 	/* Find the parent zone that has the current zone delegated and try in there */
@@ -391,24 +434,24 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
 	if (*zc) {
 	  MYDNS_SOA *xsoa;
 #if DEBUG_ENABLED
-	  Debug(resolve, 1, _("%s: resolve_label(%s) -> trying recursive look up in %s"),
+	  Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve_label(%s) -> trying recursive look up in %s"),
 		 desctask(t), label, zc);
 #endif
 	  xsoa = find_soa(t, zc, NULL);
 #if DEBUG_ENABLED
-	  Debug(resolve, 1, _("%s: resolve_label(%s) -> got %s for recursive look up in %s"),
+	  Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve_label(%s) -> got %s for recursive look up in %s"),
 		 desctask(t), label, ((xsoa)?xsoa->origin:"<no match>"), zc);
 #endif
 	  if (xsoa) {
 	    /* Got a ancestor need to check that it is a parent for the last zone we checked */
 #if DEBUG_ENABLED
-	    Debug(resolve, 1, _("%s: resolve_label(%s) -> %s is an ancestor of %s"),
+	    Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve_label(%s) -> %s is an ancestor of %s"),
 		   desctask(t), label,
 		   xsoa->origin, zsoa->origin);
 #endif
 	    MYDNS_RR *xrr = find_rr(t, xsoa, DNS_QTYPE_NS, zsoa->origin);
 #if DEBUG_ENABLED
-	    Debug(resolve, 1, _("%s: resolve_label(%s) -> %s is%s a parent of %s"),
+	    Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve_label(%s) -> %s is%s a parent of %s"),
 		   desctask(t), label,
 		   ((xrr) ? "" : " not"),
 		   xsoa->origin, zsoa->origin);
@@ -439,12 +482,16 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
     mydns_rr_free(rr);
     add_authority_ns(t, section, soa, label);
 #if DEBUG_ENABLED
-	  Debug(resolve, 1, _("%s: resolve_label(%s) returning results %s"), desctask(t),
-		 fqdn, task_exec_name(rv));
+    Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve_label(%s) returning results %s"), desctask(t),
+	  fqdn, task_exec_name(rv));
 #endif
     return (rv);
   }
 
+#if DEBUG_ENABLED
+  Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve_label(%s) returning results EXECUTED"), desctask(t),
+	fqdn);
+#endif
   return (TASK_EXECUTED);
 }
 /*--- resolve_label() ---------------------------------------------------------------------------*/
@@ -463,8 +510,8 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
   taskexec_t		rv = TASK_COMPLETED;
 
 #if DEBUG_ENABLED
-  Debug(resolve, 1, _("%s: resolve(%s, %s, \"%s\", %d)"),
-	 desctask(t), resolve_datasection_str[section],
+  Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve(%s, %s, \"%s\", %d)"),
+	desctask(t), mydns_section_str(section),
 	 mydns_rr_get_type_by_id(qtype)->rr_type_name, fqdn, level);
 #endif
 
@@ -473,12 +520,20 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
     return status_get_rr(t);
 #endif
 
-  if (!axfr_enabled && t->qtype == DNS_QTYPE_AXFR)
+  if (!axfr_enabled && t->qtype == DNS_QTYPE_AXFR) {
+#if DEBUG_ENABLED
+    Debug(resolve, DEBUGLEVEL_FUNCS, _("%s: resolve returns RCODE_REFUSED as the request is an AXFR"), desctask(t));
+#endif
     return dnserror(t, DNS_RCODE_REFUSED, ERR_NO_AXFR);
+  }
 
   /* Is the request for a SOA record only? */
-  if (t->qtype == DNS_QTYPE_SOA && section == ANSWER)
+  if (t->qtype == DNS_QTYPE_SOA && section == ANSWER) {
+#if DEBUG_ENABLED
+    Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve an SOA"), desctask(t));
+#endif
     return resolve_soa(t, section, fqdn, level);
+  }
 
   /*
   ** Load SOA record for this name - if section is ANSWER and no SOA is found, we're not
@@ -488,24 +543,33 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
   soa = find_soa(t, fqdn, &name);
 
 #if DEBUG_ENABLED
-  Debug(resolve, 1, _("%s: resolve(%s) -> soa %s"), desctask(t), fqdn, (soa)?soa->origin:_("not found"));
+  Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve(%s) -> soa %s"), desctask(t), fqdn, (soa)?soa->origin:_("not found"));
 #endif
 
   if (!soa || soa->recursive) {
     RELEASE(name);
     if ((section == ANSWER) && !level) {
 #if DEBUG_ENABLED
-      Debug(resolve, 1, _("%s: Checking for recursion soa = %p, soa->recursive = %d, "
+      Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: Checking for recursion soa = %p, soa->recursive = %d, "
 			     "forward_recursive = %d, t->hdr.rd = %d, section = %d, level = %d"),
 	     desctask(t),
 	    soa, (soa) ? (int)soa->recursive : -1,
 	     forward_recursive, t->hdr.aa, section, level);
 #endif
       if (forward_recursive && t->hdr.rd) {
+#if DEBUG_ENABLED
+	Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve call recursive_fwd"), desctask(t));
+#endif
 	return recursive_fwd(t);
       }
+#if DEBUG_ENABLED
+      Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve returns RCODE_REFUSED need to do recursive lokup and it is not active"), desctask(t));
+#endif
       return dnserror(t, DNS_RCODE_REFUSED, ERR_ZONE_NOT_FOUND);
     } else {
+#if DEBUG_ENABLED
+      Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve returns CONTINUE"), desctask(t));
+#endif
       return TASK_CONTINUE;
     }
   }
@@ -546,7 +610,7 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
   rv = resolve_label(t, section, qtype, fqdn, soa, name, level);
 
 #if DEBUG_ENABLED
-  Debug(resolve, 1, _("%s: resolve(%s) -> trying `%s', %s"),
+  Debug(resolve, DEBUGLEVEL_PROGRESS, _("%s: resolve(%s) -> trying `%s', %s"),
 	 desctask(t), fqdn, name, task_exec_name(rv));
 #endif
 
@@ -566,7 +630,10 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
   }
 
   mydns_soa_free(soa);
-  
+
+#if DEBUG_ENABLED
+  Debug(resolve, DEBUGLEVEL_FUNCS, _("%s: resolve returns %s"), desctask(t), task_exec_name(rv));
+#endif
   return (rv);
 }	
 /*--- resolve() ---------------------------------------------------------------------------------*/

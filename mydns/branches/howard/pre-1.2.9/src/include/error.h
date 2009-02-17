@@ -22,10 +22,9 @@
 extern taskexec_t	_formerr_internal(TASK *, dns_rcode_t, task_error_t, char *, const char *, unsigned int);
 extern taskexec_t	_dnserror_internal(TASK *, dns_rcode_t, task_error_t, const char *, unsigned int);
 extern char		*err_reason_str(TASK *, task_error_t);
-extern int		rr_error_repeat(uint32_t);
 extern int		rr_error(uint32_t, const char *, ...) __printflike(2,3);
 
 #define formerr(task,rcode,reason,xtra)	_formerr_internal((task),(rcode),(reason),(xtra),__FILE__,__LINE__)
-#define dnserror(task,rcode,reason)			_dnserror_internal((task),(rcode),(reason),__FILE__,__LINE__)
+#define dnserror(task,rcode,reason)	_dnserror_internal((task),(rcode),(reason),__FILE__,__LINE__)
 
 #endif

@@ -39,21 +39,37 @@ int		debug_encode = 0;
 	Adds the specified name + offset to the `Labels' array within the specified task.
 **************************************************************************************************/
 inline int name_remember(TASK *t, char *name, unsigned int offset) {
-  if (!name || strlen(name) > 64)			/* Don't store labels > 64 bytes in length */
+
+#if DEBUG_ENABLED
+  Debug(encode, DEBUGLEVEL_FUNCS, _("%s, name_remember: called for %s"), desctask(t), name);
+#endif
+
+  if (!name || strlen(name) > 64) {			/* Don't store labels > 64 bytes in length */
+#if DEBUG_ENABLED
+    Debug(encode, DEBUGLEVEL_FUNCS, _("%s: name_remember: returns success name is NULL or is > 64 bytes"), desctask(t));
+#endif
     return (0);
+  }
 
 #if DYNAMIC_NAMES
   t->Names = REALLOCATE(t->Names, (t->numNames + 1) * sizeof(char *), char*[]);
   t->Names[t->numNames] = STRDUP(name);
   t->Offsets = REALLOCATE(t->Offsets, (t->numNames + 1) * sizeof(unsigned int), unsigned int[]);
 #else
-  if (t->numNames >= MAX_STORED_NAMES - 1)
+  if (t->numNames >= MAX_STORED_NAMES - 1) {
+#if DEBUG_ENABLED
+    Debug(encode, DEBUGLEVEL_FUNCS, _("%s: name_remember: returns SERVFAIL too many names remembered"), desctask(t));
+#endif
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_NAME_TOO_LONG);
+  }
   strncpy(t->Names[t->numNames], name, sizeof(t->Names[t->numNames]) - 1);
 #endif
 
   t->Offsets[t->numNames] = offset;
   t->numNames++;
+#if DEBUG_ENABLED
+    Debug(encode, DEBUGLEVEL_FUNCS, _("%s: name_remember: returns success name has been remembered"), desctask(t));
+#endif
   return (0);
 }
 /*--- name_remember() ---------------------------------------------------------------------------*/
@@ -64,6 +80,9 @@ inline int name_remember(TASK *t, char *name, unsigned int offset) {
 	Forget all names in the specified task.
 **************************************************************************************************/
 inline void name_forget(TASK *t) {
+#if DEBUG_ENABLED
+  Debug(encode, DEBUGLEVEL_FUNCS, _("%s: name_forget: called"), desctask(t));
+#endif
 #if DYNAMIC_NAMES
   register int n = 0;
 
@@ -73,6 +92,9 @@ inline void name_forget(TASK *t) {
   RELEASE(t->Offsets);
 #endif
   t->numNames = 0;
+#if DEBUG_ENABLED
+  Debug(encode, DEBUGLEVEL_FUNCS, _("%s: name_forget: returns"), desctask(t));
+#endif
 }
 /*--- name_forget() -----------------------------------------------------------------------------*/
 
@@ -85,10 +107,19 @@ inline void name_forget(TASK *t) {
 unsigned int name_find(TASK *t, char *name) {
   register unsigned int n = 0;
 
+#if DEBUG_ENABLED
+  Debug(encode, DEBUGLEVEL_FUNCS, _("%s: name_find: called for %s"), desctask(t), name);
+#endif
   for (n = 0; n < t->numNames; n++)
     if (!strcasecmp(t->Names[n], name)) {
+#if DEBUG_ENABLED
+  Debug(encode, DEBUGLEVEL_FUNCS, _("%s: name_find: returns having found the name"), desctask(t));
+#endif
       return (t->Offsets[n]);
     }
+#if DEBUG_ENABLED
+  Debug(encode, DEBUGLEVEL_FUNCS, _("%s: name_find: returns without a match"), desctask(t));
+#endif
   return (0);
 }
 /*--- name_find() -------------------------------------------------------------------------------*/
@@ -100,11 +131,18 @@ int name_encode(TASK *t, char **dest, char *name, unsigned int dest_offset, int 
   register int		len = 0;
   register unsigned int	offset = 0;
 
+#if DEBUG_ENABLED
+  Debug(encode, DEBUGLEVEL_FUNCS, _("%s: name_encode: called for %s"), desctask(t), name);
+#endif
   namebuf = STRDUP(name);
 
   /* Label must end in the root zone (with a dot) */
-  if (LASTCHAR(namebuf) != '.')
+  if (LASTCHAR(namebuf) != '.') {
+#if DEBUG_ENABLED
+    Debug(encode, DEBUGLEVEL_FUNCS, _("%s: name_encode: returns SERVFAIL as the name does not end in a dot"), desctask(t));
+#endif
     return dnserror(t, DNS_RCODE_SERVFAIL, ERR_NAME_FORMAT);
+  }
 
   *dest = ALLOCATE(strlen(namebuf) + 1, char*); /* If not compressing this should be equal
 						    If compressing then it should be bigger */
@@ -117,9 +155,15 @@ int name_encode(TASK *t, char **dest, char *name, unsigned int dest_offset, int 
 	len++;
 	if (len > DNS_MAXNAMELEN) {
 	  RELEASE(*dest);
+#if DEBUG_ENABLED
+	  Debug(encode, DEBUGLEVEL_FUNCS, _("%s: name_encode: returns SERVFAIL as the name is too long"), desctask(t));
+#endif
 	  return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_NAME_TOO_LONG);
 	}
 	*d++ = 0;
+#if DEBUG_ENABLED
+	Debug(encode, DEBUGLEVEL_FUNCS, _("%s: name_encode: returns success"), desctask(t));
+#endif
 	return (len);
       }
       this_name = (c == namebuf) ? c : (++c);
@@ -131,10 +175,16 @@ int name_encode(TASK *t, char **dest, char *name, unsigned int dest_offset, int 
 	len += SIZE16;
 	if (len > DNS_MAXNAMELEN) {
 	  RELEASE(*dest);
+#if DEBUG_ENABLED
+	  Debug(encode, DEBUGLEVEL_FUNCS, _("%s: name_encode: returns SERVFAIL as the name is too long"), desctask(t));
+#endif
 	  return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_NAME_TOO_LONG);
 	}
 	offset |= 0xC000;
 	DNS_PUT16(d, offset);
+#if DEBUG_ENABLED
+	Debug(encode, DEBUGLEVEL_FUNCS, _("%s: name_encode: returns success"), desctask(t));
+#endif
 	return (len);
       } else {	/* No marker for this name; encode current label and store marker */
 #endif
@@ -146,12 +196,18 @@ int name_encode(TASK *t, char **dest, char *name, unsigned int dest_offset, int 
 	  if (nlen > DNS_MAXLABELLEN) {
 	    RELEASE(*dest);
 	    RELEASE(namebuf);
+#if DEBUG_ENABLED
+	    Debug(encode, DEBUGLEVEL_FUNCS, _("%s: name_encode: returns SERVFAIL as the name is too long"), desctask(t));
+#endif
 	    return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_LABEL_TOO_LONG);
 	  }
 	  len += nlen + 1;
 	  if (len > DNS_MAXNAMELEN) {
 	    RELEASE(*dest);
 	    RELEASE(namebuf);
+#if DEBUG_ENABLED
+	    Debug(encode, DEBUGLEVEL_FUNCS, _("%s: name_encode: returns SERVFAIL as the name is too long"), desctask(t));
+#endif
 	    return dnserror(t, DNS_RCODE_SERVFAIL, ERR_RR_NAME_TOO_LONG);
 	  }
 	  *d++ = (unsigned char)nlen;
@@ -162,12 +218,18 @@ int name_encode(TASK *t, char **dest, char *name, unsigned int dest_offset, int 
 	  if (!t->no_markers && (name_remember(t, this_name, dest_offset + (c - namebuf)) < 0)) {
 	    RELEASE(*dest);
 	    RELEASE(namebuf);
+#if DEBUG_ENABLED
+	    Debug(encode, DEBUGLEVEL_FUNCS, _("%s: name_encode: returns SERVFAIL as name_remember failed"), desctask(t));
+#endif
 	    return (-1);
 	  }
 	}
     }
   }
   RELEASE(namebuf);
+#if DEBUG_ENABLED
+  Debug(encode, DEBUGLEVEL_FUNCS, _("%s: name_encode: returns success"), desctask(t));
+#endif
   return (len);
 }
 /*--- name_encode() -----------------------------------------------------------------------------*/

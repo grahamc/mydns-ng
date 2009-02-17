@@ -31,22 +31,26 @@ int		debug_ip = 0;
 	IPv4 address, in host byte order.
 **************************************************************************************************/
 uint32_t
-mydns_revstr_ip4(char *s)
-{
-	register char *c, n;
-	uint8_t	ip[4];
-	uint32_t	rv;
+mydns_revstr_ip4(char *s) {
+  register char *c, n;
+  uint8_t	ip[4];
+  uint32_t	rv;
 
-	ip[0] = ip[1] = ip[2] = ip[3] = 0;
-	for (c = s, n = 0; *c && n < 4; c++)
-		if (c == s || *c == '.')
-		{
-			if (*c == '.') c++;
-			ip[3-n] = (uint8_t)atoi(c);
-			n++;
-		}
-	memcpy(&rv, ip, sizeof(rv));
-	return (rv);
+#if DEBUG_ENABLED
+  Debug(ip, DEBUGLEVEL_FUNCS, _("mydns_revstr_ip4 called for %s"), s);
+#endif
+  ip[0] = ip[1] = ip[2] = ip[3] = 0;
+  for (c = s, n = 0; *c && n < 4; c++)
+    if (c == s || *c == '.') {
+      if (*c == '.') c++;
+      ip[3-n] = (uint8_t)atoi(c);
+      n++;
+    }
+  memcpy(&rv, ip, sizeof(rv));
+#if DEBUG_ENABLED
+  Debug(ip, DEBUGLEVEL_FUNCS, _("mydns_revstr_ip4 returns"));
+#endif
+  return (rv);
 }
 /*--- mydns_revstr_ip4() ------------------------------------------------------------------------*/
 
@@ -57,21 +61,25 @@ mydns_revstr_ip4(char *s)
 	found.
 **************************************************************************************************/
 int
-mydns_extract_arpa(char *s, uint8_t ip[])
-{
-	register char	*c;
-	register int	n;
+mydns_extract_arpa(char *s, uint8_t ip[]) {
+  register char	*c;
+  register int	n;
 
-	ip[0] = ip[1] = ip[2] = ip[3] = 0;
-	for (c = s, n = 0; *c && n < 4; c++)
-		if (c == s || *c == '.')
-		{
-			if (*c == '.') c++;
-			if (!isdigit(*c))
-				return (n);
-			ip[n++] = (uint8_t)atoi(c);
-		}
+#if DEBUG_ENABLED
+  Debug(ip, DEBUGLEVEL_FUNCS, _("mydns_extract_arpa called for %s"), s);
+#endif
+  ip[0] = ip[1] = ip[2] = ip[3] = 0;
+  for (c = s, n = 0; *c && n < 4; c++)
+    if (c == s || *c == '.') {
+      if (*c == '.') c++;
+      if (!isdigit(*c))
 	return (n);
+      ip[n++] = (uint8_t)atoi(c);
+    }
+#if DEBUG_ENABLED
+  Debug(ip, DEBUGLEVEL_FUNCS, _("mydns_extract_arpa returns"));
+#endif
+  return (n);
 }
 /*--- mydns_extract_arpa() ----------------------------------------------------------------------*/
 

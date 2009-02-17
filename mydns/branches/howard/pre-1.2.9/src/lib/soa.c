@@ -49,9 +49,15 @@ mydns_soa_get_active_types(SQL *sqlConn) {
   char		*YES = (char*)"Y";
   char		*NO = (char*)"N";
 
+#if DEBUG_ENABLED
+  Debug(soa, DEBUGLEVEL_FUNCS, _("mydns_soa_get_active_types called"));
+#endif
   querylen = sql_build_query(&query, "SELECT DISTINCT(active) FROM %s LIMIT 1", mydns_soa_table_name);
 
   if (!(res = sql_query(sqlConn, query, querylen))) {
+#if DEBUG_ENABLED
+    Debug(soa, DEBUGLEVEL_FUNCS, _("mydns_soa_get_active_types returns query %s failed"), query);
+#endif
     RELEASE(query);
     return;
   }
@@ -59,7 +65,7 @@ mydns_soa_get_active_types(SQL *sqlConn) {
 #if DEBUG_ENABLED
   {
     int numresults = sql_num_rows(res);
-    Debug(soa, 1, _("SOA get active types: %d row%s: %s"), numresults, S(numresults), query);
+    Debug(soa, DEBUGLEVEL_PROGRESS, _("SOA get active types: %d row%s: %s"), numresults, S(numresults), query);
   }
 #endif
 
@@ -89,6 +95,9 @@ mydns_soa_get_active_types(SQL *sqlConn) {
 
   mydns_soa_active_types[0] = YES;
   mydns_soa_active_types[1] = NO;
+#if DEBUG_ENABLED
+  Debug(soa, DEBUGLEVEL_FUNCS, _("mydns_soa_get_active_types returns active = %s, inactive = %s"), YES, NO);
+#endif
 }
 
 /**************************************************************************************************
@@ -97,6 +106,9 @@ mydns_soa_get_active_types(SQL *sqlConn) {
 **************************************************************************************************/
 long
 mydns_soa_count(SQL *sqlConn) {
+#if DEBUG_ENABLED
+    Debug(soa, DEBUGLEVEL_FUNCS, _("mydns_soa_count called"));
+#endif
   return sql_count(sqlConn, "SELECT COUNT(*) FROM %s", mydns_soa_table_name);
 }
 /*--- mydns_soa_count() -------------------------------------------------------------------------*/
@@ -107,11 +119,17 @@ mydns_soa_count(SQL *sqlConn) {
 **************************************************************************************************/
 void
 mydns_set_soa_table_name(char *name) {
+#if DEBUG_ENABLED
+    Debug(soa, DEBUGLEVEL_FUNCS, _("mydns_set_soa_table_name called"));
+#endif
   RELEASE(mydns_soa_table_name);
   if (!name)
     mydns_soa_table_name = STRDUP(MYDNS_SOA_TABLE);
   else
     mydns_soa_table_name = STRDUP(name);
+#if DEBUG_ENABLED
+  Debug(soa, DEBUGLEVEL_FUNCS, _("mydns_set_soa_table_name returns with name = %s"), mydns_soa_table_name);
+#endif
 }
 /*--- mydns_set_soa_table_name() ----------------------------------------------------------------*/
 
@@ -121,9 +139,15 @@ mydns_set_soa_table_name(char *name) {
 **************************************************************************************************/
 void
 mydns_set_soa_where_clause(char *where) {
+#if DEBUG_ENABLED
+    Debug(soa, DEBUGLEVEL_FUNCS, _("mydns_set_soa_where_clause called"));
+#endif
   if (where && strlen(where)) {
     mydns_soa_where_clause = STRDUP(where);
   }
+#if DEBUG_ENABLED
+  Debug(soa, DEBUGLEVEL_FUNCS, _("mydns_set_soa_table_name returns with where clause = %s"), mydns_soa_where_clause);
+#endif
 }
 /*--- mydns_set_soa_where_clause() --------------------------------------------------------------*/
 
@@ -140,6 +164,9 @@ mydns_soa_parse(SQL_ROW row) {
   MYDNS_SOA *rv;
   int len;
 
+#if DEBUG_ENABLED
+    Debug(soa, DEBUGLEVEL_FUNCS, _("mydns_soa_parse called"));
+#endif
   rv = (MYDNS_SOA *)ALLOCATE(sizeof(MYDNS_SOA), MYDNS_SOA*);
 
   rv->next = NULL;
@@ -180,6 +207,9 @@ mydns_soa_parse(SQL_ROW row) {
   if (rv->ttl < rv->minimum)
     rv->ttl = rv->minimum;
 
+#if DEBUG_ENABLED
+    Debug(soa, DEBUGLEVEL_FUNCS, _("mydns_soa_parse returns"));
+#endif
   return (rv);
 }
 /*--- mydns_soa_parse() -------------------------------------------------------------------------*/
@@ -195,6 +225,9 @@ MYDNS_SOA *
 mydns_soa_dup(MYDNS_SOA *start, int recurse) {
   register MYDNS_SOA *first = NULL, *last = NULL, *soa, *s, *tmp;
 
+#if DEBUG_ENABLED
+    Debug(soa, DEBUGLEVEL_FUNCS, _("mydns_soa_dup called"));
+#endif
   for (s = start; s; s = tmp) {
     tmp = s->next;
 
@@ -217,8 +250,14 @@ mydns_soa_dup(MYDNS_SOA *start, int recurse) {
       if (last) last->next = soa;
       last = soa;
     } else
+#if DEBUG_ENABLED
+      Debug(soa, DEBUGLEVEL_FUNCS, _("mydns_soa_parse returns soa = %p"), soa);
+#endif
       return (soa);
   }
+#if DEBUG_ENABLED
+  Debug(soa, DEBUGLEVEL_FUNCS, _("mydns_soa_parse returns first = %p"), first);
+#endif
   return (first);
 }
 /*--- mydns_soa_dup() ---------------------------------------------------------------------------*/
@@ -235,9 +274,15 @@ mydns_soa_size(MYDNS_SOA *first) {
   register MYDNS_SOA *p;
   register size_t size = 0;
 
+#if DEBUG_ENABLED
+    Debug(soa, DEBUGLEVEL_FUNCS, _("mydns_soa_size called"));
+#endif
   for (p = first; p; p = p->next)
     size += sizeof(MYDNS_SOA);
 
+#if DEBUG_ENABLED
+  Debug(soa, DEBUGLEVEL_FUNCS, _("mydns_soa_size returns %d"), size);
+#endif
   return (size);
 }
 /*--- mydns_soa_size() --------------------------------------------------------------------------*/
@@ -254,10 +299,16 @@ void
 _mydns_soa_free(MYDNS_SOA *first) {
   register MYDNS_SOA *p, *tmp;
 
+#if DEBUG_ENABLED
+    Debug(soa, DEBUGLEVEL_FUNCS, _("_mydns_soa_free called"));
+#endif
   for (p = first; p; p = tmp) {
     tmp = p->next;
     RELEASE(p);
   }
+#if DEBUG_ENABLED
+    Debug(soa, DEBUGLEVEL_FUNCS, _("_mydns_soa_free returns"));
+#endif
 }
 /*--- mydns_soa_free() --------------------------------------------------------------------------*/
 
@@ -279,7 +330,7 @@ mydns_soa_load(SQL *sqlConn, MYDNS_SOA **rptr, char *origin) {
 #endif
 
 #if DEBUG_ENABLED
-  Debug(soa, 1, _("mydns_soa_load(%s)"), origin);
+  Debug(soa, DEBUGLEVEL_PROGRESS, _("mydns_soa_load(%s)"), origin);
 #endif
 
   if (rptr) *rptr = NULL;
@@ -287,13 +338,23 @@ mydns_soa_load(SQL *sqlConn, MYDNS_SOA **rptr, char *origin) {
   /* Verify args */
   if (!sqlConn || !origin || !rptr) {
     errno = EINVAL;
+#if DEBUG_ENABLED
+    Debug(soa, DEBUGLEVEL_FUNCS, _("mydns_soa_load returns -1 because %s"),
+	  (!sqlConn) ? _("sql is not connected")
+	  : (!origin) ? _("origin is NULL")
+	  : _("rptr is NULL"));
+#endif
     return (-1);
   }
 
   /* We're not escaping 'origin', so check it for illegal type chars */
   for (c = origin; *c; c++)
-    if (SQL_BADCHAR(*c))
+    if (SQL_BADCHAR(*c)) {
+#if DEBUG_ENABLED
+      Debug(soa, DEBUGLEVEL_FUNCS, _("mydns_soa_load returns 0 because origin %s has a bad sql character %c"), origin, *c);
+#endif
       return (0);
+    }
 
 #ifdef DN_COLUMN_NAMES
   if (origin[originlen - 1] == '.')
@@ -317,14 +378,18 @@ mydns_soa_load(SQL *sqlConn, MYDNS_SOA **rptr, char *origin) {
 #endif
 
   /* Submit query */
-  if (!(res = sql_query(sqlConn, query, querylen)))
+  if (!(res = sql_query(sqlConn, query, querylen))) {
+#if DEBUG_ENABLED
+      Debug(soa, DEBUGLEVEL_FUNCS, _("mydns_soa_load returns -1 because query %s failed"), query);
+#endif
     return (-1);
+  }
 
 #if DEBUG_ENABLED
   {
     int numresults = sql_num_rows(res);
 
-    Debug(soa, 1, _("SOA query: %d row%s: %s"), numresults, S(numresults), query);
+    Debug(soa, DEBUGLEVEL_PROGRESS, _("SOA query: %d row%s: %s"), numresults, S(numresults), query);
   }
 #endif
 
@@ -335,15 +400,15 @@ mydns_soa_load(SQL *sqlConn, MYDNS_SOA **rptr, char *origin) {
     MYDNS_SOA *new;
 
 #if DEBUG_ENABLED
-    Debug(soa, 1, _("SOA query: use_soa_active=%d soa_active=%s,%d"), mydns_soa_use_active,
-	   (mydns_soa_use_active)?row[MYDNS_SOA_NUMFIELDS]:"<undef>",
-	   (mydns_soa_use_active)?GETBOOL(row[MYDNS_SOA_NUMFIELDS]):-1);
-    Debug(soa, 1, _("SOA query: id=%s, origin=%s, ns=%s, mbox=%s, serial=%s, refresh=%s, "
-			   "retry=%s, expire=%s, minimum=%s, ttl=%s"),
+    Debug(soa, DEBUGLEVEL_PROGRESS, _("SOA query: use_soa_active=%d soa_active=%s,%d"), mydns_soa_use_active,
+	  (mydns_soa_use_active)?row[MYDNS_SOA_NUMFIELDS]:"<undef>",
+	  (mydns_soa_use_active)?GETBOOL(row[MYDNS_SOA_NUMFIELDS]):-1);
+    Debug(soa, DEBUGLEVEL_PROGRESS, _("SOA query: id=%s, origin=%s, ns=%s, mbox=%s, serial=%s, refresh=%s, "
+				      "retry=%s, expire=%s, minimum=%s, ttl=%s"),
 	   row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9]);
     { int ridx = MYDNS_SOA_NUMFIELDS;
       ridx += (mydns_soa_use_active)?1:0;
-      Debug(soa, 1, _("Soa query: recursive = %s"),
+      Debug(soa, DEBUGLEVEL_PROGRESS, _("Soa query: recursive = %s"),
 	     (mydns_soa_use_recursive)?row[ridx++]:_("not recursing"));
     }
 #endif
@@ -359,6 +424,9 @@ mydns_soa_load(SQL *sqlConn, MYDNS_SOA **rptr, char *origin) {
 
   *rptr = first;
   sql_free(res);
+#if DEBUG_ENABLED
+      Debug(soa, DEBUGLEVEL_FUNCS, _("mydns_soa_load returns 0"));
+#endif
   return (0);
 }
 /*--- mydns_soa_load() --------------------------------------------------------------------------*/

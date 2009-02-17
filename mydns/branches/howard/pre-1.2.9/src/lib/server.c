@@ -28,20 +28,43 @@ ARRAY	*Servers = NULL;
 SERVER *server_find_by_task(TASK *t) {
   int n = 0;
 
+#if DEBUG_ENABLED
+  Debug(server, DEBUGLEVEL_FUNCS, _("%s: server_find_by_task called"), desctask(t));
+#endif
   for (n = 0; n < array_numobjects(Servers); n++) {
     SERVER *server = (SERVER*)array_fetch(Servers, n);
-    if (server->listener == t) return server;
+    if (server->listener == t) {
+#if DEBUG_ENABLED
+      Debug(server, DEBUGLEVEL_FUNCS, _("%s: server_find_by_task returns server=%p"), desctask(t), server);
+#endif
+      return server;
+    }
   }
 
+#if DEBUG_ENABLED
+  Debug(server, DEBUGLEVEL_FUNCS, _("%s: server_find_by_task returns NULL"), desctask(t));
+#endif
   return NULL;
 }
 
 void server_kill(SERVER *server, int sig) {
+#if DEBUG_ENABLED
+  Debug(server, DEBUGLEVEL_FUNCS, _("server_kill called"));
+#endif
   kill(server->pid, sig);
+#if DEBUG_ENABLED
+  Debug(server, DEBUGLEVEL_FUNCS, _("server_kill returns"));
+#endif
 }
 
 void server_kill_all(int signalid) {
   int n = 0;
+#if DEBUG_ENABLED
+  Debug(server, DEBUGLEVEL_FUNCS, _("server_kill_all called"));
+#endif
   for (n = 0; n < array_numobjects(Servers); n++)
     server_kill((SERVER*)array_fetch(Servers, n), signalid);
+#if DEBUG_ENABLED
+  Debug(server, DEBUGLEVEL_FUNCS, _("server_kill_all returns"));
+#endif
 }
