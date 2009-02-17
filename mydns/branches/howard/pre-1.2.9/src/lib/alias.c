@@ -62,7 +62,7 @@ find_alias(TASK *t, char *fqdn) {
     if (label == name || *label == '.') {
       if (label[0] == '.' && label[1]) label++;		/* Advance past leading dot */
 #if DEBUG_ENABLED
-      Debug(alias, 1, _("%s: label=`%s'"), desctask(t), label);
+      Debug(alias, DEBUGLEVEL_PROGRESS, _("%s: label=`%s'"), desctask(t), label);
 #endif
 
       /* Do an exact match if the label is the first in the list */

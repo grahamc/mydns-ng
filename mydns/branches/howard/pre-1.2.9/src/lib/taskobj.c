@@ -90,7 +90,7 @@ TASK *task_find_by_id(TASK *t, QUEUE *TaskQ, unsigned long id) {
     if (ThisT->internal_id == id) return ThisT;
   }
 #if DEBUG_ENABLED
-  Debug(taskobj, 1, _("%s: task_find_by_id(%s, %ld) cannot find task on queue"),
+  Debug(taskobj, DEBUGLEVEL_PROGRESS, _("%s: task_find_by_id(%s, %ld) cannot find task on queue"),
 	desctask(t), TaskQ->queuename, id);
 #endif
   return NULL;
@@ -648,15 +648,13 @@ void _task_dequeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 
 void _task_requeue(QUEUE **q, TASK *t, const char *file, unsigned int line) {
 #if DEBUG_ENABLED
-  char *taskdesc = desctask(t);
-  Debug(taskobj, DEBUGLEVEL_PROGRESS, _("%s: requeuing (by %s:%u) called"), taskdesc, file, line);
+  Debug(taskobj, DEBUGLEVEL_PROGRESS, _("%s: requeuing (by %s:%u) called"), desctask(t), file, line);
 #endif
 
   queue_remove(task_queue(t), t);
   queue_append(q, t);
 #if DEBUG_ENABLED
-  Debug(taskobj, DEBUGLEVEL_PROGRESS, _("%s: requeued (by %s:%u)"), taskdesc, file, line);
-  RELEASE(taskdesc);
+  Debug(taskobj, DEBUGLEVEL_PROGRESS, _("%s: requeued (by %s:%u)"), desctask(t), file, line);
 #endif
 }
 
