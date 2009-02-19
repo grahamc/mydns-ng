@@ -324,7 +324,7 @@ AC_DEFUN([AC_ENABLE_STRICT],
 					AC_C_CFLAGS(-Wdisabled-optimization)
 #					AC_C_CFLAGS(-std=c89)
 #					AC_C_CFLAGS(-pedantic)
-#					AC_C_CFLAGS(-Werror)
+					AC_C_CFLAGS(-Werror)
 					AC_C_CFLAGS(-funsigned-char)
 				else
 					AC_MSG_RESULT([no])

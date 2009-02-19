@@ -38,7 +38,17 @@
 #endif
 #endif
 
+#if HAVE_STRING_H
+#include <string.h>
+#else
+#if HAVE_STRINGS_H
+#include <strings.h>
+#endif
+#endif
+
+#if !HAVE_DECL_STRNCMP
 extern int strncmp();
+#endif
 
 #include <stdio.h>
 
@@ -75,7 +85,7 @@ extern int strncmp();
    GNU application programs can use a third alternative mode in which
    they can distinguish the relative order of options and other arguments.  */
 
-#include "getopt.h"
+#include "getopt1.h"
 
 /* For communication from `getopt' to the caller.
    When `getopt' finds an option that takes an argument,

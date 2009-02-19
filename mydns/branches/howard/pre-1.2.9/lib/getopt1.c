@@ -20,7 +20,11 @@
 #include <config.h>
 #endif
 
-#include "getopt.h"
+#if HAVE_GETOPT_H
+#include <getopt.h>
+#else
+#include "getopt1.h"
+#endif
 
 #if !defined (__STDC__) || !__STDC__
 /* This is a separate conditional since some stdc systems

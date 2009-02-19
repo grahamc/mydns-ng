@@ -451,14 +451,14 @@ comms_start(int fd, FreeExtension comms_freeer, RunExtension comms_runner,
 }
 
 static taskexec_t
-comms_run(TASK *t, void * data) {
+scomms_run(TASK *t, void * data) {
   taskexec_t		rv = TASK_FAILED;
   COMMS			*comms = NULL;
   CommandProcessor	action = NULL;
   char			*args = NULL;
 
 #if DEBUG_ENABLED
-  Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_run called"));
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("scomms_run called"));
 #endif
   t->timeout = current_time + KEEPALIVE;
 
@@ -471,7 +471,7 @@ comms_run(TASK *t, void * data) {
 #endif
   if ((rv == TASK_FAILED) || (rv == TASK_CONTINUE)) {
 #if DEBUG_ENABLED
-    Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_run returns CONTINUE"));
+    Debug(servercomms, DEBUGLEVEL_FUNCS, _("scomms_run returns CONTINUE"));
 #endif
     return TASK_CONTINUE;
   }
@@ -486,7 +486,48 @@ comms_run(TASK *t, void * data) {
     action(t, (void*)comms, args);
 
 #if DEBUG_ENABLED
-  Debug(servercomms, DEBUGLEVEL_FUNCS, _("comms_run returns CONTINUE"));
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("scomms_run returns CONTINUE"));
+#endif
+  return TASK_CONTINUE;
+}
+
+static taskexec_t
+mcomms_run(TASK *t, void * data) {
+  taskexec_t		rv = TASK_FAILED;
+  COMMS			*comms = NULL;
+  CommandProcessor	action = NULL;
+  char			*args = NULL;
+
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("mcomms_run called"));
+#endif
+  t->timeout = current_time + KEEPALIVE;
+
+  comms = (COMMS*)data;
+
+  rv = comms_recv(t, comms);
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_PROGRESS, _("%s: Received command %s - result %s"), desctask(t),
+	 &comms->message->messagedata[0], task_exec_name(rv));
+#endif
+  if ((rv == TASK_FAILED) || (rv == TASK_CONTINUE)) {
+#if DEBUG_ENABLED
+    Debug(servercomms, DEBUGLEVEL_FUNCS, _("mcomms_run returns CONTINUE"));
+#endif
+    return TASK_CONTINUE;
+  }
+
+  /* Got a message from the master dispatch it. */
+  action = comms_find_command(t, comms, mastercommands, &args);
+
+  __comms_free(t, comms);
+  comms->donesofar = 0;
+
+  if (action)
+    action(t, (void*)comms, args);
+
+#if DEBUG_ENABLED
+  Debug(servercomms, DEBUGLEVEL_FUNCS, _("mcomms_run returns CONTINUE"));
 #endif
   return TASK_CONTINUE;
 }
@@ -602,12 +643,12 @@ mcomms_tick(TASK *t, void *data) {
 
 TASK *
 scomms_start(int fd) {
-  return comms_start(fd, __comms_free, comms_run, scomms_tick);
+  return comms_start(fd, __comms_free, scomms_run, scomms_tick);
 }
 
 TASK *
 mcomms_start(int fd) {
-  return comms_start(fd, __comms_free, comms_run, mcomms_tick);
+  return comms_start(fd, __comms_free, mcomms_run, mcomms_tick);
 }
 
 

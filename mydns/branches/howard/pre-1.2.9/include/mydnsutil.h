@@ -72,7 +72,11 @@
 extern char *getenv ();
 #endif
 
+#if HAVE_GETOPT_H
 #include <getopt.h>
+#else
+#include "getopt1.h"
+#endif
 
 /* Don't use bcopy!  Use memmove if source and destination may overlap,
    memcpy otherwise.  */

@@ -763,10 +763,10 @@ dist-hook: news
 
 distready: news
 	rm -rf mydns-*
-	po/mkpotfile
+	cd po; ./mkpotfiles
 
 release: clean distready
-	chown -R 0:0 .
+	if [ `id -u` = "0" ] ; then chown -R 0:0 . ; fi
 	if [ -x ./release.sh ]; then ./release.sh $(VERSION) `pwd`; fi
 
 .PHONY: release distready news localconf conf sedfile

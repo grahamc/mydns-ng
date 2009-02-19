@@ -57,7 +57,8 @@ static char *rdata_enlarge(TASK *t, size_t size) {
   t->rdlen += size;
   t->rdata = REALLOCATE(t->rdata, t->rdlen, char*);
 #if DEBUG_ENABLED
-  Debug(reply, DEBUGLEVEL_FUNCS, _("%s: rdata_enlarge returns pinter into tasks rdata offset by"), desctask(t), t->rdlen - size);
+  Debug(reply, DEBUGLEVEL_FUNCS, _("%s: rdata_enlarge returns pointer into tasks rdata offset by %d"),
+	desctask(t), t->rdlen - size);
 #endif
   return (t->rdata + t->rdlen - size);
 }

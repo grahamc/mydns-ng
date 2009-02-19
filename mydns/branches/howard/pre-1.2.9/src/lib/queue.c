@@ -32,7 +32,7 @@ int		debug_queue = 0;
 	Creates a new queue and returns a pointer to it.
 **************************************************************************************************/
 QUEUE *
-queue_init(char *typename, char *priorityname) {
+queue_init(const char *typename, const char *priorityname) {
   QUEUE		*q = NULL;
   int		queuenamelen = strlen(typename) + strlen(priorityname) + 3;
   char		*queuename = NULL;

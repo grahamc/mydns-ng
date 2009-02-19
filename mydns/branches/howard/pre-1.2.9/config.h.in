@@ -66,6 +66,10 @@
    don't. */
 #undef HAVE_DECL_STRNCASECMP
 
+/* Define to 1 if you have the declaration of `strncmp', and to 0 if you
+   don't. */
+#undef HAVE_DECL_STRNCMP
+
 /* Define to 1 if you have the declaration of `strndup', and to 0 if you
    don't. */
 #undef HAVE_DECL_STRNDUP

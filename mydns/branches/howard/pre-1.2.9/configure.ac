@@ -18,7 +18,7 @@
 ##	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ##
 
-AC_INIT(mydns, [pre-1.2.9], [support@cohtech.com])	## Package name, version, bugreport address
+AC_INIT(mydns, [1.2.9.0], [support@cohtech.com])	## Package name, version, bugreport address
 AC_PREREQ([2.59])
 AC_COPYRIGHT([Portions of this script are Copyright 2002-2005 Don Moore  2007-2009 Howard Wilkinson])
 AM_INIT_AUTOMAKE([1.9.5 dist-bzip2])
@@ -66,14 +66,14 @@ AC_LIB_NSL
 AC_LIB_MATH
 
 ## Declarations
-AC_CHECK_DECLS([strcasecmp, strcoll, strerror, strncasecmp, strsep, strndup, strdup])
+AC_CHECK_DECLS([strcasecmp, strcoll, strerror, strncasecmp, strsep, strndup, strdup, strncmp])
 AC_CHECK_DECLS([poll, select])
 
 
 ##
 ## Package-specific variables
 ##
-PACKAGE_HOMEPAGE="http://mydns.bboy.net"
+PACKAGE_HOMEPAGE="http://www.mydns-ng.com"
 PACKAGE_COPYRIGHT="Copyright (C) 2002-2005 Don Moore  2007-2009 Howard Wilkinson"
 PACKAGE_AUTHOR="Don Moore <bboy@bboy.net>  Howard Wilkinson <howard@cohtech.com>"
 
@@ -99,19 +99,10 @@ AC_ENABLE_STATUS		#	Enable the STATUS opcode to check server status
 AC_DISABLE_DATE_LOGGING		#	Disable date/time in verbose output?
 AC_MYDNS_VARS			#  Set variables containing dirs
 
-AC_OUTPUT(	contrib/Makefile \
-		intl/Makefile \
-		po/Makefile.in \
-		m4/Makefile \
-		Makefile \
-		lib/Makefile \
-		src/Makefile \
-		src/lib/Makefile \
-		src/mydns/Makefile \
-		src/util/Makefile \
-		pkg/Makefile \
-		doc/Makefile
-	  )
+AC_CONFIG_FILES([contrib/Makefile intl/Makefile po/Makefile.in m4/Makefile Makefile \
+		 lib/Makefile src/Makefile src/lib/Makefile src/mydns/Makefile src/util/Makefile \
+		 pkg/Makefile doc/Makefile])
+AC_OUTPUT
 
 echo
 echo "  ###"

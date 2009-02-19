@@ -36,7 +36,7 @@ typedef struct __queue
   QueueEntry	*tail;					/* Pointer to last element in list */
 } QUEUE;
 
-extern QUEUE		*queue_init(char *, char *);
+extern QUEUE		*queue_init(const char *, const char *);
 extern void		queue_append(QUEUE **q, void *t);
 extern void		queue_remove(QUEUE **q, void *t);
 

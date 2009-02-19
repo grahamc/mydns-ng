@@ -498,7 +498,7 @@ sql_count(SQL *sqlConn, const char *fmt, ...) {
   }
   sql_free(res);
 #if DEBUG_ENABLED
-  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_queryf returns %d"), rv);
+  Debug(sql, DEBUGLEVEL_FUNCS, _("sql_queryf returns %ld"), rv);
 #endif
   return (rv);
 }
