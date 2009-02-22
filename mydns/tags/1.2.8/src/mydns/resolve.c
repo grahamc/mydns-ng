@@ -421,15 +421,27 @@ resolve_label(TASK *t, datasection_t section, dns_qtype_t qtype,
 
  NOWILDCARDMATCH:
   /* STILL no match - check for NS records for child delegation */
-  if (*label && (rr = find_rr(t, soa, DNS_QTYPE_NS, label))) {
-    rv = process_rr(t, section, qtype, fqdn, soa, label, rr, level);
-    mydns_rr_free(rr);
-    add_authority_ns(t, section, soa, label);
+  while (*label) {
+    if ((rr = find_rr(t, soa, DNS_QTYPE_NS, label))) {
+      char *newfqdn;
+      if (LASTCHAR(label) == '.') {
+	newfqdn = STRDUP(label);
+      } else {
+	ASPRINTF(&newfqdn, "%s.%s", label, soa->origin);
+      }
+      rv = process_rr(t, AUTHORITY, qtype, newfqdn, soa, label, rr, level);
+      mydns_rr_free(rr);
+      RELEASE(newfqdn);
+      add_authority_ns(t, section, soa, label);
 #if DEBUG_ENABLED && DEBUG_RESOLVE
-	  DebugX("resolve", 1, _("%s: resolve_label(%s) returning results %s"), desctask(t),
-		 fqdn, task_exec_name(rv));
+      DebugX("resolve", 1, _("%s: resolve_label(%s) returning results %s"), desctask(t),
+	     fqdn, task_exec_name(rv));
 #endif
-    return (rv);
+      return (rv);
+    }
+    label = strchr(label, '.');
+    if (!label) break;
+    label++;
   }
 
   return (TASK_EXECUTED);
