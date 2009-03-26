@@ -946,7 +946,6 @@ notify_allocate_fd(int family, struct sockaddr *sourceaddr)
       }
       Warn(_("bind (UDP): %s:%d - %s(%d)"), msg, port, strerror(errno), errno);
       RELEASE(msg);
-      return fd;
     }
     for (n = 1; n < 1024; n++) {
       opt = n * 1024;
@@ -981,15 +980,24 @@ notify_get_source(int family, const char *sourceaddr)
 static void
 notify_master_free(TASK *t, void *data) {
 
+#if DEBUG_ENABLED && DEBUG_NOTIFY
+  DebugX("notify", 1, _("%s: DNS NOTIFY notify_master_free freeing fd = %d"), desctask(t), t->fd);
+#endif
   sockclose(t->fd);
 
-  if (t->family == AF_INET)
+  if (t->family == AF_INET) {
+#if DEBUG_ENABLED && DEBUG_NOTIFY
+    DebugX("notify", 1, _("%s: DNS NOTIFY notify_master_free notify fd = %d"), desctask(t), notifyfd);
+#endif
     notifyfd = -1;
 #if HAVE_IPV6
-  else if (t->family == AF_INET6)
+  } else if (t->family == AF_INET6) {
+#if DEBUG_ENABLED && DEBUG_NOTIFY
+    DebugX("notify", 1, _("%s: DNS NOTIFY notify_master_free notify fd = %d"), desctask(t), notifyfd6);
+#endif
     notifyfd6 = -1;
 #endif
-
+  }
 }
 
 static taskexec_t
@@ -1093,6 +1101,9 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
 	  goto DONEIPV4;
 	}
       }
+#if DEBUG_ENABLED && DEBUG_NOTIFY
+      DebugX("notify", 1, _("%s: DNS NOTIFY notify_slaves allocated fd = %d"), desctask(t), notifyfd);
+#endif
       if (notify_tasks_running <= 0) {
 #if DEBUG_ENABLED && DEBUG_NOTIFY
 	DebugX("notify", 1, _("%s: DNS NOTIFY notify_slaves initializing master IPV4 task for %s"),
@@ -1143,6 +1154,9 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
 	  goto DONEIPV6;
 	}
       }
+#if DEBUG_ENABLED && DEBUG_NOTIFY
+      DebugX("notify", 1, _("%s: DNS NOTIFY notify_slaves allocated fd = %d"), desctask(t), notifyfd6);
+#endif
       if (notify_tasks_running6 <= 0) {
 #if DEBUG_ENABLED && DEBUG_NOTIFY
 	DebugX("notify", 1, _("%s: DNS NOTIFY notify_slaves initializing master IPV6 task for %s"),

@@ -47,15 +47,15 @@ static void server_greeting(void);
 
 typedef struct _addrlist
 {
-	int					family;		/* AF_INET or AF_INET6 */
+	int			family;				/* AF_INET or AF_INET6 */
 	struct in_addr		addr4;				/* Address if IPv4 */
 #if HAVE_IPV6
-	struct in6_addr	addr6;					/* Address if IPv6 */
+	struct in6_addr		addr6;				/* Address if IPv6 */
 #endif
-	int					port;		/* Port number */
-	int					ok;		/* OK to use this address? */
+	int			port;				/* Port number */
+	int			ok;				/* OK to use this address? */
 
-	struct _addrlist *next;					/* Next address */
+	struct _addrlist	*next;				/* Next address */
 } ADDRLIST;
 
 static ADDRLIST *FirstAddr, *LastAddr;				/* Current address list */
@@ -304,6 +304,7 @@ addrlist_load(int port) {
 	break;
     }
     if ((n == -1) && errno != EINVAL) {
+      close(sockfd);
       Err(_("addrlist_load: error setting SIOCGIFCONF for interface scan"));
       return NULL;
     }
@@ -506,25 +507,34 @@ static int
 ipv4_listener(struct sockaddr_in *sa, int protocol) {
   int fd = -1, opt = 1;
 
-  if ((fd = socket(AF_INET, protocol, (protocol == SOCK_STREAM) ? IPPROTO_TCP : IPPROTO_UDP)) < 0)
+  if ((fd = socket(AF_INET, protocol, (protocol == SOCK_STREAM) ? IPPROTO_TCP : IPPROTO_UDP)) < 0) {
     Err(_("ipv4_listener: socket failed to create %s"),
 	(protocol == SOCK_STREAM) ? "TCP" : "UDP");
-  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+    return -1;
+  }
+  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
     Warn(_("ipv4_listener: setsockopt failed on socket %d (%s)"),
 	 fd,
 	 (protocol == SOCK_STREAM) ? "TCP" : "UDP");
+  }
   fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
-  if (bind(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in)) < 0)
+  if (bind(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in)) < 0) {
+    close(fd);
     Err(_("ipv4_listerner: bind on socket %d (%s) failed: %s+%d"),
 	fd,
 	(protocol == SOCK_STREAM) ? "TCP" : "UDP",
 	inet_ntoa(sa->sin_addr),
 	ntohs(sa->sin_port));
+    return -1;
+  }
   if (protocol == SOCK_STREAM) {
-    if (listen(fd, SOMAXCONN) < 0)
+    if (listen(fd, SOMAXCONN) < 0) {
+      close(fd);
       Err(_("ipv4_listener: listen on socket %d (%s) failed"),
 	  fd,
 	  (protocol == SOCK_STREAM) ? "TCP" : "UDP");
+      return -1;
+    }
   } else {
     int n, size;
 
@@ -554,25 +564,34 @@ static int
 ipv6_listener(struct sockaddr_in6 *sa, int protocol) {
   int fd = -1, opt = 1;
 
-  if ((fd = socket(AF_INET6, protocol, (protocol == SOCK_STREAM) ? IPPROTO_TCP : IPPROTO_UDP)) < 0)
+  if ((fd = socket(AF_INET6, protocol, (protocol == SOCK_STREAM) ? IPPROTO_TCP : IPPROTO_UDP)) < 0) {
     Err(_("ipv6_listener: socket failed to create %s"),
 	(protocol == SOCK_STREAM) ? "TCP" : "UDP");
-  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+    return -1;
+  }
+  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
     Warn(_("ipv6_listener: setsockopt failed on socket %d (%s)"),
 	 fd,
 	 (protocol == SOCK_STREAM) ? "TCP" : "UDP");
+  }
   fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
-  if (bind(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in6)) < 0)
+  if (bind(fd, (struct sockaddr *)sa, sizeof(struct sockaddr_in6)) < 0) {
+    close(fd);
     Err(_("ipv6_listener: bind on socket %d (%s): failed %s+%d"),
 	fd,
 	(protocol == SOCK_STREAM) ? "TCP" : "UDP",
 	ipaddr(AF_INET6, &sa->sin6_addr),
 	ntohs(sa->sin6_port));
+    return -1;
+  }
   if (protocol == SOCK_STREAM) {
-    if (listen(fd, SOMAXCONN) < 0)
+    if (listen(fd, SOMAXCONN) < 0) {
+      close(fd);
       Err(_("ipv6_listener: listen on socket %d (%s) failed"),
 	  fd,
 	  (protocol == SOCK_STREAM) ? "TCP" : "UDP");
+      return -1;
+    }
   } else {
     int n = 0;
 

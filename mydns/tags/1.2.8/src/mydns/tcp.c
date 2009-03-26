@@ -92,6 +92,9 @@ accept_tcp_query(int fd, int family) {
 
   t->len = 0;
 
+#if DEBUG_ENABLED && DEBUG_TCP
+  DebugX("tcp", 1, _("%s: accept_tcp_query created task returns fd = %d"), desctask(t), rmt_fd);
+#endif
   return rmt_fd;
 }
 /*--- accept_tcp_query() ------------------------------------------------------------------------*/

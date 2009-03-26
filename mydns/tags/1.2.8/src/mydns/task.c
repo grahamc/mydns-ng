@@ -146,6 +146,7 @@ task_status_name(TASK *t) {
   case NEED_RECURSIVE_FWD_WRITE:	return _("NEED_RECURSIVE_FWD_WRITE");
   case NEED_RECURSIVE_FWD_RETRY:	return _("NEED_RECURSIVE_FWD_RETRY");
   case NEED_RECURSIVE_FWD_READ:		return _("NEED_RECURSIVE_FWD_READ");
+  case NEED_RECURSIVE_FWD_CONNECTED:	return _("NEED_RECURSIVE_FWD_CONNECTED");
 
   case NEED_NOTIFY_READ:		return _("NEED_NOTIFY_READ");
   case NEED_NOTIFY_WRITE:		return _("NEED_NOTIFY_WRITE");
@@ -526,7 +527,7 @@ _task_free(TASK *t, const char *file, int line) {
   if (!t) return;
 
 #if DEBUG_ENABLED && DEBUG_TASK
-  DebugX("task", 1, _("%s: Freeing task at %s:%d"), desctask(t), file, line);
+  DebugX("task", 1, _("%s: Freeing task with fd = %d at %s:%d"), desctask(t), t->fd, file, line);
 #endif
 
   if (t->protocol == SOCK_STREAM && t->fd >= 0) {
@@ -947,16 +948,6 @@ task_process_recursive(TASK *t, int rfd, int wfd, int efd) {
 	    _("unexpected result from recursive_fwd_connecting"));
       return TASK_FAILED;
 
-    case NEED_RECURSIVE_FWD_WRITE:
-      /*
-      **  NEED_RECURSIVE_FWD_WRITE: Need to write request to recursive forwarder
-      */
-      res = recursive_fwd_write(t);
-      if (res == TASK_FAILED) return TASK_FAILED;
-      if (res == TASK_CONTINUE) return TASK_CONTINUE;		/* means try again */
-      Warnx("%s: %d: %s", desctask(t), (int)res, _("unexpected result from recursive_fwd_write"));
-      return TASK_FAILED;
-
     default:
       Warnx("%s: %d %s", desctask(t), t->status, _("unrecognised task status"));
       return TASK_FAILED;
@@ -980,10 +971,32 @@ task_process_recursive(TASK *t, int rfd, int wfd, int efd) {
 	return TASK_FAILED;
       }
       return TASK_CONTINUE;
-	    
+
     default:
       Warnx("%s: %d %s", desctask(t), t->status, _("unrecognised task status"));
       return TASK_FAILED;;
+    }
+    break;
+
+  case Needs2Exec:
+    switch (t->status) {
+
+    case NEED_RECURSIVE_FWD_CONNECTED:
+      return TASK_CONTINUE;
+
+    case NEED_RECURSIVE_FWD_WRITE:
+      /*
+      **  NEED_RECURSIVE_FWD_WRITE: Need to write request to recursive forwarder
+      */
+      res = recursive_fwd_write(t);
+      if (res == TASK_FAILED) return TASK_FAILED;
+      if (res == TASK_CONTINUE) return TASK_CONTINUE;		/* means try again */
+      Warnx("%s: %d: %s", desctask(t), (int)res, _("unexpected result from recursive_fwd_write"));
+      return TASK_FAILED;
+
+    default:
+      Warnx("%s: %d %s", desctask(t), t->status, _("unrecognised task status"));
+      return TASK_FAILED;
     }
     break;
 

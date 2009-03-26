@@ -552,8 +552,7 @@ free_other_tasks(TASK *t, int closeallfds) {
 	nexttask = curtask->next;
 	if (curtask == t) { curtask = nexttask; continue; }
 	/* Do not sockclose as the other end(s) are still inuse */
-	if (closeallfds && (curtask->protocol != SOCK_STREAM) && curtask->fd >= 0
-	    && curtask->fd != t->fd)
+	if (closeallfds && curtask->fd >= 0 && curtask->fd != t->fd)
 	  close(curtask->fd);
 	dequeue(curtask);
 	curtask = nexttask;
@@ -1005,7 +1004,11 @@ run_tasks(struct pollfd items[], int numfds) {
 	    }
 	  }
 	  if (efd) {
+#if DEBUG_ENABLED
+	    DebugX("enabled", 1, _("%s: purge_bad_task on fd %d has error indication"), desctask(t), fd);
+#endif
 	    purge_bad_task(t);
+	    continue;
 	  } else {
 	    if ((t->status & Needs2Read) && !rfd) continue;
 	    if ((t->status & Needs2Write) && !wfd) continue;
@@ -1084,6 +1087,9 @@ purge_bad_tasks(void) {
 	      }
 	    }
 	    if ((item.revents & (POLLERR|POLLHUP|POLLNVAL))) {
+#if DEBUG_ENABLED
+	      DebugX("enabled", 1, _("%s: purge_bad_task at fd %d has error indication"), desctask(t), t->fd);
+#endif
 	      purge_bad_task(t);
 	    }
 	  }
@@ -1139,13 +1145,16 @@ server_loop(INITIALTASK *initial_tasks, int serverfd) {
     DebugX("enabled", 1, _("Scheduling Tasks - timeout = %d, numfds = %d"),
 	   timeoutWanted, numfds);
 #endif
+#ifdef notdef
     if (timeoutWanted > 0 && TaskArray[NORMAL_TASK][HIGH_PRIORITY_TASK]->head) {
       /* If we have a high priority normal task to run then wake up in 1/10th second */
       tv.tv_sec = 0;
-      tv.tv_usec = 10000;
+      tv.tv_usec = 100000;
       tvp = &tv;
-      timeoutWanted = 10;
-    } else if (timeoutWanted >= 0) {
+      timeoutWanted = 100;
+    } else
+#endif
+    if (timeoutWanted >= 0) {
       /* Otherwise wakeup when IO conditions change or when next task times out */
       tv.tv_sec = timeoutWanted;
       tv.tv_usec = 0;
@@ -1506,6 +1515,8 @@ main(int argc, char **argv)
   set_sighandler(SIGUSR2, signal_handler);
   set_sighandler(SIGALRM, signal_handler);
   set_sighandler(SIGCHLD, signal_handler);
+
+  set_sighandler(SIGPIPE, SIG_IGN);
 
   sigaddset(&mask, SIGCHLD);
   sigaddset(&mask, SIGINT);

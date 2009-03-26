@@ -346,8 +346,13 @@ conf_set_logging(void) {
   logtype = STRDUP(conf_get(&Conf, "log", NULL));
   strtolower(logtype);
 
-  if (!err_file)
+  if (err_file) {
+    if (err_file != stderr && err_file != stdout)
+      fclose(err_file);
+    err_file = NULL;
+  } else {
     closelog();
+  }
 
   if (!strcasecmp(logtype, "stderr")) { err_file = stderr; closelog(); }
   else if (!strcasecmp(logtype, "stdout")) { err_file = stdout; closelog(); }

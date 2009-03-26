@@ -1,5 +1,12 @@
+26-Mar-2009 Howard Wilkinson  <howard@cohtech.com> [1.2.8.27]
+	*	Rewrite the recursion code to use private queue while waiting for
+		connect to finish. Needed new TASK state, change to write state
+		timeout fixes and an alteration to the scheduler.
+	*	Remove duplicate open of the log file on start up!
+	*	Add a signal ignore for SIGPIPE
+	
 22-Feb-2009 Howard Wilkinson  <howard@cohtech.com> [1.2.8.26]
-   * Fix delegation to records with non-zone matching names
+	*	Fix delegation to records with non-zone matching names
 30-Jan-2009	Howard Wilkinson	<howard@cohtech.com>	[1.2.8.21]
 	*	Bug fix for taskvec code - fixes use of internal_id rather than query id.
 	*	Publishing change to stop multiple runs of the configuration utility
