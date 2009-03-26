@@ -778,13 +778,16 @@ server_loop(INITIALTASK *initial_tasks, int serverfd) {
     }
     Debug(mydns, DEBUGLEVEL_PROGRESS, _("Scheduling Tasks - timeout = %d, numfds = %d"), timeoutWanted, numfds);
 #endif
+#ifdef notdef
     if (timeoutWanted > 0 && TaskArray[NORMAL_TASK][HIGH_PRIORITY_TASK]->head) {
       /* If we have a high priority normal task to run then wake up in 1/10th second */
       tv.tv_sec = 0;
-      tv.tv_usec = 10000;
+      tv.tv_usec = 100000;
       tvp = &tv;
-      timeoutWanted = 10;
-    } else if (timeoutWanted >= 0) {
+      timeoutWanted = 100;
+    } else
+#endif
+    if (timeoutWanted >= 0) {
       /* Otherwise wakeup when IO conditions change or when next task times out */
       tv.tv_sec = timeoutWanted;
       tv.tv_usec = 0;
@@ -1151,6 +1154,8 @@ main(int argc, char **argv)
   set_sighandler(SIGUSR2, signal_handler);
   set_sighandler(SIGALRM, signal_handler);
   set_sighandler(SIGCHLD, signal_handler);
+
+  set_sighandler(SIGPIPE, SIG_IGN);
 
   sigaddset(&mask, SIGCHLD);
   sigaddset(&mask, SIGINT);

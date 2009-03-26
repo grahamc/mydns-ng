@@ -440,7 +440,7 @@ int __mydns_reply_add_naptr(TASKP t, RRP r, dns_qtype_mapp map) {
 #if DEBUG_ENABLED
   Debug(reply, DEBUGLEVEL_FUNCS, _("%s: __mydns_reply_add_naptr called"), desctask(t));
 #endif
-  flags_len = sizeof(MYDNS_RR_NAPTR_FLAGS(rr));
+  flags_len = strlen(MYDNS_RR_NAPTR_FLAGS(rr));
   service_len = strlen(MYDNS_RR_NAPTR_SERVICE(rr));
   regex_len = strlen(MYDNS_RR_NAPTR_REGEX(rr));
 

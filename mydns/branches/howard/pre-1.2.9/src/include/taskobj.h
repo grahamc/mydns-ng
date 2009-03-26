@@ -91,11 +91,13 @@ typedef enum _taskstat_t {
   /* TCP connection has started but not finished */
   NEED_RECURSIVE_FWD_CONNECTING = TASKSTAT(1)|QueryTask|Needs2Write|Needs2Recurse,
   /* Need to write the question to recursive forwarder */
-  NEED_RECURSIVE_FWD_WRITE = TASKSTAT(2)|QueryTask|Needs2Write|Needs2Recurse,
+  NEED_RECURSIVE_FWD_WRITE = TASKSTAT(2)|QueryTask|Needs2Exec|Needs2Recurse,
   /* Have sent message will need to retry on timeout */
   NEED_RECURSIVE_FWD_RETRY = TASKSTAT(3)|TickTask|Needs2Exec|Needs2Recurse,
   /* Need to read the answer from recursive forwarder */
   NEED_RECURSIVE_FWD_READ = TASKSTAT(4)|QueryTask|Needs2Read|Needs2Recurse,
+  /* Need the task to finish connecting before can be scheduled */
+  NEED_RECURSIVE_FWD_CONNECTED = TASKSTAT(5)|QueryTask|Needs2Exec|Needs2Recurse,
 
   /* Need to read a response to a notify */
   NEED_NOTIFY_READ = TASKSTAT(0)|ReqTask|Needs2Read,

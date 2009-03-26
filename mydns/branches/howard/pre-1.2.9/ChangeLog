@@ -1,8 +1,10 @@
+26-Mar-2009	Howard Wilkinson	<howard@cohtech.com>	[1.2.9.0]
+	*	Merge in fixes from 1.2.8.27 for recursion and logs
 29-Jan-2009	Howard Wilkinson	<howard@cohtech.com>	[1.2.9.0]
 	*	Rewrite internal id allocation code to use local facilities.
 26-Jan-2009	Howard Wilkinson	<howard@cohtech.com>	[1.2.9.0]
 	*	Rewrote debug code to use levels properly, made much more efficient if
-		switched off, and more effificent if switched.
+		switched off, and more efficient if switched on.
 25-Jan-2009	Howard Wilkinson	<howard@cohtech.com>	[1.2.9.0]
 	*	Add a fix for a portability problem on FreeBSD with MAX_HOST_NAME not being defined
 	*	Add a fix for internal_id wrap around
@@ -11,6 +13,7 @@
 23-Jan-2009	Howard Wilkinson	<howard@cohtech.com>	[1.2.9.0]
 	*	Major restructure of the code to support additions of new record
 		types.
+
 23-Jan-2009	Howard Wilkinson	<howard@cohtech.com>	[1.2.8.18]
 	*	Fixed a problem where the connection to the Database is left
 		dangling on start up.

@@ -205,6 +205,7 @@ const char * task_status_name(TASK *t) {
   case NEED_RECURSIVE_FWD_WRITE:	buf = _("NEED_RECURSIVE_FWD_WRITE"); break;
   case NEED_RECURSIVE_FWD_RETRY:	buf = _("NEED_RECURSIVE_FWD_RETRY"); break;
   case NEED_RECURSIVE_FWD_READ:		buf = _("NEED_RECURSIVE_FWD_READ"); break;
+  case NEED_RECURSIVE_FWD_CONNECTED:	buf = _("NEED_RECURSIVE_FWD_CONNECTED"); break;
 
   case NEED_NOTIFY_READ:		buf = _("NEED_NOTIFY_READ"); break;
   case NEED_NOTIFY_WRITE:		buf = _("NEED_NOTIFY_WRITE"); break;
@@ -298,7 +299,8 @@ _task_free(TASK *t, const char *file, int line) {
   if (!t) return;
 
 #if DEBUG_ENABLED
-  Debug(taskobj, DEBUGLEVEL_PROGRESS, _("%s: Freeing task at %s:%d"), desctask(t), file, line);
+  Debug(taskobj, DEBUGLEVEL_PROGRESS, _("%s: Freeing task with fd = %d at %s:%d"),
+	desctask(t), t->fd, file, line);
 #endif
 
   if (t->protocol == SOCK_STREAM && t->fd >= 0) {

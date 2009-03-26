@@ -406,7 +406,7 @@ typedef struct _mydns_rr {				/* `rr' table data (resource records) */
     struct {
       uint16_t		order;
       uint16_t		pref;
-      char		flags[8];	/* Stored in binary in the database ? */
+      char		*_flags;	/* Upper case characters */
       char		*_service;	/* Max contents is DNS_MAXNAMELEN */
       char		*_regex;	/* Max contents is DNS_MAXNAMELEN */
       char		*_replacement;	/* Max contents is DNS_MAXNAMELEN */
@@ -428,8 +428,11 @@ extern void				*__mydns_rr_assert_pointer(void *, const char *, const char *, in
 #define MYDNS_RR_NAPTR_REGEX(__rrp)	  ((char*)__mydns_rr_assert_pointer((__rrp)->recData.naptr._regex, \
 									    "naptr_regex", __FILE__, __LINE__))
 #define MYDNS_RR_NAPTR_REPLACEMENT(__rrp) ((char*)__mydns_rr_assert_pointer((__rrp)->recData.naptr._replacement, \
-									   "naptr_replacement", \
-									   __FILE__, __LINE__))
+									    "naptr_replacement", \
+									    __FILE__, __LINE__))
+#define MYDNS_RR_NAPTR_FLAGS(__rrp)	  ((char*)__mydns_rr_assert_pointer((__rrp)->recData.naptr._flags, \
+									    "naptr_flags", \
+									    __FILE__, __LINE__))
 #else
 #define MYDNS_RR_NAME(__rrp)			((__rrp)->_name)
 #define MYDNS_RR_DATA_VALUE(__rrp)		((__rrp)->_data.value)
@@ -437,6 +440,7 @@ extern void				*__mydns_rr_assert_pointer(void *, const char *, const char *, in
 #define MYDNS_RR_NAPTR_SERVICE(__rrp)		((__rrp)->recData.naptr._service)
 #define MYDNS_RR_NAPTR_REGEX(__rrp)		((__rrp)->recData.naptr._regex)
 #define MYDNS_RR_NAPTR_REPLACEMENT(__rrp)	((__rrp)->recData.naptr._replacement)
+#define MYDNS_RR_NAPTR_FLAGS(__rrp)		((__rrp)->recData.naptr._flags)
 #endif
 
 #define MYDNS_RR_DATA(__rrp)			MYDNS_RR_DATA_VALUE(__rrp)
@@ -445,7 +449,6 @@ extern void				*__mydns_rr_assert_pointer(void *, const char *, const char *, in
 #define MYDNS_RR_SRV_PORT(__rrp)		((__rrp)->recData.srv.port)
 #define MYDNS_RR_NAPTR_ORDER(__rrp)		((__rrp)->recData.naptr.order)
 #define MYDNS_RR_NAPTR_PREF(__rrp)		((__rrp)->recData.naptr.pref)
-#define MYDNS_RR_NAPTR_FLAGS(__rrp)		((__rrp)->recData.naptr.flags)
 
 typedef struct _update_query_rr {
   dns_qtype_t		type;

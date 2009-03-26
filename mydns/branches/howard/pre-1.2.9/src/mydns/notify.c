@@ -725,7 +725,6 @@ notify_allocate_fd(int family, struct sockaddr *sourceaddr)
 #if DEBUG_ENABLED
       Debug(notify, DEBUGLEVEL_FUNCS, _("notify_allocate_fd returns %d"), fd);
 #endif
-      return fd;
     }
     for (n = 1; n < 1024; n++) {
       opt = n * 1024;
@@ -770,16 +769,23 @@ static void
 notify_master_free(TASK *t, void *data) {
 
 #if DEBUG_ENABLED
-  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_master_free called"), desctask(t));
+  Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_master_free called freeing fd = %d"), desctask(t), t->fd);
 #endif
   sockclose(t->fd);
 
-  if (t->family == AF_INET)
+  if (t->family == AF_INET) {
+#if DEBUG_ENABLED
+    Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_master_free notify fd = %d"), desctask(t), notifyfd);
+#endif
     notifyfd = -1;
 #if HAVE_IPV6
-  else if (t->family == AF_INET6)
+  } else if (t->family == AF_INET6) {
+#if DEBUG_ENABLED
+    Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_master_free notify fd = %d"), desctask(t), notifyfd6);
+#endif
     notifyfd6 = -1;
 #endif
+  }
 
 #if DEBUG_ENABLED
   Debug(notify, DEBUGLEVEL_FUNCS, _("%s: notify_master_free returns"), desctask(t));
@@ -899,6 +905,10 @@ notify_slaves(TASK *t, MYDNS_SOA *soa) {
 	  goto DONEIPV4;
 	}
       }
+#if DEBUG_ENABLED
+      Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_slaves allocated fd = %d"),
+	    desctask(t), notifyfd);
+#endif
       if (notify_tasks_running <= 0) {
 #if DEBUG_ENABLED
 	Debug(notify, DEBUGLEVEL_PROGRESS, _("%s: DNS NOTIFY notify_slaves initializing master IPV4 task for %s"),

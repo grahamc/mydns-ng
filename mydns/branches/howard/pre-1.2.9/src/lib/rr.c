@@ -40,7 +40,7 @@ int		debug_rr = 0;
 #define __MYDNS_RR_RP_TXT(__rrp)		((__rrp)->recData._rp_txt)
 #define __MYDNS_RR_NAPTR_ORDER(__rrp)		((__rrp)->recData.naptr.order)
 #define __MYDNS_RR_NAPTR_PREF(__rrp)		((__rrp)->recData.naptr.pref)
-#define __MYDNS_RR_NAPTR_FLAGS(__rrp)		((__rrp)->recData.naptr.flags)
+#define __MYDNS_RR_NAPTR_FLAGS(__rrp)		((__rrp)->recData.naptr._flags)
 #define __MYDNS_RR_NAPTR_SERVICE(__rrp)		((__rrp)->recData.naptr._service)
 #define __MYDNS_RR_NAPTR_REGEX(__rrp)		((__rrp)->recData.naptr._regex)
 #define __MYDNS_RR_NAPTR_REPLACEMENT(__rrp)	((__rrp)->recData.naptr._replacement)
@@ -328,39 +328,44 @@ int __mydns_rr_parse_srv(const char *origin, MYDNS_RRP rr) {
 	Returns 0 on success, -1 on error.
 **************************************************************************************************/
 int __mydns_rr_parse_naptr(const char *origin, MYDNS_RRP rr) {
-  char 		*int_tmp, *p;
+  char 		*tmp, *p;
 
 #if DEBUG_ENABLED
   Debug(rr, DEBUGLEVEL_PROGRESS, _("__mydns_rr_parse_naptr: called for %s"), origin);
 #endif
   p = __MYDNS_RR_DATA_VALUE(rr);
 
-  if (!strsep_quotes2(&p, &int_tmp))
+  if (!(tmp = strsep(&p, " ")))
     return (-1);
-  __MYDNS_RR_NAPTR_ORDER(rr) = atoi(int_tmp);
-  RELEASE(int_tmp);
+  __MYDNS_RR_NAPTR_ORDER(rr) = atoi(tmp);
 
-  if (!strsep_quotes2(&p, &int_tmp))
+  if (!(tmp = strsep(&p, " ")))
     return (-1);
-  __MYDNS_RR_NAPTR_PREF(rr) = atoi(int_tmp);
-  RELEASE(int_tmp);
+  __MYDNS_RR_NAPTR_PREF(rr) = atoi(tmp);
 
-  if (!strsep_quotes(&p, __MYDNS_RR_NAPTR_FLAGS(rr), sizeof(__MYDNS_RR_NAPTR_FLAGS(rr))))
+  if (!strsep_quotes2(&p, &__MYDNS_RR_NAPTR_FLAGS(rr)))
     return (-1);
 
   if (!strsep_quotes2(&p, &__MYDNS_RR_NAPTR_SERVICE(rr)))
-    return (-1);
+    goto NAPTR_PARSE_FAILED;
 
   if (!strsep_quotes2(&p, &__MYDNS_RR_NAPTR_REGEX(rr)))
-    return (-1);
+    goto NAPTR_PARSE_FAILED;
 
   if (!strsep_quotes2(&p, &__MYDNS_RR_NAPTR_REPLACEMENT(rr)))
-    return (-1);
+    goto NAPTR_PARSE_FAILED;
 
   __MYDNS_RR_DATA_LENGTH(rr) = 0;
   RELEASE(__MYDNS_RR_DATA_VALUE(rr));
 
   return __mydns_rr_parse_default(origin, rr);
+
+ NAPTR_PARSE_FAILED:
+  RELEASE(__MYDNS_RR_NAPTR_FLAGS(rr));
+  RELEASE(__MYDNS_RR_NAPTR_SERVICE(rr));
+  RELEASE(__MYDNS_RR_NAPTR_REGEX(rr));
+  
+  return (-1);
 }
 /*--- __mydns_rr_parse_naptr() --------------------------------------------------------------------*/
 /**************************************************************************************************
@@ -721,7 +726,8 @@ void  __mydns_rr_duplicate_naptr(MYDNS_RRP dst, MYDNS_RRP src) {
 #endif
   __MYDNS_RR_NAPTR_ORDER(dst) = __MYDNS_RR_NAPTR_ORDER(src);
   __MYDNS_RR_NAPTR_PREF(dst) = __MYDNS_RR_NAPTR_PREF(src);
-  memcpy(__MYDNS_RR_NAPTR_FLAGS(dst), __MYDNS_RR_NAPTR_FLAGS(src), sizeof(__MYDNS_RR_NAPTR_FLAGS(dst)));
+  RELEASE(__MYDNS_RR_NAPTR_FLAGS(dst));
+  __MYDNS_RR_NAPTR_FLAGS(dst) = STRDUP(__MYDNS_RR_NAPTR_FLAGS(src));
   RELEASE(__MYDNS_RR_NAPTR_SERVICE(dst));
   __MYDNS_RR_NAPTR_SERVICE(dst) = STRDUP(__MYDNS_RR_NAPTR_SERVICE(src));
   RELEASE(__MYDNS_RR_NAPTR_REGEX(dst));

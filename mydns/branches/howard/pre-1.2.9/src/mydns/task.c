@@ -687,24 +687,6 @@ task_process_recursive(TASK *t, int rfd, int wfd, int efd) {
 #endif
       return TASK_FAILED;
 
-    case NEED_RECURSIVE_FWD_WRITE:
-      /*
-      **  NEED_RECURSIVE_FWD_WRITE: Need to write request to recursive forwarder
-      */
-      res = recursive_fwd_write(t);
-      if ((res == TASK_FAILED)
-	  || (res == TASK_CONTINUE)) {		/* means try again */
-#if DEBUG_ENABLED
-	Debug(task, DEBUGLEVEL_FUNCS, _("%s: task_process_recursive returns %s"), desctask(t), task_exec_name(res));
-#endif
-	return res;
-      }
-      Warnx("%s: %d: %s", desctask(t), (int)res, _("unexpected result from recursive_fwd_write"));
-#if DEBUG_ENABLED
-      Debug(task, DEBUGLEVEL_FUNCS, _("%s: task_process_recursive returns FAILED"), desctask(t));
-#endif
-     return TASK_FAILED;
-
     default:
       Warnx("%s: %d %s", desctask(t), t->status, _("unrecognised task status"));
 #if DEBUG_ENABLED
@@ -749,6 +731,36 @@ task_process_recursive(TASK *t, int rfd, int wfd, int efd) {
       Debug(task, DEBUGLEVEL_FUNCS, _("%s: task_process_recursive returns FAILED"), desctask(t));
 #endif
       return TASK_FAILED;;
+    }
+    break;
+
+  case Needs2Exec:
+    switch (t->status) {
+
+    case NEED_RECURSIVE_FWD_CONNECTED:
+      return TASK_CONTINUE;
+
+    case NEED_RECURSIVE_FWD_WRITE:
+      /*
+      **  NEED_RECURSIVE_FWD_WRITE: Need to write request to recursive forwarder
+      */
+      res = recursive_fwd_write(t);
+      if ((res == TASK_FAILED)
+	  || (res == TASK_CONTINUE)) {		/* means try again */
+#if DEBUG_ENABLED
+	Debug(task, DEBUGLEVEL_FUNCS, _("%s: task_process_recursive returns %s"), desctask(t), task_exec_name(res));
+#endif
+	return res;
+      }
+      Warnx("%s: %d: %s", desctask(t), (int)res, _("unexpected result from recursive_fwd_write"));
+#if DEBUG_ENABLED
+      Debug(task, DEBUGLEVEL_FUNCS, _("%s: task_process_recursive returns FAILED"), desctask(t));
+#endif
+     return TASK_FAILED;
+
+    default:
+      Warnx("%s: %d %s", desctask(t), t->status, _("unrecognised task status"));
+      return TASK_FAILED;
     }
     break;
 
@@ -1103,8 +1115,7 @@ void task_free_others(TASK *t, int closeallfds) {
 	nexttask = task_next(curtask);
 	if (curtask == t) { curtask = nexttask; continue; }
 	/* Do not sockclose as the other end(s) are still inuse */
-	if (closeallfds && (curtask->protocol != SOCK_STREAM) && curtask->fd >= 0
-	    && curtask->fd != t->fd)
+	if (closeallfds && curtask->fd >= 0 && curtask->fd != t->fd)
 	  close(curtask->fd);
 	dequeue(curtask);
 	curtask = nexttask;
@@ -1373,7 +1384,12 @@ int task_run_all(struct pollfd items[], int numfds) {
 	    }
 	  }
 	  if (efd) {
+#if DEBUG_ENABLED
+	    Debug(task, DEBUGLEVEL_PROGRESS, _("%s: task_run_all on fd %d has error indication"),
+		  desctask(t), fd);
+#endif
 	    task_purge(t);
+	    continue;
 	  } else {
 	    if ((t->status & Needs2Read) && !rfd) continue;
 	    if ((t->status & Needs2Write) && !wfd) continue;
