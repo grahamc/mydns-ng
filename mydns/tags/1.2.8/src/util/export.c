@@ -244,7 +244,7 @@ bind_dump_rr(MYDNS_SOA *soa, MYDNS_RR *rr, int maxlen) {
 
   printf("%-*s", maxlen, MYDNS_RR_NAME(rr));
 
-  printf("\t%u\tIN %-5s\t", (rr->ttl < soa->minimum) ? soa->minimum : rr->ttl, type);
+  printf("\t%u\tIN %-5s\t", rr->ttl, type);
 
   if (rr->type == DNS_QTYPE_MX)
     printf("%u %s\n", (uint32_t)rr->aux, (char*)MYDNS_RR_DATA_VALUE(rr));
