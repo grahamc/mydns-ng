@@ -34,15 +34,10 @@ static char *_sql_database = NULL;
 	Connect to the database.  Errors fatal.
 **************************************************************************************************/
 void
-sql_open(char *user, char *password, char *host, char *database) {
+sql_open(const char *user, const char *password, const char *host, const char *database) {
   char *portp = NULL;
   unsigned int port = 0;
-
-  if (host && (portp = strchr(host, ':'))) {
-    port = atoi(portp + 1);
-    *portp = '\0';
-    portp = portp + 1;
-  }
+  char *host2 = NULL;
 
   /* Save connection information so that we can reconnect if necessary */
   if (_sql_user) RELEASE(_sql_user);
@@ -54,8 +49,21 @@ sql_open(char *user, char *password, char *host, char *database) {
   _sql_host = host ? STRDUP(host) : NULL;
   _sql_database = database ? STRDUP(database) : NULL;
 
+  if( host != NULL ) {
+    host2 = STRDUP( host );
+
+    if (portp = strchr(host2, ':')) {
+      port = atoi(portp + 1);
+      *portp = '\0';
+      portp = portp + 1;
+    }
+  }
+
 #if USE_PGSQL
-  sql = PQsetdbLogin(host, portp, NULL, NULL, database, user, password);
+  char *portp2;
+  const char *host2;
+
+  sql = PQsetdbLogin(host2 ? host2 : host, portp, NULL, NULL, database, user, password);
   if (PQstatus(sql) == CONNECTION_BAD) {
     char *errmsg = PQerrorMessage(sql), *c, *out = NULL;
 
@@ -87,12 +95,12 @@ sql_open(char *user, char *password, char *host, char *database) {
 #if MYSQL_VERSION_ID > 50012
   mysql_options(sql, MYSQL_OPT_RECONNECT, "1");
 #endif
-  if (!(mysql_real_connect(sql, host, user, password, database, port, NULL, 0)))
+  if (!(mysql_real_connect(sql, host2 ? host2 : host, user, password, database, port, NULL, 0)))
     ErrSQL(sql, _("Error connecting to MySQL server at %s"), host);
 #endif
 
-  if (portp)
-    *portp = ':';
+  if( host2 )
+    RELEASE( host2 );
 }
 /*--- sql_open() --------------------------------------------------------------------------------*/
 
