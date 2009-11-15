@@ -64,6 +64,7 @@ strsep_quotes(char **stringp, char *dest, size_t destlen) {
 
   /* Terminate token and set *stringp past NUL */
   *end++ = '\0';
+  for (; *end && isspace(*end); end++) /* DONOTHING */;
   *stringp = end;
 
   return (begin);
@@ -114,7 +115,12 @@ strsep_quotes2(char **stringp, char **dest) {
   destlen = end - begin;
 
   *dest = STRNDUP(begin, destlen);
-  *dest[destlen] = '\0';
+//  *dest[destlen] = '\0';
+  (*dest)[destlen] = '\0';
+
+   if((*end)&&(quote!='\0'))
+   end++;
+   for (; *end && isspace(*end); end++) /* DONOTHING */;
 
   /* Terminate token and set *stringp past NUL */
   *stringp = end;

@@ -317,8 +317,8 @@ mydns_rr_parse_naptr(const char *origin, MYDNS_RR *rr) {
   if (!strsep_quotes2(&p, &__MYDNS_RR_NAPTR_REPLACEMENT(rr)))
     return (-1);
 
-  __MYDNS_RR_DATA_LENGTH(rr) = 0;
-  RELEASE(__MYDNS_RR_DATA_VALUE(rr));
+//  __MYDNS_RR_DATA_LENGTH(rr) = 0;
+//  RELEASE(__MYDNS_RR_DATA_VALUE(rr));
 
   return 0;
 }
