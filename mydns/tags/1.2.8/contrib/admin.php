@@ -5,6 +5,8 @@
 				  administration interface.
 
 	Copyright (C) 2002-2005  Don Moore <bboy@bboy.net>
+	Copyright (C) 2005-2010  Jorge Bastos <jorge@mydns-ng.com> / Howard Wilkinson <support@cohtech.com>
+	
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -3515,9 +3517,12 @@ function rr_row($soa, $rr = NULL) {
   $values = $rr;
   $widget = NULL;
 
-  if (strlen($values['edata']))
-    $values['data'] .= $values['edata'];
-
+  if (isset($values['edata'])) {
+	if (strlen($values['edata']))
+	$values['data'] .= $values['edata'];
+  }
+	
+	
   if (!strlen($values['name']))
     $values['name'] = $soa['origin'];
 
