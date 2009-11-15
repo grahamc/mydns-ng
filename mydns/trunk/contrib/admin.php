@@ -31,7 +31,7 @@
 **  database where your MyDNS data resides.
 */
 $dbhost = "localhost";
-$dbuser = "username";
+$dbuser = "root";
 $dbpass = "password";
 $dbname = "mydns";
 
@@ -448,6 +448,12 @@ function open_page() {
 	     padding: 10px 10px 6px 10px;
 	     border: <?php echo $gray?> solid 1px;
 	  }
+	    TABLE.inactivesoaBox {
+		background: #FF4500;
+		margin: 0px;
+		padding: 10px 10px 6px 10px;
+		border: <?=$gray?> solid 1px;
+		}
 	  TD.soaFirstRow {
 	     vertical-align: middle;
 	  }
@@ -2137,7 +2143,17 @@ function soa_editor($soa = NULL, $error_message = NULL) {
 ?>
 </DIV>
 <DIV align=center>
-<TABLE class=soaBox>
+<?php
+// Ensure that we notice INACTIVE zones
+if ($soa_use_active){
+	if (isset($values['active']) && getbool($values['active'])){
+	echo "<TABLE class=soaBox>";
+	}else{
+	echo "<TABLE class=inactivesoaBox>";
+	}
+}
+?>
+<!---TABLE class=soaBox--->
 <TR><TD class=soaFirstRow nowrap>
 <?php
     if ($soa_use_active) {
@@ -3187,6 +3203,7 @@ function ptr_delete_rr($arpazone, $name, $data, $origin, $delete_if_empty = 1) {
 /*--- ptr_delete_rr() ---------------------------------------------------------------------------*/
 
 function rr_extended_data($data, &$edata) {
+  global $rr_datalen;
   $edata = NULL;
   if (strlen($data) > $rr_datalen) {
     $xdata = str_split($data, $rr_datalen);
