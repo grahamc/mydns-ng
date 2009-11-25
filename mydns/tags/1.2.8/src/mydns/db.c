@@ -138,7 +138,7 @@ db_output_create_tables(void) {
   printf("CREATE TABLE %s (\n", mydns_rr_table_name);
   printf("  id     SERIAL NOT NULL PRIMARY KEY,\n");
   printf("  zone   INTEGER NOT NULL,\n");
-  printf("  name   VARCHAR(64) NOT NULL,\n");
+  printf("  name   VARCHAR(200) NOT NULL,\n");
   printf("  data   BYTEA NOT NULL,\n");
   printf("  aux    INTEGER NOT NULL default 0,\n");
   printf("  ttl    INTEGER NOT NULL default %u,\n", DNS_DEFAULT_TTL);
@@ -173,7 +173,7 @@ db_output_create_tables(void) {
   printf("CREATE TABLE IF NOT EXISTS %s (\n", mydns_rr_table_name);
   printf("  id         INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,\n");
   printf("  zone       INT UNSIGNED NOT NULL,\n");
-  printf("  name       CHAR(64) NOT NULL,\n");
+  printf("  name       CHAR(200) NOT NULL,\n");
   printf("  data       VARBINARY(%u) NOT NULL,\n", (unsigned int)mydns_rr_data_length);
   printf("  aux        INT UNSIGNED NOT NULL,\n");
   printf("  ttl        INT UNSIGNED NOT NULL default '%u',\n", DNS_DEFAULT_TTL);
