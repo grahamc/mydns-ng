@@ -1,4 +1,0 @@
-
-Currently the only package is RedHat RPM.
-
-`make rpm'	Build RPM.
