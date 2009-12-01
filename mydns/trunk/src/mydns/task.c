@@ -362,7 +362,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
 
   /* If this is AXFR, fork to handle it so that other requests don't block */
 //  if (t->protocol == SOCK_STREAM && t->qtype == DNS_QTYPE_AXFR) {
-  if ((t->protocol == SOCK_STREAM && t->qtype == DNS_QTYPE_AXFR) || (t->protocol == SOCK_STREAM && t->qtype == DNS_QTYPE_IXFR))
+  if ((t->protocol == SOCK_STREAM && t->qtype == DNS_QTYPE_AXFR) || (t->protocol == SOCK_STREAM && t->qtype == DNS_QTYPE_IXFR)) {
     task_change_type_and_priority(t, IO_TASK, NORMAL_PRIORITY_TASK);
     t->status = NEED_AXFR;
   } else if (t->qtype == DNS_QTYPE_IXFR) {
