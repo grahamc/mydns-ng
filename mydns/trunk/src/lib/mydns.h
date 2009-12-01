@@ -609,7 +609,7 @@ extern void		_mydns_soa_free(MYDNS_SOA *);
 
 /* sql.c */
 extern SQL		*sql;
-extern void		sql_open(char *user, char *password, char *host, char *database);
+extern void     sql_open(const char *user, const char *password, const char *host, const char *database);
 extern void		sql_reopen(void);
 extern void		_sql_close(SQL *);
 #define			sql_close(p) if ((p)) _sql_close((p)), (p) = NULL
