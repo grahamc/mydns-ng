@@ -278,7 +278,7 @@ task_new(TASK *t, unsigned char *data, size_t len) {
 
   /* If this request is TCP and TCP is disabled, refuse the request */
 //  if (t->protocol == SOCK_STREAM && !tcp_enabled && (t->qtype != DNS_QTYPE_AXFR || !axfr_enabled)) {
-  if (t->protocol == SOCK_STREAM && !tcp_enabled && (t->qtype !=DNS_QTYPE_AXFR || !axfr_enabled) && (t->qtype != DNS_QTYPE_IXFR || !axfr_enabled))
+  if (t->protocol == SOCK_STREAM && !tcp_enabled && (t->qtype !=DNS_QTYPE_AXFR || !axfr_enabled) && (t->qtype != DNS_QTYPE_IXFR || !axfr_enabled)) {
     Warnx(_("%s: REFUSED query - TCP not enabled"), desctask(t));
     return formerr(t, DNS_RCODE_REFUSED, ERR_TCP_NOT_ENABLED, NULL);
   }
