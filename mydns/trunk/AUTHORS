@@ -1,0 +1,77 @@
+Authors of MyDNS:
+
+  Don Moore  <bboy@bboy.net>
+     Primary developer.
+
+  David Phillips  <david@acz.org>
+     ALIAS patch (see contrib/README), MANY bugfixes,
+     child delegation code, mydns-conf utility, and lots of
+     advocacy!
+
+  Howard Wilkinson <howard@cohtech.com>
+     Started 1.2.x line of development.
+     New scheduler.
+     Additions to the core of update code, notify code, ixfr code.
+     Some bug fixes.
+     Add wildcard recursion facility.
+
+Code contributions (in alphabetical order):
+
+  Joost Yervante Damad  <Joost.Damad@siemens.com>
+     Reliable signals patch, Solaris help.
+
+  Thijs Hendriks  <thijs@cee-kay.net>
+     Enhancements to contrib/admin.php.
+
+  Andreas Ljunggren  <andreas@ljunggren.net>
+     Code (now obsolete) to support "bind" configuration option.
+
+  Ari Pollak <ajp@aripollak.com>
+     SysV-style init script for RedHat (contrib/mydns.redhat)
+
+  Ian Ellison <iane@papadocs.com>
+     Patch to contrib/admin.php to fix problems with PHP ip2long()
+
+
+Beta testing, bug reports, debugging help, etc.:
+
+  Arnaud de Bermingham  <duracell@apinc.org>
+     Beta testing, debugging help.
+
+  Hélios de Creisquer  <helios@balios.org>
+     Debian GNU/Linux support.
+
+  Simon Dick  <simon@advantage-interactive.com>
+     Beta testing, debugging help, FreeBSD port.
+
+  Matthias Goebl  <matthias@goebl.net>
+     Bug reports and PostgreSQL "views" support.
+
+  Marc Jauvin  <marc@jauvin.com>
+     Beta testing, debugging help.
+
+  Jan Ploski  <jpl@remotejava.com>
+     PostgreSQL support and advice.
+
+
+Native language support:
+
+  Davi Arnaut  <davi@hotpop.com>
+     Brazilian Portugese.
+
+  Helios de Creisquer  <helios@balios.org>
+     French.
+
+  José Luis Domingo López  <jdomingo@24x7linux.com>
+     Spanish.
+
+
+Inspiration:
+
+  Jeremy Cole  <jeremy@mysql.com>
+     MySQL advice, program idea.
+
+
+
+If I forgot to mention you in here, and you have contributed
+to the project, email me -- bboy@bboy.net.  Thanks to all!

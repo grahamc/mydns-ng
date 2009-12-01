@@ -1,0 +1,92 @@
+.\"
+.\" $Id: mydns-conf.8.in,v 1.4 2005/04/20 16:49:11 bboy Exp $
+.\"
+.\" Copyright (C) 2002-2005  Don Moore <bboy@bboy.net>
+.\"
+.TH mydns-conf 8 "@PACKAGE_DATE@" "@PACKAGE_STRING@" "System Administrator's Manual"
+.SH NAME
+mydns-conf \- Sets up a MyDNS service
+.SH SYNOPSIS
+.B mydns-conf
+.IR logacct
+.IR D
+
+
+.\"--------------------------------------------------------------------------
+.\"  DESCRIPTION
+.\"--------------------------------------------------------------------------
+.SH DESCRIPTION
+.B mydns-conf
+creates a service directory
+.I D
+that runs
+.BR mydns (8).
+The name
+.I D
+must start with a slash and must not contain any special characters.
+Normally
+.I D
+is
+.IR /etc/mydns .
+
+.PP
+You can run the service under
+.BR svscan (8)
+by creating a symbolic link in the
+.BR svscan (8)
+directory:
+
+.PP
+ln -s
+.I D
+/service
+
+.PP
+The service will start within five seconds, and will be restarted upon
+reboot.  You can use
+.BR svc (8)
+to control the service.
+
+.PP
+.B mydns-conf
+creates an automatically rotated log directory in
+.IR D /log/main.
+The logs are owned by
+.IR logacct .
+The corresponding
+.BR multilog (8)
+processes run under the uid and gid of
+.IR logacct .
+The name
+.I logacct
+must not contain any special characters.
+
+
+.\"--------------------------------------------------------------------------
+.\"  AUTHOR
+.\"--------------------------------------------------------------------------
+.SH AUTHOR
+@PACKAGE_AUTHOR@
+
+
+.\"--------------------------------------------------------------------------
+.\"  HOMEPAGE
+.\"--------------------------------------------------------------------------
+.SH HOMEPAGE
+@PACKAGE_HOMEPAGE@
+
+
+.\"--------------------------------------------------------------------------
+.\"  SEE ALSO
+.\"--------------------------------------------------------------------------
+.SH "SEE ALSO"
+.BR mydns (8),
+.BR mydns.conf (5),
+.BR mydnsexport (8),
+.BR mydnsimport (8),
+.BR svscan (8),
+.BR svc (8),
+.BR multilog (8)
+
+
+.\" vi:set ts=3:

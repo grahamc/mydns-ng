@@ -1,0 +1,44 @@
+@c ***
+@c ***	REFERENCES
+@c ***
+@node References
+@appendix References
+@anchor{RFC 1034}
+@anchor{RFC 1035}
+@anchor{RFC 1183}
+@anchor{RFC 1537}
+@anchor{RFC 1700}
+@anchor{RFC 2136}
+@anchor{RFC 2317}
+@anchor{RFC 2782}
+@anchor{RFC 2915}
+@table @uref
+
+@item http://www.ietf.org/rfc/rfc1034.txt, RFC 1034
+Mockapetris, P., "Domain Names - Concepts and Facilities", STD 13, RFC 1034, November 1987.
+
+@item http://www.ietf.org/rfc/rfc1035.txt, RFC 1035
+Mockapetris, P., "Domain Names - Implementation and Specification", STD 13, RFC 1035, November 1987.
+
+@item http://www.ietf.org/rfc/rfc1183.txt, RFC 1183
+Everhart, C., et. al., "New DNS RR Definitions", RFC 1183, October 1990.
+
+@item http://www.ietf.org/rfc/rfc1537.txt, RFC 1537
+Beertema, P., "Common DNS Data File Configuration Errors", RFC 1537, October 1993.
+
+@item http://www.ietf.org/rfc/rfc1700.txt, RFC 1700
+Reynolds, J. and Postel, J., "Assigned Numbers", STD 2, RFC 1700, October 1994.
+
+@item http://www.ietf.org/rfc/rfc2136.txt, RFC 2136
+Vixie, P., et. al., "Dynamic Updates in the Domain Name System (DNS UPDATE)", RFC 1537, April 1997.
+
+@item http://www.ietf.org/rfc/rfc2317.txt, RFC 2317
+Eidnes, H., et. al., "Classless IN-ADDR.ARPA delegation", BCP 20, RFC 1537, March 1998.
+
+@item http://www.ietf.org/rfc/rfc2782.txt, RFC 2782
+Gulbrandsen, et al., "A DNS RR for specifying the location of services (DNS SRV)", RFC 2782, February 2000.
+
+@item http://www.ietf.org/rfc/rfc2915.txt, RFC 2915
+Mealling, M. and Daniel, R., "The Naming Authority Pointer (NAPTR) DNS Resource Record", RFC 2915, September 2000.
+
+@end table

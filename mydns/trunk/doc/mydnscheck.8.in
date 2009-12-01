@@ -1,0 +1,99 @@
+.\"
+.\" $Id: mydnscheck.8.in,v 1.4 2005/04/20 16:49:11 bboy Exp $
+.\"
+.\" Copyright (C) 2002-2005  Don Moore <bboy@bboy.net>
+.\"
+.TH mydnscheck 8 "@PACKAGE_DATE@" "@PACKAGE_STRING@" "System Administrator's Manual"
+.SH NAME
+mydnscheck \- Check zone data for consistency and syntax.
+.SH SYNOPSIS
+.B mydnscheck
+[\fB-c\fP, \fB--consistency\fP]
+[\fB-C\fP, \fB--consistency-only\fP]
+[\fB-D\fP, \fB--database=\fP\fIdbname\fP]
+[\fB-h\fP, \fB--host=\fP\fIhostname\fP]
+[\fB-p\fP, \fB--password[=\fP\fIpassword\fP]]
+[\fB-u\fP, \fB--user=\fP\fIusername\fP]
+[\fB-v\fP, \fB--verbose\fP]
+[\fB--help\fP]
+[\fB--version\fP]
+[\fBZONE\fP...]
+
+
+.\"--------------------------------------------------------------------------
+.\"  DESCRIPTION
+.\"--------------------------------------------------------------------------
+.SH DESCRIPTION
+\fBmydnscheck\fP scans the zones named on the command line for syntax.  If
+no zones are specified, all zones are scanned.  If the -c (or -C) option is
+specified, additional database consistency checks are performed.
+
+The program writes all results to stdout in a format that both humans and
+computers should be able to read.  Each problem found is listed on a
+separate line, with a TAB character in between each field.
+
+The fields listed are:
+
+.BR MESSAGE " .. " "SOA ID" " .. " "RR ID" " .. " NAME " .. " TTL " .. " TYPE " .. " DATA
+
+If stderr is a terminal, a progress meter is displayed if scanning all zones.
+
+.\"--------------------------------------------------------------------------
+.\"  OPTIONS
+.\"--------------------------------------------------------------------------
+.SH PROGRAM OPTIONS
+
+.IP "\fB-c\fP, \fB--consistency\fP"
+Perform database consistency checks in addition to the usual syntax checks
+
+.IP "\fB-C\fP, \fB--consistency-only\fP"
+Skip the syntax checks and only perform the database consistency checks.
+
+.IP "\fB-D\fP, \fB--database\fP=\fIdbname\fP"
+Use the database called \fIdbname\fP.
+
+.IP "\fB-h\fP, \fB--host\fP=\fIhostname\fP"
+Connect to database server at \fIhostname\fP.
+
+.IP "\fB-p\fP, \fB--pass\fP=\fIpassword\fP"
+Supply \fIpassword\fP when connecting to the database server.  If
+the \fIpassword\fP argument is omitted, it will be prompted on the tty.
+
+.IP "\fB-u\fP, \fB--user\fP=\fIusername\fP"
+Use \fIusername\fP when connecting to the database server.
+
+.IP "\fB-v\fP, \fB--verbose\fP"
+Enable verbose output while running.
+
+.IP "\fB--help\fP"
+Display program help and exit.
+
+.IP "\fB--version\fP"
+Output version number and exit.
+
+
+.\"--------------------------------------------------------------------------
+.\"  AUTHOR
+.\"--------------------------------------------------------------------------
+.SH AUTHOR
+@PACKAGE_AUTHOR@
+
+
+.\"--------------------------------------------------------------------------
+.\"  HOMEPAGE
+.\"--------------------------------------------------------------------------
+.SH HOMEPAGE
+@PACKAGE_HOMEPAGE@
+
+
+.\"--------------------------------------------------------------------------
+.\"  SEE ALSO
+.\"--------------------------------------------------------------------------
+.SH "SEE ALSO"
+.BR mydns (8),
+.BR mydns.conf (5),
+.BR mydnsexport (8),
+.BR mydnsimport (8)
+
+
+.\" vi:set ts=3:

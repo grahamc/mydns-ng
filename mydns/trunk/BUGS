@@ -1,0 +1,3 @@
+- Status (uptime etc) output is wrong.
+- AXFR does not work with BIND stub zones; the bug is in BIND.
+

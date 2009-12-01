@@ -1,0 +1,123 @@
+.\"
+.\" $Id: mydns.8.in,v 1.4 2005/04/20 16:49:11 bboy Exp $
+.\" mydns(8)
+.\"
+.\" Copyright (C) 2002-2005  Don Moore <bboy@bboy.net>
+.\"
+.TH mydns 8 "@PACKAGE_DATE@" "@PACKAGE_STRING@" "System Administrator's Manual"
+.SH NAME
+mydns \- SQL-based Internet name daemon.
+.SH SYNOPSIS
+.B mydns
+[\fB-b\fP, \fB--background\fP]
+[\fB-c\fP, \fB--conf=\fP\fIfilename\fP]
+[\fB-d\fP, \fB--debug\fP]
+[\fB-D\fP, \fB--database=\fP\fIdbname\fP]
+[\fB-h\fP, \fB--host=\fP\fIhostname\fP]
+[\fB-p\fP, \fB--password[=\fP\fIpassword\fP]]
+[\fB-u\fP, \fB--user=\fP\fIusername\fP]
+[\fB-v\fP, \fB--verbose\fP]
+[\fB--create-tables\fP]
+[\fB--dump-config\fP]
+[\fB--debug-<module>\fP[=\fI<debug_level>\fP]]
+[\fB--help\fP]
+[\fB--version\fP]
+
+
+.\"--------------------------------------------------------------------------
+.\"  DESCRIPTION
+.\"--------------------------------------------------------------------------
+.SH DESCRIPTION
+\fBmydns\fP is a SQL-based DNS server.
+
+
+.\"--------------------------------------------------------------------------
+.\"  OPTIONS
+.\"--------------------------------------------------------------------------
+.SH OPTIONS
+
+.IP "\fB-b\fP, \fB--background\fP"
+Run in the background, as a daemon.
+
+.IP "\fB-c\fP, \fB--conf\fP=\fIfilename\fP"
+Read configuration from \fIfilename\fP instead of the default
+(\fB@MYDNS_CONF@\fP).  Consult \fBmydns.conf\fP(5) for information about
+configuring \fBmydns\fP.
+
+.IP "\fB-d\fP, \fB--debug\fP"
+Output huge amounts of diagnostic text while running.  This option is only
+available if MyDNS was configured with the \fB--enable-debug\fP option.
+
+.IP "\fB-D\fP, \fB--database\fP=\fIdbname\fP"
+Use the database called \fIdbname\fP.
+
+.IP "\fB-h\fP, \fB--host\fP=\fIhostname\fP"
+Connect to database server at \fIhostname\fP.
+
+.IP "\fB-p\fP, \fB--pass\fP=\fIpassword\fP"
+Supply \fIpassword\fP when connecting to the database server.  If
+the \fIpassword\fP argument is omitted, it will be prompted on the tty.
+
+.IP "\fB-u\fP, \fB--user\fP=\fIusername\fP"
+Use \fIusername\fP when connecting to the database server.
+
+.IP "\fB-v\fP, \fB--verbose\fP"
+Enable verbose output while running.
+
+.IP "\fB--create-tables\fP"
+Write CREATE TABLE statements suitable for creating the tables used by
+\fBmydns\fP to the standard output and exit.
+
+.IP "\fB--dump-config\fP"
+Read the current configuration (if any).  Dump all possible configuration
+options to the standard output, with current values filled in.  For options
+not presently configured, the internal defaults will be used.  Output is in
+\fBmydns.conf\fP format, which is handy for creating a \fBmydns.conf\fP
+template.
+
+.IP "\fB--debug-<module>\fP[=\fI<debug-level>\fP"
+Switch on debug for a particular module and set the debug level if given.
+
+.IP "\fB--help\fP"
+Display program help and exit.
+
+.IP "\fB--version\fP"
+Output version number and exit.
+
+.\"--------------------------------------------------------------------------
+.\"  FILES
+.\"--------------------------------------------------------------------------
+.SH FILES
+.I @MYDNS_CONF@
+.RS
+The default location of the configuration file.  (See \fBmydns.conf\fP(5))
+
+
+.\"--------------------------------------------------------------------------
+.\"  AUTHOR
+.\"--------------------------------------------------------------------------
+.SH AUTHOR
+@PACKAGE_AUTHOR@
+
+
+.\"--------------------------------------------------------------------------
+.\"  HOMEPAGE
+.\"--------------------------------------------------------------------------
+.SH HOMEPAGE
+@PACKAGE_HOMEPAGE@
+
+
+.\"--------------------------------------------------------------------------
+.\"  SEE ALSO
+.\"--------------------------------------------------------------------------
+.SH "SEE ALSO"
+.BR mydns.conf (5),
+.BR mydnscheck (8),
+.BR mydnsexport (8),
+.BR mydnsimport (8)
+
+This man page is a quick reference.  For detailed documentation, see the
+MyDNS user's manual, available from @PACKAGE_HOMEPAGE@.
+
+
+.\" vi:set ts=3:
