@@ -471,7 +471,8 @@ resolve(TASK *t, datasection_t section, dns_qtype_t qtype, char *fqdn, int level
     return remote_status(t);
 #endif
 
-  if (!axfr_enabled && t->qtype == DNS_QTYPE_AXFR)
+    if (!axfr_enabled && (t->qtype == DNS_QTYPE_AXFR || t->qtype == DNS_QTYPE_IXFR))
+
     return dnserror(t, DNS_RCODE_REFUSED, ERR_NO_AXFR);
 
   /* Is the request for a SOA record only? */

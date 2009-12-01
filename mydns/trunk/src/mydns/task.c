@@ -277,7 +277,8 @@ task_new(TASK *t, unsigned char *data, size_t len) {
   DNS_GET16(t->qtype, src);
 
   /* If this request is TCP and TCP is disabled, refuse the request */
-  if (t->protocol == SOCK_STREAM && !tcp_enabled && (t->qtype != DNS_QTYPE_AXFR || !axfr_enabled)) {
+//  if (t->protocol == SOCK_STREAM && !tcp_enabled && (t->qtype != DNS_QTYPE_AXFR || !axfr_enabled)) {
+  if (t->protocol == SOCK_STREAM && !tcp_enabled && (t->qtype !=DNS_QTYPE_AXFR || !axfr_enabled) && (t->qtype != DNS_QTYPE_IXFR || !axfr_enabled))
     Warnx(_("%s: REFUSED query - TCP not enabled"), desctask(t));
     return formerr(t, DNS_RCODE_REFUSED, ERR_TCP_NOT_ENABLED, NULL);
   }
@@ -355,11 +356,13 @@ task_new(TASK *t, unsigned char *data, size_t len) {
     return formerr(t, DNS_RCODE_REFUSED, ERR_IXFR_NOT_ENABLED, NULL);
 
   /* If AXFR is requested, it must be TCP, and AXFR must be enabled */
-  if (t->qtype == DNS_QTYPE_AXFR && (!axfr_enabled || t->protocol != SOCK_STREAM))
+//  if (t->qtype == DNS_QTYPE_AXFR && (!axfr_enabled || t->protocol != SOCK_STREAM))
+  if ((t->qtype == DNS_QTYPE_AXFR || t->qtype == DNS_QTYPE_IXFR) && (!axfr_enabled || t->protocol != SOCK_STREAM))
     return formerr(t, DNS_RCODE_REFUSED, ERR_NO_AXFR, NULL);
 
   /* If this is AXFR, fork to handle it so that other requests don't block */
-  if (t->protocol == SOCK_STREAM && t->qtype == DNS_QTYPE_AXFR) {
+//  if (t->protocol == SOCK_STREAM && t->qtype == DNS_QTYPE_AXFR) {
+  if ((t->protocol == SOCK_STREAM && t->qtype == DNS_QTYPE_AXFR) || (t->protocol == SOCK_STREAM && t->qtype == DNS_QTYPE_IXFR))
     task_change_type_and_priority(t, IO_TASK, NORMAL_PRIORITY_TASK);
     t->status = NEED_AXFR;
   } else if (t->qtype == DNS_QTYPE_IXFR) {
