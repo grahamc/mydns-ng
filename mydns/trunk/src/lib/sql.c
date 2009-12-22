@@ -52,7 +52,7 @@ sql_open(const char *user, const char *password, const char *host, const char *d
   if( host != NULL ) {
     host2 = STRDUP( host );
 
-    if (portp = strchr(host2, ':')) {
+    if ((portp = strchr(host2, ':')) != NULL) {
       port = atoi(portp + 1);
       *portp = '\0';
       portp = portp + 1;
