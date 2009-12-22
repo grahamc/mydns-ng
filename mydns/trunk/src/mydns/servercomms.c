@@ -406,7 +406,12 @@ scomms_tick(TASK *t, void *data) {
     DebugX("servercomms", 1, _("%s: Server comms tick - master has not pinged for %d seconds"), desctask(t),
 	   lastseen);
 #endif
-    named_shutdown(0);
+    if (abs(lastseen) > 10*KEEPALIVE) {
+      Notice(_("Possible clock jump: master has not pinged for %d seconds"), lastseen);
+    } else {
+      Notice(_("Client shutdown: %s: master has not pinged for %d seconds"), desctask(t), lastseen);
+      named_shutdown(0);
+    }
   }
 
   return TASK_CONTINUE;

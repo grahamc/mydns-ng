@@ -27,8 +27,11 @@
 	Close/shutdown a socket.
 **************************************************************************************************/
 void
-_sockclose(int fd) {
+_sockclose(int fd, const char *file, int line) {
   if (fd >= 0) {
+#if DEBUG_ENABLED
+    DebugX("enabled", 1, _("sockclose(%d) as requested by %s:%d"), fd, file, line);
+#endif
 #if HAVE_SHUTDOWN
     shutdown(fd, 2);
 #endif
