@@ -2160,11 +2160,9 @@ if ($soa_use_active){
 <?php
     if ($soa_use_active) {
       echo "<INPUT class=activeBox type=checkbox name=\"active\" value=\"";
-      if (isset($values['active']) && getbool($values['active'])) {
 	echo $soa_active_types[1] . "\"";
-	echo " checked";
-      } else {
-	echo $soa_active_types[0] . "\"";
+      if (isset($values['active']) && getbool($values['active'])) {
+	echo " checked=\"checked\"";
       }
       echo " title=\"Uncheck this box to deactivate this zone.\">&nbsp;";
     }
