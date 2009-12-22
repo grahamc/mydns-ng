@@ -735,8 +735,8 @@ SHELL=${CONFIG_SHELL-/bin/sh}
 # Identity of this package.
 PACKAGE_NAME='mydns'
 PACKAGE_TARNAME='mydns'
-PACKAGE_VERSION='1.2.8.27'
-PACKAGE_STRING='mydns 1.2.8.27'
+PACKAGE_VERSION='1.2.8.30'
+PACKAGE_STRING='mydns 1.2.8.30'
 PACKAGE_BUGREPORT='support@cohtech.com'
 
 # Factoring default headers for most tests.
