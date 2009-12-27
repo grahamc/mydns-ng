@@ -1,3 +1,11 @@
+1.2.8.30
+- MyDNS-NG stops responding after some time. Thank you Thomas! #40
+- Delegation now has precedence over wildcard matching, fixes bugs #38 & #42
+- Fix for NAPTR.#23
+- Add patch to show SOA box's in red when inactive.#27
+	
+
+
 26-Mar-2009 Howard Wilkinson  <howard@cohtech.com> [1.2.8.27]
 	*	Rewrite the recursion code to use private queue while waiting for
 		connect to finish. Needed new TASK state, change to write state
