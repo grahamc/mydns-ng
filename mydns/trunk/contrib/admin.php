@@ -3,9 +3,10 @@
 	$Id: admin.php,v 1.64 2005/04/29 15:24:01 bboy Exp $
 	admin.php: Functional and useful example of a web-based DNS
 				  administration interface.
+	Jorge Bastos <jorge@mydns-ng.com> / Howard Wilkinson <support@cohtech.com>
 
 	Copyright (C) 2002-2005  Don Moore <bboy@bboy.net>
-	Copyright (C) 2005-2010  Jorge Bastos <jorge@mydns-ng.com> / Howard Wilkinson <support@cohtech.com>
+	Copyright (C) 2005-2010  MyDNS Team
 	
 
 	This program is free software; you can redistribute it and/or modify
@@ -745,6 +746,8 @@ function next_serial($serial = NULL) {
   $now = time();
   $low = $now - (31449600 * 2);					/* Time 2 years ago */
   $high = $now + (31449600 * 1);				/* Time 1 year hence */
+/* date_default_timezone_set avoid warning about It is not safe to rely on the system's timezone settings. */
+  date_default_timezone_set('UTC');
   $curyear = (int)strftime("%Y", $now);				/* The current year */
   $timestamp = strftime("%Y%m%d", $now);			/* The current timestamp */
 
