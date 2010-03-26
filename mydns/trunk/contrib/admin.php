@@ -1329,6 +1329,8 @@ function send_img() {
   header("Content-Type: image/png");
 
   /* A Last-Modified: header keeps the image from being reloaded every time */
+  /* date_default_timezone_set avoid warning about It is not safe to rely on the system's timezone settings. */
+  date_default_timezone_set('UTC');
   header("Last-Modified: " . date("r", filectime($_SERVER['SCRIPT_FILENAME'])));
   header("Content-Length: " . strlen($data));
   echo $data;
