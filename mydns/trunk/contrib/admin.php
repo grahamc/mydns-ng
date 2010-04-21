@@ -455,7 +455,7 @@ function open_page() {
 		background: #FF4500;
 		margin: 0px;
 		padding: 10px 10px 6px 10px;
-		border: <?=$gray?> solid 1px;
+		border: <?php echo $gray?> solid 1px;
 		}
 	  TD.soaFirstRow {
 	     vertical-align: middle;
@@ -586,7 +586,7 @@ function open_page() {
 <DIV><INPUT type=hidden name="action" value="search"></DIV>
 	<TABLE class=hdrBox>
 		<TR>
-<!--			<TD><?
+<!--			<TD><?php
 	if (strlen(ent($query)))
 	  echo "<A href=\"{$_SERVER['PHP_SELF']}?action=search&query=" . ent($query) . "\">" .
 	    "<IMG name=\"refresh\" src=\"{$_SERVER['PHP_SELF']}?img=Refresh.png\" alt=\"REFRESH\" title=\"Click this to refresh zone\" class=noborder></A>";
@@ -1563,7 +1563,7 @@ function offset_select($page, $total, $group_size, $xtra = "") {
 </TABLE>
 <!-- END page navigation bar -->
 
-<?
+<?php
   return ($page * $pagesize);
 }
 /*--- offset_select() ---------------------------------------------------------------------------*/
