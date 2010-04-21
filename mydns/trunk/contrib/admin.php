@@ -1692,8 +1692,8 @@ function db_column_exists($table, $column) {
 
 function db_get_column_width ($table, $column) {
 
+/* always return 128 for now because the flowing sql query works only with mysql
   $width = 128;
-
   $res = sql_query("SELECT character_maximum_length FROM information_schema.columns WHERE table_name='$table' and column_name='$column'",
 		   "columns named '$column' from table '$table'");
   if ($res) {
@@ -1701,6 +1701,8 @@ function db_get_column_width ($table, $column) {
       $width = $row[0];
     }
   }
+*/
+  $width = 128;
   return $width;
 }
 
