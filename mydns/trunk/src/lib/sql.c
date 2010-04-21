@@ -61,7 +61,7 @@ sql_open(const char *user, const char *password, const char *host, const char *d
 
 #if USE_PGSQL
   char *portp2;
-  const char *host2;
+//char *host2 = NULL;
 
   sql = PQsetdbLogin(host2 ? host2 : host, portp, NULL, NULL, database, user, password);
   if (PQstatus(sql) == CONNECTION_BAD) {
