@@ -2,7 +2,7 @@
 #
 # mydns        This starts and stops mydns.
 #
-# chkconfig: - 52 50
+# chkconfig: - 65 35
 # description: A database-driven DNS server
 #
 # processname: /usr/sbin/mydns
@@ -22,7 +22,6 @@ RETVAL=0
 
 start(){
     echo -n $"Starting $prog: "
-	
     daemon $prog -b
     RETVAL=$?
     echo
