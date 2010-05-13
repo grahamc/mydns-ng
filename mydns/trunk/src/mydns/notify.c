@@ -785,6 +785,7 @@ name_servers2ip(TASK *t, ARRAY *name_servers,
       struct addrinfo hosthints;
       struct addrinfo *hostdata = NULL;
       struct addrinfo *hostentry;
+      int rv;
 
       hosthints.ai_flags = AI_CANONNAME|AI_ADDRCONFIG;
 #if HAVE_IPV6
@@ -799,7 +800,7 @@ name_servers2ip(TASK *t, ARRAY *name_servers,
       hosthints.ai_canonname = NULL;
       hosthints.ai_next = NULL;
 
-      int rv = getaddrinfo(name_server, NULL, NULL, &hostdata);
+      rv = getaddrinfo(name_server, NULL, NULL, &hostdata);
 
       if (!rv) {
 	int k;

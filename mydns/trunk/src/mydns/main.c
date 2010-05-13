@@ -974,8 +974,10 @@ purge_bad_task(TASK *t) {
 
 static int
 run_tasks(struct pollfd items[], int numfds) {
-  int i = 0, j = 0, tasks_executed = 0;
+  int i = 0, j = 0, k = 0, tasks_executed = 0;
   TASK *t = NULL, *next_task = NULL;
+  int rfd = 0, wfd = 0, efd = 0, fd;
+  struct pollfd *item = NULL;
 
   /* Process tasks */
   for (j = HIGH_PRIORITY_TASK; j <= LOW_PRIORITY_TASK; j++) {
@@ -983,11 +985,10 @@ run_tasks(struct pollfd items[], int numfds) {
       QUEUE *TaskQ = TaskArray[i][j];
       for (t = TaskQ->head; t; t = next_task) {
 	next_task = t->next;
-	int rfd = 0, wfd = 0, efd = 0;
-	int fd = t->fd;
+	rfd = 0; wfd = 0; efd = 0;
+	fd = t->fd;
 	if (fd >= 0) {
-	  int k = 0;
-	  struct pollfd *item = NULL;
+	  item = NULL;
 	  for (k = 0; k < numfds; k++) {
 	    if ((&(items[k]))->fd == fd) {
 	      item = &(items[k]);

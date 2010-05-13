@@ -249,7 +249,9 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
        */
       MYDNS_RR	*ThisRR = NULL, *rr = NULL;
       char	*deltafilter = NULL;
-
+      int	deletecount, activecount, zonesize;
+      size_t	deltasize, fullsize;
+       
       /* For very large zones we do not want to load all of the records just to give up */
       sql_build_query(&deltafilter, "serial > %u", q->IR.serial);
 
@@ -258,17 +260,17 @@ ixfr(TASK * t, datasection_t section, dns_qtype_t qtype, char *fqdn, int truncat
        * ... assumes records are about the same size
        * approximate zone size by 2 * deleted count === actual number of delta records
        */
-      int deletecount = mydns_rr_count_deleted_filtered(sql,
+      deletecount = mydns_rr_count_deleted_filtered(sql,
 							soa->id, DNS_QTYPE_ANY, NULL,
 							soa->origin, deltafilter);
-      int activecount = mydns_rr_count_active_filtered(sql,
+      activecount = mydns_rr_count_active_filtered(sql,
 						       soa->id, DNS_QTYPE_ANY, NULL,
 						       soa->origin, deltafilter);
-      int zonesize = mydns_rr_count_active(sql,
+      zonesize = mydns_rr_count_active(sql,
 					   soa->id, DNS_QTYPE_ANY, NULL,
 					   soa->origin);
-      size_t deltasize = deletecount + activecount + 4;
-      size_t fullsize = zonesize + 2;
+      deltasize = deletecount + activecount + 4;
+      fullsize = zonesize + 2;
 
       if ((deletecount < 0) || (activecount < 0) || (zonesize < 0)) {
 	RELEASE(deltafilter);

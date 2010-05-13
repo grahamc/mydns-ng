@@ -97,7 +97,7 @@ name_find(TASK *t, const char *name) {
 **************************************************************************************************/
 int
 name_encode(TASK *t, char *dest, const char *name, unsigned int dest_offset, int compression) {
-  char			namebuf[DNS_MAXNAMELEN+1];;
+  char			namebuf[DNS_MAXNAMELEN+1];
   register char		*c = NULL;
   char			*d = NULL;
   char			*this_name = NULL;
