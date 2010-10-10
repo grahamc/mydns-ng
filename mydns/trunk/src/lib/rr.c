@@ -571,7 +571,9 @@ mydns_rr_parse(SQL_ROW row, unsigned long *lengths, const char *origin) {
   DebugX("lib-rr", 1, _("mydns_rr_parse(): called for origin %s"), origin);
 #endif
 
-  if (!(type = mydns_rr_get_type(row[6]))) {
+/* #60 */
+//if (!(type = mydns_rr_get_type(row[6]))) {
+  if (!row[6] || !(type = mydns_rr_get_type(row[6]))) {
     /* Ignore unknown RR type(s) */
     return (NULL);
   }
