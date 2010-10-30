@@ -88,6 +88,15 @@ $auto_update_serial = 0;
 */
 $auto_update_ptr = 0;
 
+/*
+**  This can automatically insert the defaults w/o updating the serial
+**  number automatically.  Sometimes you want to change entries but not
+**  have the nameserver reload and start serving out new data.
+**  -bek@monsterous.com
+*/
+
+$auto_defaults = 1;
+
 
 /*
 **  If this option is nonzero, this script will not complain if the
@@ -2067,7 +2076,7 @@ function soa_editor($soa = NULL, $error_message = NULL) {
   global $soa_use_active, $soa_use_recursive, $soa_use_xfer, $soa_use_update_acl, $soa_use_also_notify;
   global $rr_table_name, $soa_active_types, $soa_recursive_types;
   global $default_refresh, $default_retry, $default_expire, $default_minimum_ttl, $default_ttl;
-  global $default_ns, $default_mbox;
+  global $default_ns, $default_mbox, $auto_defaults;
   global $soa_bgcolor, $zonenotify;
 
   $delete_confirm = 0;
@@ -2115,6 +2124,7 @@ function soa_editor($soa = NULL, $error_message = NULL) {
       if ($soa_use_recursive)
 	$soa['recursive'] = $soa_recursive_types[0];
       if (($soa['serial'] = auto_next_serial(1)) == 1)
+        date_default_timezone_set('UTC');
 	$soa['serial'] = date("Ymd01", time());		/* Use RFC1912 by default */
       $soa['refresh'] = $default_refresh;
       $soa['retry'] = $default_retry;
@@ -2127,6 +2137,19 @@ function soa_editor($soa = NULL, $error_message = NULL) {
     } else
       $soa = $values = $_POST;
     $new_soa = 1;
+
+       if ($auto_defaults == 1) {
+                        date_default_timezone_set('UTC');
+                        $soa['serial'] = date("Ymd01", time());
+                        $soa['refresh'] = $default_refresh;
+                        $soa['retry'] = $default_retry;
+                        $soa['expire'] = $default_expire;
+                        $soa['minimum'] = $default_minimum_ttl;
+                        $soa['ttl'] = $default_ttl;
+                        $soa['ns'] = trim($default_ns);
+                        $soa['mbox'] = trim($default_mbox);
+                        $values = $soa;
+                        }
   }
 
   /* Set 'values' vars to avoid 'undefined' errors */
