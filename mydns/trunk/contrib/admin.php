@@ -2212,9 +2212,9 @@ if ($soa_use_active){
 	<TR title="The serial number for this zone.">
 		<TD class="soaFields"><INPUT class=mono type=text name="serial" value="<?php echo ent($values['serial'])?>" size=20>
 		<TD>&nbsp;
-		<TD nowrap><TT>; <B>Serial</B> (next is <?php echo next_serial(isset($soa['serial']) ? $soa['serial'] : '');?>)</TT>
-		<TD>&nbsp;
-
+                <TD nowrap><TT>; <B>Serial</B> (next is <?=next_serial(isset($soa['serial']) ? $soa['serial'] : '');?>)</TT>
+                <TD><input name="updateserial" class=formButton style="border-color: #FFFF99; color: #FFFF99;" type="button" value="Update Serial" onclick="javascript:document.soaform.serial.value
+=<?=next_serial(isset($soa['serial']) ? $soa['serial'] : '');?>">&nbsp;
 	<TR title="The number of seconds slave nameservers will wait before updating their zone data for this zone.">
 		<TD class=soaFields><INPUT class=mono type=text name="refresh" value="<?php echo ent($values['refresh'])?>" size=10>
 		<TD>&nbsp;
