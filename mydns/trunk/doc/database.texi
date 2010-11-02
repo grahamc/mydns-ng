@@ -397,7 +397,8 @@ For more information, see @uref{http://www.ietf.org/rfc/rfc2782.txt, RFC 2782}.
 
 @item TXT
 A text string.  The @samp{data} column contains a text string that is returned only when a @var{TXT} query
-is issued for the host specified by @samp{name}.
+is issued for the host specified by @samp{name}. Note that the string should not be escaped in the database,
+as escaping is done by mydns-ng.
 
 @i{example}: @samp{This is a string.}
 
