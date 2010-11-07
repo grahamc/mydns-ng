@@ -27,35 +27,9 @@ EXTRA_DIST			=	${man_MANS:=.in}
 
 CLEANFILES			=	${man_MANS} variables.texi mydns.info
 
-sedfile:
-	if ! test -f @SEDFILE@; then \
-		cd @top_srcdir@ && $(MAKE) sedfile; \
-	fi
-
-mydns.8: sedfile ${@:=.in}
-	$(SHELL) @top_srcdir@/missing --run sed -f @SEDFILE@ ${@:=.in} | tr -s '\n' > $@
-
-mydnscheck.8: sedfile ${@:=.in}
-	$(SHELL) @top_srcdir@/missing --run sed -f @SEDFILE@ ${@:=.in} | tr -s '\n' > $@
-
-mydns.conf.5: sedfile ${@:=.in}
-	$(SHELL) @top_srcdir@/missing --run sed -f @SEDFILE@ ${@:=.in} | tr -s '\n' > $@
-
-mydns-conf.8: sedfile ${@:=.in}
-	$(SHELL) @top_srcdir@/missing --run sed -f @SEDFILE@ ${@:=.in} | tr -s '\n' > $@
-
-mydnsexport.8: sedfile ${@:=.in}
-	$(SHELL) @top_srcdir@/missing --run sed -f @SEDFILE@ ${@:=.in} | tr -s '\n' > $@
-
-mydnsimport.8: sedfile ${@:=.in}
-	$(SHELL) @top_srcdir@/missing --run sed -f @SEDFILE@ ${@:=.in} | tr -s '\n' > $@
-
-mydnsptrconvert.8: sedfile ${@:=.in}
-	$(SHELL) @top_srcdir@/missing --run sed -f @SEDFILE@ ${@:=.in} | tr -s '\n' > $@
-
 html:
-	if [ -x /usr/local/bin/mydns-texi2html ]; then /usr/local/bin/mydns-texi2html mydns.texi; fi
+    ##fix this code bellow
+    ##if [ -x /usr/local/bin/mydns-texi2html ]; then /usr/local/bin/mydns-texi2html mydns.texi; fi
 
-.PHONY: sedfile
 
 ## vi:set ts=3:
