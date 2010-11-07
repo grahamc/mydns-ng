@@ -22,7 +22,6 @@ src/mydns/resolve.c
 src/mydns/axfr.c
 src/mydns/listen.c
 src/mydns/task.c
-src/mydns/conf.c
 src/mydns/db.c
 src/mydns/reply.c
 src/mydns/data.c
