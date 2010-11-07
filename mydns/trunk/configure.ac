@@ -24,6 +24,7 @@ AC_PREREQ([2.60])
 AC_COPYRIGHT([Portions of this script are Copyright 2002-2005 Don Moore  2007-2009 Howard Wilkinson])
 AM_INIT_AUTOMAKE([1.9.5 dist-bzip2])
 AM_CONFIG_HEADER(config.h)
+AC_CONFIG_MACRO_DIR([m4])
 
 ## Checks for programs
 AC_PROG_AWK
