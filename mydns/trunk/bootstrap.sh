@@ -1,1 +1,1 @@
-autoreconf -f
+autoreconf -fiv
