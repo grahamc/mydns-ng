@@ -4,26 +4,11 @@
 
 SUBDIRS				=	pkg contrib intl po m4 doc lib src
 
-SEDFILE				=	version.sed
 ACLOCAL_AMFLAGS	=	-I m4
 
 EXTRA_DIST			=	BUGS config.rpath makeinfo QUICKSTART.mysql QUICKSTART.postgres README.mysql TODO
 
-CLEANFILES			=	core* *~ $(SEDFILE) gmon.out bb.out @PACKAGE_NAME@-*.gz @PACKAGE_NAME@-*.bz2
-
-## Creates a small .sed script to replace various variables
-## (Used by doc and pkg)
-sedfile:
-	@if `test -f $(SEDFILE)`; then rm -f $(SEDFILE); fi
-	@echo "s,@MYDNS_CONF\@,@MYDNS_CONF@,g" >> $(SEDFILE)
-	@echo "s,@PACKAGE_DATE\@,@PACKAGE_DATE@,g" >> $(SEDFILE)
-	@echo "s,@PACKAGE_NAME\@,@PACKAGE_NAME@,g" >> $(SEDFILE)
-	@echo "s,@PACKAGE_VERSION\@,@PACKAGE_VERSION@,g" >> $(SEDFILE)
-	@echo "s,@PACKAGE_STRING\@,@PACKAGE_STRING@,g" >> $(SEDFILE)
-	@echo "s,@PACKAGE_AUTHOR\@,@PACKAGE_AUTHOR@,g" >> $(SEDFILE)
-	@echo "s,@PACKAGE_BUGREPORT\@,@PACKAGE_BUGREPORT@,g" >> $(SEDFILE)
-	@echo "s,@PACKAGE_HOMEPAGE\@,@PACKAGE_HOMEPAGE@,g" >> $(SEDFILE)
-	@echo "s,@PACKAGE_COPYRIGHT\@,@PACKAGE_COPYRIGHT@,g" >> $(SEDFILE)
+CLEANFILES			=	core* *~ gmon.out bb.out @PACKAGE_NAME@-*.gz @PACKAGE_NAME@-*.bz2
 
 install-data-hook:
 	@echo
@@ -88,6 +73,6 @@ release: clean distready
 	chown -R 0:0 .
 	if [ -x ./release.sh ]; then ./release.sh $(VERSION) `pwd`; fi
 
-.PHONY: release distready news localconf conf sedfile
+.PHONY: release distready news localconf conf
 
 # vi:set ts=3:
