@@ -18,8 +18,9 @@
 ##	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ##
 
-AC_INIT(mydns, [1.2.8.27], [support@cohtech.com])	## Package name, version, bugreport address
-AC_PREREQ([2.59])
+AC_INIT(mydns, [1.2.8.31], [http://bugs.mydns-ng.com/])
+AC_USE_SYSTEM_EXTENSIONS
+AC_PREREQ([2.60])
 AC_COPYRIGHT([Portions of this script are Copyright 2002-2005 Don Moore  2007-2009 Howard Wilkinson])
 AM_INIT_AUTOMAKE([1.9.5 dist-bzip2])
 AM_CONFIG_HEADER(config.h)
@@ -47,20 +48,56 @@ AC_CHECK_HEADERS([arpa/inet.h])
 AC_CHECK_HEADERS([inttypes.h])
 AC_CHECK_HEADERS([string.h])
 AC_CHECK_HEADERS([poll.h])
+AC_CHECK_HEADERS([langinfo.h])
+AC_CHECK_HEADERS([stdio_ext.h])
+AC_CHECK_HEADERS([syslog.h])
+
 
 ## Typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
-AC_CHECK_TYPES([uchar,uint,uint8_t,uint16_t,uint32_t])
+AC_TYPE_INT32_T
+AC_TYPE_PID_T
+AC_TYPE_SSIZE_T
+AC_TYPE_UID_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT64_T
+AC_TYPE_UINT8_T
+AC_TYPE_OFF_T
+
+AC_CHECK_TYPES([uchar uint uint8_t uint16_t uint32_t])
 
 ## Library functions
 AC_FUNC_MALLOC
 AC_TYPE_SIGNAL
 AC_FUNC_ALLOCA
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([memset getpwuid shutdown inet_ntop inet_pton strsep strndup strdup, strncmp])
+AC_FUNC_CHOWN
+AC_FUNC_FORK
+AC_FUNC_STRCOLL
+AC_CHECK_FUNCS([memset getpwuid shutdown inet_ntop inet_pton strsep strndup strdup strncmp])
 AC_CHECK_FUNCS([select poll])
 AC_CHECK_FUNCS([getaddrinfo getnameinfo])
+AC_CHECK_FUNCS([alarm])
+AC_CHECK_FUNCS([gethostbyname])
+AC_CHECK_FUNCS([gethostname])
+AC_CHECK_FUNCS([gettimeofday])
+AC_CHECK_FUNCS([inet_ntoa])
+AC_CHECK_FUNCS([memchr])
+AC_CHECK_FUNCS([memmove])
+AC_CHECK_FUNCS([mkdir])
+AC_CHECK_FUNCS([nl_langinfo])
+AC_CHECK_FUNCS([socket])
+AC_CHECK_FUNCS([strchr])
+AC_CHECK_FUNCS([strcspn])
+AC_CHECK_FUNCS([strerror])
+AC_CHECK_FUNCS([strncasecmp])
+AC_CHECK_FUNCS([strpbrk])
+AC_CHECK_FUNCS([strrchr])
+AC_CHECK_FUNCS([strstr])
+AC_CHECK_FUNCS([strtol])
+
 AC_LIB_SOCKET
 AC_LIB_NSL
 AC_LIB_MATH
@@ -100,7 +137,9 @@ AC_ENABLE_STATUS		#	Enable the STATUS opcode to check server status
 AC_DISABLE_DATE_LOGGING		#	Disable date/time in verbose output?
 AC_MYDNS_VARS			#  Set variables containing dirs
 
-AC_OUTPUT(	contrib/Makefile \
+SUBDIRS = lib src contrib m4 pkg doc intl
+
+AC_CONFIG_FILES(contrib/Makefile \
 		intl/Makefile \
 		po/Makefile.in \
 		m4/Makefile \
@@ -111,8 +150,19 @@ AC_OUTPUT(	contrib/Makefile \
 		src/mydns/Makefile \
 		src/util/Makefile \
 		pkg/Makefile \
-		doc/Makefile
-	  )
+		doc/Makefile \
+		doc/mydns.8 \
+		doc/mydnscheck.8 \
+		doc/mydns.conf.5 \
+		doc/mydns-conf.8 \
+		doc/mydnsexport.8 \
+		doc/mydnsimport.8 \
+		doc/mydnsptrconvert.8 \
+		pkg/mydns-mysql.spec \
+		pkg/mydns-postgres.spec
+		)
+
+AC_OUTPUT
 
 echo
 echo "  ###"
