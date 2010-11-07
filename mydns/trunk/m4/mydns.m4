@@ -884,10 +884,6 @@ AC_DEFUN([AC_MYDNS_VARS],
 		## Documentation directory
 		DOCDIR="\$(top_srcdir)/doc"
 		AC_SUBST(DOCDIR)
-
-		## "version.sed"
-		SEDFILE="\$(top_srcdir)/version.sed"
-		AC_SUBST(SEDFILE)
 	]
 )
 
