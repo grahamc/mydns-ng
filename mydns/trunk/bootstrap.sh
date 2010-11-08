@@ -1,2 +1,2 @@
-gettextize --force --intl --no-changelog
+autopoint
 autoreconf -fiv
