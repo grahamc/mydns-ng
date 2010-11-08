@@ -1,2 +1,15 @@
+ABOUT-NLS
+aclocal.m4
+autom4te.cache
+config.guess
+config.h.in
+config.rpath
+config.sub
 configure
+depcomp
+INSTALL
+install-sh
+ltmain.sh
 Makefile.in
+missing
+stamp-h1
