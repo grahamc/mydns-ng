@@ -4,11 +4,11 @@
 
 ACLOCAL_AMFLAGS	=	-I m4
 
-SUBDIRS = lib src contrib m4 pkg doc po intl
+SUBDIRS = intl lib src contrib m4 pkg doc po
 
-EXTRA_DIST			=	BUGS config.rpath makeinfo QUICKSTART.mysql QUICKSTART.postgres README.mysql TODO mydns.conf
+EXTRA_DIST			= config.rpath BUGS makeinfo QUICKSTART.mysql QUICKSTART.postgres README.mysql TODO mydns.conf
 
-CLEANFILES			=	core* *~ gmon.out bb.out @PACKAGE_NAME@-*.gz @PACKAGE_NAME@-*.bz2
+CLEANFILES			= core* *~ gmon.out bb.out @PACKAGE_NAME@-*.gz @PACKAGE_NAME@-*.bz2
 
 install-data-hook:
 	@echo

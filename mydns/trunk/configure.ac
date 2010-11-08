@@ -138,8 +138,7 @@ AC_ENABLE_STATUS		#	Enable the STATUS opcode to check server status
 AC_DISABLE_DATE_LOGGING		#	Disable date/time in verbose output?
 AC_MYDNS_VARS			#  Set variables containing dirs
 
-AC_CONFIG_FILES(contrib/Makefile \
-		intl/Makefile \
+AC_CONFIG_FILES(contrib/Makefile  intl/Makefile\
 		po/Makefile.in \
 		m4/Makefile \
 		Makefile \
