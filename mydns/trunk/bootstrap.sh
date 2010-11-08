@@ -1,2 +1,1 @@
-autopoint
 autoreconf -fiv
