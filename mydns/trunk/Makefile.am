@@ -6,7 +6,7 @@ ACLOCAL_AMFLAGS	=	-I m4
 
 SUBDIRS = intl lib src contrib m4 pkg doc po
 
-EXTRA_DIST			= config.rpath BUGS makeinfo QUICKSTART.mysql QUICKSTART.postgres README.mysql TODO mydns.conf
+EXTRA_DIST			= config.rpath BUGS QUICKSTART.mysql QUICKSTART.postgres README.mysql TODO mydns.conf
 
 CLEANFILES			= core* *~ gmon.out bb.out @PACKAGE_NAME@-*.gz @PACKAGE_NAME@-*.bz2
 
