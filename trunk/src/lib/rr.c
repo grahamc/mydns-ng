@@ -291,9 +291,10 @@ mydns_rr_parse_srv(const char *origin, MYDNS_RR *rr) {
 **************************************************************************************************/
 static inline int
 mydns_rr_parse_naptr(const char *origin, MYDNS_RR *rr) {
-  char 		*int_tmp, *p;
+  char 		*int_tmp, *p, *data_copy;
 
-  p = __MYDNS_RR_DATA_VALUE(rr);
+  data_copy = STRNDUP(__MYDNS_RR_DATA_VALUE(rr), __MYDNS_RR_DATA_LENGTH(rr));
+  p = data_copy;
 
   if (!strsep_quotes2(&p, &int_tmp))
     return (-1);
@@ -320,6 +321,7 @@ mydns_rr_parse_naptr(const char *origin, MYDNS_RR *rr) {
   //__MYDNS_RR_DATA_LENGTH(rr) = 0;
 //  RELEASE(__MYDNS_RR_DATA_VALUE(rr));
 
+  RELEASE(data_copy);
   return 0;
 }
 /*--- mydns_rr_parse_naptr() --------------------------------------------------------------------*/
