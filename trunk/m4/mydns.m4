@@ -652,14 +652,14 @@ AC_DEFUN([AC_LIB_PQ],
 		ac_mydns_libs="$LDFLAGS"
 		for dir in $ac_mydns_lib_dirs
 		do
-#			if test "$ac_mydns_lib_found" != yes
-#			then
-#				AC_CHECK_FILE($dir/libpq.dll, ac_mydns_lib_found=yes, ac_mydns_lib_found=yes)
-				#if test "$ac_mydns_lib_found" = "yes"; then
-					LIBPQ="-L/usr/i686-pc-mingw32/sys-root/mingw/lib -lpq"
+			if test "$ac_mydns_lib_found" != yes
+			then
+				AC_CHECK_FILE($dir/libpq.so, ac_mydns_lib_found=yes, ac_mydns_lib_found=no)
+				if test "$ac_mydns_lib_found" = "yes"; then
+					LIBPQ="-L$dir -lpq"
 
-				#fi
-#			fi
+				fi
+			fi
 		done
 		AC_SUBST(LIBPQ)
 	]
@@ -680,22 +680,21 @@ AC_DEFUN([AC_HEADER_PQ],
 			ac_mydns_header_dirs="$withval $ac_mydns_header_dirs")
 		for dir in $ac_mydns_header_dirs
 		do
-#			if test "$ac_mydns_header_found" != yes
-#			then
-#				AC_CHECK_FILE($dir/libpq-fe.h, ac_mydns_header_found=yes, ac_mydns_header_found=no)
-#				if test "$ac_mydns_header_found" = yes
-#				then
-					PQ_INCLUDE="-I/usr/i686-pc-mingw32/sys-root/mingw/include"
+			if test "$ac_mydns_header_found" != yes
+			then
+				AC_CHECK_FILE($dir/libpq-fe.h, ac_mydns_header_found=yes, ac_mydns_header_found=no)
+				if test "$ac_mydns_header_found" = yes
+				then
+					PQ_INCLUDE="-I$dir"
 
 					AC_MSG_CHECKING([for PostgreSQL version number])
 					PG_VERSION=`grep "PG_VERSION " $dir/pg_config.h | cut -f3 -d' '`
 					AC_MSG_RESULT([$PG_VERSION])
 					AC_DEFINE_UNQUOTED(PGSQL_VERSION, [$PG_VERSION], [PostgreSQL version])
 
-#					AC_CHECK_FILE($dir/pg_config.h, 
-					AC_DEFINE(HAVE_PGCONFIG, 1, [Does the system have pg_config.h?])
-#				fi
-#			fi
+					AC_CHECK_FILE($dir/pg_config.h, AC_DEFINE(HAVE_PGCONFIG, 1, [Does the system have pg_config.h?]))
+				fi
+			fi
 		done
 		AC_SUBST(PQ_INCLUDE)
 	]
@@ -885,10 +884,6 @@ AC_DEFUN([AC_MYDNS_VARS],
 		## Documentation directory
 		DOCDIR="\$(top_srcdir)/doc"
 		AC_SUBST(DOCDIR)
-
-		## "version.sed"
-		SEDFILE="\$(top_srcdir)/version.sed"
-		AC_SUBST(SEDFILE)
 	]
 )
 
