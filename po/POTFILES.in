@@ -1,0 +1,30 @@
+##
+## po/POTFILES.in
+##
+## Generated Wed Jan 18 17:18:00 CST 2006
+## by `po/mkpotfile'
+##
+
+lib/conf.c
+src/util/export.c
+src/util/util.c
+src/util/import-tinydns.c
+src/util/check.c
+src/util/import-axfr.c
+src/util/import.c
+src/util/conf.c
+src/util/ptrconvert.c
+src/mydns/cache.c
+src/mydns/encode.c
+src/mydns/tcp.c
+src/mydns/udp.c
+src/mydns/resolve.c
+src/mydns/axfr.c
+src/mydns/listen.c
+src/mydns/task.c
+src/mydns/db.c
+src/mydns/reply.c
+src/mydns/data.c
+src/mydns/main.c
+src/mydns/error.c
+src/mydns/recursive.c

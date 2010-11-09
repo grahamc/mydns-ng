@@ -1,0 +1,76 @@
+#!/bin/bash
+#
+# mydns        This starts and stops mydns.
+#
+# chkconfig: - 65 35
+# description: A database-driven DNS server
+#
+# processname: /usr/sbin/mydns
+# config: /etc/mydns.conf
+# pidfile: /var/run/mydns.pid
+
+PATH=/sbin:/bin:/usr/bin:/usr/sbin
+prog=mydns
+
+# Source function library.
+. /etc/init.d/functions
+
+[ -f /usr/sbin/mydns ] || exit 1
+[ -f /etc/mydns.conf ] || exit 1
+
+RETVAL=0
+
+start(){
+    echo -n $"Starting $prog: "
+    daemon $prog -b
+    RETVAL=$?
+    echo
+    touch /var/lock/subsys/mydns
+    return $RETVAL
+}
+
+stop(){
+    echo -n $"Stopping $prog: "
+    killproc $prog
+    RETVAL=$?
+    echo
+    rm -f /var/lock/subsys/mydns
+    return $RETVAL
+
+}
+
+restart(){
+    stop
+    start
+}
+
+condrestart(){
+    [ -e /var/lock/subsys/mydns ] && restart
+    return 0
+}
+
+
+# See how we were called.
+case "$1" in
+    start)
+	start
+	;;
+    stop)
+	stop
+	;;
+    status)
+	status $prog
+	;;
+    restart|reload)
+	restart
+	;;
+    condrestart)
+	condrestart
+	;;
+    *)
+	echo $"Usage: $0 {start|stop|status|restart|condrestart|reload}"
+	RETVAL=1
+esac
+
+exit $RETVAL
+

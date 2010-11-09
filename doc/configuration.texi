@@ -1,0 +1,290 @@
+@c ***
+@c ***	CONFIGURATION
+@c ***
+@node Configuration
+@appendix Configuration
+@cindex configuration
+@cindex mydns.conf
+@cindex variables, configuration
+The @file{mydns.conf} file has a simple, familiar format.  It consists
+of lines that may contain variables and values, in the format
+
+@example
+@i{variable} = @i{value}
+@end example
+
+Blank lines are allowed.  The @samp{#} character begins comments, which
+are ignored.
+
+The @option{--dump-config} option of the @command{mydns} program will output
+all possible variables in @file{mydns.conf} format.  (@xref{Creating mydns.conf}.)
+
+Boolean values can be @samp{yes}, @samp{no}, @samp{1}, @samp{0}, @samp{on}, or @samp{off}.
+
+@menu
+* Database options::  Database configuration.
+* General options::   Name daemon configuration.
+* Cache options::     Cache configuration.
+* Misc options::      Miscellaneous configuration options.
+@end menu
+
+
+@c *** (config) Database
+@node Database options
+@section Database configuration
+@cindex database, configuration
+@cindex configuration, database
+@cindex db-host
+@cindex db-user
+@cindex db-password
+@cindex database
+
+@table @var
+@item db-host
+@i{(string)}  The hostname where your database server is located.  May be overridden by the
+@option{-h} (@option{--host}) command-line option.
+
+@item db-user
+@i{(string)}  The username to provide to the database server during authentication.  May be
+overridden by the @option{-u} (@option{--user}) command-line option.
+
+@item db-password
+@i{(string)}  The password to provide to the database server during authentication.  May be
+overridden by the @option{-p} (@option{--password}) command-line option.
+
+@item database
+@i{(string)}  The name of the database containing DNS data.
+@end table
+
+
+@c *** (config) General options
+@node General options
+@section Name daemon configuration
+@cindex daemon, configuration
+@cindex configuration, daemon
+@cindex user
+@cindex group
+@cindex listen
+@cindex no-listen
+@cindex port number
+
+@table @var
+@item user
+@i{(string)}  Run with the permissions of this user. 
+
+@item group
+@i{(string)}  Run with the permissions of this group. 
+
+@item listen
+@i{(string)}  Listen and accept requests on this address only.  If this is @samp{*},
+the server will accept connections on all addresses.  This must be an IP address
+in numbers-and-dots format, or @samp{*}.  Multiple addresses may be specified,
+as a comma-delimited list of addresses or on separate @samp{listen} lines.  To
+specify a port other than port 53, append @samp{:@i{port}} to the address.
+
+@item no-listen
+@i{(string)}  Do @i{not} listen on this address.  This must be an IP address
+in numbers-and-dots format, or @samp{*}.  Multiple addresses may be specified,
+as a comma-delimited list of addresses or on separate @samp{no-listen} lines.  To
+specify a port other than port 53, append @samp{:@i{port}} to the address.  This
+option may be used to easily tell MyDNS not to listen on the address @samp{127.0.0.1},
+on which you are running a recursive name server.
+
+
+@end table
+
+@c *** (config) Cache options
+@node Cache options
+@section Cache configuration
+@cindex cache, configuration
+@cindex configuration, cache
+@cindex zone-cache-size
+@cindex zone-cache-expire
+@cindex reply-cache-size
+@cindex reply-cache-expire
+
+@table @var
+@item zone-cache-size
+@i{(integer)}  The number of items stored in the DNS server's internal zone data cache.
+Set this to @samp{0} to disable the zone data cache entirely.  (@xref{Caching}.)
+
+@item zone-cache-expire
+@i{(integer)}  Number of seconds after which cached items expire.  If this is @samp{0}, the
+zone data cache is not used.  The TTL value for any RR may override this value if it is
+a shorter amount of time.  (@xref{Caching}.)
+
+@item reply-cache-size
+@i{(integer)}  The number of items stored in the DNS server's internal reply cache.
+Set this to @samp{0} to disable the reply cache entirely.  (@xref{Caching}.)
+
+@item reply-cache-expire
+@i{(integer)}  Number of seconds after which cached replies expire.  If this is @samp{0}, the
+reply cache is not used. (@xref{Caching}.)
+@end table
+
+
+@c *** (config) Esoterica
+@node Misc options
+@section Miscellaneous configuration options.
+@cindex misc, configuration
+@cindex configuration, misc
+@cindex log
+@cindex pidfile
+@cindex timeout
+@cindex multicpu
+@cindex servers
+@cindex recursive
+@cindex recursive-timeout
+@cindex recursive-retries
+@cindex recursive-algorithm
+@cindex allow-axfr
+@cindex allow-tcp
+@cindex allow-update
+@cindex ignore-minimum
+@cindex soa-table
+@cindex rr-table
+@cindex use-soa-active
+@cindex use-rr-active
+@cindex notify-enabled
+@cindex notify-source
+@cindex notify-source6
+@cindex notify-timeout
+@cindex notify-retries
+@cindex notify-algorithm
+@cindex ixfr-enabled
+@cindex ixfr-gc-enabled
+@cindex ixfr-gc-interval
+@cindex ixfr-gc-delay
+@cindex extended-data-support
+@cindex dbengine
+@cindex soa-where
+@cindex rr-where
+@cindex wildcard-recursion
+@cindex debug-<module>
+
+@table @var
+@item log
+@i{(string)} The name daemon should log via the syslog facility specified,
+which may be @samp{LOG_DAEMON} or any of @samp{LOG_LOCAL0} through
+@samp{LOG_LOCAL7}.  If the argument is @samp{stderr} or @samp{stdout},
+program output will go to that stream only.  If the argument is a
+filename, program output will go to that file.
+
+@item pidfile
+@i{(string)}  The @command{mydns} program will write its PID to this file on startup.
+
+@item timeout
+@i{(integer)}  Number of seconds after which queries should time out.
+
+@item multicpu
+@i{(integer)}  Number of processors in your system. - deprecated use servers instead.
+
+@item servers
+@i{(integer)}  Number of server processors to run. Set this to @samp{0} to run just a single process,
+@samp{1} will run a master and a server process. @samp{n} runs @i{n} servers plus a master.
+It is recommended that this be set to the number of CPUS time 2 plus 1.
+
+@item recursive
+@i{(string)}  Forward recursive requests to a DNS server at this address
+and return its response to the client.
+
+@item recursive-timeout
+@i{(integer)} Number of seconds to wait before first retry - default @samp{60}
+
+@item recursive-retries
+@i{(integer)} Number of retries before abandoning recursion
+
+@item recursive-algorithm
+@i{(string)}  Algorithm to use when applying timeout.
+Linear - each timeout is equal to @i{recursive-timeout},
+Exponential - double timeout on each retry,
+Progressive - increase timeout by number of retries.
+Default is @code{linear}.
+
+@item allow-axfr
+@i{(boolean)}  Should DNS-based zone transfers be enabled?
+
+@item allow-tcp
+@i{(boolean)}  Should TCP queries be allowed?  Use of this option is usually
+not recommended.  However, TCP queries should be enabled if you think your
+server will be serving out answers larger than 512 bytes.
+
+@item allow-update
+@i{(boolean)}  Should RFC 2136 DNS UPDATE queries be allowed?  (@xref{DNS UPDATE}.)
+
+@item ignore-minimum
+@i{(boolean)}  Should MyDNS ignore the minimum TTL specified in the SOA
+record for each zone?
+
+@item soa-table
+@i{(string)}  Name of the table containing SOA records.
+
+@item rr-table
+@i{(string)}  Name of the table containing resource record data.
+
+@item use-soa-active
+@i{(boolean)} Where there is an soa-active column use this to determine which zones to serve.
+
+@item use-rr-active
+@i{(boolean)} Where there is a rr-active column use this to determine which records to serve.
+
+@item notify-enabled
+@i{(boolean)} Support DNS NOTIFY message generation if this is enabled.
+
+@item notify-source
+@i{(string)} IPv4 address from which NOTIFY messages will be sent - set to @samp{0.0.0.0} or
+leave blank for the default of using the outgoing interface address.
+
+@item notify-source6
+@i{(string)} IPv6 address from which NOTIFY messages will be sent - set to @samp{::} or
+leave blank for the default of using the outgoing interface address.
+
+@item notify-timeout
+@i{(integer)} Number of seconds before first retry of NOTIFY message - default @samp{60}.
+
+@item notify-retries
+@i{(integer)} Number of times to retry the NOTIFY message before giving up. Default @samp{5}.
+
+@item notify-algorithm
+@i{(string)} Select type of notify algorithm to use - select oneof
+Linear - each timeout is equal to @i{notify-timeout},
+Exponential - double timeout on each retry,
+Progressive - increase timeout by number of retries.
+Default is @code{linear}.
+
+@item ixfr-enabled
+@i{(boolean}) Enable IXFR functionality - requires DB schema change as well.
+
+@item ixfr-gc-enabled
+@i{(boolean)} Enable @i{real-time} IXFR garbage collection facility. With this switched on
+the server will periodically scan the database for expired records that have been marked
+deleted and will remove them from the DB.
+
+@item ixfr-gc-interval
+@i{(integer)} Number of seconds between each GC scan. - default 86400 seconds = 1 day.
+
+@item ixfr-gc-delay
+@i{(integer}) Number of seconds before first GC scan. - default 600 seconds = 10 minutes.
+
+@item extended-data-support
+@i{(boolean)} Switch on support for extended data, this allows large rr data entries needed by large TXT records and other data types.
+
+@item dbengine
+@i{(string)} Select default DB engine used when creating MySQL databases. Tested with MyISAM, InnoDB, NDBCLUSTER - default MyISAM.
+
+@item soa-where
+@i{(string)}  An additional SQL @samp{WHERE} clause to use when retrieving
+records from the @code{soa} table (@pxref{soa table}).
+
+@item rr-where
+@i{(string)}  An additional SQL @samp{WHERE} clause to use when retrieving
+records from the @code{rr} table (@pxref{rr table}).
+
+@item wildcard-recursion
+@i{(integer)} number of ancestor zones to scan for a matching wildcard. default 0.
+Use -1 for infinite.
+
+@item debug-<module>
+@i{(integer)} debug level for reporting from module selected.
+
+@end table

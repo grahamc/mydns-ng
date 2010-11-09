@@ -1,0 +1,736 @@
+
+
+@c ***
+@c ***	THE DATABASE
+@c ***
+@node Database
+@chapter Database
+@cindex database
+@cindex mydns (database)
+@cindex tables
+@cindex table layouts
+
+The default database name is @samp{mydns}.
+
+To specify a different name, edit the @samp{database} variable in your @file{mydns.conf}.
+
+You can freely add columns to the @samp{mydns} database.  You can also modify the
+columns that MyDNS uses, as long as you don't change their names.
+
+The table layouts described here are for the tables created on a MySQL
+database.  If you're using PostgreSQL, the fields are pretty much the same;
+however, the field types are slightly different.  You can run
+@command{mydns --create-tables} to see the exact table structures.
+
+@menu
+* soa table::           Information about zones (@code{SOA} records).
+* rr table::            All other resource records.
+* Supported RR types::  The RR types supported and what their data should contain.
+* Optional columns::    Optional columns enabling extra functionality.
+@end menu
+
+
+
+
+@c ***
+@c ***	TABLE LAYOUTS: SOA
+@c ***
+@node soa table
+@section The @samp{soa} table
+@cindex soa
+@cindex mydns.soa
+@cindex origin
+@cindex serial
+@cindex refresh
+@cindex retry
+@cindex expire
+@cindex minimum
+@cindex TTL
+@cindex active
+@cindex recursive
+@cindex xfer
+@cindex update_acl
+@cindex also_notify
+
+The @samp{soa} table contains one row for each zone for which the server is
+authoritative.
+
+The default values for the various timer fields are from @uref{http://www.ietf.org/rfc/rfc1537.txt, RFC 1537}.
+
+@table @asis
+
+@c *** ID
+@item @samp{id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY} (@i{MySQL})
+@item @samp{id SERIAL NOT NULL PRIMARY KEY} (@i{PostgreSQL})
+A unique number identifying this zone.
+
+@c *** ORIGIN
+@item @samp{origin CHAR(255) NOT NULL} (@i{MySQL})
+@item @samp{origin VARCHAR(255) NOT NULL} (@i{PostgreSQL})
+The name of this zone.  (@i{Unique key})@*
+@i{ex:} @b{@code{example.com.}}
+
+@c *** NS
+@item @samp{ns CHAR(255) NOT NULL} (@i{MySQL})
+@item @samp{ns VARCHAR(255) NOT NULL} (@i{PostgreSQL})
+The name of the name server that was the original or primary source of data
+for this zone.  @i{(meaningless to MyDNS)}@*
+@i{ex:} @b{@code{primary.example.com.}}
+
+@c *** MBOX
+@item @samp{mbox CHAR(255) NOT NULL} (@i{MySQL})
+@item @samp{mbox VARCHAR(255) NOT NULL} (@i{PostgreSQL})
+A name which specifies the mailbox of the person responsible for this zone.
+This should be specified in the mailbox-as-domain-name format where the
+@samp{@@} character is replaced with a dot.  @i{(meaningless to MyDNS)}@*
+@i{ex:} @b{@code{postmaster.example.com.}}
+
+@c *** SERIAL
+@item @samp{serial INT UNSIGNED NOT NULL DEFAULT '1'} (@i{MySQL})
+@item @samp{serial INTEGER NOT NULL DEFAULT 1} (@i{PostgreSQL})
+A "version number" for this zone.  DNS servers that rely on AXFR for zone transfers
+use this to determine when updates have occurred.  Popular values to use are
+the Unix timestamp or a date in the form YYYYMMDD.  (@pxref{Zone transfers}).@*
+@i{ex:} @b{@code{20020529}}
+
+@c *** REFRESH
+@item @samp{refresh INT UNSIGNED NOT NULL DEFAULT '28800'} (@i{MySQL})
+@item @samp{refresh INTEGER NOT NULL DEFAULT 28800} (@i{PostgreSQL})
+The number of seconds after which slave nameservers should check to see if
+this zone has been changed.  If the zone's serial number has changed, the
+slave nameserver initiates a zone transfer.
+@i{(meaningless to MyDNS)}@*
+@i{ex:} @b{@code{10800}}
+
+@c *** RETRY
+@item @samp{retry INT UNSIGNED NOT NULL DEFAULT '7200'} (@i{MySQL})
+@item @samp{retry INTEGER NOT NULL DEFAULT 7200} (@i{PostgreSQL})
+This specifies the number of seconds a slave nameserver should wait before
+retrying if it attmepts to transfer this zone but fails.
+@i{(meaningless to MyDNS)}@*
+@i{ex:} @b{@code{3600}}
+
+@c *** EXPIRE
+@item @samp{expire INT UNSIGNED NOT NULL DEFAULT '604800'} (@i{MySQL})
+@item @samp{expire INTEGER NOT NULL DEFAULT 604800} (@i{PostgreSQL})
+If for @i{expire} seconds the primary server cannot be reached,
+all information about the zone is invalidated on the secondary
+servers (i.e., they are no longer authoritative for that zone).
+@i{(meaningless to MyDNS)}@*
+@i{ex:} @b{@code{60400}}
+
+@c *** MINIMUM
+@item @samp{minimum INT UNSIGNED NOT NULL DEFAULT '86400'} (@i{MySQL})
+@item @samp{minimum INTEGER NOT NULL DEFAULT 86400} (@i{PostgreSQL})
+The minimum TTL field that should be exported with any RR from this zone.  If any
+RR in the database has a lower TTL, this TTL is sent instead.@*
+@i{ex:} @b{@code{86400}}
+
+@c *** TTL
+@item @samp{ttl INT UNSIGNED NOT NULL DEFAULT '86400'} (@i{MySQL})
+@item @samp{ttl INTEGER NOT NULL DEFAULT 86400} (@i{PostgreSQL})
+The number of seconds that this zone may be cached before the
+source of the information should again be consulted.  Zero values are
+interpreted to mean that the zone should not be cached.@*
+@i{ex:} @b{@code{86400}}
+
+@c *** ACTIVE
+@item @samp{active ENUM('Y', 'N') NOT NULL DEFAULT 'Y'} (@i{MySQL})
+@item @samp{active VARCHAR(1) NOT NULL CHECK (active='Y' OR active='N')} (@i{PostgreSQL})
+Optional column allowing zones to be marked inactive and therefore ignored by the
+server.
+
+@c ** RECURSIVE
+@item @samp{recursive ENUM('Y', 'N') NOT NULL DEFAULT 'N'} (@i{MySQL})
+@item @samp{recursive VARCHAR(1) NOT NULL CHECK (recursive='Y' O recursive='N')} (@i{PostgreSQL})
+Optional column marking the zone as recursive - is this is true then the server will delegate
+any requests for resolution to an external resolver. @b{This is due to be replaced by a zone type column shortly}
+
+@c ** XFER
+@item @samp{xfer CHAR(255) DEFAULT NULL} (@i{MySQL})
+@item @samp{xfer CHAR(255) DEFAULT NULL} (@i{PostgreSQL})
+Optional column specifying the ACL for allowing AXFR/IXFR requests. Currently specified as an IP address list.
+
+@c ** UPDATE_ACL
+@item @samp{update_acl CHAR(255) DEFAULT NULL} (@i{MySQL})
+@item @samp{update_acl CHAR(255) DEFAULT NULL} (@i{PostgreSQL})
+Optional column specifying the ACL controlling who can update a zone. Currently specified as an IP address list.
+
+@c ** ALSO_NOTIFY
+@item @samp{also_notify CHAR(255) DEFAULT NULL} (@i{MySQL})
+@item @samp{also_notify CHAR(255) DEFAULT NULL} (@i{PostgreSQL})
+Optional column specifying the name servers, other than those mentioned in the zone data, that should receive
+NOTIFY messages. Specified as a list of IP addresses.
+ 
+@end table
+
+
+
+@c ***
+@c ***	TABLE LAYOUTS: RR
+@c ***
+@node rr table
+@section The @samp{rr} table
+@cindex rr
+@cindex mydns.rr
+@cindex data
+@cindex aux
+@cindex wildcard
+@cindex wildcards
+
+The @samp{rr} table contains all non-@code{SOA} resource record types.
+
+It has a unique key on the combination of @i{zone}, @i{name}, @i{type}, and @i{data}. Plus optionally the @i{active} and @i{edatakey} columns.
+
+
+@table @asis
+@c *** ID
+@item @samp{id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY} (@i{MySQL})
+@item @samp{id SERIAL NOT NULL PRIMARY KEY} (@i{PostgreSQL})
+A unique number identifying this record.
+
+@c *** ZONE
+@item @samp{zone INT UNSIGNED NOT NULL} (@i{MySQL})
+@item @samp{zone INTEGER NOT NULL} (@i{PostgreSQL})
+The ID of the zone (from the @samp{soa} table) to which this resource record belongs.  (@pxref{soa table}).
+
+For PostgreSQL databases, this column is also created with @samp{FOREIGN KEY (zone) REFERENCES soa (id) ON DELETE CASCADE}.
+
+@c *** NAME
+@item @samp{name CHAR(64) NOT NULL} (@i{MySQL})
+@item @samp{name VARCHAR(64) NOT NULL} (@i{PostgreSQL})
+The name that this RR describes.  Wildcard values such as @samp{*} or @samp{*.sub} are
+supported, and this field can contain a FQDN or just a hostname.  It may contain
+out-of-zone data if this is a glue record.@*
+@i{ex:} @b{@code{foo}}@*
+@i{ex:} @b{@code{foo.example.com.}}
+
+@c *** TYPE
+@item @samp{type ENUM('A','AAAA','CNAME','HINFO','MX','NAPTR','NS','PTR','RP','SRV','TXT') NOT NULL} (@i{MySQL})
+@item @samp{type VARCHAR(5) NOT NULL CHECK (type='A' OR type='AAAA' OR type='CNAME' OR type='HINFO' OR type='MX' OR type='NAPTR' OR type='NS' OR type='PTR' OR type='RP' OR type='SRV' OR type='TXT')} (@i{PostgreSQL})
+The type of resource record.  (@pxref{Supported RR types}).
+
+@c *** DATA
+@item @samp{data CHAR(128) NOT NULL} (@i{MySQL})
+@item @samp{data VARCHAR(128) NOT NULL} (@i{PostgreSQL})
+The data associated with this resource record.  @xref{Supported RR types}, for
+specifications and examples of the type of data each record type should contain.
+
+@c *** AUX
+@item @samp{aux INT UNSIGNED NOT NULL} (@i{MySQL})
+@item @samp{aux INTEGER NOT NULL default 0} (@i{PostgreSQL})
+An auxillary numeric value in addition to @i{data}.  For @samp{MX} records,
+this field specifies the preference.  For @samp{SRV} records, this field
+specifies the priority.
+
+@c *** TTL
+@item @samp{ttl INT UNSIGNED NOT NULL DEFAULT '86400'} (@i{MySQL})
+@item @samp{ttl INTEGER NOT NULL default 86400} (@i{PostgreSQL})
+The time interval that this resource record may be cached before the
+source of the information should again be consulted.  Zero values are
+interpreted to mean that the RR can only be used for the transaction
+in progress, and should not be cached.
+
+@c *** EDATA
+@item @samp{edata BLOB(65408) DEFAULT NULL} (@i{MySQL})
+@item @samp{edata BYTEA DEFAULT NULL} (@i{PostgreSQL})
+Optional column thats hold data that will not fit into the data column.
+This allow much larger rr records to be stored.
+
+@c *** EDATAKEY
+@item @samp{edatakey CHAR(32) DEFAULT NULL} (@i{MySQL})
+@item @samp{edatakey CHAR(32) DEFAULT NULL} (@i{PostgreSQL})
+Optional column that holds the MD5 hash of the data stored in the edata column.
+
+@c *** ACTIVE
+@item @samp{active ENUM('Y', 'N', 'D') NOT NULL DEFAULT 'Y'} (@i{MySQL})
+@item @samp{active VARCHAR(1) NOT NULL CHECK (active='Y' OR active='N' OR active='D')} (@i{PostgreSQL})
+Optional column used to mark a record as active. When not set to Y the record is not served out by the
+server during normal requests or AXFR's. However if IXFR processing is enabled and the record is marked
+as 'D' (@i{deleted}) then it is visible in IXFR responses. If IXFR is disabled then 'D' === 'N'.
+
+@c *** STAMP
+@item @samp{stamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP} (@i{MySQL})
+@item @samp{stamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP} (@i{PostgreSQL})
+Optional column used to mark the last modified time and date of the record. Utilised in IXFR processing.
+
+@c *** SERIAL
+@item @samp{serial INT UNSIGNED DEFAULT NULL} (@i{MySQL})
+@item @samp{serial INTEGER DEFAULT NULL} (@i{PostgreSQL})
+Optional column used to contain the serial number of the zone when the record was created.
+Utilised in IXFR processing.
+
+@end table
+
+
+
+@c ***
+@c ***	SUPPORTED RR TYPES
+@c ***
+@node Supported RR types
+@section Supported RR types
+@cindex RR types
+@cindex A record
+@cindex AAAA record
+@cindex ALIAS record
+@cindex CNAME record
+@cindex HINFO record
+@cindex MX record
+@cindex NAPTR record
+@cindex NS record
+@cindex PTR record
+@cindex RP record
+@cindex SRV record
+@cindex TXT record
+
+The @samp{type} column in the @samp{rr} table may contain any of the following
+supported resource record types:
+
+@table @samp
+@item A
+A host address.  The @samp{data} column should contain the IP address (in
+numbers-and-dots format) associated with the @samp{name}.
+
+@i{example}: @samp{192.168.1.88}
+
+@item AAAA
+An IPv6 host address.  The @samp{data} column should contain the IPv6 address
+associated with the @samp{name}.
+
+@i{example}: @samp{3ffe:b00:c18:3::a}
+
+@item ALIAS
+A server side alias.  An alias is like a @code{CNAME}, only it is handled entirely
+by the server.  The @samp{data} column should contain the hostname aliased
+by @samp{name}.  Aliases can be used in place of @code{A} records.  The client will
+only see @code{A} records and will not be able to tell that aliases are involved. 
+The hostname specified by @samp{data} must exist in the database.
+
+It can be useful to use aliases for everything.  Use @code{A} records for the
+canonical name of the machine and use aliases for any additional names. 
+This is especially useful when combined with automatic @code{PTR} records.  If a
+single IP address is only used for one @code{A} record, then there will never be
+any confusion over what the @code{PTR} record should be.
+
+In order for server-side aliases to work, MyDNS must have been compiled with
+@command{configure --enable-alias}.
+
+@i{example}: @samp{albuquerque.example.com.} (FQDN)@*
+@i{example}: @samp{albuquerque} (hostname only)
+
+@item CNAME
+The canonical name for an alias.  The @samp{data} column should contain the real name
+of the machine specified by @samp{name}.  @samp{data} may be a hostname or an FQDN.
+
+@i{example}: @samp{porcini.example.com.} (FQDN)@*
+@i{example}: @samp{porcini} (hostname only)
+
+@item HINFO
+Host information.  The @samp{data} column should contain two strings which provide information
+about the host specified by @samp{name}.  The first string specifies the CPU type, and the
+second string describes the operating system type.  The two strings should be separated by
+a space.  If either string needs to contain a space, enclose it in quotation marks.
+
+Well-known CPU and operating system types that are most often used are listed in @uref{http://www.ietf.org/rfc/rfc1700.txt, RFC 1700}.
+
+@i{example}: @samp{"Pentium Pro" Linux}
+
+@item MX
+Mail exchange.  The @samp{data} column should contain the hostname or FQDN of a mail server
+which will accept mail for the host specified by @samp{name}.  The @samp{aux} column should
+contain a preference for this mail server.  Mail transfer agents prefer MX records with
+lower values in @samp{aux}.
+
+@i{example}: @samp{ns0.example.com.} (FQDN)@*
+@i{example}: @samp{ns0} (hostname only)
+
+@item NAPTR
+Naming authority pointer.  The @samp{data} column should contain six fields, separated by whitespace, which describe
+a regular expression based rewrite rule as described in @uref{http://www.ietf.org/rfc/rfc2915.txt, RFC 2915}
+for the name specified by @samp{name}.  The first field is the order (a number) in which the record
+must be processed with other similar records.  The second field is the preference (a number) in which
+similar records with equal order values should be processed.  The third field (a string) describe
+processing flags used while rewriting.  The fourth field (a string) specifies the services available
+down this rewrite path.  The fifth field (a string) contains a regular expression to use while rewriting.
+The last field (a string) contains the next name to query along the rewrite path.  If a string contains
+spaces, it may be enclosed in quotation marks.  If a string needs to contain a literal quotation mark,
+precede it with a backslash character.
+
+@i{example}: @samp{100 90 "" "" "!http://([^/:]+)!\1!i" .}
+
+@item NS
+An authoritative nameserver.  The @samp{data} column should contain the hostname or FQDN of a
+server which should be considered authoritative for the zone listed in @samp{name}.
+
+@i{example}: @samp{france.example.com.} (FQDN)@*
+@i{example}: @samp{france} (hostname only)
+
+@item PTR
+A domain name pointer.  These records, used only with @var{IN-ADDR.ARPA} zones, should contain the
+canonical hostname of the machine referred to by @samp{name} in @samp{data}.
+
+@i{example}: @samp{webserver.example.com.}
+
+@item RP
+A responsible person.  The @samp{data} column should contain the DNS-encoded email address of
+the person responsible for the name requested, then a space, then a hostname
+that should return a TXT record containing additional information about the responsible
+person.  If there is no such TXT record, the second value should contain a dot (@samp{.}).
+
+For more information, see @uref{http://www.ietf.org/rfc/rfc1183.txt, RFC 1183}.
+
+@i{example}: @samp{webmaster.example.com. contactinfo.example.com.}
+
+@item SRV
+Server location.  Specifies the location of the server(s) for a specific protocol and domain.  The @samp{data}
+column must contain three space-separated values.  The first value is a number specifying the @i{weight} for
+this entry.  The second field is a number specifying the @i{port} on the target host of this service.  The
+last field is a name specifying the @i{target} host.  The @samp{aux} column should contain the @i{priority} of
+this target host.  Targets with a lower priority are preferred.
+
+For well-known services, a reserved universal symbolic name may be listed in @uref{http://www.ietf.org/rfc/rfc1700.txt, RFC 1700}.
+
+For more information, see @uref{http://www.ietf.org/rfc/rfc2782.txt, RFC 2782}.
+
+@i{example}: @samp{0 9 server.example.com.} (FQDN)@*
+@i{example}: @samp{0 9 server} (hostname only)
+
+@item TXT
+A text string.  The @samp{data} column contains a text string that is returned only when a @var{TXT} query
+is issued for the host specified by @samp{name}. Note that the string should not be escaped in the database,
+as escaping is done by mydns-ng.
+
+@i{example}: @samp{This is a string.}
+
+@end table
+
+
+
+
+@c ***
+@c ***	OPTIONAL COLUMNS
+@c ***
+@node Optional columns
+@section Optional columns
+@cindex optional columns
+
+As shown above MyDNS allows optional columns in the tables. These are utilised when extended operation is
+enabled. The configuration must aenable the use of these columns before they will have any effect.
+
+Each of these columns is optional.
+
+If these columns exist, MyDNS will notice this and enable additional code
+specific to each optional field.
+
+If you add any of these fields to your database, you must signal MyDNS to
+rescan the tables by sending it a SIGHUP signal (@pxref{Signals}).
+
+@menu
+* any.active::      Activating and deactivating individual rows.
+* soa.xfer::        Zone transfer access rules.
+* soa.update_acl::  Dynamic DNS UPDATE access rules.
+* soa.also_notify:: Notify additional servers on zone update.
+* soa.recursive::   Zone will be handled by the recursive server.
+* rr.stamp::        Modification timestamp.
+* rr.serial::       Creation serial number.
+* rr.edata::	    Overflow column for data
+* rr.edatakey::     MD5 hash of edata column used in index.
+@end menu
+
+
+
+
+@c ***
+@c ***	OPTIONAL: ACTIVE
+@c ***
+@node any.active
+@subsection any.active
+@cindex active
+
+Both the @samp{soa} table and the @samp{rr} table may contain a column called @samp{active}.
+
+If this column exists, it should contain a boolean value.  This could be @code{0/1} (an integer),
+@code{'Y'/'N'}, @code{'1'/'0'}, or @code{'Active'/'Inactive'}.  For MySQL databases,
+an @code{ENUM} value is recommended.
+
+If the @code{active} column is present, whenever records are retrieved from
+that table, the @code{active} column will be honored.  If the row is inactive,
+it will be as if the row did not exist at all.
+
+To create an @samp{active} column on your @samp{soa} table, for example, you
+might issue SQL statements like this:
+
+@i{MySQL:}
+@example
+mysql> ALTER TABLE mydns.soa ADD COLUMN active ENUM('Y','N') NOT NULL;
+mysql> ALTER TABLE mydns.soa ADD INDEX (active);
+@end example
+
+@i{PostgreSQL:}
+@example
+mydns=# ALTER TABLE soa ADD COLUMN active INT;
+mydns=# UPDATE soa SET active=1;
+mydns=# ALTER TABLE soa ALTER COLUMN active SET NOT NULL;
+mydns=# ALTER TABLE soa ALTER COLUMN active SET DEFAULT 1;
+@end example
+
+
+
+@c ***
+@c ***	OPTIONAL: SOA.XFER
+@c ***
+@node soa.xfer
+@subsection soa.xfer
+@cindex xfer
+
+If the @samp{soa} table contains a column named @samp{xfer} and DNS-based
+zone transfers are enabled (@pxref{Zone transfers}), the @samp{xfer} column
+will be examined whenever a DNS-based zone transfer request is received.
+
+The @samp{xfer} column should contain one or more IP addresses separated
+by commas.  These IP addresses will be allowed to transfer the zone.
+
+If the @samp{xfer} column is empty, no DNS-based zone transfers will be allowed
+for that zone.
+
+The IP addresses in @samp{xfer} may contain standard wildcard characters.  Thus,
+if you want to grant zone transfer access for a particular zone to any
+IP address, you would set @samp{xfer} to @samp{*}.
+
+Addresses may also be specified in CIDR notation (i.e. @code{192.168.1.1/24})
+or in network/netmask notation (i.e. @code{192.168.1.1/255.255.0.0}).
+
+The @samp{xfer} column may be any size you want, and whatever size you think
+will be adequate for the IP address lists you intend to use.
+
+To create an @samp{xfer} column on your @samp{soa} table, for example, you
+might issue SQL statements like this:
+
+@i{MySQL:}
+@example
+mysql> ALTER TABLE mydns.soa ADD COLUMN xfer CHAR(255) NOT NULL;
+@end example
+
+@i{PostgreSQL:}
+@example
+mydns=# ALTER TABLE soa ADD COLUMN xfer VARCHAR(255);
+mydns=# UPDATE soa SET xfer='';
+mydns=# ALTER TABLE soa ALTER COLUMN xfer SET NOT NULL;
+mydns=# ALTER TABLE soa ALTER COLUMN xfer SET DEFAULT '';
+@end example
+
+
+@c ***
+@c ***	OPTIONAL: SOA.UPDATE_ACL
+@c ***
+@node soa.update_acl
+@subsection soa.update_acl
+@cindex update_acl
+
+If the @samp{soa} table contains a column named @samp{update_acl} and dynamic DNS updates
+are enabled (@pxref{DNS UPDATE}), the @samp{update} column
+will be examined whenever a DNS UPDATE request is received.
+
+The @samp{update_acl} column should contain one or more IP addresses separated
+by commas.  These IP addresses will be allowed to update the zone.
+
+If the @samp{update_acl} column is empty, no dynamic DNS updates will be allowed
+for that zone.
+
+The IP addresses in @samp{update_acl} may contain standard wildcard characters.  Thus,
+if you want to grant access for a particular zone to any
+IP address, you would set @samp{update_acl} to @samp{*}.
+
+Addresses may also be specified in CIDR notation (i.e. @code{192.168.1.1/24})
+or in network/netmask notation (i.e. @code{192.168.1.1/255.255.0.0}).
+
+The @samp{update_acl} column may be any size you want, and whatever size you think
+will be adequate for the IP address lists you intend to use.
+
+To create an @samp{update_acl} column on your @samp{soa} table, for example, you
+might issue SQL statements like this:
+
+@i{MySQL:}
+@example
+mysql> ALTER TABLE mydns.soa ADD COLUMN update_acl CHAR(255) NOT NULL;
+@end example
+
+@i{PostgreSQL:}
+@example
+mydns=# ALTER TABLE soa ADD COLUMN update_acl VARCHAR(255);
+mydns=# UPDATE soa SET update_acl='';
+mydns=# ALTER TABLE soa ALTER COLUMN update_acl SET NOT NULL;
+mydns=# ALTER TABLE soa ALTER COLUMN update_acl SET DEFAULT '';
+@end example
+
+@c ***
+@c ***  OPTIONAL: SOA.ALSO_NOTIFY
+@c ***
+@node soa.also_notify
+@subsection soa.also_notify
+@cindex also_notify
+
+If the @samp{soa} table contains a column named @samp{also_notify} and dynamic DNS updates
+are enabled (@pxref{DNS UPDATE}), the @samp{also_notify} column
+will be examined whenever an UPDATE is processed successfully by the server.
+
+The @samp{also_notify} column should contain one or more IP addresses separated
+by commas. These IP addresses will be used to send NOTIFY messages to additional name servers.
+
+The IP addresses in @samp{also_notify} must be host addresses and may not contain any wildcard
+specifications.
+
+The @samp{also_notify} column may be any size you want, whatever size you think
+will be adequate to hold the list of additional servers for the zone.
+
+To create an @samp{also_notify} column on your @samp{soa} table, for example, you
+might issue SQL statements like this:
+
+@i{MySQL}
+@example
+mysql> ALTER TABLE mydns.soq ADD COLUMN also_notify CHAR(255) DEFAULT NULL;
+@end example
+
+@i{PostgreSQL}
+@example
+mydns=# ALTER TABLE soa ADD COLUMN also_notify VARCHAR(255) DEFAULT NULL;
+@end example
+
+@c ***
+@c ***  OPTIONAL: SOA.RECURSIVE
+@c ***
+@node soa.recursive
+@subsection soa.recursive
+@cindex recursive
+
+If the @samp{soa} table contains a column named @samp{recursive} the column will be examined
+on every request and if set to true requests for this zone will be forwarded via
+the recursor rather than resolved locally.
+
+To create a @samp{recursive} column on your @samp{soa} table, for example, you
+might issue SQL statements like this:
+
+@i{MySQL:}
+@example
+mysql> ALTER TABLE mydns.soa ADD COLUMN recursive ENUM('Y','N') NOT NULL;
+@end example
+
+@i{PostgreSQL:}
+@example
+mydns=# ALTER TABLE soa ADD COLUMN recursive VARCHAR(1);
+mydns=# UPDATE soa SET recursive='N';
+mydns=# ALTER TABLE soa ALTER COLUMN recursive SET NOT NULL;
+mydns=# ALTER TABLE soa ALTER COLUMN recursive SET DEFAULT 'Y';
+mydns=# ALTER TABLE soa ALTER COLUMN recursive SET CHECK (recursive='Y' OR recursive='N');
+@end example
+
+@c ***
+@c ***  OPTIONAL: RR.STAMP
+@c ***
+@node rr.stamp
+@subsection rr.stamp
+@cindex stamp
+
+If the @samp{rr} table contains a column named @samp{stamp} the column will be examined
+by the garbage collection code to determine if the record can be deleted. This is used in
+conjunction with the @samp{active} column where the record must be in the @b{D} state,
+and the @samp{soa.expire} column for the zone which determines how old the record must be
+before it can be deleted.
+
+To create a @samp{stamp} column on your @samp{rr} table, for example, you
+might issue SQL statements like this:
+
+@i{MySQL:}
+@example
+mysql> ALTER TABLE mydns.rr ADD COLUMN stamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+@end example
+
+@i{PostgreSQL:}
+@example
+mydns=# ALTER TABLE rr ADD COLUMN stamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+@end example
+
+
+@c ***
+@c ***  OPTIONAL: RR.SERIAL
+@c ***
+@node rr.serial
+@subsection rr.serial
+@cindex serial
+
+If the @samp{rr} table contains a column named @samp{serial} the column will be examined
+by the IXFR code to determine if the record needs to be sent to the requestor. This is used in
+conjunction with the @samp{active} column where the record must be in the @b{D} state,
+and the @samp{soa.expire} column for the zone which determines how old the record must be
+before it can be ignored.
+
+To create a @samp{serial} column on your @samp{rr} table, for example, you
+might issue SQL statements like this:
+
+@i{MySQL:}
+@example
+mysql> ALTER TABLE mydns.rr ADD COLUMN serial INT UNSIGNED DEFAULT NULL;
+@end example
+
+@i{PostgreSQL:}
+@example
+mydns=# ALTER TABLE rr ADD COLUMN stamp INTEGER DEFAULT NULL;
+@end example
+
+@c ***
+@c ***  OPTIONAL: RR.EDATA
+@c ***
+@node rr.edata
+@subsection rr.data
+@cindex rr.edata
+
+If the @samp{rr} table contains a column named @samp{edata} the column will be used to extend
+the data column when responding to queries and when updates are stored in the db. This allows
+maximum length records to be stored without compromising the index function.
+
+To create an @samp{edata} column on your @samp{rr} table, for example, you
+might issue SQL statements like this:
+
+@i{MySQL}
+@example
+mysql> ALTER TABLE mydns.rr ADD COLUMN edata BLOB(65408) DEFAULT NULL;
+mysql> ALTER TABLE mydns.rr ADD COLUMN edatakey CHAR(32) DEFAULT NULL;
+mysql> ALTER TABLE mydns.rr ADD INDEX edatakey;
+@end example
+
+@i{PostgreSQL}
+@example
+mydns=# ALTER TABLE rr ADD COLUMN edata BYTEA DEFAULT NULL;
+mydns=# ALTER TABLE rr ADD COLUMN edatakey CHAR(32) DEFAULT NULL;
+mydns=# DROP INDEX rr;
+mydns=# CREATE INDEX rr ON rr (zone,name,type,data,edatakey,active);
+@end example
+
+@c ***
+@c ***  OPTIONAL: RR.EDATAKEY
+@c ***
+@node rr.edatakey
+@subsection rr.datakey
+@cindex rr.edatakey
+
+If the @samp{rr} table contains a column named @samp{edatakey} the column will be used to key
+the edata extension column when responding to queries and when updates are stored in the db.
+This allows maximum length records to be stored without compromising the index function.
+
+To create an @samp{edatakey} column on your @samp{rr} table, for example, you
+might issue SQL statements like this:
+
+@i{MySQL}
+@example
+mysql> ALTER TABLE mydns.rr ADD COLUMN edata BLOB(65408) DEFAULT NULL;
+mysql> ALTER TABLE mydns.rr ADD COLUMN edatakey CHAR(32) DEFAULT NULL;
+mysql> ALTER TABLE mydns.rr ADD INDEX edatakey;
+@end example
+
+@i{PostgreSQL}
+@example
+mydns=# ALTER TABLE rr ADD COLUMN edata BYTEA DEFAULT NULL;
+mydns=# ALTER TABLE rr ADD COLUMN edatakey CHAR(32) DEFAULT NULL;
+mydns=# DROP INDEX rr;
+mydns=# CREATE INDEX rr ON rr (zone,name,type,data,edatakey,active);
+@end example

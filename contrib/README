@@ -1,0 +1,62 @@
+
+admin.php:
+---------------------------------------------------------------------------
+by Don Moore <bboy@bboy.net> (http://mydns.bboy.net)
+and David Phillips <david@acz.org> (http://david.acz.org)
+
+A fully functional web interface to the MyDNS data.  To use, copy
+admin.php to your http-space and edit the configuration variables at the
+top of the file.  You will obviously need PHP installed and configured
+in order to use this script.  See http://www.php.net/ for PHP help.
+
+
+alias.patch:
+---------------------------------------------------------------------------
+by David Phillips <david@acz.org> (http://david.acz.org)
+
+A patch to add functionality for server side aliasing for A records.
+Aliased records are returned to the client as normal A records: the client
+will not know that any translation took place.  These work anytime an A
+record is needed, such as when providing additional records for NS or MX
+records.  For more info, see "README.alias".
+
+To install, configure mydns with "--enable-alias" and build.
+
+
+create_domain.pl:
+---------------------------------------------------------------------------
+by Gerard de Brieder <smeevil@meladicta.com>
+
+A Perl script to add a minimal functioning domain entry.
+
+
+MyDNS.pm
+---------------------------------------------------------------------------
+by Allen Bettilyon <allen@bettilyon.net>
+
+An object based interface to the MyDNS DB information.
+
+
+mydns.redhat
+---------------------------------------------------------------------------
+by Ari Pollak <ajp@aripollak.com>
+
+A SysV-style init script for use with RedHat (and possibly other RPM-based
+systems).
+
+
+mydns.solaris
+---------------------------------------------------------------------------
+by Fernando Durango <fernando@secret.org>
+
+MyDNS startup script for Solaris.
+
+
+stats.php:
+---------------------------------------------------------------------------
+by Don Moore <bboy@bboy.net> (http://mydns.bboy.net)
+
+An example of a command-line PHP script that captures the query log lines
+from "mydns --verbose" and does something with the data.
+
+
