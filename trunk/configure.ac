@@ -77,7 +77,7 @@ AC_FUNC_REALLOC
 AC_FUNC_CHOWN
 AC_FUNC_FORK
 AC_FUNC_STRCOLL
-AC_CHECK_FUNCS([memset getpwuid shutdown inet_ntop inet_pton strsep strndup strdup strncmp])
+AC_CHECK_FUNCS([memset getpwuid shutdown inet_pton strsep strndup strdup strncmp])
 AC_CHECK_FUNCS([select poll])
 AC_CHECK_FUNCS([getaddrinfo getnameinfo])
 AC_CHECK_FUNCS([alarm])
@@ -98,6 +98,10 @@ AC_CHECK_FUNCS([strpbrk])
 AC_CHECK_FUNCS([strrchr])
 AC_CHECK_FUNCS([strstr])
 AC_CHECK_FUNCS([strtol])
+
+
+AC_CHECK_FUNC(inet_ntop, AC_DEFINE(HAVE_INET_NTOP, 1, [Define to 1 if you have the 'inet_ntop' function.]),
+    AC_CHECK_LIB(nsl, inet_ntop, AC_DEFINE(HAVE_INET_NTOP, 1, [Define to 1 if you have the 'inet_ntop' function.])))
 
 AC_LIB_SOCKET
 AC_LIB_NSL
